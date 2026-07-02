@@ -1,0 +1,50 @@
+---
+description: Core Angular v22 patterns and conventions for this project
+alwaysApply: true
+---
+
+# Angular Core Conventions
+
+## TypeScript
+
+- Use strict type checking (already enabled in tsconfig)
+- Prefer type inference when the type is obvious
+- Avoid `any`; use `unknown` when type is uncertain
+
+## Components
+
+- Always use standalone components (do NOT set `standalone: true` — it's the default in v20+)
+- Do NOT set `changeDetection: ChangeDetectionStrategy.OnPush` explicitly — OnPush is the default in v22+
+- Use `input()` and `output()` functions instead of `@Input()` / `@Output()` decorators
+- Use `computed()` for derived state
+- Keep components small and focused on a single responsibility
+- Prefer inline templates for small components
+- When using external templates/styles, use paths relative to the component TS file
+- Do NOT use `ngClass` — use `class` bindings instead
+- Do NOT use `ngStyle` — use `style` bindings instead
+- Do NOT use `@HostBinding` / `@HostListener` — put host bindings in the `host` object of `@Component` or `@Directive`
+- Use `NgOptimizedImage` for all static images (not for inline base64)
+
+## State Management
+
+- Use signals for local component state
+- Use `computed()` for derived state
+- Keep state transformations pure and predictable
+- Do NOT use `mutate` on signals — use `update` or `set` instead
+
+## Templates
+
+- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
+- Use the async pipe to handle observables
+- Keep templates simple — avoid complex logic
+- Do not assume globals like `new Date()` are available in templates
+
+## Services
+
+- Design services around a single responsibility
+- Prefer `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (v22+)
+- Use `inject()` function instead of constructor injection
+
+## Routing
+
+- Implement lazy loading for feature routes

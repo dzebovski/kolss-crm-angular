@@ -1,0 +1,14 @@
+---
+description: Vitest + jsdom testing conventions for this Angular project
+globs: "**/*.spec.ts"
+alwaysApply: false
+---
+
+# Angular Testing (Vitest + jsdom)
+
+- Use `TestBed.configureTestingModule` with `imports: [ComponentUnderTest]` for standalone components
+- Call `await fixture.whenStable()` before asserting on async/signal-driven DOM updates
+- Prefer testing behavior and rendered output over implementation details
+- Use `fixture.nativeElement` or `fixture.debugElement` for DOM assertions
+- Keep tests focused — one behavior per `it()` block
+- Run tests with `npm test`

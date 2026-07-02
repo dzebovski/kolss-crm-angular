@@ -1,0 +1,12 @@
+---
+description: Angular forms conventions — Signal Forms preferred
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Angular Forms
+
+- Prefer **Signal Forms** (`@angular/forms/signals`) for new forms — stable in Angular v22+
+  - Signal-based state, type-safe field access, schema-based validation
+- When not using Signal Forms, prefer **Reactive forms** over Template-driven forms
+- Keep form logic in the component or a dedicated form service, not in templates

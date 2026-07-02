@@ -1,0 +1,15 @@
+---
+description: Accessibility requirements — WCAG AA and AXE compliance
+alwaysApply: true
+---
+
+# Accessibility
+
+- All UI MUST pass AXE checks
+- Follow WCAG AA minimums:
+  - Focus management (visible focus indicators, logical tab order)
+  - Color contrast ratios (4.5:1 for normal text, 3:1 for large text)
+  - ARIA attributes where native semantics are insufficient
+  - Keyboard navigability for all interactive elements
+- Use semantic HTML elements (`button`, `nav`, `main`, `label`) before reaching for ARIA
+- Provide accessible names for icons and icon-only buttons
