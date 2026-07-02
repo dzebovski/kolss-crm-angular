@@ -1,0 +1,4 @@
+[mcp_servers.angular-cli]
+command = "./node_modules/.bin/ng"
+args = ["mcp"]
+startup_timeout_sec = 120

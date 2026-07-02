@@ -41,6 +41,16 @@ public/          # Static assets
 Follow [best-practices.md](best-practices.md) for all Angular and TypeScript patterns.
 Cursor rules in `.cursor/rules/` enforce these automatically.
 
+## Agent Skills
+
+Official Angular team skill **`angular-developer`** is installed from [angular/skills](https://github.com/angular/skills):
+
+- Location: `.agents/skills/angular-developer/` (symlinked at `.cursor/skills/angular-developer`)
+- Invoke in chat: `/angular-developer`
+- Covers: signals, forms, DI, routing, SSR, accessibility, animations, testing, CLI
+
+Update to latest skill version: `npx skills update`
+
 ## MCP
 
 Angular CLI MCP server is configured in `.cursor/mcp.json`.
