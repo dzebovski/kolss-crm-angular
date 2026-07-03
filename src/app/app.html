@@ -151,6 +151,12 @@
     background: color-mix(in srgb, var(--pill-accent) 15%, transparent);
   }
 
+  .pill-group .design-pill {
+    --pill-accent: var(--french-violet);
+    border: 1px solid color-mix(in srgb, var(--french-violet) 28%, transparent);
+    font-weight: 650;
+  }
+
   .pill-group .pill:nth-child(6n + 1) {
     --pill-accent: var(--bright-blue);
   }
@@ -249,6 +255,18 @@
     <div class="divider" role="separator" aria-label="Divider"></div>
     <div class="right-side">
       <div class="pill-group">
+        <a class="pill design-pill" routerLink="/design">
+          <span>KOLSS Design</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="14"
+            viewBox="0 -960 960 960"
+            width="14"
+            fill="currentColor"
+          >
+            <path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+          </svg>
+        </a>
         @for (
           item of [
             { title: 'Explore the Docs', link: 'https://angular.dev' },
@@ -349,5 +367,3 @@
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
 <!-- * * * * * * * * * * End of Placeholder  * * * * * * * * * * * * -->
 <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
-
-<router-outlet />

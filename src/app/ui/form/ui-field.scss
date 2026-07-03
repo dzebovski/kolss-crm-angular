@@ -1,0 +1,73 @@
+:host {
+  display: grid;
+  gap: var(--ui-space-2);
+  min-width: 0;
+}
+
+.ui-field__label {
+  color: var(--ui-text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.ui-field__label span {
+  color: var(--ui-danger);
+}
+
+.ui-field__control {
+  min-height: var(--ui-control-height);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  box-shadow: 0 0 0 0 transparent;
+  transition:
+    border-color var(--ui-duration-fast) var(--ui-ease),
+    box-shadow var(--ui-duration-fast) var(--ui-ease);
+}
+
+.ui-field__control:focus-within {
+  border-color: var(--ui-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus) 16%, transparent);
+}
+
+.ui-field__control--invalid {
+  border-color: var(--ui-danger);
+}
+
+input,
+textarea {
+  width: 100%;
+  min-height: calc(var(--ui-control-height) - 2px);
+  padding: 0 var(--ui-space-3);
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ui-text);
+  font-size: 0.875rem;
+}
+
+textarea {
+  min-height: 6.5rem;
+  padding-block: var(--ui-space-3);
+  resize: vertical;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ui-text-subtle);
+}
+
+input:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-field__message {
+  color: var(--ui-text-subtle);
+  font-size: 0.75rem;
+}
+
+.ui-field__message--error {
+  color: var(--ui-danger);
+}

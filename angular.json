@@ -30,7 +30,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": [
+              "node_modules/@fontsource-variable/inter/index.css",
+              "node_modules/@fontsource-variable/inter-tight/index.css",
+              "src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {

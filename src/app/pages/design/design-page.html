@@ -1,0 +1,547 @@
+<div class="design-page" [attr.data-density]="density()">
+  <header class="design-header">
+    <a class="design-brand" routerLink="/" aria-label="KOLSS home">
+      <span class="design-brand__mark" aria-hidden="true"></span>
+      <span>KOLSS</span>
+      <small>Design system</small>
+    </a>
+    <div class="design-header__actions">
+      <span class="design-version">v1.0</span>
+      <app-ui-button variant="secondary" size="small" (pressed)="toggleDensity()">
+        <app-ui-icon name="density_medium" [size]="17" />
+        {{ density() === 'comfortable' ? 'Comfortable' : 'Compact' }}
+      </app-ui-button>
+      <a class="design-home-link" routerLink="/">
+        <app-ui-icon name="arrow_back" [size]="17" />
+        Starter
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <section class="design-hero" aria-labelledby="design-title">
+      <div class="design-hero__eyebrow"><span></span> System language for a focused CRM</div>
+      <h1 id="design-title">Useful by default.<br /><span>Distinct when it matters.</span></h1>
+      <p>
+        Foundations and production-ready components for dense workflows, clear decisions and calm
+        daily work.
+      </p>
+      <div class="design-hero__meta">
+        <div><strong>22</strong><span>Angular</span></div>
+        <div><strong>AA</strong><span>Accessibility</span></div>
+        <div><strong>2</strong><span>Density modes</span></div>
+      </div>
+      <div class="design-hero__orb" aria-hidden="true"></div>
+    </section>
+
+    <div ngTabs class="catalog-tabs">
+      <div
+        ngTabList
+        class="catalog-tabs__list"
+        selectionMode="follow"
+        [selectedTab]="activeTab()"
+        (selectedTabChange)="setActiveTab($event)"
+      >
+        <button ngTab type="button" value="foundation"><span>01</span> Foundation</button>
+        <button ngTab type="button" value="components"><span>02</span> Components</button>
+        <button ngTab type="button" value="sections"><span>03</span> Sections</button>
+      </div>
+
+      <section ngTabPanel class="catalog-panel" value="foundation">
+        <ng-template ngTabContent>
+          <div class="catalog-layout">
+            <aside class="catalog-rail" aria-label="Foundation categories">
+              <span>Foundation</span>
+              <a href="/design#color">Color</a>
+              <a href="/design#typography">Typography</a>
+              <a href="/design#spacing">Spacing</a>
+              <a href="/design#shape">Shape & depth</a>
+              <a href="/design#iconography">Iconography</a>
+              <a href="/design#motion">Motion & layout</a>
+            </aside>
+
+            <div class="catalog-content">
+              <section id="color" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Color</span>
+                  <h2>Signal, never decorate.</h2>
+                  <p>
+                    Neutral surfaces carry the work. Brand color identifies decisions and important
+                    transitions.
+                  </p>
+                </div>
+                <div class="swatch-grid">
+                  @for (swatch of swatches; track swatch.token) {
+                    <article class="swatch-card">
+                      <div [style.background]="'var(' + swatch.token + ')'">
+                        <span>{{ swatch.name }}</span>
+                      </div>
+                      <code>{{ swatch.token }}</code>
+                      <small>{{ swatch.value }}</small>
+                    </article>
+                  }
+                </div>
+                <div class="semantic-row">
+                  <app-ui-badge tone="success">Success</app-ui-badge>
+                  <app-ui-badge tone="info">Information</app-ui-badge>
+                  <app-ui-badge tone="warning">Attention</app-ui-badge>
+                  <app-ui-badge tone="danger">Critical</app-ui-badge>
+                  <app-ui-badge tone="brand">Brand</app-ui-badge>
+                </div>
+              </section>
+
+              <section id="typography" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Typography</span>
+                  <h2>Clear hierarchy, compact rhythm.</h2>
+                  <p>
+                    Inter Tight leads moments of orientation. Inter carries operational content and
+                    dense data.
+                  </p>
+                </div>
+                <div class="type-specimen">
+                  <div class="type-specimen__display">Turn activity<br />into momentum.</div>
+                  <div class="type-specimen__details">
+                    <article>
+                      <span>Display / 64</span><strong>Aa</strong><code>Inter Tight · 620</code>
+                    </article>
+                    <article>
+                      <span>Heading / 32</span>
+                      <h3>Account health</h3>
+                      <code>Inter Tight · 600</code>
+                    </article>
+                    <article>
+                      <span>Body / 16</span>
+                      <p>Everything your team needs to move the relationship forward.</p>
+                      <code>Inter · 400</code>
+                    </article>
+                    <article>
+                      <span>Label / 12</span><b>LAST ACTIVITY</b><code>Inter · 700</code>
+                    </article>
+                  </div>
+                </div>
+              </section>
+
+              <section id="spacing" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Spacing</span>
+                  <h2>A four-pixel operating rhythm.</h2>
+                  <p>
+                    Spacing remains predictable from compact controls to generous page composition.
+                  </p>
+                </div>
+                <div class="spacing-scale">
+                  @for (space of spacing; track space) {
+                    <div>
+                      <span [style.width.px]="space"></span><strong>{{ space }}</strong
+                      ><code>{{ space / 4 }}×</code>
+                    </div>
+                  }
+                </div>
+                <div class="density-comparison">
+                  <article data-density="comfortable">
+                    <span>Comfortable · 40px</span>
+                    <app-ui-text-field label="Account owner" value="Maya Chen" />
+                  </article>
+                  <article data-density="compact">
+                    <span>Compact · 32px</span>
+                    <app-ui-text-field label="Account owner" value="Maya Chen" />
+                  </article>
+                </div>
+              </section>
+
+              <section id="shape" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Shape & depth</span>
+                  <h2>Soft enough to guide, sharp enough to work.</h2>
+                </div>
+                <div class="shape-grid">
+                  <article>
+                    <div class="radius-sm"></div>
+                    <span>Small · 6</span>
+                  </article>
+                  <article>
+                    <div class="radius-md"></div>
+                    <span>Medium · 10</span>
+                  </article>
+                  <article>
+                    <div class="radius-lg"></div>
+                    <span>Large · 16</span>
+                  </article>
+                  <article>
+                    <div class="radius-pill"></div>
+                    <span>Pill · 999</span>
+                  </article>
+                </div>
+                <div class="elevation-grid">
+                  <article class="elevation-1">
+                    <strong>Level 1</strong><span>Controls, cards</span>
+                  </article>
+                  <article class="elevation-2">
+                    <strong>Level 2</strong><span>Menus, popovers</span>
+                  </article>
+                  <article class="elevation-3">
+                    <strong>Level 3</strong><span>Dialogs, focus</span>
+                  </article>
+                </div>
+              </section>
+
+              <section id="iconography" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Iconography</span>
+                  <h2>Material Symbols, tuned for KOLSS.</h2>
+                  <p>
+                    Rounded variable symbols use consistent optical size and weight across control
+                    sizes.
+                  </p>
+                </div>
+                <div class="icon-grid">
+                  @for (icon of icons; track icon) {
+                    <article>
+                      <app-ui-icon [name]="icon" [size]="24" /><code>{{ icon }}</code>
+                    </article>
+                  }
+                </div>
+              </section>
+
+              <section id="motion" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Motion & layout</span>
+                  <h2>Fast feedback, stable geometry.</h2>
+                </div>
+                <div class="motion-grid">
+                  <article>
+                    <span class="motion-dot motion-dot--fast"></span><strong>Fast · 120ms</strong
+                    ><small>Hover and press</small>
+                  </article>
+                  <article>
+                    <span class="motion-dot motion-dot--base"></span><strong>Base · 180ms</strong
+                    ><small>Menus and disclosure</small>
+                  </article>
+                  <article>
+                    <span class="motion-dot motion-dot--slow"></span><strong>Slow · 240ms</strong
+                    ><small>Page-level transitions</small>
+                  </article>
+                </div>
+                <div class="breakpoints">
+                  <div><strong>360</strong><span>Mobile floor</span></div>
+                  <div><strong>768</strong><span>Tablet</span></div>
+                  <div><strong>1280</strong><span>CRM desktop</span></div>
+                  <div><strong>1600</strong><span>Wide workspace</span></div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </ng-template>
+      </section>
+
+      <section ngTabPanel class="catalog-panel" value="components">
+        <ng-template ngTabContent>
+          <div class="catalog-layout">
+            <aside class="catalog-rail" aria-label="Component categories">
+              <span>Components</span>
+              <a href="/design#actions">Actions</a>
+              <a href="/design#forms">Form controls</a>
+              <a href="/design#selection">Selection</a>
+              <a href="/design#display">Data display</a>
+              <a href="/design#navigation">Navigation</a>
+              <a href="/design#feedback">Feedback</a>
+              <a href="/design#table">Data table</a>
+            </aside>
+
+            <div class="catalog-content">
+              <section id="actions" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Actions</span>
+                  <h2>Buttons with a clear decision hierarchy.</h2>
+                </div>
+                <div class="component-card">
+                  <div class="component-card__header">
+                    <strong>Button</strong><code>app-ui-button</code>
+                  </div>
+                  <div class="component-canvas component-canvas--row">
+                    <app-ui-button
+                      ><app-ui-icon name="add" [size]="18" />Create account</app-ui-button
+                    >
+                    <app-ui-button variant="secondary">Save draft</app-ui-button>
+                    <app-ui-button variant="ghost">Cancel</app-ui-button>
+                    <app-ui-button variant="danger">Delete</app-ui-button>
+                    <app-ui-button [loading]="true">Saving</app-ui-button>
+                    <app-ui-button [disabled]="true">Disabled</app-ui-button>
+                  </div>
+                  <div class="component-card__footer">
+                    <span>small · medium · large</span><span>default · loading · disabled</span>
+                  </div>
+                </div>
+                <div class="component-card">
+                  <div class="component-card__header">
+                    <strong>Icon button & tooltip</strong
+                    ><code>app-ui-icon-button · appUiTooltip</code>
+                  </div>
+                  <div class="component-canvas component-canvas--row">
+                    <app-ui-icon-button icon="edit" label="Edit account" />
+                    <app-ui-icon-button icon="add" label="Add item" variant="primary" />
+                    <app-ui-icon-button icon="delete" label="Delete item" variant="danger" />
+                    <button
+                      class="demo-tooltip-trigger"
+                      appUiTooltip="More account actions"
+                      aria-label="More account actions"
+                    >
+                      <app-ui-icon name="more_horiz" [size]="20" />
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section id="forms" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Form controls</span>
+                  <h2>Signal-native fields with complete states.</h2>
+                  <p>
+                    The live form below uses Angular 22 Signal Forms and reusable FormValueControl
+                    components.
+                  </p>
+                </div>
+                <form class="demo-form" (submit)="$event.preventDefault()">
+                  <app-ui-text-field
+                    label="Company name"
+                    placeholder="Acme Inc."
+                    [formField]="contactForm.company"
+                    [error]="fieldError('company')"
+                  />
+                  <app-ui-text-field
+                    label="Work email"
+                    type="email"
+                    placeholder="name@company.com"
+                    [formField]="contactForm.email"
+                    [error]="fieldError('email')"
+                  />
+                  <app-ui-select
+                    label="Lifecycle stage"
+                    [options]="stageOptions"
+                    [formField]="contactForm.stage"
+                  />
+                  <app-ui-text-field label="Read only" value="CRM-10482" [readOnly]="true" />
+                  <app-ui-text-field
+                    label="Disabled"
+                    value="Managed by workflow"
+                    [disabled]="true"
+                  />
+                  <app-ui-text-field
+                    label="Invalid state"
+                    value="incorrect@"
+                    error="Enter a valid email address."
+                  />
+                  <app-ui-textarea
+                    class="demo-form__wide"
+                    label="Internal note"
+                    hint="Visible to your team only."
+                    [(value)]="notes"
+                  />
+                  <div class="demo-form__actions demo-form__wide">
+                    <span>Model: {{ formModel().company || 'No company yet' }}</span>
+                    <app-ui-button type="submit" [disabled]="contactForm().invalid()"
+                      >Save contact</app-ui-button
+                    >
+                  </div>
+                </form>
+              </section>
+
+              <section id="selection" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Selection</span>
+                  <h2>Controls that make state explicit.</h2>
+                </div>
+                <div class="component-card">
+                  <div class="component-card__header">
+                    <strong>Checkbox, radio & switch</strong
+                    ><code>FormCheckboxControl · FormValueControl</code>
+                  </div>
+                  <div class="component-canvas selection-demo">
+                    <div>
+                      <app-ui-checkbox
+                        label="Include inactive accounts"
+                        [(checked)]="includeInactive"
+                      />
+                      <app-ui-checkbox
+                        label="Selected and disabled"
+                        [checked]="true"
+                        [disabled]="true"
+                      />
+                    </div>
+                    <div>
+                      <app-ui-radio label="Low" optionValue="low" [(value)]="priority" />
+                      <app-ui-radio label="Medium" optionValue="medium" [(value)]="priority" />
+                      <app-ui-radio label="High" optionValue="high" [(value)]="priority" />
+                    </div>
+                    <div>
+                      <app-ui-switch label="Workflow notifications" [(checked)]="notifications" />
+                      <app-ui-switch label="Locked setting" [checked]="true" [disabled]="true" />
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section id="display" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Data display</span>
+                  <h2>Small labels with operational meaning.</h2>
+                </div>
+                <div class="component-card">
+                  <div class="component-card__header">
+                    <strong>Badges & chips</strong><code>app-ui-badge · app-ui-chip</code>
+                  </div>
+                  <div class="component-canvas component-canvas--row">
+                    <app-ui-badge>Draft</app-ui-badge>
+                    <app-ui-badge tone="success">Active</app-ui-badge>
+                    <app-ui-badge tone="info">Onboarding</app-ui-badge>
+                    <app-ui-badge tone="warning">Paused</app-ui-badge>
+                    <app-ui-badge tone="danger">At risk</app-ui-badge>
+                    @if (chipVisible()) {
+                      <app-ui-chip
+                        label="Enterprise"
+                        [removable]="true"
+                        (removed)="chipVisible.set(false)"
+                        >Enterprise</app-ui-chip
+                      >
+                    } @else {
+                      <app-ui-button size="small" variant="ghost" (pressed)="chipVisible.set(true)"
+                        >Restore chip</app-ui-button
+                      >
+                    }
+                  </div>
+                </div>
+              </section>
+
+              <section id="navigation" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Navigation</span>
+                  <h2>Keyboard-first tabs and menus.</h2>
+                </div>
+                <div class="component-grid component-grid--two">
+                  <div class="component-card">
+                    <div class="component-card__header">
+                      <strong>Tabs</strong><code>@angular/aria</code>
+                    </div>
+                    <div class="component-canvas">
+                      <app-ui-tabs [tabs]="sampleTabs" selected="overview" />
+                    </div>
+                  </div>
+                  <div class="component-card">
+                    <div class="component-card__header">
+                      <strong>Menu</strong><code>@angular/aria</code>
+                    </div>
+                    <div class="component-canvas menu-demo">
+                      <app-ui-menu
+                        label="Account actions"
+                        [items]="menuItems"
+                        (selected)="selectMenuItem($event)"
+                      />
+                      <span>{{ menuAction() }}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section id="feedback" class="catalog-section">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Feedback</span>
+                  <h2>Confirm outcomes without adding noise.</h2>
+                </div>
+                <div class="alert-stack">
+                  <app-ui-alert title="Import complete" tone="success"
+                    >248 contacts are now available in this workspace.</app-ui-alert
+                  >
+                  <app-ui-alert title="Review required" tone="warning"
+                    >Three records need an account owner.</app-ui-alert
+                  >
+                  <app-ui-alert title="Sync interrupted" tone="danger"
+                    >Reconnect the source before the next scheduled run.</app-ui-alert
+                  >
+                </div>
+                <div class="component-card dialog-demo">
+                  <div>
+                    <strong>Confirmation dialog</strong>
+                    <p>Material overlay and focus management behind a KOLSS wrapper.</p>
+                  </div>
+                  <app-ui-button variant="secondary" (pressed)="openDialog()"
+                    >Open dialog</app-ui-button
+                  >
+                </div>
+              </section>
+
+              <section id="table" class="catalog-section catalog-section--wide">
+                <div class="catalog-section__intro">
+                  <span class="catalog-kicker">Data table</span>
+                  <h2>Operational density with readable hierarchy.</h2>
+                  <p>
+                    Client-side filtering, sorting, selection, pagination and explicit async states.
+                  </p>
+                </div>
+                <div class="table-state-picker" aria-label="Table preview state">
+                  <button
+                    type="button"
+                    [class.active]="tableState() === 'ready'"
+                    (click)="setTableState('ready')"
+                  >
+                    Ready
+                  </button>
+                  <button
+                    type="button"
+                    [class.active]="tableState() === 'loading'"
+                    (click)="setTableState('loading')"
+                  >
+                    Loading
+                  </button>
+                  <button
+                    type="button"
+                    [class.active]="tableState() === 'empty'"
+                    (click)="setTableState('empty')"
+                  >
+                    Empty
+                  </button>
+                  <button
+                    type="button"
+                    [class.active]="tableState() === 'error'"
+                    (click)="setTableState('error')"
+                  >
+                    Error
+                  </button>
+                </div>
+                <app-ui-data-table
+                  [rows]="visibleRows()"
+                  [columns]="tableColumns"
+                  [rowKey]="accountRowKey"
+                  [rowLabel]="accountRowLabel"
+                  [density]="density()"
+                  [loading]="tableState() === 'loading'"
+                  [error]="tableState() === 'error' ? 'The CRM service did not respond.' : ''"
+                />
+              </section>
+            </div>
+          </div>
+        </ng-template>
+      </section>
+
+      <section ngTabPanel class="catalog-panel" value="sections">
+        <ng-template ngTabContent>
+          <div class="coming-soon">
+            <span class="coming-soon__number">03</span>
+            <div>
+              <span class="catalog-kicker">Next layer</span>
+              <h2>Sections are coming next.</h2>
+              <p>
+                Tables, forms, history and workflow primitives will become complete CRM compositions
+                once product jobs are defined.
+              </p>
+              <div class="coming-soon__tags">
+                <span>Workflow board</span><span>Record history</span><span>Entity form</span
+                ><span>CRM shell</span>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </main>
+</div>
