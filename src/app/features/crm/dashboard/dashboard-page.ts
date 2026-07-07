@@ -1,7 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { CrmMockService } from '../../../services/crm-mock.service';
+import { SessionService } from '../../../core/session/session.service';
+import { LeadsService } from '../../../services/leads.service';
+import { UsersService } from '../../../services/users.service';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
@@ -13,9 +15,9 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
     <section class="dashboard-page" aria-labelledby="dashboard-title">
       <header class="page-header">
         <div>
-          <p class="page-kicker">Prototype overview</p>
+          <p class="page-kicker">CRM overview</p>
           <h1 id="dashboard-title">Огляд</h1>
-          <p>Короткий стан мок-CRM. Основна робоча сторінка прототипу — список лідів.</p>
+          <p>Короткий стан CRM з реальних даних Supabase.</p>
         </div>
         <app-ui-button routerLink="/crm/leads">
           <app-ui-icon name="view_kanban" [size]="17" />
@@ -26,8 +28,8 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
       <div class="dashboard-grid">
         <article>
           <span>Ліди</span>
-          <strong>{{ crm.leads().length }}</strong>
-          <app-ui-badge tone="brand">моки</app-ui-badge>
+          <strong>{{ leads().length }}</strong>
+          <app-ui-badge tone="brand">live</app-ui-badge>
         </article>
         <article>
           <span>Активні</span>
@@ -41,8 +43,8 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
         </article>
         <article>
           <span>Співробітники</span>
-          <strong>{{ crm.employees().length }}</strong>
-          <app-ui-badge tone="neutral">roles</app-ui-badge>
+          <strong>{{ employees().length }}</strong>
+          <app-ui-badge tone="neutral">profiles</app-ui-badge>
         </article>
       </div>
     </section>
@@ -112,15 +114,27 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
   `,
 })
 export class DashboardPage {
-  protected readonly crm = inject(CrmMockService);
+  private readonly session = inject(SessionService);
+  private readonly leadsService = inject(LeadsService);
+  private readonly usersService = inject(UsersService);
+
+  protected readonly leadsResource = resource({
+    params: () => ({ officeId: this.session.selectedOfficeId() }),
+    loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
+  });
+  protected readonly employeesResource = resource({
+    loader: () => this.usersService.listEmployees(),
+  });
+
+  protected readonly leads = computed(() => this.leadsResource.value() ?? []);
+  protected readonly employees = computed(() => this.employeesResource.value() ?? []);
   protected readonly activeLeads = computed(
     () =>
-      this.crm
-        .leads()
-        .filter((lead) => lead.workflowStatus !== 'closed' && lead.workflowStatus !== 'successful')
-        .length,
+      this.leads().filter(
+        (lead) => lead.workflowStatus !== 'closed' && lead.workflowStatus !== 'successful',
+      ).length,
   );
   protected readonly successfulLeads = computed(
-    () => this.crm.leads().filter((lead) => lead.workflowStatus === 'successful').length,
+    () => this.leads().filter((lead) => lead.workflowStatus === 'successful').length,
   );
 }

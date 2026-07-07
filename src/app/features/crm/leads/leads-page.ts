@@ -1,6 +1,7 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { SessionService } from '../../../core/session/session.service';
 import {
   formatDateTime,
   groupLeadsByYearMonth,
@@ -10,8 +11,10 @@ import {
   WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
-import { CrmMockService } from '../../../services/crm-mock.service';
+import { LeadsService } from '../../../services/leads.service';
+import { UsersService } from '../../../services/users.service';
 import type { MockLead } from '../../../services/crm-mock.types';
+import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
@@ -19,26 +22,28 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
 @Component({
   selector: 'app-leads-page',
-  imports: [UiBadge, UiButton, UiIcon, UiTextField],
+  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiTextField],
   template: `
     <section class="crm-page" aria-labelledby="leads-title">
       <header class="page-header">
         <div>
           <p class="page-kicker">CRM pipeline</p>
           <h1 id="leads-title">Ліди</h1>
-          <p>10 мок-клієнтів, згруповані за місяцем створення. Дані не пишуться в Supabase.</p>
+          <p>Робочий список лідів з Supabase, згруповані за місяцем створення.</p>
         </div>
         <div class="page-actions">
-          <app-ui-button variant="secondary" (pressed)="simulateLoading()">
+          <app-ui-button variant="secondary" (pressed)="leadsResource.reload()">
             <app-ui-icon name="history" [size]="17" />
-            Loading state
-          </app-ui-button>
-          <app-ui-button (pressed)="showCreateState()">
-            <app-ui-icon name="add" [size]="17" />
-            Створити лід
+            Оновити
           </app-ui-button>
         </div>
       </header>
+
+      @if (loadError()) {
+        <app-ui-alert tone="danger" title="Не вдалося завантажити ліди">
+          {{ loadError() }}
+        </app-ui-alert>
+      }
 
       @if (notice()) {
         <div class="notice" role="status">
@@ -70,7 +75,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
         </div>
       </div>
 
-      @if (loading()) {
+      @if (leadsResource.isLoading()) {
         <div class="table-state" aria-live="polite">
           @for (row of skeletonRows; track row) {
             <span></span>
@@ -382,17 +387,33 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
   `,
 })
 export class LeadsPage {
-  private readonly crm = inject(CrmMockService);
+  private readonly session = inject(SessionService);
+  private readonly leadsService = inject(LeadsService);
+  private readonly usersService = inject(UsersService);
   private readonly router = inject(Router);
 
   protected readonly query = signal('');
-  protected readonly loading = signal(false);
   protected readonly notice = signal('');
   protected readonly skeletonRows = [1, 2, 3, 4];
 
-  protected readonly filteredLeads = computed(() =>
-    this.crm.visibleLeads().filter((lead) => matchesLeadSearch(lead, this.query())),
-  );
+  protected readonly leadsResource = resource({
+    params: () => ({ officeId: this.session.selectedOfficeId() }),
+    loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
+  });
+
+  protected readonly employeesResource = resource({
+    loader: () => this.usersService.listEmployees(),
+  });
+
+  protected readonly loadError = computed(() => {
+    const error = this.leadsResource.error();
+    return error instanceof Error ? error.message : error ? String(error) : '';
+  });
+
+  protected readonly filteredLeads = computed(() => {
+    const leads = this.leadsResource.value() ?? [];
+    return leads.filter((lead) => matchesLeadSearch(lead, this.query()));
+  });
   protected readonly groupedLeads = computed(() => groupLeadsByYearMonth(this.filteredLeads()));
   protected readonly activeCount = computed(
     () =>
@@ -412,7 +433,9 @@ export class LeadsPage {
   protected readonly workflowTone = workflowTone;
 
   protected employeeName(employeeId: string | null): string {
-    return this.crm.employeeName(employeeId);
+    const employees = this.employeesResource.value() ?? [];
+    if (!employeeId) return 'Не призначено';
+    return employees.find((employee) => employee.id === employeeId)?.displayName ?? 'Невідомий';
   }
 
   protected sourceLabel(lead: MockLead): string {
@@ -425,15 +448,5 @@ export class LeadsPage {
 
   protected async openLead(lead: MockLead): Promise<void> {
     await this.router.navigate(['/crm/leads', lead.id]);
-  }
-
-  protected simulateLoading(): void {
-    this.loading.set(true);
-    this.notice.set('Показано loading state локальної таблиці.');
-    setTimeout(() => this.loading.set(false), 700);
-  }
-
-  protected showCreateState(): void {
-    this.notice.set('Створення ліда у прототипі змодельовано: реального запису в Supabase немає.');
   }
 }

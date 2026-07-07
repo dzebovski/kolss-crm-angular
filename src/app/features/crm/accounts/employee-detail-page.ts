@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, resource } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { roleLabel } from '../../../core/roles/roles';
@@ -9,8 +9,9 @@ import {
   WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
-import { CrmMockService } from '../../../services/crm-mock.service';
-import type { MockEmployee } from '../../../services/crm-mock.types';
+import { LeadsService } from '../../../services/leads.service';
+import type { CrmEmployee } from '../../../services/users.service';
+import { UsersService } from '../../../services/users.service';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 
@@ -30,7 +31,7 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
           <div>
             <p class="page-kicker">{{ roleLabel(employee.role) }}</p>
             <h1 [id]="'employee-' + employee.id">{{ employee.displayName }}</h1>
-            <p>{{ employee.email }}</p>
+            <p>ID: {{ employee.id }}</p>
           </div>
           <app-ui-badge [tone]="employee.status === 'active' ? 'success' : 'warning'">
             {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
@@ -47,7 +48,7 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
               </div>
               <div>
                 <dt>Мова</dt>
-                <dd>{{ employee.locale.toUpperCase() }}</dd>
+                <dd>UK</dd>
               </div>
               <div>
                 <dt>Створено</dt>
@@ -318,13 +319,21 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
 })
 export class EmployeeDetailPage {
   private readonly route = inject(ActivatedRoute);
-  private readonly crm = inject(CrmMockService);
+  private readonly usersService = inject(UsersService);
+  private readonly leadsService = inject(LeadsService);
 
   protected readonly employeeId = this.route.snapshot.paramMap.get('employeeId') ?? '';
-  protected readonly employee = computed(() => this.crm.employeeById(this.employeeId));
-  protected readonly assignedLeads = computed(() =>
-    this.crm.leads().filter((lead) => lead.assignedToId === this.employeeId),
-  );
+  protected readonly employeeResource = resource({
+    params: () => ({ employeeId: this.employeeId }),
+    loader: ({ params }) => this.usersService.getEmployee(params.employeeId),
+  });
+  protected readonly assignedLeadsResource = resource({
+    params: () => ({ employeeId: this.employeeId }),
+    loader: ({ params }) => this.leadsService.listAssignedTo(params.employeeId),
+  });
+
+  protected readonly employee = computed(() => this.employeeResource.value() ?? null);
+  protected readonly assignedLeads = computed(() => this.assignedLeadsResource.value() ?? []);
 
   protected readonly roleLabel = roleLabel;
   protected readonly formatDateTime = formatDateTime;
@@ -336,11 +345,11 @@ export class EmployeeDetailPage {
     return employeeInitials(name);
   }
 
-  protected officeLabels(employee: MockEmployee): string {
+  protected officeLabels(employee: CrmEmployee): string {
     return employee.officeIds.map((officeId) => officeName(officeId)).join(', ');
   }
 
-  protected permissions(employee: MockEmployee): readonly string[] {
+  protected permissions(employee: CrmEmployee): readonly string[] {
     if (employee.role === 'super_admin') {
       return ['Усі офіси', 'Керування акаунтами', 'Перегляд усіх лідів', 'Офісний фільтр'];
     }

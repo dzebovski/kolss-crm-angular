@@ -1,10 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { SessionService } from '../../../core/session/session.service';
 import { roleLabel } from '../../../core/roles/roles';
-import { CrmMockService } from '../../../services/crm-mock.service';
 import type { LocaleCode, OfficeFilter } from '../../../services/crm-mock.types';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
@@ -41,17 +40,19 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
         </nav>
 
         <div class="crm-shell__tools" aria-label="CRM controls">
-          <div class="crm-shell__segmented" aria-label="Офісний контекст">
-            @for (item of officeFilters; track item.value) {
-              <button
-                type="button"
-                [class.is-active]="officeFilter() === item.value"
-                (click)="setOfficeFilter(item.value)"
-              >
-                {{ item.label }}
-              </button>
-            }
-          </div>
+          @if (showOfficeFilter()) {
+            <div class="crm-shell__segmented" aria-label="Офісний контекст">
+              @for (item of officeFilters(); track item.value) {
+                <button
+                  type="button"
+                  [class.is-active]="officeFilter() === item.value"
+                  (click)="setOfficeFilter(item.value)"
+                >
+                  {{ item.label }}
+                </button>
+              }
+            </div>
+          }
 
           <div class="crm-shell__segmented crm-shell__segmented--language" aria-label="Мова">
             @for (item of locales; track item.value) {
@@ -101,84 +102,79 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
     }
 
     .crm-shell__brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: var(--ui-space-3);
-      font-family: var(--ui-font-display);
-      font-size: 1.125rem;
-      color: var(--ui-text);
+      color: inherit;
       text-decoration: none;
+      font-family: var(--ui-font-display);
+      line-height: 1.1;
     }
 
     .crm-shell__brand-mark {
       width: 2.25rem;
       height: 2.25rem;
       border-radius: var(--ui-radius-md);
-      background:
-        linear-gradient(135deg, rgb(255 255 255 / 70%), transparent 48%), var(--ui-brand-gradient);
+      background: var(--ui-brand-gradient);
       box-shadow: var(--ui-shadow-1);
     }
 
     .crm-shell__eyebrow {
       display: block;
-      font-size: 0.6875rem;
-      letter-spacing: 0.08em;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--ui-text-subtle);
     }
 
     .crm-shell__nav {
-      display: flex;
+      display: inline-flex;
       gap: var(--ui-space-2);
+      justify-self: center;
     }
 
     .crm-shell__nav a {
-      min-height: 2.25rem;
-      padding: 0 var(--ui-space-3);
-      border-radius: var(--ui-radius-md);
+      min-height: 2.5rem;
+      padding: 0 var(--ui-space-4);
+      border-radius: var(--ui-radius-pill);
       color: var(--ui-text-muted);
       text-decoration: none;
-      font-weight: 500;
+      font-size: 0.875rem;
+      font-weight: 650;
       display: inline-flex;
       align-items: center;
       gap: var(--ui-space-2);
-      transition:
-        background var(--ui-duration-fast) var(--ui-ease),
-        color var(--ui-duration-fast) var(--ui-ease);
     }
 
-    .crm-shell__nav a.is-active,
-    .crm-shell__nav a:hover {
+    .crm-shell__nav a.is-active {
+      background: var(--ui-action-soft);
       color: var(--ui-action);
-      background: color-mix(in srgb, var(--ui-action) 8%, transparent);
     }
 
     .crm-shell__tools {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: var(--ui-space-3);
     }
 
     .crm-shell__segmented {
-      min-height: 2rem;
-      padding: 0.1875rem;
-      border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-md);
-      background: var(--ui-surface-subtle);
       display: inline-flex;
-      gap: 0.125rem;
+      padding: 0.2rem;
+      border-radius: var(--ui-radius-pill);
+      background: var(--ui-surface-muted);
+      gap: 0.15rem;
     }
 
     .crm-shell__segmented button {
-      min-width: 3rem;
-      padding: 0 var(--ui-space-2);
+      min-height: 2rem;
+      padding: 0 var(--ui-space-3);
       border: 0;
-      border-radius: calc(var(--ui-radius-md) - 0.1875rem);
+      border-radius: var(--ui-radius-pill);
       background: transparent;
       color: var(--ui-text-muted);
-      cursor: pointer;
       font-size: 0.75rem;
       font-weight: 700;
+      cursor: pointer;
     }
 
     .crm-shell__segmented button.is-active {
@@ -214,13 +210,7 @@ export class CrmShell {
   private readonly auth = inject(AuthService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
-  private readonly crm = inject(CrmMockService);
 
-  protected readonly officeFilters: readonly { value: OfficeFilter; label: string }[] = [
-    { value: 'all', label: 'Усі офіси' },
-    { value: 'kyiv', label: 'Київ' },
-    { value: 'warsaw', label: 'Варшава' },
-  ];
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
     { value: 'uk', label: 'UK' },
     { value: 'pl', label: 'PL' },
@@ -232,20 +222,33 @@ export class CrmShell {
   ];
 
   readonly displayName = () =>
-    this.auth.profile()?.display_name ??
-    this.auth.sessionContext()?.user.email ??
-    this.crm.currentEmployee().displayName;
-  readonly roleName = () => roleLabel(this.auth.profile()?.role ?? this.crm.currentEmployee().role);
+    this.auth.profile()?.display_name ?? this.auth.sessionContext()?.user.email ?? 'Користувач';
+  readonly roleName = () => roleLabel(this.auth.profile()?.role ?? 'office_member');
   readonly canManageAccounts = () => this.session.officeContext()?.isSuperAdmin ?? false;
-  readonly officeFilter = this.crm.officeFilter;
-  readonly locale = this.crm.locale;
+  readonly showOfficeFilter = this.session.showOfficeFilter;
+  readonly officeFilter = this.session.officeFilter;
+  readonly locale = this.session.locale;
+
+  protected readonly officeFilters = computed(() => {
+    const offices = this.session.officeContext()?.filterOffices ?? [];
+    const items: { value: OfficeFilter; label: string }[] = [{ value: 'all', label: 'Усі офіси' }];
+    for (const office of offices) {
+      if (office.code === 'kyiv' || office.code === 'warsaw') {
+        items.push({
+          value: office.code,
+          label: office.name_uk,
+        });
+      }
+    }
+    return items;
+  });
 
   protected setOfficeFilter(filter: OfficeFilter): void {
-    this.crm.setOfficeFilter(filter);
+    this.session.setOfficeFilter(filter);
   }
 
   protected setLocale(locale: LocaleCode): void {
-    this.crm.setLocale(locale);
+    this.session.setLocale(locale);
   }
 
   protected async handleUserMenu(value: string): Promise<void> {

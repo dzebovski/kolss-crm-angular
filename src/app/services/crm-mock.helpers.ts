@@ -1,5 +1,5 @@
 import type { UiBadgeTone } from '../ui/feedback/ui-badge';
-import { CRM_MOCK_NOW, CRM_MOCK_OFFICES } from './crm-mock.data';
+import { CRM_MOCK_NOW } from './crm-mock.data';
 import type {
   CloseLeadPayload,
   CloseReason,
@@ -73,7 +73,7 @@ export const FIRST_CALL_RESULTS = [
 ] as const;
 
 export function officeName(officeId: OfficeId): string {
-  return CRM_MOCK_OFFICES.find((office) => office.id === officeId)?.nameUk ?? officeId;
+  return OFFICE_FILTER_LABELS[officeId] ?? officeId;
 }
 
 export function employeeName(

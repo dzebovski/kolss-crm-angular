@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 
+import { CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
+import { LeadWorkflowService } from '../../../services/lead-workflow.service';
+import { LeadsService } from '../../../services/leads.service';
+import { UsersService } from '../../../services/users.service';
 import { LeadDetailPage } from './lead-detail-page';
 
 describe('LeadDetailPage', () => {
@@ -17,12 +21,31 @@ describe('LeadDetailPage', () => {
             },
           },
         },
+        {
+          provide: LeadsService,
+          useValue: {
+            getById: async (leadId: string) =>
+              CRM_MOCK_LEADS.find((lead) => lead.id === leadId) ?? null,
+          },
+        },
+        {
+          provide: UsersService,
+          useValue: {
+            listEmployees: async () => [],
+          },
+        },
+        {
+          provide: LeadWorkflowService,
+          useValue: {},
+        },
       ],
     }).compileComponents();
   });
 
   it('renders successful terminal state for a converted lead', async () => {
     const fixture = TestBed.createComponent(LeadDetailPage);
+    await fixture.whenStable();
+    fixture.detectChanges();
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;

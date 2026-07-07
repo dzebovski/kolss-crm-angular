@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import {
@@ -13,7 +13,9 @@ import {
   WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
-import { CrmMockService } from '../../../services/crm-mock.service';
+import { LeadWorkflowService } from '../../../services/lead-workflow.service';
+import { LeadsService } from '../../../services/leads.service';
+import { UsersService } from '../../../services/users.service';
 import type { CloseReason, MockLead } from '../../../services/crm-mock.types';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
@@ -660,12 +662,23 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
 })
 export class LeadDetailPage {
   private readonly route = inject(ActivatedRoute);
-  private readonly crm = inject(CrmMockService);
+  private readonly leadsService = inject(LeadsService);
+  private readonly workflowService = inject(LeadWorkflowService);
+  private readonly usersService = inject(UsersService);
 
   protected readonly leadId = this.route.snapshot.paramMap.get('leadId') ?? '';
-  protected readonly lead = computed(() => this.crm.leadById(this.leadId));
+  protected readonly leadResource = resource({
+    params: () => ({ leadId: this.leadId }),
+    loader: ({ params }) => this.leadsService.getById(params.leadId),
+  });
+  protected readonly employeesResource = resource({
+    loader: () => this.usersService.listEmployees(),
+  });
+
+  protected readonly lead = computed(() => this.leadResource.value() ?? null);
   protected readonly actionError = signal('');
   protected readonly dialogError = signal('');
+  protected readonly actionPending = signal(false);
   protected readonly closeDialogOpen = signal(false);
   protected readonly successDialogOpen = signal(false);
 
@@ -705,7 +718,9 @@ export class LeadDetailPage {
   }
 
   protected employeeName(employeeId: string | null): string {
-    return this.crm.employeeName(employeeId);
+    const employees = this.employeesResource.value() ?? [];
+    if (!employeeId) return 'Не призначено';
+    return employees.find((employee) => employee.id === employeeId)?.displayName ?? 'Невідомий';
   }
 
   protected initials(name: string): string {
@@ -730,36 +745,60 @@ export class LeadDetailPage {
     return 'Основні дії недоступні для завершеного ліда.';
   }
 
-  protected takeLead(lead: MockLead): void {
-    this.clearErrors();
-    this.crm.takeLead(lead.id);
+  protected async takeLead(lead: MockLead): Promise<void> {
+    await this.runAction(() => this.workflowService.takeLead(lead.id));
   }
 
-  protected saveFirstCall(lead: MockLead): void {
-    this.setActionResult(
-      this.crm.recordFirstCall(lead.id, this.firstCallResult(), this.firstCallComment()),
-    );
-    if (!this.actionError()) this.firstCallComment.set('');
+  protected async saveFirstCall(lead: MockLead): Promise<void> {
+    await this.runAction(async () => {
+      const error = await this.workflowService.recordFirstCall(
+        lead.id,
+        this.firstCallResult(),
+        this.firstCallComment(),
+      );
+      if (error) throw new Error(error);
+      this.firstCallComment.set('');
+    });
   }
 
-  protected scheduleVisit(lead: MockLead): void {
-    this.setActionResult(this.crm.scheduleVisit(lead.id, this.visitDate(), this.visitComment()));
-    if (!this.actionError()) this.visitComment.set('');
+  protected async scheduleVisit(lead: MockLead): Promise<void> {
+    await this.runAction(async () => {
+      const error = await this.workflowService.scheduleVisit(
+        lead.id,
+        this.visitDate(),
+        this.visitComment(),
+      );
+      if (error) throw new Error(error);
+      this.visitComment.set('');
+    });
   }
 
-  protected rescheduleVisit(lead: MockLead): void {
-    this.setActionResult(this.crm.rescheduleVisit(lead.id, this.visitDate(), this.visitComment()));
-    if (!this.actionError()) this.visitComment.set('');
+  protected async rescheduleVisit(lead: MockLead): Promise<void> {
+    await this.runAction(async () => {
+      const error = await this.workflowService.rescheduleVisit(
+        lead.id,
+        this.visitDate(),
+        this.visitComment(),
+      );
+      if (error) throw new Error(error);
+      this.visitComment.set('');
+    });
   }
 
-  protected completeVisit(lead: MockLead): void {
-    this.setActionResult(this.crm.completeVisit(lead.id, this.visitComment()));
-    if (!this.actionError()) this.visitComment.set('');
+  protected async completeVisit(lead: MockLead): Promise<void> {
+    await this.runAction(async () => {
+      const error = await this.workflowService.completeVisit(lead.id, this.visitComment());
+      if (error) throw new Error(error);
+      this.visitComment.set('');
+    });
   }
 
-  protected addComment(lead: MockLead): void {
-    this.setActionResult(this.crm.addComment(lead.id, this.commentDraft()));
-    if (!this.actionError()) this.commentDraft.set('');
+  protected async addComment(lead: MockLead): Promise<void> {
+    await this.runAction(async () => {
+      const error = await this.workflowService.addComment(lead.id, this.commentDraft());
+      if (error) throw new Error(error);
+      this.commentDraft.set('');
+    });
   }
 
   protected openCloseDialog(): void {
@@ -772,45 +811,58 @@ export class LeadDetailPage {
     this.successDialogOpen.set(true);
   }
 
-  protected submitClose(lead: MockLead): void {
-    const error = this.crm.closeLead(lead.id, {
+  protected async submitClose(lead: MockLead): Promise<void> {
+    const validationError = await this.workflowService.closeLead(lead.id, {
       reason: this.closeReason() as CloseReason,
       comment: this.closeComment(),
     });
-    this.dialogError.set(error ?? '');
-    if (!error) {
-      this.closeDialogOpen.set(false);
-      this.closeComment.set('');
+    if (validationError) {
+      this.dialogError.set(validationError);
+      return;
     }
+    this.closeDialogOpen.set(false);
+    this.closeComment.set('');
+    await this.leadResource.reload();
   }
 
-  protected submitSuccess(lead: MockLead): void {
+  protected async submitSuccess(lead: MockLead): Promise<void> {
     const amount = this.parseMoney(this.contractAmount());
     const prepaymentRaw = this.contractPrepayment().trim();
     const prepayment = prepaymentRaw ? this.parseMoney(prepaymentRaw) : null;
-    const error = this.crm.markSuccessful(lead.id, {
+    const validationError = await this.workflowService.markSuccessful(lead.id, {
       contractNumber: this.contractNumber(),
       amount,
       prepayment,
       comment: this.contractComment(),
     });
-    this.dialogError.set(error ?? '');
-    if (!error) {
-      this.successDialogOpen.set(false);
-      this.contractNumber.set('');
-      this.contractAmount.set('');
-      this.contractPrepayment.set('');
-      this.contractComment.set('');
+    if (validationError) {
+      this.dialogError.set(validationError);
+      return;
+    }
+    this.successDialogOpen.set(false);
+    this.contractNumber.set('');
+    this.contractAmount.set('');
+    this.contractPrepayment.set('');
+    this.contractComment.set('');
+    await this.leadResource.reload();
+  }
+
+  private async runAction(action: () => Promise<void>): Promise<void> {
+    this.clearErrors();
+    this.actionPending.set(true);
+    try {
+      await action();
+      await this.leadResource.reload();
+    } catch (error) {
+      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося виконати дію');
+    } finally {
+      this.actionPending.set(false);
     }
   }
 
   private clearErrors(): void {
     this.actionError.set('');
     this.dialogError.set('');
-  }
-
-  private setActionResult(error: string | null): void {
-    this.actionError.set(error ?? '');
   }
 
   private parseMoney(value: string): number {

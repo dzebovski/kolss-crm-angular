@@ -93,6 +93,9 @@ export class AuthService {
       }
 
       await this.applySession(data.session);
+    } catch (error) {
+      this.errorSignal.set(error instanceof Error ? error.message : 'Помилка входу');
+      throw error;
     } finally {
       this.loadingSignal.set(false);
     }

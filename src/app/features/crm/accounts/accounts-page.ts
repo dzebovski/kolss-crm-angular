@@ -1,10 +1,12 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { roleLabel } from '../../../core/roles/roles';
 import { formatDateTime, officeName } from '../../../services/crm-mock.helpers';
-import { CrmMockService } from '../../../services/crm-mock.service';
-import type { MockEmployee, OfficeFilter } from '../../../services/crm-mock.types';
+import type { CrmEmployee } from '../../../services/users.service';
+import { UsersService } from '../../../services/users.service';
+import type { OfficeFilter } from '../../../services/crm-mock.types';
+import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge, UiBadgeTone } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
@@ -13,20 +15,26 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
 @Component({
   selector: 'app-accounts-page',
-  imports: [UiBadge, UiButton, UiIcon, UiSelect, UiTextField],
+  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiSelect, UiTextField],
   template: `
     <section class="accounts-page" aria-labelledby="accounts-title">
       <header class="page-header">
         <div>
           <p class="page-kicker">Access management</p>
           <h1 id="accounts-title">Акаунти</h1>
-          <p>9 мок-користувачів: керівні ролі, адміністратор офісу й менеджери Києва/Варшави.</p>
+          <p>Користувачі з profiles і memberships. Email доступний після Edge Function (Фаза 4).</p>
         </div>
         <app-ui-button (pressed)="showCreateState()">
           <app-ui-icon name="add" [size]="17" />
           Створити акаунт
         </app-ui-button>
       </header>
+
+      @if (loadError()) {
+        <app-ui-alert tone="danger" title="Не вдалося завантажити акаунти">
+          {{ loadError() }}
+        </app-ui-alert>
+      }
 
       @if (notice()) {
         <div class="notice" role="status">
@@ -39,7 +47,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
         <app-ui-text-field
           label="Пошук"
           type="search"
-          placeholder="Імʼя або email"
+          placeholder="Імʼя або ID"
           [(value)]="query"
         />
         <app-ui-select label="Офіс" [options]="officeOptions" [(value)]="officeFilter" />
@@ -47,49 +55,53 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       </div>
 
       <section class="accounts-table-panel" aria-label="Список співробітників">
-        <table>
-          <thead>
-            <tr>
-              <th>Співробітник</th>
-              <th>Роль</th>
-              <th>Офіс</th>
-              <th>Статус</th>
-              <th>Остання активність</th>
-              <th>Дії</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (employee of filteredEmployees(); track employee.id) {
+        @if (employeesResource.isLoading()) {
+          <p class="loading-cell">Завантаження…</p>
+        } @else {
+          <table>
+            <thead>
               <tr>
-                <td>
-                  <strong>{{ employee.displayName }}</strong>
-                  <small>{{ employee.email }}</small>
-                </td>
-                <td>{{ roleLabel(employee.role) }}</td>
-                <td>{{ officeLabels(employee) }}</td>
-                <td>
-                  <app-ui-badge [tone]="statusTone(employee)">
-                    {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
-                  </app-ui-badge>
-                </td>
-                <td>{{ formatDateTime(employee.lastActiveAt) }}</td>
-                <td>
-                  <app-ui-button
-                    variant="secondary"
-                    size="small"
-                    (pressed)="openEmployee(employee)"
-                  >
-                    Профіль
-                  </app-ui-button>
-                </td>
+                <th>Співробітник</th>
+                <th>Роль</th>
+                <th>Офіс</th>
+                <th>Статус</th>
+                <th>Остання активність</th>
+                <th>Дії</th>
               </tr>
-            } @empty {
-              <tr>
-                <td colspan="6" class="empty-cell">Немає співробітників за поточними фільтрами.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (employee of filteredEmployees(); track employee.id) {
+                <tr>
+                  <td>
+                    <strong>{{ employee.displayName }}</strong>
+                    <small>{{ employee.id }}</small>
+                  </td>
+                  <td>{{ roleLabel(employee.role) }}</td>
+                  <td>{{ officeLabels(employee) }}</td>
+                  <td>
+                    <app-ui-badge [tone]="statusTone(employee)">
+                      {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+                    </app-ui-badge>
+                  </td>
+                  <td>{{ formatDateTime(employee.lastActiveAt) }}</td>
+                  <td>
+                    <app-ui-button
+                      variant="secondary"
+                      size="small"
+                      (pressed)="openEmployee(employee)"
+                    >
+                      Профіль
+                    </app-ui-button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-cell">Немає співробітників за поточними фільтрами.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
       </section>
     </section>
   `,
@@ -192,7 +204,8 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       background: var(--ui-surface-subtle);
     }
 
-    .empty-cell {
+    .empty-cell,
+    .loading-cell {
       height: 12rem;
       color: var(--ui-text-muted);
       text-align: center;
@@ -200,7 +213,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
   `,
 })
 export class AccountsPage {
-  private readonly crm = inject(CrmMockService);
+  private readonly usersService = inject(UsersService);
   private readonly router = inject(Router);
 
   protected readonly query = signal('');
@@ -222,33 +235,42 @@ export class AccountsPage {
     { value: 'office_member', label: roleLabel('office_member') },
   ];
 
+  protected readonly employeesResource = resource({
+    loader: () => this.usersService.listEmployees(),
+  });
+
+  protected readonly loadError = computed(() => {
+    const error = this.employeesResource.error();
+    return error instanceof Error ? error.message : error ? String(error) : '';
+  });
+
   protected readonly filteredEmployees = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('uk-UA');
     const office = this.officeFilter();
     const role = this.roleFilter();
-    return this.crm.employees().filter((employee) => {
+    return (this.employeesResource.value() ?? []).filter((employee) => {
       const matchesQuery =
         !query ||
-        `${employee.displayName} ${employee.email}`.toLocaleLowerCase('uk-UA').includes(query);
+        `${employee.displayName} ${employee.id}`.toLocaleLowerCase('uk-UA').includes(query);
       const matchesOffice = office === 'all' || employee.officeIds.includes(office);
       const matchesRole = role === 'all' || employee.role === role;
       return matchesQuery && matchesOffice && matchesRole;
     });
   });
 
-  protected officeLabels(employee: MockEmployee): string {
-    return employee.officeIds.map((officeId) => officeName(officeId)).join(', ');
+  protected officeLabels(employee: CrmEmployee): string {
+    return employee.officeIds.map((officeId) => officeName(officeId)).join(', ') || '—';
   }
 
-  protected statusTone(employee: MockEmployee): UiBadgeTone {
+  protected statusTone(employee: CrmEmployee): UiBadgeTone {
     return employee.status === 'active' ? 'success' : 'warning';
   }
 
-  protected async openEmployee(employee: MockEmployee): Promise<void> {
+  protected async openEmployee(employee: CrmEmployee): Promise<void> {
     await this.router.navigate(['/crm/accounts', employee.id]);
   }
 
   protected showCreateState(): void {
-    this.notice.set('Створення акаунта у прототипі не викликає Edge Function.');
+    this.notice.set('Створення акаунта буде доступне після Edge Function admin-create-user (Фаза 4).');
   }
 }

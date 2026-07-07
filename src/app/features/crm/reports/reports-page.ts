@@ -1,12 +1,15 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 
-import { CrmMockService } from '../../../services/crm-mock.service';
+import { SessionService } from '../../../core/session/session.service';
+import { calculateFunnel } from '../../../services/crm-mock.helpers';
+import { LeadsService } from '../../../services/leads.service';
 import type { FunnelStage } from '../../../services/crm-mock.types';
+import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 
 @Component({
   selector: 'app-reports-page',
-  imports: [UiBadge],
+  imports: [UiAlert, UiBadge],
   template: `
     <section class="reports-page" aria-labelledby="reports-title">
       <header class="page-header">
@@ -28,6 +31,12 @@ import { UiBadge } from '../../../ui/feedback/ui-badge';
           }
         </div>
       </header>
+
+      @if (loadError()) {
+        <app-ui-alert tone="danger" title="Не вдалося завантажити звітність">
+          {{ loadError() }}
+        </app-ui-alert>
+      }
 
       <div class="metrics-grid" aria-label="Основні метрики">
         @for (stage of funnel(); track stage.key) {
@@ -252,7 +261,8 @@ import { UiBadge } from '../../../ui/feedback/ui-badge';
   `,
 })
 export class ReportsPage {
-  private readonly crm = inject(CrmMockService);
+  private readonly session = inject(SessionService);
+  private readonly leadsService = inject(LeadsService);
 
   protected readonly periods = [
     { label: '40 днів', days: 40 },
@@ -261,7 +271,20 @@ export class ReportsPage {
     { label: '6 місяців', days: 180 },
   ] as const;
   protected readonly periodDays = signal(40);
-  protected readonly funnel = computed(() => this.crm.funnel(this.periodDays()));
+
+  protected readonly leadsResource = resource({
+    params: () => ({ officeId: this.session.selectedOfficeId() }),
+    loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
+  });
+
+  protected readonly loadError = computed(() => {
+    const error = this.leadsResource.error();
+    return error instanceof Error ? error.message : error ? String(error) : '';
+  });
+
+  protected readonly funnel = computed(() =>
+    calculateFunnel(this.leadsResource.value() ?? [], this.periodDays()),
+  );
   protected readonly totalLeads = computed(() => this.funnel()[0]?.count ?? 0);
   protected readonly periodLabel = computed(
     () => this.periods.find((period) => period.days === this.periodDays())?.label ?? 'Період',
