@@ -34,7 +34,7 @@ let nextSelectId = 0;
         [disabled]="disabled()"
         [attr.aria-labelledby]="labelId"
         [attr.aria-invalid]="invalid() || !!error()"
-        [attr.aria-describedby]="descriptionId"
+        [attr.aria-describedby]="error() || hint() ? descriptionId : null"
         (blur)="touch.emit()"
       >
         <span [class.ui-select__placeholder]="!selectedLabel()">
@@ -72,13 +72,15 @@ let nextSelectId = 0;
         </ul>
       </ng-template>
     </div>
-    @if (error()) {
-      <span class="ui-select__message ui-select__message--error" [id]="descriptionId" role="alert">
-        {{ error() }}
-      </span>
-    } @else if (hint()) {
-      <span class="ui-select__message" [id]="descriptionId">{{ hint() }}</span>
-    }
+    <span
+      class="ui-select__message"
+      [class.ui-select__message--error]="!!error()"
+      [id]="descriptionId"
+      [attr.role]="error() ? 'alert' : null"
+      [attr.aria-hidden]="error() || hint() ? null : 'true'"
+    >
+      {{ error() || hint() }}
+    </span>
   `,
   styles: `
     :host {
@@ -137,7 +139,9 @@ let nextSelectId = 0;
     }
 
     .ui-select__message {
+      min-block-size: 0.9375rem;
       font-size: 0.75rem;
+      line-height: 1.25;
     }
 
     .ui-select__options {

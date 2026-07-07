@@ -41,4 +41,25 @@ describe('UiTextField', () => {
     expect(element.querySelector('input')?.getAttribute('aria-invalid')).toBe('true');
     expect(element.querySelector('[role="alert"]')?.textContent).toContain('Invalid value');
   });
+
+  it('keeps a stable message slot when validation text appears', async () => {
+    const fixture = TestBed.createComponent(UiTextField);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const input = element.querySelector('input');
+    const emptyMessage = element.querySelector('.ui-field__message');
+
+    expect(emptyMessage?.getAttribute('aria-hidden')).toBe('true');
+    expect(input?.getAttribute('aria-describedby')).toBeNull();
+
+    fixture.componentRef.setInput('error', 'Invalid value');
+    await fixture.whenStable();
+
+    const errorMessage = element.querySelector('.ui-field__message');
+    expect(errorMessage).toBe(emptyMessage);
+    expect(errorMessage?.getAttribute('role')).toBe('alert');
+    expect(errorMessage?.getAttribute('aria-hidden')).toBeNull();
+    expect(errorMessage?.textContent).toContain('Invalid value');
+    expect(input?.getAttribute('aria-describedby')).toBe(errorMessage?.id);
+  });
 });

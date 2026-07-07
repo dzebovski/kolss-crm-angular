@@ -106,4 +106,25 @@ describe('UiSelect', () => {
     expect(trigger.getAttribute('aria-disabled')).toBe('true');
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
+
+  it('keeps a stable message slot when validation text appears', async () => {
+    const fixture = TestBed.createComponent(UiSelect);
+    fixture.componentRef.setInput('options', options);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector('button');
+    const emptyMessage = element.querySelector('.ui-select__message');
+
+    expect(emptyMessage?.getAttribute('aria-hidden')).toBe('true');
+    expect(trigger?.getAttribute('aria-describedby')).toBeNull();
+
+    fixture.componentRef.setInput('error', 'Select a stage');
+    await fixture.whenStable();
+
+    const errorMessage = element.querySelector('.ui-select__message');
+    expect(errorMessage).toBe(emptyMessage);
+    expect(errorMessage?.getAttribute('role')).toBe('alert');
+    expect(errorMessage?.textContent).toContain('Select a stage');
+    expect(trigger?.getAttribute('aria-describedby')).toBe(errorMessage?.id);
+  });
 });

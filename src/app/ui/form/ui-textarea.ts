@@ -23,18 +23,20 @@ let nextTextareaId = 0;
         [readOnly]="readOnly()"
         [required]="required()"
         [attr.aria-invalid]="invalid() || !!error()"
-        [attr.aria-describedby]="descriptionId"
+        [attr.aria-describedby]="error() || hint() ? descriptionId : null"
         (input)="updateValue($event)"
         (blur)="touch.emit()"
       ></textarea>
     </div>
-    @if (error()) {
-      <span class="ui-field__message ui-field__message--error" [id]="descriptionId" role="alert">
-        {{ error() }}
-      </span>
-    } @else if (hint()) {
-      <span class="ui-field__message" [id]="descriptionId">{{ hint() }}</span>
-    }
+    <span
+      class="ui-field__message"
+      [class.ui-field__message--error]="!!error()"
+      [id]="descriptionId"
+      [attr.role]="error() ? 'alert' : null"
+      [attr.aria-hidden]="error() || hint() ? null : 'true'"
+    >
+      {{ error() || hint() }}
+    </span>
   `,
   styleUrl: './ui-field.scss',
 })
