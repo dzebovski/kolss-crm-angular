@@ -14,8 +14,7 @@ export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
-    loadComponent: () =>
-      import('./features/auth/login/login-page').then((page) => page.LoginPage),
+    loadComponent: () => import('./features/auth/login/login-page').then((page) => page.LoginPage),
   },
   {
     path: 'design',
@@ -26,7 +25,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./features/crm/shell/crm-shell').then((page) => page.CrmShell),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: '', pathMatch: 'full', redirectTo: 'leads' },
       {
         path: 'dashboard',
         loadComponent: () =>
@@ -38,6 +37,11 @@ export const routes: Routes = [
           import('./features/crm/leads/leads-page').then((page) => page.LeadsPage),
       },
       {
+        path: 'leads/:leadId',
+        loadComponent: () =>
+          import('./features/crm/leads/lead-detail-page').then((page) => page.LeadDetailPage),
+      },
+      {
         path: 'reports',
         loadComponent: () =>
           import('./features/crm/reports/reports-page').then((page) => page.ReportsPage),
@@ -47,6 +51,14 @@ export const routes: Routes = [
         canActivate: [superAdminGuard],
         loadComponent: () =>
           import('./features/crm/accounts/accounts-page').then((page) => page.AccountsPage),
+      },
+      {
+        path: 'accounts/:employeeId',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/crm/accounts/employee-detail-page').then(
+            (page) => page.EmployeeDetailPage,
+          ),
       },
     ],
   },

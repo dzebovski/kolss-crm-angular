@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/sync-env-local.mjs",
     "start": "ng serve",
     "build": "ng build",
+    "prewatch": "node scripts/sync-env-local.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "lint": "ng lint",

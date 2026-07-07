@@ -4,12 +4,12 @@ import type { Session } from '@supabase/supabase-js';
 import type { Profile, SessionContext } from '../../models/database';
 import { SupabaseService } from '../supabase/supabase.service';
 
-const PROFILE_COLUMNS =
-  'id, role, display_name, is_active, deactivated_at, created_at, updated_at';
+const PROFILE_COLUMNS = 'id, role, display_name, is_active, deactivated_at, created_at, updated_at';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly supabase = inject(SupabaseService).getClient();
+  private readonly supabaseService = inject(SupabaseService);
+  private readonly supabase = this.supabaseService.getClient();
 
   private readonly sessionSignal = signal<Session | null>(null);
   private readonly profileSignal = signal<Profile | null>(null);
@@ -36,6 +36,8 @@ export class AuthService {
 
   constructor() {
     effect((onCleanup) => {
+      if (!this.supabaseService.isConfigured()) return;
+
       const { data } = this.supabase.auth.onAuthStateChange((_event, session) => {
         void this.applySession(session);
       });
@@ -46,6 +48,15 @@ export class AuthService {
   async initialize(): Promise<void> {
     if (this.initializedSignal()) return;
     this.loadingSignal.set(true);
+    if (!this.supabaseService.isConfigured()) {
+      this.sessionSignal.set(null);
+      this.profileSignal.set(null);
+      this.errorSignal.set('Supabase не налаштовано для локального середовища.');
+      this.loadingSignal.set(false);
+      this.initializedSignal.set(true);
+      return;
+    }
+
     try {
       const { data, error } = await this.supabase.auth.getSession();
       if (error) throw error;
@@ -64,6 +75,12 @@ export class AuthService {
     this.loadingSignal.set(true);
     this.errorSignal.set(null);
     try {
+      if (!this.supabaseService.isConfigured()) {
+        throw new Error(
+          'Supabase URL і anon key не налаштовані. Заповніть .env.local і перезапустіть dev server.',
+        );
+      }
+
       const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
@@ -84,6 +101,12 @@ export class AuthService {
   async signOut(): Promise<void> {
     this.loadingSignal.set(true);
     try {
+      if (!this.supabaseService.isConfigured()) {
+        this.sessionSignal.set(null);
+        this.profileSignal.set(null);
+        return;
+      }
+
       const { error } = await this.supabase.auth.signOut();
       if (error) throw error;
       this.sessionSignal.set(null);

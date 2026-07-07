@@ -1,0 +1,158 @@
+import type { UserRole } from '../models/database';
+
+export type OfficeId = 'kyiv' | 'warsaw';
+export type OfficeFilter = 'all' | OfficeId;
+export type LocaleCode = 'uk' | 'pl' | 'en';
+export type EmployeeStatus = 'active' | 'inactive';
+
+export type LeadStatus = 'new' | 'in_progress' | 'converted' | 'failed';
+
+export type LeadWorkflowStatus =
+  | 'new'
+  | 'taken'
+  | 'first_call_done'
+  | 'visit_scheduled'
+  | 'visit_rescheduled'
+  | 'visit_completed'
+  | 'closed'
+  | 'successful';
+
+export type LeadSource = 'website' | 'facebook' | 'manual';
+export type VisitStatus = 'scheduled' | 'rescheduled' | 'completed';
+export type LeadEventType =
+  | 'created'
+  | 'taken'
+  | 'first_call'
+  | 'visit_scheduled'
+  | 'visit_rescheduled'
+  | 'visit_completed'
+  | 'comment'
+  | 'closed'
+  | 'successful'
+  | 'attachment';
+
+export type CloseReason =
+  'no_contact' | 'not_target' | 'location_mismatch' | 'expensive' | 'lost_client';
+
+export interface CrmOffice {
+  readonly id: OfficeId;
+  readonly code: OfficeId;
+  readonly nameUk: string;
+  readonly namePl: string;
+}
+
+export interface MockEmployee {
+  readonly id: string;
+  readonly displayName: string;
+  readonly email: string;
+  readonly role: UserRole;
+  readonly officeIds: readonly OfficeId[];
+  readonly status: EmployeeStatus;
+  readonly locale: LocaleCode;
+  readonly createdAt: string;
+  readonly lastActiveAt: string;
+}
+
+export interface LeadAttachment {
+  readonly id: string;
+  readonly name: string;
+  readonly sizeLabel: string;
+  readonly addedAt: string;
+  readonly eventId?: string;
+}
+
+export interface LeadEvent {
+  readonly id: string;
+  readonly type: LeadEventType;
+  readonly title: string;
+  readonly body: string;
+  readonly actorId: string;
+  readonly occurredAt: string;
+}
+
+export interface FirstCall {
+  readonly date: string;
+  readonly result: string;
+  readonly comment: string;
+}
+
+export interface ShowroomVisit {
+  readonly status: VisitStatus;
+  readonly scheduledAt: string;
+  readonly completedAt?: string;
+  readonly comment?: string;
+}
+
+export interface LeadContract {
+  readonly contractNumber: string;
+  readonly amount: number;
+  readonly prepayment: number | null;
+  readonly comment: string;
+  readonly signedAt: string;
+}
+
+export interface LeadClose {
+  readonly reason: CloseReason;
+  readonly comment: string;
+  readonly closedAt: string;
+  readonly actorId: string;
+}
+
+export interface MockLead {
+  readonly id: string;
+  readonly name: string;
+  readonly phone: string;
+  readonly email: string | null;
+  readonly leadStatus: LeadStatus;
+  readonly workflowStatus: LeadWorkflowStatus;
+  readonly officeCode: OfficeId;
+  readonly source: LeadSource;
+  readonly sourceCreatedAt: string;
+  readonly initialMessage: string;
+  readonly cityRegion: string;
+  readonly productInterest: string;
+  readonly estimatedBudget: number | null;
+  readonly assignedToId: string | null;
+  readonly firstManagerId: string | null;
+  readonly firstCall: FirstCall | null;
+  readonly visit: ShowroomVisit | null;
+  readonly close: LeadClose | null;
+  readonly contract: LeadContract | null;
+  readonly callbackDueAt: string | null;
+  readonly lastComment: string | null;
+  readonly lastActivityAt: string;
+  readonly attachments: readonly LeadAttachment[];
+  readonly events: readonly LeadEvent[];
+}
+
+export interface LeadMonthGroup {
+  readonly key: string;
+  readonly label: string;
+  readonly rows: readonly MockLead[];
+}
+
+export interface LeadYearGroup {
+  readonly year: number;
+  readonly months: readonly LeadMonthGroup[];
+}
+
+export interface FunnelStage {
+  readonly key: string;
+  readonly label: string;
+  readonly count: number;
+  readonly percentOfTotal: number;
+  readonly conversionFromPrevious: number;
+  readonly tone: 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand';
+}
+
+export interface CloseLeadPayload {
+  readonly reason: CloseReason;
+  readonly comment: string;
+}
+
+export interface SuccessfulLeadPayload {
+  readonly contractNumber: string;
+  readonly amount: number;
+  readonly prepayment: number | null;
+  readonly comment: string;
+}
