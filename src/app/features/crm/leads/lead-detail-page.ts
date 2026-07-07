@@ -1,6 +1,9 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { AuthService } from '../../../core/auth/auth.service';
+import { canEditLeads } from '../../../core/roles/roles';
+import { SessionService } from '../../../core/session/session.service';
 import {
   CLOSE_REASON_LABELS,
   employeeInitials,
@@ -16,7 +19,7 @@ import {
 import { LeadWorkflowService } from '../../../services/lead-workflow.service';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
-import type { CloseReason, MockLead } from '../../../services/crm-mock.types';
+import type { CloseReason, LeadEvent, MockLead } from '../../../services/crm-mock.types';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
@@ -24,11 +27,114 @@ import { UiSelect, UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiTextarea } from '../../../ui/form/ui-textarea';
 
+const NO_MANAGER_VALUE = '__none__';
+
 @Component({
   selector: 'app-lead-detail-page',
   imports: [RouterLink, UiBadge, UiButton, UiIcon, UiSelect, UiTextField, UiTextarea],
   template: `
-    @if (lead(); as lead) {
+    @if (leadResource.isLoading()) {
+      <section class="lead-page lead-page--loading" aria-busy="true" aria-label="Завантаження ліда">
+        <span class="skeleton" style="--skeleton-w: 9rem; --skeleton-h: 1.25rem"></span>
+
+        <header class="lead-header">
+          <div class="skeleton-stack">
+            <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
+            <span
+              class="skeleton"
+              style="
+                --skeleton-w: min(100%, 22rem);
+                --skeleton-h: 2.5rem;
+                --skeleton-radius: var(--ui-radius-md);
+              "
+            ></span>
+            <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
+          </div>
+          <div class="lead-actions">
+            <span
+              class="skeleton"
+              style="
+                --skeleton-w: 8.5rem;
+                --skeleton-h: var(--ui-control-height);
+                --skeleton-radius: var(--ui-radius-md);
+              "
+            ></span>
+            <span
+              class="skeleton"
+              style="
+                --skeleton-w: 8.5rem;
+                --skeleton-h: var(--ui-control-height);
+                --skeleton-radius: var(--ui-radius-md);
+              "
+            ></span>
+            <span
+              class="skeleton"
+              style="
+                --skeleton-w: 8.5rem;
+                --skeleton-h: var(--ui-control-height);
+                --skeleton-radius: var(--ui-radius-md);
+              "
+            ></span>
+          </div>
+        </header>
+
+        <div class="lead-layout">
+          <main class="lead-main">
+            @for (panel of skeletonPanels; track panel) {
+              <section class="workflow-panel skeleton-panel">
+                <span
+                  class="skeleton"
+                  style="
+                    --skeleton-w: 45%;
+                    --skeleton-h: 1.25rem;
+                    --skeleton-radius: var(--ui-radius-md);
+                  "
+                ></span>
+                <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
+                <span
+                  class="skeleton"
+                  style="
+                    --skeleton-h: 5.75rem;
+                    --skeleton-radius: var(--ui-radius-md);
+                  "
+                ></span>
+              </section>
+            }
+          </main>
+
+          <aside class="lead-side" aria-hidden="true">
+            <section class="summary-panel skeleton-panel">
+              <span
+                class="skeleton"
+                style="
+                  --skeleton-w: 2.75rem;
+                  --skeleton-h: 2.75rem;
+                  --skeleton-radius: var(--ui-radius-lg);
+                "
+              ></span>
+              <span
+                class="skeleton"
+                style="
+                  --skeleton-w: 45%;
+                  --skeleton-h: 1.25rem;
+                  --skeleton-radius: var(--ui-radius-md);
+                "
+              ></span>
+              <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
+              <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
+              <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
+            </section>
+          </aside>
+        </div>
+      </section>
+    } @else if (loadError()) {
+      <section class="missing-state" role="alert">
+        <app-ui-icon name="inbox" [size]="30" />
+        <h1>Не вдалося завантажити лід</h1>
+        <p>{{ loadError() }}</p>
+        <a routerLink="/crm/leads">Повернутись до списку</a>
+      </section>
+    } @else if (lead(); as lead) {
       <section class="lead-page" [attr.aria-labelledby]="'lead-' + lead.id">
         <a class="back-link" routerLink="/crm/leads">
           <app-ui-icon name="arrow_back" [size]="17" />
@@ -128,8 +234,8 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
                 </header>
                 <div class="workflow-grid">
                   <app-ui-text-field
-                    label="Дата і час"
-                    placeholder="2026-07-10 13:00"
+                    label="Дата"
+                    type="date"
                     [(value)]="visitDate"
                   />
                   <app-ui-textarea
@@ -181,13 +287,30 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
                 <h2 id="timeline-title">Історія активності</h2>
                 <span>{{ lead.events.length }} подій</span>
               </header>
-              <ol>
+              <ol class="timeline-list">
                 @for (event of lead.events; track event.id) {
-                  <li>
+                  <li class="timeline-item">
                     <span class="timeline-dot" aria-hidden="true"></span>
-                    <div>
-                      <strong>{{ event.title }}</strong>
-                      <p>{{ event.body }}</p>
+                    <div class="timeline-content">
+                      <div class="timeline-item__header">
+                        <strong>{{ event.title }}</strong>
+                        @if (canEditLead(lead)) {
+                          <app-ui-button
+                            variant="ghost"
+                            size="small"
+                            (pressed)="openHistoryEditDialog(event)"
+                          >
+                            <app-ui-icon name="edit" [size]="16" />
+                            Редагувати
+                          </app-ui-button>
+                        }
+                      </div>
+                      @if (event.body) {
+                        <p>{{ event.body }}</p>
+                      }
+                      @if (historyAuditText(event); as auditText) {
+                        <p class="timeline-audit">{{ auditText }}</p>
+                      }
                       <small>
                         {{ employeeName(event.actorId) }} · {{ formatDateTime(event.occurredAt) }}
                       </small>
@@ -200,12 +323,24 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
 
           <aside class="lead-side" aria-label="Дані клієнта">
             <section class="summary-panel">
-              <header>
-                <div class="avatar" aria-hidden="true">{{ initials(lead.name) }}</div>
-                <div>
-                  <h2>Контакти</h2>
-                  <p>{{ lead.cityRegion }}</p>
+              <header class="summary-panel__header">
+                <div class="summary-panel__title">
+                  <div class="avatar" aria-hidden="true">{{ initials(lead.name) }}</div>
+                  <div>
+                    <h2>Контакти</h2>
+                    <p>{{ lead.cityRegion }}</p>
+                  </div>
                 </div>
+                @if (canEditLead(lead)) {
+                  <app-ui-button
+                    variant="secondary"
+                    size="small"
+                    (pressed)="openLeadEditDialog(lead)"
+                  >
+                    <app-ui-icon name="edit" [size]="16" />
+                    Редагувати
+                  </app-ui-button>
+                }
               </header>
               <dl>
                 <div>
@@ -217,8 +352,8 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
                   <dd>{{ lead.email ?? '—' }}</dd>
                 </div>
                 <div>
-                  <dt>Перший менеджер</dt>
-                  <dd>{{ employeeName(lead.firstManagerId) }}</dd>
+                  <dt>Менеджер</dt>
+                  <dd>{{ employeeName(lead.assignedToId) }}</dd>
                 </div>
                 <div>
                   <dt>Продукт</dt>
@@ -262,6 +397,91 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
             </section>
           </aside>
         </div>
+
+        @if (editLeadDialogOpen()) {
+          <div class="modal-backdrop" role="presentation">
+            <section
+              class="modal modal--wide"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-lead-dialog-title"
+            >
+              <h2 id="edit-lead-dialog-title">Редагувати дані ліда</h2>
+              <p>Контакти, деталі заявки та відповідальний менеджер.</p>
+              @if (dialogError()) {
+                <div class="inline-error" role="alert">{{ dialogError() }}</div>
+              }
+
+              <div class="modal-section">
+                <h3>Контакти</h3>
+                <div class="modal-grid">
+                  <app-ui-text-field label="Імʼя" [(value)]="editLeadName" />
+                  <app-ui-text-field label="Телефон" type="tel" [(value)]="editLeadPhone" />
+                  <app-ui-text-field label="Email" type="email" [(value)]="editLeadEmail" />
+                  <app-ui-text-field label="Місто / район" [(value)]="editLeadCityRegion" />
+                </div>
+              </div>
+
+              <div class="modal-section">
+                <h3>Дані ліда</h3>
+                <div class="modal-grid">
+                  <app-ui-text-field label="Продукт" [(value)]="editLeadProductInterest" />
+                  <app-ui-text-field label="Бюджет, EUR" [(value)]="editLeadBudget" />
+                  <app-ui-select
+                    label="Менеджер"
+                    [options]="managerOptions(lead)"
+                    [(value)]="editLeadAssignedToId"
+                  />
+                </div>
+                <app-ui-textarea
+                  label="Початкове повідомлення"
+                  [rows]="4"
+                  [(value)]="editLeadInitialMessage"
+                />
+              </div>
+
+              <div class="modal-actions">
+                <app-ui-button variant="ghost" (pressed)="closeLeadEditDialog()">
+                  Скасувати
+                </app-ui-button>
+                <app-ui-button (pressed)="submitLeadEdit(lead)">Зберегти</app-ui-button>
+              </div>
+            </section>
+          </div>
+        }
+
+        @if (editHistoryDialogOpen()) {
+          <div class="modal-backdrop" role="presentation">
+            <section
+              class="modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-history-dialog-title"
+            >
+              <h2 id="edit-history-dialog-title">Редагувати історію</h2>
+              <p>Дата події не змінюється. Позначка про редагування буде видима всім.</p>
+              @if (dialogError()) {
+                <div class="inline-error" role="alert">{{ dialogError() }}</div>
+              }
+              <app-ui-select
+                label="Тип"
+                [options]="historyEventTypeOptions"
+                [(value)]="editHistoryType"
+              />
+              <app-ui-textarea
+                label="Повідомлення"
+                [rows]="4"
+                [(value)]="editHistoryComment"
+              />
+              <div class="modal-actions">
+                <app-ui-button variant="ghost" (pressed)="closeHistoryEditDialog()">
+                  Скасувати
+                </app-ui-button>
+                <app-ui-button (pressed)="submitHistoryEdit(lead)">Зберегти</app-ui-button>
+              </div>
+            </section>
+          </div>
+        }
 
         @if (closeDialogOpen()) {
           <div class="modal-backdrop" role="presentation">
@@ -461,7 +681,7 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
 
     .workflow-grid {
       display: grid;
-      grid-template-columns: minmax(14rem, 0.8fr) minmax(16rem, 1.2fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: var(--ui-space-4);
       align-items: start;
     }
@@ -482,10 +702,20 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
       color: color-mix(in srgb, currentColor 82%, black);
     }
 
-    .summary-panel header {
+    .summary-panel header,
+    .summary-panel__title {
       display: flex;
       gap: var(--ui-space-3);
       align-items: center;
+    }
+
+    .summary-panel__header {
+      justify-content: space-between;
+      align-items: start;
+    }
+
+    .summary-panel__title {
+      min-width: 0;
     }
 
     .avatar {
@@ -567,22 +797,39 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
       font-weight: 650;
     }
 
-    ol {
+    .timeline-list {
       margin: 0;
       padding: var(--ui-space-5);
       display: grid;
-      gap: var(--ui-space-4);
       list-style: none;
     }
 
-    li {
+    .timeline-item {
       position: relative;
       display: grid;
       grid-template-columns: auto 1fr;
       gap: var(--ui-space-3);
+      padding-bottom: var(--ui-space-4);
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 1.15rem;
+      bottom: 0;
+      left: 0.3125rem;
+      width: 2px;
+      border-radius: var(--ui-radius-pill);
+      background: color-mix(in srgb, var(--ui-action) 22%, var(--ui-border));
     }
 
     .timeline-dot {
+      position: relative;
+      z-index: 1;
       width: 0.75rem;
       height: 0.75rem;
       margin-top: 0.35rem;
@@ -591,18 +838,35 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
       background: var(--ui-surface-raised);
     }
 
-    li strong,
-    li p,
-    li small {
+    .timeline-content {
+      min-width: 0;
+    }
+
+    .timeline-item__header {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--ui-space-3);
+      align-items: start;
+    }
+
+    .timeline-content strong,
+    .timeline-content p,
+    .timeline-content small {
       display: block;
     }
 
-    li p {
+    .timeline-content p {
       margin: var(--ui-space-1) 0;
       color: var(--ui-text-muted);
     }
 
-    li small {
+    .timeline-audit {
+      color: var(--ui-action);
+      font-size: 0.8125rem;
+      font-weight: 650;
+    }
+
+    .timeline-content small {
       color: var(--ui-text-subtle);
       font-size: 0.75rem;
     }
@@ -629,6 +893,8 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
 
     .modal {
       width: min(100%, 32rem);
+      max-height: calc(100vh - 3rem);
+      overflow: auto;
       padding: var(--ui-space-6);
       border-radius: var(--ui-radius-lg);
       background: var(--ui-surface-raised);
@@ -637,13 +903,76 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
       box-shadow: var(--ui-shadow-3);
     }
 
+    .modal--wide {
+      width: min(100%, 43rem);
+    }
+
     .modal h2 {
       font-family: var(--ui-font-display);
       font-size: 1.5rem;
     }
 
+    .modal h3 {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    .modal-section {
+      display: grid;
+      gap: var(--ui-space-3);
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ui-space-4);
+      align-items: start;
+    }
+
     .modal-actions {
       justify-content: flex-end;
+    }
+
+    @media (max-width: 48rem) {
+      .lead-header,
+      .lead-layout,
+      .modal-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .lead-header {
+        display: grid;
+        align-items: start;
+      }
+
+      .summary-panel__header,
+      .timeline-item__header {
+        display: grid;
+      }
+    }
+
+    .lead-page--loading .lead-header {
+      align-items: start;
+    }
+
+    .skeleton-stack,
+    .skeleton-panel {
+      display: grid;
+      gap: var(--ui-space-3);
+    }
+
+    .skeleton {
+      display: block;
+      width: var(--skeleton-w, 100%);
+      height: var(--skeleton-h, 0.875rem);
+      border-radius: var(--skeleton-radius, var(--ui-radius-pill));
+      background: linear-gradient(
+        90deg,
+        var(--ui-surface-subtle),
+        var(--ui-surface-muted),
+        var(--ui-surface-subtle)
+      );
+      animation: lead-skeleton 1.15s ease-in-out infinite;
     }
 
     .missing-state {
@@ -658,10 +987,23 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
     .missing-state h1 {
       font-size: 1.75rem;
     }
+
+    .missing-state p {
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    @keyframes lead-skeleton {
+      50% {
+        opacity: 0.58;
+      }
+    }
   `,
 })
 export class LeadDetailPage {
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
   private readonly workflowService = inject(LeadWorkflowService);
   private readonly usersService = inject(UsersService);
@@ -676,23 +1018,41 @@ export class LeadDetailPage {
   });
 
   protected readonly lead = computed(() => this.leadResource.value() ?? null);
+  protected readonly loadError = computed(() => {
+    const error = this.leadResource.error();
+    return error ? 'Не вдалося завантажити дані ліда.' : '';
+  });
   protected readonly actionError = signal('');
   protected readonly dialogError = signal('');
   protected readonly actionPending = signal(false);
   protected readonly closeDialogOpen = signal(false);
   protected readonly successDialogOpen = signal(false);
+  protected readonly editLeadDialogOpen = signal(false);
+  protected readonly editHistoryDialogOpen = signal(false);
+  protected readonly editingHistoryEvent = signal<LeadEvent | null>(null);
 
   protected readonly firstCallResult = signal<string>(FIRST_CALL_RESULTS[0]);
   protected readonly firstCallComment = signal('');
-  protected readonly visitDate = signal('2026-07-10 13:00');
+  protected readonly visitDate = signal('2026-07-10');
   protected readonly visitComment = signal('');
   protected readonly commentDraft = signal('');
+  protected readonly editLeadName = signal('');
+  protected readonly editLeadPhone = signal('');
+  protected readonly editLeadEmail = signal('');
+  protected readonly editLeadCityRegion = signal('');
+  protected readonly editLeadProductInterest = signal('');
+  protected readonly editLeadBudget = signal('');
+  protected readonly editLeadInitialMessage = signal('');
+  protected readonly editLeadAssignedToId = signal(NO_MANAGER_VALUE);
+  protected readonly editHistoryType = signal('comment');
+  protected readonly editHistoryComment = signal('');
   protected readonly closeReason = signal('no_contact');
   protected readonly closeComment = signal('');
   protected readonly contractNumber = signal('');
   protected readonly contractAmount = signal('');
   protected readonly contractPrepayment = signal('');
   protected readonly contractComment = signal('');
+  protected readonly skeletonPanels = [1, 2, 3];
 
   protected readonly firstCallOptions: readonly UiSelectOption[] = FIRST_CALL_RESULTS.map(
     (result) => ({
@@ -703,11 +1063,70 @@ export class LeadDetailPage {
   protected readonly closeReasonOptions: readonly UiSelectOption[] = Object.entries(
     CLOSE_REASON_LABELS,
   ).map(([value, label]) => ({ value, label }));
+  protected readonly historyEventTypeOptions: readonly UiSelectOption[] = [
+    { value: 'created', label: 'Заявка створена' },
+    { value: 'taken', label: 'Лід взято в роботу' },
+    { value: 'contact_attempt', label: 'Перший дзвінок' },
+    { value: 'first_call', label: 'Перший дзвінок (старий тип)' },
+    { value: 'showroom_visit_scheduled', label: 'Візит заплановано' },
+    { value: 'visit_scheduled', label: 'Візит заплановано (старий тип)' },
+    { value: 'visit_rescheduled', label: 'Візит перенесено' },
+    { value: 'showroom_visit_completed', label: 'Візит відбувся' },
+    { value: 'visit_completed', label: 'Візит відбувся (старий тип)' },
+    { value: 'comment', label: 'Коментар' },
+    { value: 'closed', label: 'Лід закрито' },
+    { value: 'bad_lead', label: 'Нецільовий лід' },
+    { value: 'contract_signed', label: 'Договір заключений' },
+    { value: 'successful', label: 'Договір заключений (старий тип)' },
+    { value: 'attachment', label: 'Вкладення' },
+    { value: 'lead_updated', label: 'Дані ліда відредаговано' },
+  ];
 
   protected readonly formatDateTime = formatDateTime;
   protected readonly formatMoney = formatMoney;
   protected readonly officeName = officeName;
   protected readonly workflowTone = workflowTone;
+
+  protected canEditLead(lead: MockLead): boolean {
+    const role = this.auth.profile()?.role;
+    if (!canEditLeads(role)) return false;
+    if (role === 'super_admin') return true;
+    return (
+      role === 'office_admin' &&
+      (this.session.officeContext()?.userOffices ?? []).some(
+        (office) => office.code === lead.officeCode,
+      )
+    );
+  }
+
+  protected managerOptions(lead: MockLead): readonly UiSelectOption[] {
+    const employees = this.employeesResource.value() ?? [];
+    const options = employees
+      .filter(
+        (employee) =>
+          employee.status === 'active' &&
+          employee.role !== 'super_admin' &&
+          employee.officeIds.includes(lead.officeCode),
+      )
+      .map((employee) => ({
+        value: employee.id,
+        label: employee.displayName,
+      }));
+    if (lead.assignedToId && !options.some((option) => option.value === lead.assignedToId)) {
+      options.push({
+        value: lead.assignedToId,
+        label: this.employeeName(lead.assignedToId),
+      });
+    }
+    return [{ value: NO_MANAGER_VALUE, label: 'Не призначено' }, ...options];
+  }
+
+  protected historyAuditText(event: LeadEvent): string {
+    if (!event.editAudit || !event.editAudit.fields.length) return '';
+    const fields = event.editAudit.fields.join(', ');
+    const editedAt = formatDateTime(event.editAudit.editedAt);
+    return `Відредаговано: ${fields}. Редагував: ${event.editAudit.editedByName} · ${editedAt}`;
+  }
 
   protected sourceLabel(lead: MockLead): string {
     return LEAD_SOURCE_LABELS[lead.source];
@@ -765,7 +1184,7 @@ export class LeadDetailPage {
     await this.runAction(async () => {
       const error = await this.workflowService.scheduleVisit(
         lead.id,
-        this.visitDate(),
+        this.normalizedVisitDate(),
         this.visitComment(),
       );
       if (error) throw new Error(error);
@@ -777,7 +1196,7 @@ export class LeadDetailPage {
     await this.runAction(async () => {
       const error = await this.workflowService.rescheduleVisit(
         lead.id,
-        this.visitDate(),
+        this.normalizedVisitDate(),
         this.visitComment(),
       );
       if (error) throw new Error(error);
@@ -799,6 +1218,125 @@ export class LeadDetailPage {
       if (error) throw new Error(error);
       this.commentDraft.set('');
     });
+  }
+
+  protected openLeadEditDialog(lead: MockLead): void {
+    this.dialogError.set('');
+    this.editLeadName.set(lead.name === 'Без імені' ? '' : lead.name);
+    this.editLeadPhone.set(lead.phone === '—' ? '' : lead.phone);
+    this.editLeadEmail.set(lead.email ?? '');
+    this.editLeadCityRegion.set(lead.cityRegion);
+    this.editLeadProductInterest.set(lead.productInterest);
+    this.editLeadBudget.set(lead.estimatedBudget == null ? '' : String(lead.estimatedBudget));
+    this.editLeadInitialMessage.set(lead.initialMessage);
+    this.editLeadAssignedToId.set(lead.assignedToId ?? NO_MANAGER_VALUE);
+    this.editLeadDialogOpen.set(true);
+  }
+
+  protected closeLeadEditDialog(): void {
+    this.dialogError.set('');
+    this.editLeadDialogOpen.set(false);
+  }
+
+  protected async submitLeadEdit(lead: MockLead): Promise<void> {
+    this.dialogError.set('');
+    if (!this.canEditLead(lead)) {
+      this.dialogError.set('Недостатньо прав для редагування ліда.');
+      return;
+    }
+
+    const name = this.editLeadName().trim();
+    const phone = this.editLeadPhone().trim();
+    const email = this.nullableText(this.editLeadEmail());
+    const estimatedBudget = this.parseOptionalMoney(this.editLeadBudget());
+    if (!name) {
+      this.dialogError.set('Вкажіть імʼя клієнта.');
+      return;
+    }
+    if (!phone) {
+      this.dialogError.set('Вкажіть телефон клієнта.');
+      return;
+    }
+    if (email && !this.isValidEmail(email)) {
+      this.dialogError.set('Email має некоректний формат.');
+      return;
+    }
+    if (Number.isNaN(estimatedBudget) || (estimatedBudget != null && estimatedBudget < 0)) {
+      this.dialogError.set('Бюджет має бути додатним числом або порожнім.');
+      return;
+    }
+
+    const payload = {
+      name,
+      phone,
+      email,
+      cityRegion: this.editLeadCityRegion().trim(),
+      productInterest: this.editLeadProductInterest().trim(),
+      estimatedBudget,
+      initialMessage: this.editLeadInitialMessage().trim(),
+      assignedToId:
+        this.editLeadAssignedToId() === NO_MANAGER_VALUE ? null : this.editLeadAssignedToId(),
+    };
+    const changedFields = this.changedLeadFields(lead, payload);
+    if (!changedFields.length) {
+      this.editLeadDialogOpen.set(false);
+      return;
+    }
+
+    try {
+      await this.leadsService.updateLeadDetails(lead.id, payload, changedFields);
+      this.editLeadDialogOpen.set(false);
+      await this.leadResource.reload();
+    } catch (error) {
+      this.dialogError.set(
+        error instanceof Error ? error.message : 'Не вдалося зберегти зміни',
+      );
+    }
+  }
+
+  protected openHistoryEditDialog(event: LeadEvent): void {
+    this.dialogError.set('');
+    this.editingHistoryEvent.set(event);
+    this.editHistoryType.set(event.rawType ?? event.type);
+    this.editHistoryComment.set(event.body);
+    this.editHistoryDialogOpen.set(true);
+  }
+
+  protected closeHistoryEditDialog(): void {
+    this.dialogError.set('');
+    this.editHistoryDialogOpen.set(false);
+    this.editingHistoryEvent.set(null);
+  }
+
+  protected async submitHistoryEdit(lead: MockLead): Promise<void> {
+    this.dialogError.set('');
+    if (!this.canEditLead(lead)) {
+      this.dialogError.set('Недостатньо прав для редагування історії.');
+      return;
+    }
+    const event = this.editingHistoryEvent();
+    if (!event) {
+      this.dialogError.set('Подію історії не знайдено.');
+      return;
+    }
+    const comment = this.editHistoryComment().trim();
+    if (!comment) {
+      this.dialogError.set('Повідомлення не може бути порожнім.');
+      return;
+    }
+
+    try {
+      await this.leadsService.updateHistoryEvent(lead.id, event.id, {
+        eventType: this.editHistoryType(),
+        comment,
+      });
+      this.closeHistoryEditDialog();
+      await this.leadResource.reload();
+    } catch (error) {
+      this.dialogError.set(
+        error instanceof Error ? error.message : 'Не вдалося зберегти історію',
+      );
+    }
   }
 
   protected openCloseDialog(): void {
@@ -865,7 +1403,51 @@ export class LeadDetailPage {
     this.dialogError.set('');
   }
 
+  private normalizedVisitDate(): string {
+    const date = this.visitDate().trim();
+    return date ? `${date}T12:00:00` : '';
+  }
+
+  private changedLeadFields(
+    lead: MockLead,
+    payload: {
+      readonly name: string;
+      readonly phone: string;
+      readonly email: string | null;
+      readonly cityRegion: string;
+      readonly productInterest: string;
+      readonly estimatedBudget: number | null;
+      readonly initialMessage: string;
+      readonly assignedToId: string | null;
+    },
+  ): readonly string[] {
+    const fields: string[] = [];
+    if ((lead.name === 'Без імені' ? '' : lead.name) !== payload.name) fields.push('імʼя');
+    if ((lead.phone === '—' ? '' : lead.phone) !== payload.phone) fields.push('телефон');
+    if ((lead.email ?? null) !== payload.email) fields.push('email');
+    if (lead.cityRegion !== payload.cityRegion) fields.push('місто/район');
+    if (lead.productInterest !== payload.productInterest) fields.push('продукт');
+    if ((lead.estimatedBudget ?? null) !== payload.estimatedBudget) fields.push('бюджет');
+    if (lead.initialMessage !== payload.initialMessage) fields.push('початкове повідомлення');
+    if ((lead.assignedToId ?? null) !== payload.assignedToId) fields.push('менеджер');
+    return fields;
+  }
+
+  private nullableText(value: string): string | null {
+    const text = value.trim();
+    return text || null;
+  }
+
+  private parseOptionalMoney(value: string): number | null {
+    const normalized = value.trim();
+    return normalized ? this.parseMoney(normalized) : null;
+  }
+
   private parseMoney(value: string): number {
     return Number(value.replace(/\s/g, '').replace(',', '.'));
+  }
+
+  private isValidEmail(value: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 }

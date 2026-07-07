@@ -5,6 +5,7 @@ import type {
   LeadClose,
   LeadContract,
   LeadEvent,
+  LeadEventEditAudit,
   LeadEventType,
   LeadSource,
   LeadWorkflowStatus,
@@ -118,9 +119,11 @@ function mapEventType(eventType: string): LeadEventType {
     visit_completed: 'visit_completed',
     comment: 'comment',
     closed: 'closed',
+    bad_lead: 'closed',
     successful: 'successful',
     contract_signed: 'successful',
     attachment: 'attachment',
+    lead_updated: 'lead_updated',
   };
   return map[eventType] ?? 'comment';
 }
@@ -206,10 +209,12 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
   return events.map((event) => ({
     id: event.id,
     type: mapEventType(event.event_type),
+    rawType: event.event_type,
     title: eventTitle(event.event_type),
     body: event.comment ?? eventBody(event),
     actorId: event.actor_id ?? '',
     occurredAt: event.created_at,
+    editAudit: eventEditAudit(event.new_value),
   }));
 }
 
@@ -219,13 +224,17 @@ function eventTitle(eventType: string): string {
     contact_attempt: 'Перший дзвінок зафіксовано',
     first_call: 'Перший дзвінок зафіксовано',
     showroom_visit_scheduled: 'Візит заплановано',
+    visit_scheduled: 'Візит заплановано',
     visit_rescheduled: 'Візит перенесено',
     showroom_visit_completed: 'Візит відбувся',
     visit_completed: 'Візит відбувся',
     closed: 'Лід закрито',
+    bad_lead: 'Лід закрито',
     successful: 'Договір заключений',
     contract_signed: 'Договір заключений',
     comment: 'Коментар',
+    lead_updated: 'Дані ліда відредаговано',
+    attachment: 'Вкладення',
   };
   return titles[eventType] ?? eventType;
 }
@@ -236,6 +245,27 @@ function eventBody(event: LeadEventRow): string {
     return result ? `${result}` : '';
   }
   return '';
+}
+
+function eventEditAudit(value: unknown): LeadEventEditAudit | null {
+  if (!isRecord(value)) return null;
+  const audit = value['edit_audit'];
+  if (!isRecord(audit)) return null;
+  const fields = audit['fields'];
+  const editedAt = audit['edited_at'];
+  const editedById = audit['edited_by'];
+  const editedByName = audit['edited_by_name'];
+  if (!Array.isArray(fields) || typeof editedAt !== 'string') return null;
+  return {
+    fields: fields.filter((field): field is string => typeof field === 'string'),
+    editedAt,
+    editedById: typeof editedById === 'string' ? editedById : '',
+    editedByName: typeof editedByName === 'string' ? editedByName : 'Невідомий',
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function mapLeadListRow(row: LeadListRow): MockLead {

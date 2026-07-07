@@ -14,58 +14,65 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
   template: `
     <div class="crm-shell" data-density="compact">
       <header class="crm-shell__header">
-        <a class="crm-shell__brand" routerLink="/crm/leads" aria-label="KOLSS CRM">
-          <span class="crm-shell__brand-mark" aria-hidden="true"></span>
-          <span>
-            <span class="crm-shell__eyebrow">KOLSS</span>
-            <strong>CRM</strong>
-          </span>
-        </a>
+        <div class="crm-shell__left">
+          <a class="crm-shell__brand" routerLink="/crm/leads" aria-label="KOLSS CRM">
+            <span class="crm-shell__brand-mark" aria-hidden="true"></span>
+            <span>
+              <span class="crm-shell__eyebrow">KOLSS</span>
+              <strong>CRM</strong>
+            </span>
+          </a>
 
-        <nav class="crm-shell__nav" aria-label="Основна навігація">
-          <a routerLink="/crm/leads" routerLinkActive="is-active">
-            <app-ui-icon name="view_kanban" [size]="17" />
-            Ліди
-          </a>
-          <a routerLink="/crm/reports" routerLinkActive="is-active">
-            <app-ui-icon name="automation" [size]="17" />
-            Звітність
-          </a>
-          @if (canManageAccounts()) {
-            <a routerLink="/crm/accounts" routerLinkActive="is-active">
-              <app-ui-icon name="history" [size]="17" />
-              Акаунти
+          <nav class="crm-shell__nav" aria-label="Основна навігація">
+            <a routerLink="/crm/leads" routerLinkActive="is-active">
+              <app-ui-icon name="view_kanban" [size]="17" />
+              Ліди
             </a>
-          }
-        </nav>
+            <a routerLink="/crm/reports" routerLinkActive="is-active">
+              <app-ui-icon name="automation" [size]="17" />
+              Звітність
+            </a>
+            @if (canManageAccounts()) {
+              <a routerLink="/crm/accounts" routerLinkActive="is-active">
+                <app-ui-icon name="history" [size]="17" />
+                Акаунти
+              </a>
+            }
+          </nav>
 
-        <div class="crm-shell__tools" aria-label="CRM controls">
-          @if (showOfficeFilter()) {
-            <div class="crm-shell__segmented" aria-label="Офісний контекст">
-              @for (item of officeFilters(); track item.value) {
+          <div class="crm-shell__context-controls" aria-label="CRM controls">
+            @if (showOfficeFilter()) {
+              <div
+                class="crm-shell__segmented crm-shell__segmented--office"
+                aria-label="Офісний контекст"
+              >
+                @for (item of officeFilters(); track item.value) {
+                  <button
+                    type="button"
+                    [class.is-active]="officeFilter() === item.value"
+                    (click)="setOfficeFilter(item.value)"
+                  >
+                    {{ item.label }}
+                  </button>
+                }
+              </div>
+            }
+
+            <div class="crm-shell__segmented crm-shell__segmented--language" aria-label="Мова">
+              @for (item of locales; track item.value) {
                 <button
                   type="button"
-                  [class.is-active]="officeFilter() === item.value"
-                  (click)="setOfficeFilter(item.value)"
+                  [class.is-active]="locale() === item.value"
+                  (click)="setLocale(item.value)"
                 >
                   {{ item.label }}
                 </button>
               }
             </div>
-          }
-
-          <div class="crm-shell__segmented crm-shell__segmented--language" aria-label="Мова">
-            @for (item of locales; track item.value) {
-              <button
-                type="button"
-                [class.is-active]="locale() === item.value"
-                (click)="setLocale(item.value)"
-              >
-                {{ item.label }}
-              </button>
-            }
           </div>
+        </div>
 
+        <div class="crm-shell__user" aria-label="Поточний користувач">
           <div class="crm-shell__user-meta">
             <span>{{ displayName() }}</span>
             <small>{{ roleName() }}</small>
@@ -92,13 +99,31 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
       top: 0;
       z-index: var(--ui-z-header);
       display: grid;
-      grid-template-columns: auto minmax(20rem, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
       gap: var(--ui-space-5);
       padding: var(--ui-space-3) var(--ui-space-6);
       border-bottom: 1px solid var(--ui-border);
       background: color-mix(in srgb, var(--ui-surface-raised) 96%, transparent);
       backdrop-filter: blur(16px);
+    }
+
+    .crm-shell__left,
+    .crm-shell__context-controls,
+    .crm-shell__user {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ui-space-3);
+    }
+
+    .crm-shell__left {
+      min-width: 0;
+      justify-content: flex-start;
+    }
+
+    .crm-shell__user {
+      justify-self: end;
+      white-space: nowrap;
     }
 
     .crm-shell__brand {
@@ -109,6 +134,7 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
       text-decoration: none;
       font-family: var(--ui-font-display);
       line-height: 1.1;
+      flex: 0 0 auto;
     }
 
     .crm-shell__brand-mark {
@@ -130,7 +156,7 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
     .crm-shell__nav {
       display: inline-flex;
       gap: var(--ui-space-2);
-      justify-self: center;
+      flex: 0 0 auto;
     }
 
     .crm-shell__nav a {
@@ -151,10 +177,8 @@ import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
       color: var(--ui-action);
     }
 
-    .crm-shell__tools {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--ui-space-3);
+    .crm-shell__context-controls {
+      min-width: 0;
     }
 
     .crm-shell__segmented {

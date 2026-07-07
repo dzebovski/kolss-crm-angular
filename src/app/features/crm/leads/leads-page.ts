@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 
 import { SessionService } from '../../../core/session/session.service';
 import {
+  formatDate,
   formatDateTime,
   groupLeadsByYearMonth,
   LEAD_SOURCE_LABELS,
@@ -88,70 +89,84 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
           <p>Спробуйте інший телефон, дату або імʼя клієнта.</p>
         </article>
       } @else {
-        <div class="lead-groups">
-          @for (group of groupedLeads(); track group.key) {
-            <section class="lead-group" [attr.aria-labelledby]="'group-' + group.key">
-              <header>
-                <h2 [id]="'group-' + group.key">{{ group.label }}</h2>
-                <span>{{ group.rows.length }} лідів</span>
-              </header>
+        <div class="leads-table-panel">
+          <table class="leads-table" aria-label="Ліди за місяцем створення">
+            <colgroup>
+              <col class="col-date" />
+              <col class="col-client" />
+              <col class="col-call" />
+              <col class="col-source" />
+              <col class="col-manager" />
+              <col class="col-visit" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="date-heading" scope="col">Дата</th>
+                <th class="client-heading" scope="col">Клієнт</th>
+                <th class="call-heading" scope="col">Перший дзвінок</th>
+                <th class="source-heading" scope="col">Джерело</th>
+                <th class="manager-heading" scope="col">Перший менеджер</th>
+                <th class="visit-heading" scope="col">Візит у салон</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (group of groupedLeads(); track group.key) {
+                <tr class="month-row">
+                  <th scope="rowgroup" colspan="6">
+                    <span [id]="'group-' + group.key">{{ group.label }}</span>
+                    <small>{{ group.rows.length }} лідів</small>
+                  </th>
+                </tr>
 
-              <div class="leads-table-wrap">
-                <table class="leads-table">
-                  <thead>
-                    <tr>
-                      <th>Дата</th>
-                      <th>Клієнт</th>
-                      <th>Перший дзвінок</th>
-                      <th>Джерело</th>
-                      <th>Перший менеджер</th>
-                      <th>Візит у салон</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (lead of group.rows; track lead.id) {
-                      <tr
-                        tabindex="0"
-                        role="link"
-                        [attr.aria-label]="'Відкрити лід ' + lead.name"
-                        (click)="openLead(lead)"
-                        (keydown.enter)="openLead(lead)"
-                      >
-                        <td>
-                          <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
-                          <small>{{ officeName(lead.officeCode) }}</small>
-                        </td>
-                        <td>
-                          <strong>{{ lead.name }}</strong>
-                          <small>{{ lead.phone }}</small>
-                        </td>
-                        <td>
-                          @if (lead.firstCall) {
-                            <span>{{ lead.firstCall.result }}</span>
-                            <small>{{ formatDateTime(lead.firstCall.date) }}</small>
-                          } @else {
-                            <span class="muted">Ще не зафіксовано</span>
-                          }
-                        </td>
-                        <td>{{ sourceLabel(lead) }}</td>
-                        <td>{{ employeeName(lead.firstManagerId) }}</td>
-                        <td>
-                          <div class="status-cell">
-                            <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
-                              {{ workflowLabel(lead) }}
-                            </app-ui-badge>
-                            @if (lead.visit) {
-                              <small>{{ formatDateTime(lead.visit.scheduledAt) }}</small>
-                            }
-                          </div>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          }
+                @for (lead of group.rows; track lead.id) {
+                  <tr
+                    class="lead-row"
+                    tabindex="0"
+                    role="link"
+                    [attr.data-lead-id]="lead.id"
+                    [attr.aria-label]="'Відкрити лід ' + lead.name"
+                    (click)="openLead(lead)"
+                    (keydown.enter)="openLead(lead)"
+                  >
+                    <td class="date-cell" data-label="Дата">
+                      <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
+                      <small>{{ officeName(lead.officeCode) }}</small>
+                    </td>
+                    <td class="client-cell" data-label="Клієнт">
+                      <strong>{{ lead.name }}</strong>
+                      <small>{{ lead.phone }}</small>
+                      <span class="lead-compact-meta">
+                        {{ sourceLabel(lead) }} · {{ employeeName(lead.firstManagerId) }} ·
+                        {{ workflowLabel(lead) }}
+                      </span>
+                    </td>
+                    <td class="call-cell" data-label="Перший дзвінок">
+                      @if (lead.firstCall) {
+                        <span>{{ lead.firstCall.result }}</span>
+                        <small>{{ formatDateTime(lead.firstCall.date) }}</small>
+                      } @else {
+                        <span class="muted">Ще не зафіксовано</span>
+                      }
+                    </td>
+                    <td class="source-cell" data-label="Джерело">{{ sourceLabel(lead) }}</td>
+                    <td class="manager-cell" data-label="Перший менеджер">
+                      {{ employeeName(lead.firstManagerId) }}
+                    </td>
+                    <td class="visit-cell" data-label="Візит у салон">
+                      <div class="status-cell">
+                        <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
+                          {{ workflowLabel(lead) }}
+                        </app-ui-badge>
+                        @if (lead.visit) {
+                          <small>{{ formatDate(lead.visit.scheduledAt) }}</small>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
         </div>
       }
     </section>
@@ -248,12 +263,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       font-size: 0.75rem;
     }
 
-    .lead-groups {
-      display: grid;
-      gap: var(--ui-space-4);
-    }
-
-    .lead-group {
+    .leads-table-panel {
       border: 1px solid var(--ui-border);
       border-radius: var(--ui-radius-lg);
       background: var(--ui-surface-raised);
@@ -261,74 +271,112 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       overflow: hidden;
     }
 
-    .lead-group > header {
-      min-height: 3.25rem;
-      padding: 0 var(--ui-space-4);
-      border-bottom: 1px solid var(--ui-border);
-      background: var(--ui-surface-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .lead-group h2 {
-      margin: 0;
-      font-size: 1rem;
-    }
-
-    .lead-group header span {
-      color: var(--ui-text-muted);
-      font-size: 0.8125rem;
-      font-weight: 650;
-    }
-
-    .leads-table-wrap {
-      overflow-x: auto;
-    }
-
     .leads-table {
       width: 100%;
-      min-width: 72rem;
       border-collapse: collapse;
-      font-size: 0.875rem;
+      table-layout: fixed;
+      font-size: 0.8125rem;
+    }
+
+    .col-date {
+      width: 12%;
+    }
+
+    .col-client {
+      width: 24%;
+    }
+
+    .col-call {
+      width: 17%;
+    }
+
+    .col-source {
+      width: 9%;
+    }
+
+    .col-manager {
+      width: 16%;
+    }
+
+    .col-visit {
+      width: 22%;
     }
 
     th,
     td {
-      padding: var(--ui-space-3) var(--ui-space-4);
+      min-width: 0;
+      padding: 0.625rem var(--ui-space-3);
       border-bottom: 1px solid var(--ui-border);
+      overflow: hidden;
       text-align: left;
       vertical-align: top;
     }
 
     th {
+      height: 2.75rem;
+      background: var(--ui-surface-raised);
       color: var(--ui-text-subtle);
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
       font-weight: 750;
       letter-spacing: 0.04em;
+      line-height: 1.1;
       text-transform: uppercase;
     }
 
-    tbody tr {
+    .month-row th {
+      height: 3rem;
+      padding-block: 0;
+      background: var(--ui-surface-subtle);
+      border-top: 1px solid var(--ui-border);
+      color: var(--ui-text);
+      font-size: 0.875rem;
+      letter-spacing: 0;
+      text-transform: none;
+      vertical-align: middle;
+    }
+
+    .month-row small {
+      margin-left: var(--ui-space-2);
+      color: var(--ui-text-muted);
+      font-size: 0.75rem;
+      font-weight: 650;
+    }
+
+    .lead-row {
       cursor: pointer;
       transition: background var(--ui-duration-fast) var(--ui-ease);
     }
 
-    tbody tr:hover,
-    tbody tr:focus-visible {
+    .lead-row:hover,
+    .lead-row:focus-visible {
       background: var(--ui-surface-subtle);
       outline: none;
     }
 
-    td strong,
-    td span,
-    td small {
-      display: block;
+    .lead-row td {
+      height: 3.875rem;
+      line-height: 1.2;
     }
 
-    td small,
+    .lead-row strong,
+    .lead-row span,
+    .lead-row small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lead-row small,
     .muted {
       color: var(--ui-text-subtle);
+      font-size: 0.75rem;
+    }
+
+    .lead-compact-meta {
+      display: none;
+      margin-top: var(--ui-space-1);
+      color: var(--ui-text-muted);
       font-size: 0.75rem;
     }
 
@@ -336,6 +384,8 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       display: grid;
       gap: var(--ui-space-1);
       justify-items: start;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .table-state,
@@ -384,6 +434,37 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
         opacity: 0.55;
       }
     }
+
+    @media (max-width: 64rem) {
+      .col-source,
+      .col-manager,
+      .source-heading,
+      .manager-heading,
+      .source-cell,
+      .manager-cell {
+        display: none;
+      }
+
+      .col-date {
+        width: 15%;
+      }
+
+      .col-client {
+        width: 34%;
+      }
+
+      .col-call {
+        width: 21%;
+      }
+
+      .col-visit {
+        width: 30%;
+      }
+
+      .lead-compact-meta {
+        display: block;
+      }
+    }
   `,
 })
 export class LeadsPage {
@@ -429,6 +510,7 @@ export class LeadsPage {
   );
 
   protected readonly formatDateTime = formatDateTime;
+  protected readonly formatDate = formatDate;
   protected readonly officeName = officeName;
   protected readonly workflowTone = workflowTone;
 

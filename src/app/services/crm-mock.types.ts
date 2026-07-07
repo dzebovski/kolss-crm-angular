@@ -29,7 +29,8 @@ export type LeadEventType =
   | 'comment'
   | 'closed'
   | 'successful'
-  | 'attachment';
+  | 'attachment'
+  | 'lead_updated';
 
 export type CloseReason =
   'no_contact' | 'not_target' | 'location_mismatch' | 'expensive' | 'lost_client';
@@ -64,10 +65,19 @@ export interface LeadAttachment {
 export interface LeadEvent {
   readonly id: string;
   readonly type: LeadEventType;
+  readonly rawType?: string;
   readonly title: string;
   readonly body: string;
   readonly actorId: string;
   readonly occurredAt: string;
+  readonly editAudit?: LeadEventEditAudit | null;
+}
+
+export interface LeadEventEditAudit {
+  readonly fields: readonly string[];
+  readonly editedAt: string;
+  readonly editedById: string;
+  readonly editedByName: string;
 }
 
 export interface FirstCall {

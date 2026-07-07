@@ -16,6 +16,10 @@ export function canManageUsers(role: string | null | undefined): boolean {
   return role === 'super_admin';
 }
 
+export function canEditLeads(role: string | null | undefined): boolean {
+  return role === 'super_admin' || role === 'office_admin';
+}
+
 export function hasOfficeLeadFilter(role: string | null | undefined): boolean {
   return role === 'super_admin' || role === 'curator';
 }

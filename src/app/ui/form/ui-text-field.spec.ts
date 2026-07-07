@@ -42,6 +42,19 @@ describe('UiTextField', () => {
     expect(element.querySelector('[role="alert"]')?.textContent).toContain('Invalid value');
   });
 
+  it('supports date and telephone input types', async () => {
+    const fixture = TestBed.createComponent(UiTextField);
+    fixture.componentRef.setInput('type', 'date');
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('input')?.type).toBe('date');
+
+    fixture.componentRef.setInput('type', 'tel');
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('input')?.type).toBe('tel');
+  });
+
   it('keeps a stable message slot when validation text appears', async () => {
     const fixture = TestBed.createComponent(UiTextField);
     await fixture.whenStable();
