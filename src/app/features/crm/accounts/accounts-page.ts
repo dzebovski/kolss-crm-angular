@@ -1,7 +1,9 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { roleLabel } from '../../../core/roles/roles';
+import { SessionService } from '../../../core/session/session.service';
+import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
+import type { UserRole } from '../../../models/database';
 import { formatDateTime, officeName } from '../../../services/crm-mock.helpers';
 import type { CrmEmployee } from '../../../services/users.service';
 import { UsersService } from '../../../services/users.service';
@@ -10,29 +12,36 @@ import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge, UiBadgeTone } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiUser } from '../../../ui/user/ui-user';
 import { UiSelect, UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 
 @Component({
   selector: 'app-accounts-page',
-  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiSelect, UiTextField],
+  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiSelect, UiTextField, UiUser],
   template: `
     <section class="accounts-page" aria-labelledby="accounts-title">
       <header class="page-header">
         <div>
           <p class="page-kicker">Access management</p>
           <h1 id="accounts-title">Акаунти</h1>
-          <p>Користувачі з profiles і memberships. Email доступний після Edge Function (Фаза 4).</p>
+          <p>Керування користувачами CRM через admin Edge Function.</p>
         </div>
-        <app-ui-button (pressed)="showCreateState()">
-          <app-ui-icon name="add" [size]="17" />
-          Створити акаунт
+        <app-ui-button (pressed)="toggleCreatePanel()">
+          <app-ui-icon [name]="showCreatePanel() ? 'close' : 'add'" [size]="17" />
+          {{ showCreatePanel() ? 'Скасувати' : 'Створити акаунт' }}
         </app-ui-button>
       </header>
 
       @if (loadError()) {
         <app-ui-alert tone="danger" title="Не вдалося завантажити акаунти">
           {{ loadError() }}
+        </app-ui-alert>
+      }
+
+      @if (actionError()) {
+        <app-ui-alert tone="danger" title="Помилка">
+          {{ actionError() }}
         </app-ui-alert>
       }
 
@@ -43,48 +52,118 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
         </div>
       }
 
+      @if (showCreatePanel()) {
+        <section class="create-panel" aria-labelledby="create-account-title">
+          <h2 id="create-account-title">Новий акаунт</h2>
+          <div class="create-form">
+            <app-ui-text-field
+              label="Email"
+              type="email"
+              autocomplete="email"
+              [(value)]="createEmail"
+            />
+            <app-ui-text-field
+              label="Імʼя"
+              autocomplete="name"
+              [(value)]="createDisplayName"
+            />
+            <app-ui-text-field
+              label="Пароль"
+              type="password"
+              autocomplete="new-password"
+              [(value)]="createPassword"
+            />
+            <app-ui-text-field
+              label="Підтвердження пароля"
+              type="password"
+              autocomplete="new-password"
+              [(value)]="createPasswordConfirm"
+            />
+            <app-ui-select
+              label="Роль"
+              [options]="assignableRoleOptions"
+              [(value)]="createRole"
+            />
+            <fieldset class="office-fieldset">
+              <legend>Офіси</legend>
+              @for (office of availableOffices(); track office.id) {
+                <label class="office-check">
+                  <input
+                    type="checkbox"
+                    [checked]="isOfficeSelected(office.id)"
+                    (change)="toggleOffice(office.id)"
+                  />
+                  {{ office.name_uk }}
+                </label>
+              }
+            </fieldset>
+          </div>
+          <div class="create-actions">
+            <app-ui-button variant="secondary" (pressed)="resetCreateForm()">
+              Очистити
+            </app-ui-button>
+            <app-ui-button [disabled]="creating()" (pressed)="submitCreate()">
+              {{ creating() ? 'Створення…' : 'Створити' }}
+            </app-ui-button>
+          </div>
+        </section>
+      }
+
       <div class="filters">
         <app-ui-text-field
           label="Пошук"
           type="search"
-          placeholder="Імʼя або ID"
+          placeholder="Імʼя, email або ID"
           [(value)]="query"
         />
         <app-ui-select label="Офіс" [options]="officeOptions" [(value)]="officeFilter" />
         <app-ui-select label="Роль" [options]="roleOptions" [(value)]="roleFilter" />
       </div>
 
-      <section class="accounts-table-panel" aria-label="Список співробітників">
-        @if (employeesResource.isLoading()) {
+      @if (employeesResource.isLoading()) {
+        <section class="accounts-table-panel" aria-label="Список співробітників">
           <p class="loading-cell">Завантаження…</p>
-        } @else {
-          <table>
+        </section>
+      } @else if (hasActiveFilters()) {
+        <section class="accounts-table-panel" aria-label="Список співробітників">
+          <table class="accounts-table">
+            <colgroup>
+              <col class="col-employee" />
+              <col class="col-email" />
+              <col class="col-role" />
+              <col class="col-office" />
+              <col class="col-status" />
+              <col class="col-activity" />
+              <col class="col-actions" />
+            </colgroup>
             <thead>
               <tr>
-                <th>Співробітник</th>
-                <th>Роль</th>
-                <th>Офіс</th>
-                <th>Статус</th>
-                <th>Остання активність</th>
-                <th>Дії</th>
+                @for (column of tableColumns; track column) {
+                  <th>{{ column }}</th>
+                }
               </tr>
             </thead>
             <tbody>
               @for (employee of filteredEmployees(); track employee.id) {
                 <tr>
-                  <td>
-                    <strong>{{ employee.displayName }}</strong>
+                  <td class="cell-employee">
+                    <app-ui-user
+                      [userId]="employee.id"
+                      [name]="employee.displayName"
+                      size="sm"
+                    />
                     <small>{{ employee.id }}</small>
                   </td>
+                  <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
                   <td>{{ roleLabel(employee.role) }}</td>
-                  <td>{{ officeLabels(employee) }}</td>
+                  <td class="cell-truncate">{{ officeLabels(employee) }}</td>
                   <td>
                     <app-ui-badge [tone]="statusTone(employee)">
                       {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
                     </app-ui-badge>
                   </td>
-                  <td>{{ formatDateTime(employee.lastActiveAt) }}</td>
-                  <td>
+                  <td class="cell-activity">{{ formatDateTime(employee.lastActiveAt) }}</td>
+                  <td class="cell-actions">
                     <app-ui-button
                       variant="secondary"
                       size="small"
@@ -96,13 +175,149 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="empty-cell">Немає співробітників за поточними фільтрами.</td>
+                  <td colspan="7" class="empty-cell">
+                    Немає співробітників за поточними фільтрами.
+                  </td>
                 </tr>
               }
             </tbody>
           </table>
-        }
-      </section>
+        </section>
+      } @else {
+        <div class="accounts-sections">
+          @for (section of employeeSections(); track section.id) {
+            <section
+              class="accounts-table-panel"
+              [attr.aria-labelledby]="section.id"
+            >
+              <header class="section-header">
+                <h2 [id]="section.id">{{ section.title }}</h2>
+                <span>{{ section.employees.length }}</span>
+              </header>
+              <table class="accounts-table">
+                <colgroup>
+                  <col class="col-employee" />
+                  <col class="col-email" />
+                  <col class="col-role" />
+                  <col class="col-office" />
+                  <col class="col-status" />
+                  <col class="col-activity" />
+                  <col class="col-actions" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    @for (column of tableColumns; track column) {
+                      <th>{{ column }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (employee of section.employees; track employee.id) {
+                    <tr>
+                      <td class="cell-employee">
+                        <app-ui-user
+                          [userId]="employee.id"
+                          [name]="employee.displayName"
+                          size="sm"
+                        />
+                        <small>{{ employee.id }}</small>
+                      </td>
+                      <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
+                      <td>{{ roleLabel(employee.role) }}</td>
+                      <td class="cell-truncate">{{ officeLabels(employee) }}</td>
+                      <td>
+                        <app-ui-badge [tone]="statusTone(employee)">
+                          {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+                        </app-ui-badge>
+                      </td>
+                      <td class="cell-activity">{{ formatDateTime(employee.lastActiveAt) }}</td>
+                      <td class="cell-actions">
+                        <app-ui-button
+                          variant="secondary"
+                          size="small"
+                          (pressed)="openEmployee(employee)"
+                        >
+                          Профіль
+                        </app-ui-button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="empty-cell">Немає співробітників.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </section>
+          }
+        </div>
+      }
+
+      @if (!employeesResource.isLoading()) {
+        <section
+          class="accounts-table-panel accounts-table-panel--inactive"
+          aria-labelledby="accounts-inactive"
+        >
+          <header class="section-header">
+            <h2 id="accounts-inactive">Деактивовані акаунти</h2>
+            <span>{{ filteredInactiveEmployees().length }}</span>
+          </header>
+          <table class="accounts-table">
+            <colgroup>
+              <col class="col-employee" />
+              <col class="col-email" />
+              <col class="col-role" />
+              <col class="col-office" />
+              <col class="col-status" />
+              <col class="col-activity" />
+              <col class="col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                @for (column of tableColumns; track column) {
+                  <th>{{ column }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (employee of filteredInactiveEmployees(); track employee.id) {
+                <tr>
+                  <td class="cell-employee">
+                    <app-ui-user
+                      [userId]="employee.id"
+                      [name]="employee.displayName"
+                      size="sm"
+                    />
+                    <small>{{ employee.id }}</small>
+                  </td>
+                  <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
+                  <td>{{ roleLabel(employee.role) }}</td>
+                  <td class="cell-truncate">{{ officeLabels(employee) }}</td>
+                  <td>
+                    <app-ui-badge [tone]="statusTone(employee)">
+                      {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+                    </app-ui-badge>
+                  </td>
+                  <td class="cell-activity">{{ formatDateTime(employee.lastActiveAt) }}</td>
+                  <td class="cell-actions">
+                    <app-ui-button
+                      variant="secondary"
+                      size="small"
+                      (pressed)="openEmployee(employee)"
+                    >
+                      Профіль
+                    </app-ui-button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="empty-cell">Немає деактивованих акаунтів.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
     </section>
   `,
   styles: `
@@ -127,11 +342,19 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       text-transform: uppercase;
     }
 
-    h1 {
+    h1,
+    h2 {
       margin: 0;
       font-family: var(--ui-font-display);
-      font-size: 2rem;
       letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    h2 {
+      font-size: 1.25rem;
     }
 
     .page-header p:not(.page-kicker) {
@@ -152,11 +375,69 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       box-shadow: var(--ui-shadow-1);
     }
 
+    .create-panel {
+      padding: var(--ui-space-5);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-raised);
+      box-shadow: var(--ui-shadow-1);
+      display: grid;
+      gap: var(--ui-space-4);
+    }
+
+    .create-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ui-space-4);
+    }
+
+    .office-fieldset {
+      grid-column: 1 / -1;
+      margin: 0;
+      padding: var(--ui-space-3) var(--ui-space-4);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-md);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ui-space-3);
+    }
+
+    .office-fieldset legend {
+      padding: 0 var(--ui-space-2);
+      color: var(--ui-text-subtle);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .office-check {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ui-space-2);
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .create-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--ui-space-2);
+    }
+
     .filters {
       display: grid;
       grid-template-columns: minmax(18rem, 1fr) 14rem 14rem;
       gap: var(--ui-space-4);
       align-items: start;
+    }
+
+    .accounts-sections {
+      display: grid;
+      gap: var(--ui-space-5);
+    }
+
+    .accounts-table-panel--inactive {
+      margin-top: var(--ui-space-2);
     }
 
     .accounts-table-panel {
@@ -167,14 +448,61 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       overflow: hidden;
     }
 
-    table {
+    .section-header {
+      min-height: 3.25rem;
+      padding: 0 var(--ui-space-4);
+      border-bottom: 1px solid var(--ui-border);
+      background: var(--ui-surface-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ui-space-3);
+    }
+
+    .section-header span {
+      color: var(--ui-text-muted);
+      font-size: 0.8125rem;
+      font-weight: 650;
+    }
+
+    table.accounts-table {
       width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
       font-size: 0.875rem;
+    }
+
+    .col-employee {
+      width: 24%;
+    }
+
+    .col-email {
+      width: 21%;
+    }
+
+    .col-role {
+      width: 12%;
+    }
+
+    .col-office {
+      width: 10%;
+    }
+
+    .col-status {
+      width: 10%;
+    }
+
+    .col-activity {
+      width: 15%;
+    }
+
+    .col-actions {
+      width: 8rem;
     }
 
     th,
     td {
+      min-width: 0;
       padding: var(--ui-space-3) var(--ui-space-4);
       border-bottom: 1px solid var(--ui-border);
       text-align: left;
@@ -188,16 +516,40 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       font-weight: 750;
       letter-spacing: 0.04em;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    td strong,
-    td small {
+    td strong {
       display: block;
     }
 
-    td small {
+    td app-ui-user {
+      max-width: 100%;
+    }
+
+    .cell-truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cell-employee small {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       color: var(--ui-text-subtle);
       font-size: 0.75rem;
+    }
+
+    .cell-activity {
+      white-space: nowrap;
+    }
+
+    .cell-actions {
+      overflow: visible;
+      padding-inline: var(--ui-space-3) var(--ui-space-4);
+      white-space: nowrap;
     }
 
     tbody tr:hover {
@@ -214,12 +566,23 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 })
 export class AccountsPage {
   private readonly usersService = inject(UsersService);
+  private readonly session = inject(SessionService);
   private readonly router = inject(Router);
 
   protected readonly query = signal('');
   protected readonly officeFilter = signal<OfficeFilter>('all');
   protected readonly roleFilter = signal('all');
   protected readonly notice = signal('');
+  protected readonly actionError = signal('');
+  protected readonly showCreatePanel = signal(false);
+  protected readonly creating = signal(false);
+  protected readonly createEmail = signal('');
+  protected readonly createDisplayName = signal('');
+  protected readonly createPassword = signal('');
+  protected readonly createPasswordConfirm = signal('');
+  protected readonly createRole = signal<UserRole>('office_member');
+  protected readonly selectedOfficeIds = signal<string[]>([]);
+
   protected readonly formatDateTime = formatDateTime;
   protected readonly roleLabel = roleLabel;
   protected readonly officeOptions: readonly UiSelectOption[] = [
@@ -234,9 +597,31 @@ export class AccountsPage {
     { value: 'office_admin', label: roleLabel('office_admin') },
     { value: 'office_member', label: roleLabel('office_member') },
   ];
+  protected readonly assignableRoleOptions: readonly UiSelectOption[] = ASSIGNABLE_ROLES.map(
+    (role) => ({ value: role, label: roleLabel(role) }),
+  );
+  protected readonly tableColumns = [
+    'Співробітник',
+    'Email',
+    'Роль',
+    'Офіс',
+    'Статус',
+    'Остання активність',
+    'Дії',
+  ] as const;
+
+  protected readonly availableOffices = computed(
+    () => this.session.officeContext()?.offices ?? this.session.offices(),
+  );
 
   protected readonly employeesResource = resource({
-    loader: () => this.usersService.listEmployees(),
+    loader: async () => {
+      const [active, inactive] = await Promise.all([
+        this.usersService.listEmployees(),
+        this.usersService.listInactiveEmployees(),
+      ]);
+      return { active, inactive };
+    },
   });
 
   protected readonly loadError = computed(() => {
@@ -244,19 +629,86 @@ export class AccountsPage {
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
 
-  protected readonly filteredEmployees = computed(() => {
+  protected readonly employees = computed(() => this.employeesResource.value()?.active ?? []);
+  protected readonly inactiveEmployees = computed(
+    () => this.employeesResource.value()?.inactive ?? [],
+  );
+
+  protected readonly hasActiveFilters = computed(
+    () =>
+      this.query().trim() !== '' ||
+      this.officeFilter() !== 'all' ||
+      this.roleFilter() !== 'all',
+  );
+
+  protected readonly superAdmins = computed(() =>
+    this.employees().filter((employee) => employee.role === 'super_admin'),
+  );
+
+  protected readonly officeAdmins = computed(() =>
+    this.employees().filter(
+      (employee) => employee.role === 'office_admin' || employee.role === 'curator',
+    ),
+  );
+
+  protected readonly kyivManagers = computed(() =>
+    this.employees().filter(
+      (employee) => employee.role === 'office_member' && employee.officeIds.includes('kyiv'),
+    ),
+  );
+
+  protected readonly warsawManagers = computed(() =>
+    this.employees().filter(
+      (employee) => employee.role === 'office_member' && employee.officeIds.includes('warsaw'),
+    ),
+  );
+
+  protected readonly employeeSections = computed(() => [
+    {
+      id: 'accounts-super-admins',
+      title: 'Супер адмін',
+      employees: this.superAdmins(),
+    },
+    {
+      id: 'accounts-office-admins',
+      title: 'Адміни офісу',
+      employees: this.officeAdmins(),
+    },
+    {
+      id: 'accounts-kyiv-managers',
+      title: 'Менеджери Київ',
+      employees: this.kyivManagers(),
+    },
+    {
+      id: 'accounts-warsaw-managers',
+      title: 'Менеджери Варшава',
+      employees: this.warsawManagers(),
+    },
+  ]);
+
+  protected readonly filteredEmployees = computed(() =>
+    this.filterEmployees(this.employees()),
+  );
+
+  protected readonly filteredInactiveEmployees = computed(() =>
+    this.filterEmployees(this.inactiveEmployees()),
+  );
+
+  private filterEmployees(employees: readonly CrmEmployee[]): readonly CrmEmployee[] {
     const query = this.query().trim().toLocaleLowerCase('uk-UA');
     const office = this.officeFilter();
     const role = this.roleFilter();
-    return (this.employeesResource.value() ?? []).filter((employee) => {
+    return employees.filter((employee) => {
       const matchesQuery =
         !query ||
-        `${employee.displayName} ${employee.id}`.toLocaleLowerCase('uk-UA').includes(query);
+        `${employee.displayName} ${employee.email ?? ''} ${employee.id}`
+          .toLocaleLowerCase('uk-UA')
+          .includes(query);
       const matchesOffice = office === 'all' || employee.officeIds.includes(office);
       const matchesRole = role === 'all' || employee.role === role;
       return matchesQuery && matchesOffice && matchesRole;
     });
-  });
+  }
 
   protected officeLabels(employee: CrmEmployee): string {
     return employee.officeIds.map((officeId) => officeName(officeId)).join(', ') || '—';
@@ -266,11 +718,55 @@ export class AccountsPage {
     return employee.status === 'active' ? 'success' : 'warning';
   }
 
-  protected async openEmployee(employee: CrmEmployee): Promise<void> {
-    await this.router.navigate(['/crm/accounts', employee.id]);
+  protected isOfficeSelected(officeId: string): boolean {
+    return this.selectedOfficeIds().includes(officeId);
   }
 
-  protected showCreateState(): void {
-    this.notice.set('Створення акаунта буде доступне після Edge Function admin-create-user (Фаза 4).');
+  protected toggleOffice(officeId: string): void {
+    this.selectedOfficeIds.update((ids) =>
+      ids.includes(officeId) ? ids.filter((id) => id !== officeId) : [...ids, officeId],
+    );
+  }
+
+  protected toggleCreatePanel(): void {
+    this.showCreatePanel.update((open) => !open);
+    this.actionError.set('');
+  }
+
+  protected resetCreateForm(): void {
+    this.createEmail.set('');
+    this.createDisplayName.set('');
+    this.createPassword.set('');
+    this.createPasswordConfirm.set('');
+    this.createRole.set('office_member');
+    this.selectedOfficeIds.set([]);
+    this.actionError.set('');
+  }
+
+  protected async submitCreate(): Promise<void> {
+    this.actionError.set('');
+    this.creating.set(true);
+    try {
+      await this.usersService.createEmployee({
+        email: this.createEmail().trim(),
+        displayName: this.createDisplayName().trim(),
+        password: this.createPassword(),
+        passwordConfirm: this.createPasswordConfirm(),
+        role: this.createRole(),
+        officeIds: this.selectedOfficeIds(),
+      });
+      this.notice.set('Акаунт створено.');
+      this.resetCreateForm();
+      this.showCreatePanel.set(false);
+      this.employeesResource.reload();
+    } catch (error) {
+      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося створити акаунт');
+    } finally {
+      this.creating.set(false);
+    }
+  }
+
+  protected async openEmployee(employee: CrmEmployee): Promise<void> {
+    await this.router.navigate(['/crm/accounts', employee.id]);
   }
 }

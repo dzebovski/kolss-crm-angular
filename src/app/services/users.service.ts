@@ -1,14 +1,22 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
 import type { Office, Profile, UserRole } from '../models/database';
 import { injectSupabase } from '../core/supabase/supabase.service';
+import {
+  AdminUsersService,
+  type AdminUserRow,
+  type CreateUserPayload,
+  type UpdateUserPayload,
+} from './admin-users.service';
 import type { OfficeId } from './crm-mock.types';
 
 export interface CrmEmployee {
   readonly id: string;
+  readonly email: string | null;
   readonly displayName: string;
   readonly role: UserRole;
   readonly officeIds: readonly OfficeId[];
+  readonly officeUuids: readonly string[];
   readonly status: 'active' | 'inactive';
   readonly createdAt: string;
   readonly lastActiveAt: string;
@@ -29,8 +37,76 @@ function officeCodeFromMembership(row: MembershipRow): OfficeId | null {
 @Injectable({ providedIn: 'root' })
 export class UsersService {
   private readonly supabase = injectSupabase();
+  private readonly adminUsers = inject(AdminUsersService);
 
   async listEmployees(): Promise<readonly CrmEmployee[]> {
+    try {
+      const users = await this.adminUsers.listUsers(true);
+      return users.map((row) => this.mapAdminUser(row));
+    } catch {
+      const employees = await this.listEmployeesFromProfiles();
+      return employees.filter((employee) => employee.status === 'active');
+    }
+  }
+
+  async listInactiveEmployees(): Promise<readonly CrmEmployee[]> {
+    try {
+      const users = await this.adminUsers.listUsers(false);
+      return users.map((row) => this.mapAdminUser(row));
+    } catch {
+      const employees = await this.listEmployeesFromProfiles();
+      return employees.filter((employee) => employee.status === 'inactive');
+    }
+  }
+
+  async getEmployee(userId: string): Promise<CrmEmployee | null> {
+    try {
+      const user = await this.adminUsers.getUser(userId);
+      return user ? this.mapAdminUser(user) : null;
+    } catch {
+      return this.getEmployeeFromProfiles(userId);
+    }
+  }
+
+  async createEmployee(payload: CreateUserPayload): Promise<string> {
+    return this.adminUsers.createUser(payload);
+  }
+
+  async updateEmployee(payload: UpdateUserPayload): Promise<void> {
+    await this.adminUsers.updateUser(payload);
+  }
+
+  async deactivateEmployee(userId: string, confirmEmail: string): Promise<void> {
+    await this.adminUsers.deactivateUser(userId, confirmEmail);
+  }
+
+  async reactivateEmployee(userId: string): Promise<void> {
+    await this.adminUsers.reactivateUser(userId);
+  }
+
+  async deleteEmployee(userId: string, confirmEmail: string): Promise<void> {
+    await this.adminUsers.deleteUser(userId, confirmEmail);
+  }
+
+  private mapAdminUser(row: AdminUserRow): CrmEmployee {
+    const officeIds = row.offices
+      .map((o) => o.code)
+      .filter((code): code is OfficeId => code === 'kyiv' || code === 'warsaw');
+
+    return {
+      id: row.id,
+      email: row.email || null,
+      displayName: row.profile.display_name?.trim() || 'Без імені',
+      role: row.profile.role,
+      officeIds,
+      officeUuids: row.offices.map((o) => o.id),
+      status: row.profile.is_active ? 'active' : 'inactive',
+      createdAt: row.profile.created_at,
+      lastActiveAt: row.profile.updated_at,
+    };
+  }
+
+  private async listEmployeesFromProfiles(): Promise<readonly CrmEmployee[]> {
     const [{ data: profiles, error: profilesError }, { data: memberships, error: membershipsError }] =
       await Promise.all([
         this.supabase.from('profiles').select('*').order('display_name'),
@@ -42,19 +118,13 @@ export class UsersService {
     if (profilesError) throw profilesError;
     if (membershipsError) throw membershipsError;
 
-    const officesByUser = new Map<string, OfficeId[]>();
-    for (const row of (memberships ?? []) as MembershipRow[]) {
-      const code = officeCodeFromMembership(row);
-      if (!code) continue;
-      const list = officesByUser.get(row.user_id) ?? [];
-      list.push(code);
-      officesByUser.set(row.user_id, list);
-    }
-
-    return ((profiles ?? []) as Profile[]).map((profile) => this.mapEmployee(profile, officesByUser));
+    const officesByUser = this.buildOfficeMaps(memberships as MembershipRow[]);
+    return ((profiles ?? []) as Profile[]).map((profile) =>
+      this.mapProfileEmployee(profile, officesByUser),
+    );
   }
 
-  async getEmployee(userId: string): Promise<CrmEmployee | null> {
+  private async getEmployeeFromProfiles(userId: string): Promise<CrmEmployee | null> {
     const [{ data: profile, error: profileError }, { data: memberships, error: membershipsError }] =
       await Promise.all([
         this.supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
@@ -68,38 +138,41 @@ export class UsersService {
     if (membershipsError) throw membershipsError;
     if (!profile) return null;
 
-    const officesByUser = new Map<string, OfficeId[]>();
-    for (const row of (memberships ?? []) as MembershipRow[]) {
+    const officesByUser = this.buildOfficeMaps(memberships as MembershipRow[]);
+    return this.mapProfileEmployee(profile as Profile, officesByUser);
+  }
+
+  private buildOfficeMaps(memberships: MembershipRow[]): {
+    codes: Map<string, OfficeId[]>;
+    uuids: Map<string, string[]>;
+  } {
+    const codes = new Map<string, OfficeId[]>();
+    const uuids = new Map<string, string[]>();
+    for (const row of memberships ?? []) {
       const code = officeCodeFromMembership(row);
-      if (!code) continue;
-      const list = officesByUser.get(row.user_id) ?? [];
-      list.push(code);
-      officesByUser.set(row.user_id, list);
+      if (code) {
+        const list = codes.get(row.user_id) ?? [];
+        list.push(code);
+        codes.set(row.user_id, list);
+      }
+      const uuidList = uuids.get(row.user_id) ?? [];
+      uuidList.push(row.office_id);
+      uuids.set(row.user_id, uuidList);
     }
-
-    return this.mapEmployee(profile as Profile, officesByUser);
+    return { codes, uuids };
   }
 
-  async updateEmployeeStatus(userId: string, isActive: boolean): Promise<void> {
-    const { error } = await this.supabase
-      .from('profiles')
-      .update({
-        is_active: isActive,
-        deactivated_at: isActive ? null : new Date().toISOString(),
-      })
-      .eq('id', userId);
-    if (error) throw error;
-  }
-
-  private mapEmployee(
+  private mapProfileEmployee(
     profile: Profile,
-    officesByUser: Map<string, OfficeId[]>,
+    officesByUser: { codes: Map<string, OfficeId[]>; uuids: Map<string, string[]> },
   ): CrmEmployee {
     return {
       id: profile.id,
+      email: null,
       displayName: profile.display_name?.trim() || 'Без імені',
       role: profile.role,
-      officeIds: officesByUser.get(profile.id) ?? [],
+      officeIds: officesByUser.codes.get(profile.id) ?? [],
+      officeUuids: officesByUser.uuids.get(profile.id) ?? [],
       status: profile.is_active ? 'active' : 'inactive',
       createdAt: profile.created_at,
       lastActiveAt: profile.updated_at,

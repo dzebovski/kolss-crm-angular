@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import type { Office, UserOfficeContext } from '../../models/database';
 import { hasOfficeLeadFilter, isSuperAdminRole } from '../roles/roles';
@@ -18,6 +18,7 @@ export class SessionService {
   private readonly viewAsSignal = signal<ViewAsMode>(readViewAsMode());
   private readonly officeFilterSignal = signal<OfficeFilter>('all');
   private readonly localeSignal = signal<LocaleCode>('uk');
+  private lastUserId: string | null = null;
 
   readonly offices = this.officesSignal.asReadonly();
   readonly userOffices = this.userOfficesSignal.asReadonly();
@@ -58,6 +59,15 @@ export class SessionService {
     if (!context) return false;
     return context.canUseOfficeFilter || (context.isSuperAdmin && context.filterOffices.length > 1);
   });
+
+  constructor() {
+    effect(() => {
+      const userId = this.auth.sessionContext()?.user.id ?? null;
+      if (userId === this.lastUserId) return;
+      this.lastUserId = userId;
+      void this.loadOfficeContext();
+    });
+  }
 
   async loadOfficeContext(): Promise<void> {
     const ctx = this.auth.sessionContext();

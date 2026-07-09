@@ -29,6 +29,17 @@ describe('LeadsPage', () => {
           provide: SessionService,
           useValue: {
             selectedOfficeId: () => null,
+            officeContext: () => ({
+              filterOffices: [
+                {
+                  id: 'office-kyiv',
+                  code: 'kyiv',
+                  name_uk: 'Київ',
+                  name_pl: 'Kijów',
+                  is_active: true,
+                },
+              ],
+            }),
           },
         },
       ],
@@ -67,5 +78,35 @@ describe('LeadsPage', () => {
 
     expect(leadId).toBeTruthy();
     expect(navigateSpy).toHaveBeenCalledWith(['/crm/leads', leadId]);
+  });
+
+  it('opens create lead dialog from header action', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(element.querySelectorAll('app-ui-button button'));
+    const createButton = buttons.find((button) => button.textContent?.includes('Створити лід')) as
+      | HTMLButtonElement
+      | undefined;
+    createButton?.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(element.querySelector('app-create-lead-dialog')).toBeTruthy();
+  });
+
+  it('navigates to new lead after successful creation', async () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await fixture.componentInstance['onLeadCreated']('lead-new-1');
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/crm/leads', 'lead-new-1']);
   });
 });

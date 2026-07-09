@@ -1,14 +1,18 @@
 import type { WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { of } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { SessionService } from '../../../core/session/session.service';
 import { CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
+import { validateCloseLead } from '../../../services/crm-mock.helpers';
 import type { MockLead, OfficeId } from '../../../services/crm-mock.types';
 import { LeadWorkflowService } from '../../../services/lead-workflow.service';
 import { LeadsService } from '../../../services/leads.service';
+import { LossReasonsService } from '../../../services/loss-reasons.service';
 import { UsersService } from '../../../services/users.service';
+import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { LeadDetailPage } from './lead-detail-page';
 
 interface LeadDetailHarness {
@@ -22,10 +26,17 @@ interface LeadDetailHarness {
   readonly editLeadAssignedToId: WritableSignal<string>;
   readonly editHistoryType: WritableSignal<string>;
   readonly editHistoryComment: WritableSignal<string>;
+  readonly closeReason: WritableSignal<string>;
+  readonly closeComment: WritableSignal<string>;
+  readonly editHistoryDialogOpen: WritableSignal<boolean>;
+  readonly closeDialogOpen: WritableSignal<boolean>;
+  readonly dialogError: WritableSignal<string>;
   openLeadEditDialog(lead: MockLead): void;
   submitLeadEdit(lead: MockLead): Promise<void>;
   openHistoryEditDialog(event: MockLead['events'][number]): void;
   submitHistoryEdit(lead: MockLead): Promise<void>;
+  openEditCloseDialog(lead: MockLead): void;
+  submitClose(lead: MockLead): Promise<void>;
 }
 
 describe('LeadDetailPage', () => {
@@ -36,6 +47,9 @@ describe('LeadDetailPage', () => {
     userOfficeCodes?: readonly OfficeId[];
     updateLeadDetails?: ReturnType<typeof vi.fn>;
     updateHistoryEvent?: ReturnType<typeof vi.fn>;
+    updateCloseDetails?: ReturnType<typeof vi.fn>;
+    deleteLead?: ReturnType<typeof vi.fn>;
+    dialogConfirm?: boolean;
   }) {
     const leadId = options?.leadId ?? 'lead-1007';
     const getById =
@@ -46,6 +60,9 @@ describe('LeadDetailPage', () => {
     const userOfficeCodes = options?.userOfficeCodes ?? (['kyiv', 'warsaw'] as const);
     const updateLeadDetails = options?.updateLeadDetails ?? vi.fn(async () => undefined);
     const updateHistoryEvent = options?.updateHistoryEvent ?? vi.fn(async () => []);
+    const updateCloseDetails = options?.updateCloseDetails ?? vi.fn(async () => null);
+    const deleteLead = options?.deleteLead ?? vi.fn(async () => undefined);
+    const dialogConfirm = options?.dialogConfirm ?? false;
 
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
@@ -62,7 +79,7 @@ describe('LeadDetailPage', () => {
         },
         {
           provide: LeadsService,
-          useValue: { getById, updateLeadDetails, updateHistoryEvent },
+          useValue: { getById, updateLeadDetails, updateHistoryEvent, updateCloseDetails, deleteLead },
         },
         {
           provide: UsersService,
@@ -92,6 +109,19 @@ describe('LeadDetailPage', () => {
         {
           provide: LeadWorkflowService,
           useValue: {},
+        },
+        {
+          provide: LossReasonsService,
+          useValue: {
+            list: async () => [
+              { code: 'no_contact', label_uk: 'Немає контакту', label_pl: 'Brak kontaktu' },
+              { code: 'not_target', label_uk: 'Нецільовий', label_pl: 'Niecelowy' },
+              { code: 'location_mismatch', label_uk: 'Не підходить місцеположення', label_pl: 'Lokalizacja' },
+              { code: 'expensive', label_uk: 'Дорого', label_pl: 'Za drogo' },
+              { code: 'lost_client', label_uk: 'Втрачений клієнт', label_pl: 'Utracony' },
+              { code: 'price', label_uk: 'Не підійшла ціна', label_pl: 'Cena' },
+            ],
+          },
         },
         {
           provide: AuthService,
@@ -124,6 +154,12 @@ describe('LeadDetailPage', () => {
                 is_active: true,
               })),
             }),
+          },
+        },
+        {
+          provide: UiDialogService,
+          useValue: {
+            confirm: () => ({ afterClosed: () => of(dialogConfirm) }),
           },
         },
       ],
@@ -262,6 +298,146 @@ describe('LeadDetailPage', () => {
       eventType: 'comment',
       comment: 'Оновлений текст історії',
     });
+  });
+
+  it('shows no-op error when history edit has no changes', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
+    const event = lead.events[0]!;
+    const updateHistoryEvent = vi.fn(async () => {
+      throw new Error('Нічого не змінено');
+    });
+    const fixture = await createLeadDetail({ leadId: lead.id, updateHistoryEvent });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const harness = fixture.componentInstance as unknown as LeadDetailHarness;
+    harness.openHistoryEditDialog(event);
+    harness.editHistoryComment.set(event.body);
+
+    await harness.submitHistoryEdit(lead);
+    fixture.detectChanges();
+
+    expect(harness.editHistoryDialogOpen()).toBe(true);
+    expect(harness.dialogError()).toBe('Нічого не змінено');
+  });
+
+  it('shows access error when history edit update is blocked', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
+    const event = lead.events[0]!;
+    const updateHistoryEvent = vi.fn(async () => {
+      throw new Error('Не вдалося зберегти подію. Перевірте права доступу.');
+    });
+    const fixture = await createLeadDetail({ leadId: lead.id, updateHistoryEvent });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const harness = fixture.componentInstance as unknown as LeadDetailHarness;
+    harness.openHistoryEditDialog(event);
+    harness.editHistoryComment.set('Новий текст');
+
+    await harness.submitHistoryEdit(lead);
+    fixture.detectChanges();
+
+    expect(harness.editHistoryDialogOpen()).toBe(true);
+    expect(harness.dialogError()).toContain('права доступу');
+  });
+
+  it('shows edit close reason button on closed lead banner', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1008', role: 'office_member' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Лід закрито');
+    expect(element.textContent).toContain('Редагувати');
+  });
+
+  it('shows permanent delete for super admin on closed lead', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1008', role: 'super_admin' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Видалити назавжди');
+  });
+
+  it('hides permanent delete for office member on closed lead', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1008', role: 'office_member' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).not.toContain('Видалити назавжди');
+  });
+
+  it('deletes closed lead after confirmation', async () => {
+    const deleteLead = vi.fn(async () => undefined);
+    const fixture = await createLeadDetail({
+      leadId: 'lead-1008',
+      role: 'super_admin',
+      deleteLead,
+      dialogConfirm: true,
+    });
+    const router = TestBed.inject(Router);
+    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1008')!;
+    await fixture.componentInstance['confirmDeleteLead'](lead);
+
+    expect(deleteLead).toHaveBeenCalledWith('lead-1008');
+    expect(navigateSpy).toHaveBeenCalledWith(['/crm/leads']);
+  });
+
+  it('submits close reason edits through updateCloseDetails', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1008')!;
+    const updateCloseDetails = vi.fn(async () => null);
+    const fixture = await createLeadDetail({ leadId: lead.id, updateCloseDetails });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const harness = fixture.componentInstance as unknown as LeadDetailHarness;
+    harness.openEditCloseDialog(lead);
+    harness.closeReason.set('lost_client');
+    harness.closeComment.set('Клієнт обрав іншого постачальника');
+
+    await harness.submitClose(lead);
+
+    expect(updateCloseDetails).toHaveBeenCalledWith(lead.id, {
+      reason: 'lost_client',
+      comment: 'Клієнт обрав іншого постачальника',
+    });
+    expect(harness.closeDialogOpen()).toBe(false);
+  });
+
+  it('validates lost_client close reason edit without comment', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1009')!;
+    const updateCloseDetails = vi.fn(async (_leadId, payload) => validateCloseLead(payload));
+    const fixture = await createLeadDetail({ leadId: lead.id, updateCloseDetails });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const harness = fixture.componentInstance as unknown as LeadDetailHarness;
+    harness.openEditCloseDialog(lead);
+    harness.closeReason.set('lost_client');
+    harness.closeComment.set('');
+
+    await harness.submitClose(lead);
+    fixture.detectChanges();
+
+    expect(updateCloseDetails).toHaveBeenCalled();
+    expect(harness.closeDialogOpen()).toBe(true);
+    expect(harness.dialogError()).toContain('коментар');
   });
 
   it('renders history edit audit for regular users', async () => {

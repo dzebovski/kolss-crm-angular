@@ -1,6 +1,14 @@
-import { Component, inject, Injectable } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Component, inject, Injectable, Type } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 import { UiButton } from '../button/ui-button';
+
+/** Shared MatDialog options: backdrop click and Escape close without saving. */
+export const UI_DIALOG_DEFAULTS = {
+  autoFocus: 'first-tabbable' as const,
+  restoreFocus: true,
+  panelClass: 'ui-dialog-panel',
+  disableClose: false,
+};
 
 export interface UiConfirmDialogConfig {
   readonly title: string;
@@ -79,10 +87,15 @@ export class UiDialogService {
 
   confirm(config: UiConfirmDialogConfig) {
     return this.dialog.open<UiConfirmDialog, UiConfirmDialogConfig, boolean>(UiConfirmDialog, {
+      ...UI_DIALOG_DEFAULTS,
       data: config,
-      autoFocus: 'first-tabbable',
-      restoreFocus: true,
-      panelClass: 'ui-dialog-panel',
+    });
+  }
+
+  open<T, D = unknown, R = unknown>(component: Type<T>, config?: MatDialogConfig<D>) {
+    return this.dialog.open<T, D, R>(component, {
+      ...UI_DIALOG_DEFAULTS,
+      ...config,
     });
   }
 }

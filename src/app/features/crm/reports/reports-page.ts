@@ -1,15 +1,17 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 
 import { SessionService } from '../../../core/session/session.service';
-import { calculateFunnel } from '../../../services/crm-mock.helpers';
+import { calculateFunnel, calculateManagerTakenReport } from '../../../services/crm-mock.helpers';
 import { LeadsService } from '../../../services/leads.service';
-import type { FunnelStage } from '../../../services/crm-mock.types';
+import { UsersService } from '../../../services/users.service';
+import type { FunnelStage, ManagerOfficeReport } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
+import { UiUser } from '../../../ui/user/ui-user';
 
 @Component({
   selector: 'app-reports-page',
-  imports: [UiAlert, UiBadge],
+  imports: [UiAlert, UiBadge, UiUser],
   template: `
     <section class="reports-page" aria-labelledby="reports-title">
       <header class="page-header">
@@ -64,7 +66,9 @@ import { UiBadge } from '../../../ui/feedback/ui-badge';
                 <span class="funnel-index">{{ index + 1 }}</span>
                 <div>
                   <strong>{{ stage.label }}</strong>
-                  <small> {{ stage.conversionFromPrevious }}% від попереднього етапу </small>
+                  @if (stage.conversionBaseLabel) {
+                    <small>{{ stage.conversionFromPrevious }}% від {{ stage.conversionBaseLabel }}</small>
+                  }
                 </div>
                 <b>{{ stage.count }}</b>
               </div>
@@ -77,6 +81,57 @@ import { UiBadge } from '../../../ui/feedback/ui-badge';
             </li>
           }
         </ol>
+      </section>
+
+      <section class="manager-reports" aria-labelledby="manager-reports-title">
+        <header class="manager-reports__header">
+          <div>
+            <h2 id="manager-reports-title">Звіт по менеджерам</h2>
+            <p>Кількість лідів, взятих у роботу за обраний період.</p>
+          </div>
+          <app-ui-badge tone="info">Київ і Варшава</app-ui-badge>
+        </header>
+
+        <div class="manager-reports__grid">
+          @for (report of managerReports(); track report.officeCode) {
+            <section
+              class="manager-office-panel"
+              [attr.aria-labelledby]="'manager-office-' + report.officeCode"
+            >
+              <h3 [id]="'manager-office-' + report.officeCode">{{ report.officeLabel }}</h3>
+
+              <table class="manager-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Менеджер</th>
+                    <th scope="col">Взято в роботу</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of report.managers; track row.managerId) {
+                    <tr>
+                      <td>
+                        <app-ui-user
+                          [userId]="row.managerId"
+                          [name]="row.managerName"
+                          size="sm"
+                          [showName]="true"
+                        />
+                      </td>
+                      <td class="manager-table__count">{{ row.takenCount }}</td>
+                    </tr>
+                  }
+                  @if (report.unassignedCount > 0) {
+                    <tr>
+                      <td>Без менеджера</td>
+                      <td class="manager-table__count">{{ report.unassignedCount }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </section>
+          }
+        </div>
       </section>
     </section>
   `,
@@ -118,7 +173,8 @@ import { UiBadge } from '../../../ui/feedback/ui-badge';
     }
 
     .page-header p,
-    .funnel-panel p {
+    .funnel-panel p,
+    .manager-reports__header p {
       margin: var(--ui-space-2) 0 0;
       color: var(--ui-text-muted);
     }
@@ -258,11 +314,81 @@ import { UiBadge } from '../../../ui/feedback/ui-badge';
       display: block;
       transition: width var(--ui-duration) var(--ui-ease);
     }
+
+    .manager-reports {
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-raised);
+      box-shadow: var(--ui-shadow-1);
+      overflow: hidden;
+    }
+
+    .manager-reports__header {
+      min-height: 5rem;
+      padding: var(--ui-space-5);
+      border-bottom: 1px solid var(--ui-border);
+      background: var(--ui-surface-subtle);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--ui-space-4);
+    }
+
+    .manager-reports__grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--ui-space-4);
+      padding: var(--ui-space-5);
+    }
+
+    .manager-office-panel {
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-subtle);
+      overflow: hidden;
+    }
+
+    .manager-office-panel h3 {
+      margin: 0;
+      padding: var(--ui-space-4) var(--ui-space-4) var(--ui-space-3);
+      font-family: var(--ui-font-display);
+      font-size: 1.05rem;
+    }
+
+    .manager-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .manager-table th,
+    .manager-table td {
+      padding: var(--ui-space-3) var(--ui-space-4);
+      border-top: 1px solid var(--ui-border);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .manager-table th {
+      color: var(--ui-text-subtle);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .manager-table__count {
+      width: 6rem;
+      font-family: var(--ui-font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-align: right;
+    }
   `,
 })
 export class ReportsPage {
   private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
+  private readonly usersService = inject(UsersService);
 
   protected readonly periods = [
     { label: '40 днів', days: 40 },
@@ -277,8 +403,17 @@ export class ReportsPage {
     loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
   });
 
+  protected readonly allLeadsResource = resource({
+    loader: () => this.leadsService.list(),
+  });
+
+  protected readonly employeesResource = resource({
+    loader: () => this.usersService.listEmployees(),
+  });
+
   protected readonly loadError = computed(() => {
-    const error = this.leadsResource.error();
+    const error =
+      this.leadsResource.error() ?? this.allLeadsResource.error() ?? this.employeesResource.error();
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
 
@@ -289,6 +424,17 @@ export class ReportsPage {
   protected readonly periodLabel = computed(
     () => this.periods.find((period) => period.days === this.periodDays())?.label ?? 'Період',
   );
+
+  protected readonly managerReports = computed((): readonly ManagerOfficeReport[] => {
+    const leads = this.allLeadsResource.value() ?? [];
+    const employees = this.employeesResource.value() ?? [];
+    const periodDays = this.periodDays();
+
+    return [
+      calculateManagerTakenReport(leads, employees, 'kyiv', periodDays),
+      calculateManagerTakenReport(leads, employees, 'warsaw', periodDays),
+    ];
+  });
 
   protected barWidth(stage: FunnelStage): number {
     return Math.max(stage.percentOfTotal, stage.count > 0 ? 6 : 0);

@@ -6,6 +6,7 @@ import {
   formatDate,
   formatDateTime,
   groupLeadsByYearMonth,
+  LEAD_SOURCE_ICONS,
   LEAD_SOURCE_LABELS,
   matchesLeadSearch,
   officeName,
@@ -19,11 +20,13 @@ import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiUser } from '../../../ui/user/ui-user';
 import { UiTextField } from '../../../ui/form/ui-text-field';
+import { CreateLeadDialog } from './create-lead-dialog';
 
 @Component({
   selector: 'app-leads-page',
-  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiTextField],
+  imports: [CreateLeadDialog, UiAlert, UiBadge, UiButton, UiIcon, UiTextField, UiUser],
   template: `
     <section class="crm-page" aria-labelledby="leads-title">
       <header class="page-header">
@@ -33,6 +36,10 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
           <p>Робочий список лідів з Supabase, згруповані за місяцем створення.</p>
         </div>
         <div class="page-actions">
+          <app-ui-button (pressed)="openCreateDialog()">
+            <app-ui-icon name="add" [size]="17" />
+            Створити лід
+          </app-ui-button>
           <app-ui-button variant="secondary" (pressed)="leadsResource.reload()">
             <app-ui-icon name="history" [size]="17" />
             Оновити
@@ -135,10 +142,6 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                     <td class="client-cell" data-label="Клієнт">
                       <strong>{{ lead.name }}</strong>
                       <small>{{ lead.phone }}</small>
-                      <span class="lead-compact-meta">
-                        {{ sourceLabel(lead) }} · {{ employeeName(lead.firstManagerId) }} ·
-                        {{ workflowLabel(lead) }}
-                      </span>
                     </td>
                     <td class="call-cell" data-label="Перший дзвінок">
                       @if (lead.firstCall) {
@@ -148,9 +151,22 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                         <span class="muted">Ще не зафіксовано</span>
                       }
                     </td>
-                    <td class="source-cell" data-label="Джерело">{{ sourceLabel(lead) }}</td>
+                    <td class="source-cell" data-label="Джерело">
+                      <span class="source-pill">
+                        <app-ui-icon [name]="sourceIcon(lead)" [size]="14" />
+                        <span class="source-pill__text">{{ sourceLabel(lead) }}</span>
+                      </span>
+                    </td>
                     <td class="manager-cell" data-label="Перший менеджер">
-                      {{ employeeName(lead.firstManagerId) }}
+                      @if (lead.firstManagerId) {
+                        <app-ui-user
+                          [userId]="lead.firstManagerId"
+                          [name]="employeeName(lead.firstManagerId)"
+                          size="sm"
+                        />
+                      } @else {
+                        <span class="muted">Не призначено</span>
+                      }
                     </td>
                     <td class="visit-cell" data-label="Візит у салон">
                       <div class="status-cell">
@@ -170,6 +186,13 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
         </div>
       }
     </section>
+
+    @if (createDialogOpen()) {
+      <app-create-lead-dialog
+        (dismissed)="closeCreateDialog()"
+        (created)="onLeadCreated($event)"
+      />
+    }
   `,
   styles: `
     .crm-page {
@@ -228,6 +251,28 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       color: var(--ui-info);
     }
 
+    .lead-row .source-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      max-width: 100%;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .lead-row .source-pill app-ui-icon {
+      flex: 0 0 auto;
+      color: var(--ui-text-subtle);
+      transform: translateY(1px);
+    }
+
+    .lead-row .source-pill__text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .leads-toolbar {
       display: grid;
       grid-template-columns: minmax(20rem, 28rem) auto;
@@ -283,15 +328,15 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
     }
 
     .col-client {
-      width: 24%;
+      width: 28%;
     }
 
     .col-call {
-      width: 17%;
+      width: 16%;
     }
 
     .col-source {
-      width: 9%;
+      width: 12%;
     }
 
     .col-manager {
@@ -299,7 +344,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
     }
 
     .col-visit {
-      width: 22%;
+      width: 16%;
     }
 
     th,
@@ -309,7 +354,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       border-bottom: 1px solid var(--ui-border);
       overflow: hidden;
       text-align: left;
-      vertical-align: top;
+      vertical-align: middle;
     }
 
     th {
@@ -382,10 +427,18 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
     .status-cell {
       display: grid;
-      gap: var(--ui-space-1);
+      gap: 0.25rem;
       justify-items: start;
       min-width: 0;
       overflow: hidden;
+    }
+
+    .manager-cell app-ui-user {
+      max-width: 100%;
+    }
+
+    .visit-cell app-ui-badge {
+      max-width: 100%;
     }
 
     .table-state,
@@ -475,6 +528,7 @@ export class LeadsPage {
 
   protected readonly query = signal('');
   protected readonly notice = signal('');
+  protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
 
   protected readonly leadsResource = resource({
@@ -524,11 +578,30 @@ export class LeadsPage {
     return LEAD_SOURCE_LABELS[lead.source];
   }
 
+  protected sourceIcon(lead: MockLead) {
+    return LEAD_SOURCE_ICONS[lead.source];
+  }
+
   protected workflowLabel(lead: MockLead): string {
     return WORKFLOW_LABELS[lead.workflowStatus];
   }
 
   protected async openLead(lead: MockLead): Promise<void> {
     await this.router.navigate(['/crm/leads', lead.id]);
+  }
+
+  protected openCreateDialog(): void {
+    this.createDialogOpen.set(true);
+  }
+
+  protected closeCreateDialog(): void {
+    this.createDialogOpen.set(false);
+  }
+
+  protected async onLeadCreated(leadId: string): Promise<void> {
+    this.createDialogOpen.set(false);
+    this.notice.set('');
+    await this.leadsResource.reload();
+    await this.router.navigate(['/crm/leads', leadId]);
   }
 }

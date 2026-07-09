@@ -12,7 +12,11 @@
     "lint": "ng lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npx tsc -p tsconfig.app.json --noEmit && npm run lint && npm test"
+    "check": "npx tsc -p tsconfig.app.json --noEmit && npm run lint && npm test",
+    "functions:deploy": "npx supabase functions deploy import-lead --no-verify-jwt && npx supabase functions deploy site-lead --no-verify-jwt && npx supabase functions deploy process-notifications --no-verify-jwt && npx supabase functions deploy admin-users",
+    "functions:deploy:webhooks": "npx supabase functions deploy import-lead --no-verify-jwt && npx supabase functions deploy site-lead --no-verify-jwt && npx supabase functions deploy process-notifications --no-verify-jwt",
+    "functions:deploy:admin": "npx supabase functions deploy admin-users",
+    "functions:smoke": "bash scripts/smoke-edge-functions.sh"
   },
   "private": true,
   "packageManager": "npm@11.17.0",
@@ -38,6 +42,7 @@
     "@angular/cli": "^22.0.5",
     "@angular/compiler-cli": "^22.0.5",
     "@eslint/js": "^10.0.1",
+    "@material-symbols/svg-400": "^0.45.5",
     "angular-eslint": "22.0.0",
     "eslint": "^10.3.0",
     "jsdom": "^28.0.0",

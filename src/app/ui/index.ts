@@ -1,6 +1,7 @@
 export * from './button/ui-button';
 export * from './button/ui-icon-button';
 export * from './dialog/ui-dialog';
+export * from './dialog/ui-modal';
 export * from './feedback/ui-alert';
 export * from './feedback/ui-badge';
 export * from './feedback/ui-chip';
@@ -17,3 +18,4 @@ export * from './pagination/ui-pagination';
 export * from './table/ui-data-table';
 export * from './tabs/ui-tabs';
 export * from './tooltip/ui-tooltip';
+export * from './user/ui-user';

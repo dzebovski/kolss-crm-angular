@@ -1,10 +1,13 @@
 import type { UiBadgeTone } from '../ui/feedback/ui-badge';
+import type { UiIconName } from '../ui/icon/ui-icon';
 import { CRM_MOCK_NOW } from './crm-mock.data';
 import type {
   CloseLeadPayload,
   CloseReason,
   FunnelStage,
   LeadMonthGroup,
+  ManagerOfficeReport,
+  ManagerTakenRow,
   LeadSource,
   LeadWorkflowStatus,
   MockEmployee,
@@ -41,9 +44,23 @@ export const OFFICE_FILTER_LABELS: Record<OfficeFilter, string> = {
 
 export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
   website: 'Сайт',
-  facebook: 'Facebook',
-  manual: 'Ручна заявка',
+  facebook: 'Facebook Forms',
+  office: 'Офіс',
+  other: 'Інше',
 };
+
+export const LEAD_SOURCE_ICONS: Record<LeadSource, UiIconName> = {
+  website: 'public',
+  facebook: 'campaign',
+  office: 'person',
+  other: 'more_horiz',
+};
+
+export const CREATE_LEAD_SOURCE_OPTIONS: readonly { readonly value: LeadSource; readonly label: string }[] =
+  (['office', 'website', 'facebook', 'other'] as const).map((value) => ({
+    value,
+    label: LEAD_SOURCE_LABELS[value],
+  }));
 
 export const WORKFLOW_LABELS: Record<LeadWorkflowStatus, string> = {
   new: 'Нова заявка',
@@ -56,13 +73,39 @@ export const WORKFLOW_LABELS: Record<LeadWorkflowStatus, string> = {
   successful: 'Договір заключений',
 };
 
-export const CLOSE_REASON_LABELS: Record<CloseReason, string> = {
+export const CLOSE_REASON_LABELS: Record<string, string> = {
   no_contact: 'Немає контакту',
   not_target: 'Нецільовий клієнт',
   location_mismatch: 'Не підходить місцеположення',
   expensive: 'Дорого',
   lost_client: 'Втрачений клієнт',
+  price: 'Не підійшла ціна',
+  spam: 'Сміття / Спам',
 };
+
+export function lossReasonLabel(
+  code: string,
+  reasons?: readonly { readonly code: string; readonly label_uk: string }[],
+): string {
+  const fromDb = reasons?.find((item) => item.code === code)?.label_uk;
+  if (fromDb) return fromDb;
+  return CLOSE_REASON_LABELS[code] ?? code;
+}
+
+/** Strips auto-filled reason labels; returns only the manager's additional comment. */
+export function resolveCloseUserComment(
+  rawComment: string | null | undefined,
+  reason: string,
+  reasons?: readonly { readonly code: string; readonly label_uk: string }[],
+): string {
+  const comment = rawComment?.trim() ?? '';
+  if (!comment) return '';
+
+  const reasonLabels = new Set(
+    [reason, CLOSE_REASON_LABELS[reason], lossReasonLabel(reason, reasons)].filter(Boolean),
+  );
+  return reasonLabels.has(comment) ? '' : comment;
+}
 
 export const FIRST_CALL_RESULTS = [
   'Потреба підтверджена',
@@ -248,12 +291,98 @@ export function calculateFunnel(
     },
   ];
 
-  return counts.map((stage, index) => {
-    const previousCount = index === 0 ? stage.count : counts[index - 1].count;
+  const stageByKey = new Map(counts.map((stage) => [stage.key, stage] as const));
+
+  const conversionBaseKey = (key: string): string | null => {
+    switch (key) {
+      case 'created':
+        return null;
+      case 'taken':
+        return 'created';
+      case 'scheduled':
+        return 'taken';
+      case 'visited':
+        return 'scheduled';
+      case 'successful':
+      case 'closed':
+        return 'taken';
+      default:
+        return null;
+    }
+  };
+
+  return counts.map((stage) => {
+    const baseKey = conversionBaseKey(stage.key);
+    const baseStage = baseKey ? stageByKey.get(baseKey) : null;
+    const baseCount = baseStage?.count ?? 0;
     return {
       ...stage,
       percentOfTotal: total ? Math.round((stage.count / total) * 100) : 0,
-      conversionFromPrevious: previousCount ? Math.round((stage.count / previousCount) * 100) : 0,
+      conversionFromPrevious: baseCount ? Math.round((stage.count / baseCount) * 100) : 0,
+      conversionBaseLabel: baseStage?.label ?? null,
     };
   });
+}
+
+export interface ManagerReportEmployee {
+  readonly id: string;
+  readonly displayName: string;
+  readonly role: string;
+  readonly officeIds: readonly OfficeId[];
+}
+
+function filterLeadsByPeriod(leads: readonly MockLead[], periodDays: number): readonly MockLead[] {
+  const now = new Date(CRM_MOCK_NOW).getTime();
+  const periodStart = now - periodDays * 24 * 60 * 60 * 1000;
+  return leads.filter((lead) => new Date(lead.sourceCreatedAt).getTime() >= periodStart);
+}
+
+function isLeadTaken(lead: MockLead): boolean {
+  return Boolean(lead.assignedToId) || lead.workflowStatus !== 'new';
+}
+
+function managerIdForTakenLead(lead: MockLead): string | null {
+  return lead.firstManagerId ?? lead.assignedToId;
+}
+
+export function calculateManagerTakenReport(
+  leads: readonly MockLead[],
+  employees: readonly ManagerReportEmployee[],
+  officeCode: OfficeId,
+  periodDays = 40,
+): ManagerOfficeReport {
+  const cohort = filterLeadsByPeriod(leads, periodDays);
+  const takenLeads = cohort.filter(
+    (lead) => lead.officeCode === officeCode && isLeadTaken(lead),
+  );
+
+  const counts = new Map<string, number>();
+  let unassignedCount = 0;
+
+  for (const lead of takenLeads) {
+    const managerId = managerIdForTakenLead(lead);
+    if (!managerId) {
+      unassignedCount += 1;
+      continue;
+    }
+    counts.set(managerId, (counts.get(managerId) ?? 0) + 1);
+  }
+
+  const managers: ManagerTakenRow[] = employees
+    .filter(
+      (employee) => employee.role === 'office_member' && employee.officeIds.includes(officeCode),
+    )
+    .map((employee) => ({
+      managerId: employee.id,
+      managerName: employee.displayName,
+      takenCount: counts.get(employee.id) ?? 0,
+    }))
+    .sort((left, right) => right.takenCount - left.takenCount || left.managerName.localeCompare(right.managerName, 'uk'));
+
+  return {
+    officeCode,
+    officeLabel: officeName(officeCode),
+    managers,
+    unassignedCount,
+  };
 }

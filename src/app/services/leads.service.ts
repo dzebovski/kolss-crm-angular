@@ -2,9 +2,11 @@ import { inject, Injectable } from '@angular/core';
 
 import { AuthService } from '../core/auth/auth.service';
 import { injectSupabase } from '../core/supabase/supabase.service';
-import type { MockLead } from './crm-mock.types';
+import { CLOSE_REASON_LABELS, lossReasonLabel, LEAD_SOURCE_LABELS, validateCloseLead } from './crm-mock.helpers';
+import type { CloseLeadPayload, CloseReason, LeadSource, MockLead } from './crm-mock.types';
 import {
   LEAD_LIST_SELECT,
+  mapCreateLeadSource,
   mapLeadDetail,
   mapLeadListRow,
   type ContactAttemptRow,
@@ -33,6 +35,18 @@ export interface LeadDetailsUpdate {
 export interface HistoryEventUpdate {
   readonly eventType: string;
   readonly comment: string;
+}
+
+export interface CreateLeadPayload {
+  readonly officeId: string;
+  readonly source: LeadSource;
+  readonly name: string;
+  readonly phone: string;
+  readonly email: string | null;
+  readonly cityRegion: string;
+  readonly productInterest: string;
+  readonly estimatedBudget: number | null;
+  readonly initialMessage: string;
 }
 
 interface EditableLeadEventRow {
@@ -89,6 +103,55 @@ export class LeadsService {
     return ((data ?? []) as LeadListRow[]).map(mapLeadListRow);
   }
 
+  async createLead(payload: CreateLeadPayload): Promise<MockLead> {
+    const now = new Date().toISOString();
+    const actorId = this.currentUserId();
+    const { source_system, source_channel } = mapCreateLeadSource(payload.source);
+    const externalLeadId = `crm:${crypto.randomUUID()}`;
+
+    const { data, error } = await this.supabase
+      .from('leads')
+      .insert({
+        office_id: payload.officeId,
+        source_system,
+        source_channel,
+        external_lead_id: externalLeadId,
+        lead_status: 'new',
+        workflow_status: 'new',
+        workflow_status_changed_at: now,
+        source_created_at: now,
+        name: payload.name,
+        phone: payload.phone,
+        email: payload.email,
+        city_region: payload.cityRegion || null,
+        product_interest: payload.productInterest || null,
+        estimated_budget: payload.estimatedBudget,
+        order_comment: payload.initialMessage || null,
+      })
+      .select(LEAD_LIST_SELECT)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Не вдалося створити лід.');
+
+    const sourceLabel = LEAD_SOURCE_LABELS[payload.source];
+    const { error: eventError } = await this.supabase.from('lead_events').insert({
+      lead_id: data.id,
+      actor_id: actorId,
+      event_type: 'created',
+      comment: `Лід створено вручну. Джерело: ${sourceLabel}.`,
+      old_value: null,
+      new_value: {
+        source_system,
+        source_channel,
+        workflow_status: 'new',
+      },
+    });
+    if (eventError) throw eventError;
+
+    return mapLeadListRow(data as LeadListRow);
+  }
+
   async updateLeadDetails(
     leadId: string,
     payload: LeadDetailsUpdate,
@@ -116,6 +179,19 @@ export class LeadsService {
     }
   }
 
+  async deleteLead(leadId: string): Promise<void> {
+    const { data, error } = await this.supabase
+      .from('leads')
+      .delete()
+      .eq('id', leadId)
+      .select('id')
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      throw new Error('Не вдалося видалити лід. Перевірте права доступу.');
+    }
+  }
+
   async updateHistoryEvent(
     leadId: string,
     eventId: string,
@@ -136,7 +212,9 @@ export class LeadsService {
       ...(current.comment?.trim() !== nextComment ? ['повідомлення'] : []),
       ...(current.event_type !== payload.eventType ? ['тип'] : []),
     ];
-    if (!changedFields.length) return changedFields;
+    if (!changedFields.length) {
+      throw new Error('Нічого не змінено');
+    }
 
     const now = new Date().toISOString();
     const nextValue = {
@@ -149,7 +227,7 @@ export class LeadsService {
       },
     };
 
-    const { error: updateError } = await this.supabase
+    const { data: updatedEvent, error: updateError } = await this.supabase
       .from('lead_events')
       .update({
         event_type: payload.eventType,
@@ -157,9 +235,104 @@ export class LeadsService {
         new_value: nextValue,
       })
       .eq('id', eventId)
-      .eq('lead_id', leadId);
+      .eq('lead_id', leadId)
+      .select('id')
+      .maybeSingle();
     if (updateError) throw updateError;
+    if (!updatedEvent) {
+      throw new Error('Не вдалося зберегти подію. Перевірте права доступу.');
+    }
+
+    if (this.isCloseEventType(current.event_type) || this.isCloseEventType(payload.eventType)) {
+      await this.syncLeadCloseFields(leadId, payload.eventType, nextComment, nextValue, now);
+    }
+
     return changedFields;
+  }
+
+  async updateCloseDetails(leadId: string, payload: CloseLeadPayload): Promise<string | null> {
+    const validationError = validateCloseLead(payload);
+    if (validationError) return validationError;
+
+    const reasonError = await this.ensureLossReasonExists(payload.reason);
+    if (reasonError) return reasonError;
+
+    const { data: lead, error: leadError } = await this.supabase
+      .from('leads')
+      .select('workflow_status, loss_reason, last_comment')
+      .eq('id', leadId)
+      .maybeSingle();
+    if (leadError) throw leadError;
+    if (!lead) return 'Лід не знайдено.';
+    if (lead.workflow_status !== 'closed') return 'Лід не закритий.';
+
+    const userComment = payload.comment.trim();
+    const nextComment = userComment || lossReasonLabel(payload.reason);
+    const changedFields = [
+      ...(lead.loss_reason !== payload.reason ? ['причина закриття'] : []),
+      ...((lead.last_comment ?? '') !== nextComment ? ['коментар'] : []),
+    ];
+    if (!changedFields.length) return 'Нічого не змінено';
+
+    const now = new Date().toISOString();
+    const { error: updateLeadError } = await this.supabase
+      .from('leads')
+      .update({
+        loss_reason: payload.reason,
+        last_comment: nextComment,
+        updated_at: now,
+      })
+      .eq('id', leadId);
+    if (updateLeadError) throw updateLeadError;
+
+    const { data: closeEvent, error: eventError } = await this.supabase
+      .from('lead_events')
+      .select('id, new_value')
+      .eq('lead_id', leadId)
+      .in('event_type', ['closed', 'bad_lead'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (eventError) throw eventError;
+
+    const closeEventComment = userComment || lossReasonLabel(payload.reason);
+    const nextValue = {
+      reason: payload.reason,
+      workflow_status: 'closed',
+    };
+
+    if (closeEvent) {
+      const { data: updatedEvent, error: updateEventError } = await this.supabase
+        .from('lead_events')
+        .update({
+          comment: closeEventComment,
+          new_value: {
+            ...this.toEditableRecord(closeEvent.new_value),
+            ...nextValue,
+          },
+        })
+        .eq('id', closeEvent.id)
+        .eq('lead_id', leadId)
+        .select('id')
+        .maybeSingle();
+      if (updateEventError) throw updateEventError;
+      if (!updatedEvent) {
+        throw new Error('Не вдалося зберегти подію закриття. Перевірте права доступу.');
+      }
+    } else {
+      const { error: insertEventError } = await this.supabase.from('lead_events').insert({
+        lead_id: leadId,
+        actor_id: this.currentUserId(),
+        event_type: 'closed',
+        comment: closeEventComment,
+        old_value: null,
+        new_value: nextValue,
+      });
+      if (insertEventError) throw insertEventError;
+    }
+
+    await this.insertLeadEditAudit(leadId, changedFields, now);
+    return null;
   }
 
   private async loadRelations(leadId: string) {
@@ -219,6 +392,19 @@ export class LeadsService {
     return userId;
   }
 
+  async ensureLossReasonExists(reason: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('loss_reasons')
+      .select('code')
+      .eq('code', reason)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      return `Причина "${reason}" відсутня в довіднику. Застосуйте міграцію loss_reasons.`;
+    }
+    return null;
+  }
+
   private async insertLeadEditAudit(
     leadId: string,
     editedFields: readonly string[],
@@ -254,5 +440,51 @@ export class LeadsService {
       return { ...(value as Record<string, unknown>) };
     }
     return value == null ? {} : { value };
+  }
+
+  private isCloseEventType(eventType: string): boolean {
+    return eventType === 'closed' || eventType === 'bad_lead';
+  }
+
+  private async syncLeadCloseFields(
+    leadId: string,
+    eventType: string,
+    comment: string,
+    eventValue: Record<string, unknown>,
+    updatedAt: string,
+  ): Promise<void> {
+    if (!this.isCloseEventType(eventType)) return;
+
+    const { data: lead, error: leadError } = await this.supabase
+      .from('leads')
+      .select('loss_reason, last_comment')
+      .eq('id', leadId)
+      .maybeSingle();
+    if (leadError) throw leadError;
+    if (!lead) return;
+
+    const reason = this.closeReasonFromValue(eventValue);
+    const nextComment = comment || (reason ? CLOSE_REASON_LABELS[reason] : '');
+    const leadUpdates: Record<string, string> = { updated_at: updatedAt };
+    let hasChanges = false;
+
+    if (reason && lead.loss_reason !== reason) {
+      leadUpdates['loss_reason'] = reason;
+      hasChanges = true;
+    }
+    if ((lead.last_comment ?? '') !== nextComment) {
+      leadUpdates['last_comment'] = nextComment;
+      hasChanges = true;
+    }
+    if (!hasChanges) return;
+
+    const { error } = await this.supabase.from('leads').update(leadUpdates).eq('id', leadId);
+    if (error) throw error;
+  }
+
+  private closeReasonFromValue(value: Record<string, unknown>): CloseReason | null {
+    const reason = value['reason'];
+    if (typeof reason !== 'string' || !reason.trim()) return null;
+    return reason.trim();
   }
 }

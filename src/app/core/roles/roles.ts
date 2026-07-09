@@ -7,6 +7,12 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   office_member: 'Менеджер',
 };
 
+export const ASSIGNABLE_ROLES: readonly UserRole[] = [
+  'curator',
+  'office_admin',
+  'office_member',
+];
+
 export function roleLabel(role: UserRole | string | null | undefined): string {
   if (!role) return '—';
   return ROLE_LABELS[role as UserRole] ?? role;

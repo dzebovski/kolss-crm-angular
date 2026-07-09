@@ -1,0 +1,14 @@
+-- Reference migration: allow INSERT on leads for users with office access.
+-- Applied in kolss-crm repo (canonical migrations: kolss-crm/supabase/migrations/).
+-- Required for CRM manual lead creation from Angular (LeadsService.createLead).
+--
+-- Example policy shape:
+-- CREATE POLICY leads_insert_office_access ON public.leads
+--   FOR INSERT TO authenticated
+--   WITH CHECK (
+--     public.is_super_admin()
+--     OR EXISTS (
+--       SELECT 1 FROM public.user_office_memberships m
+--       WHERE m.user_id = auth.uid() AND m.office_id = leads.office_id
+--     )
+--   );

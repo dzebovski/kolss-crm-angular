@@ -865,6 +865,12 @@
 .ui-dialog-panel .mat-mdc-dialog-surface {
   border-radius: var(--ui-radius-lg);
   box-shadow: var(--ui-shadow-3);
+  overflow: visible;
+}
+
+.ui-dialog-panel .mat-mdc-dialog-content {
+  overflow: visible;
+  max-height: calc(100dvh - 6rem);
 }
 
 @keyframes design-orb {

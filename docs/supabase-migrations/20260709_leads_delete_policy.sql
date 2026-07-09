@@ -1,0 +1,17 @@
+-- Reference migration: allow DELETE on leads for super_admin and office admins with office access.
+-- Applied in kolss-crm repo (canonical migrations: kolss-crm/supabase/migrations/).
+-- Required for CRM permanent lead deletion (LeadsService.deleteLead).
+--
+-- Example policy shape:
+-- CREATE POLICY leads_delete_office_access ON public.leads
+--   FOR DELETE TO authenticated
+--   USING (
+--     public.is_super_admin()
+--     OR EXISTS (
+--       SELECT 1 FROM public.user_office_memberships m
+--       JOIN public.profiles p ON p.id = m.user_id
+--       WHERE m.user_id = auth.uid()
+--         AND m.office_id = leads.office_id
+--         AND p.role = 'office_admin'
+--     )
+--   );

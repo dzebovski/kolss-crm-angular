@@ -17,7 +17,7 @@ export type LeadWorkflowStatus =
   | 'closed'
   | 'successful';
 
-export type LeadSource = 'website' | 'facebook' | 'manual';
+export type LeadSource = 'website' | 'facebook' | 'office' | 'other';
 export type VisitStatus = 'scheduled' | 'rescheduled' | 'completed';
 export type LeadEventType =
   | 'created'
@@ -32,8 +32,8 @@ export type LeadEventType =
   | 'attachment'
   | 'lead_updated';
 
-export type CloseReason =
-  'no_contact' | 'not_target' | 'location_mismatch' | 'expensive' | 'lost_client';
+/** `loss_reasons.code` from Supabase; mock labels cover CRM defaults. */
+export type CloseReason = string;
 
 export interface CrmOffice {
   readonly id: OfficeId;
@@ -152,7 +152,21 @@ export interface FunnelStage {
   readonly count: number;
   readonly percentOfTotal: number;
   readonly conversionFromPrevious: number;
+  readonly conversionBaseLabel: string | null;
   readonly tone: 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand';
+}
+
+export interface ManagerTakenRow {
+  readonly managerId: string;
+  readonly managerName: string;
+  readonly takenCount: number;
+}
+
+export interface ManagerOfficeReport {
+  readonly officeCode: OfficeId;
+  readonly officeLabel: string;
+  readonly managers: readonly ManagerTakenRow[];
+  readonly unassignedCount: number;
 }
 
 export interface CloseLeadPayload {

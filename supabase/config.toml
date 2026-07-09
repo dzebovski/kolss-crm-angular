@@ -1,0 +1,23 @@
+# KOLSS CRM — Edge Functions only (DB migrations live in kolss-crm repo).
+project_id = "kolss-crm"
+
+[api]
+enabled = true
+
+[db]
+major_version = 15
+
+[edge_runtime]
+policy = "per_worker"
+
+[functions.import-lead]
+verify_jwt = false
+
+[functions.site-lead]
+verify_jwt = false
+
+[functions.process-notifications]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = true

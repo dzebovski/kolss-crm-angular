@@ -1,5 +1,6 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { canEditLeads } from '../../../core/roles/roles';
@@ -10,19 +11,25 @@ import {
   FIRST_CALL_RESULTS,
   formatDateTime,
   formatMoney,
+  LEAD_SOURCE_ICONS,
   LEAD_SOURCE_LABELS,
   leadIsTerminal,
+  lossReasonLabel,
   officeName,
   WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadWorkflowService } from '../../../services/lead-workflow.service';
 import { LeadsService } from '../../../services/leads.service';
+import { LossReasonsService } from '../../../services/loss-reasons.service';
 import { UsersService } from '../../../services/users.service';
 import type { CloseReason, LeadEvent, MockLead } from '../../../services/crm-mock.types';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
+import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import { UiModal } from '../../../ui/dialog/ui-modal';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiUser } from '../../../ui/user/ui-user';
 import { UiSelect, UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiTextarea } from '../../../ui/form/ui-textarea';
@@ -31,7 +38,7 @@ const NO_MANAGER_VALUE = '__none__';
 
 @Component({
   selector: 'app-lead-detail-page',
-  imports: [RouterLink, UiBadge, UiButton, UiIcon, UiSelect, UiTextField, UiTextarea],
+  imports: [RouterLink, UiBadge, UiButton, UiIcon, UiModal, UiSelect, UiTextField, UiTextarea, UiUser],
   template: `
     @if (leadResource.isLoading()) {
       <section class="lead-page lead-page--loading" aria-busy="true" aria-label="Завантаження ліда">
@@ -143,7 +150,13 @@ const NO_MANAGER_VALUE = '__none__';
 
         <header class="lead-header">
           <div>
-            <p class="page-kicker">{{ officeName(lead.officeCode) }} · {{ sourceLabel(lead) }}</p>
+            <p class="page-kicker">
+              {{ officeName(lead.officeCode) }} ·
+              <span class="source-pill">
+                <app-ui-icon [name]="sourceIcon(lead)" [size]="14" />
+                {{ sourceLabel(lead) }}
+              </span>
+            </p>
             <h1 [id]="'lead-' + lead.id">{{ lead.name }}</h1>
             <div class="lead-header__meta">
               <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
@@ -192,6 +205,29 @@ const NO_MANAGER_VALUE = '__none__';
               <h2>{{ terminalTitle(lead) }}</h2>
               <p>{{ terminalDescription(lead) }}</p>
             </div>
+            @if (lead.workflowStatus === 'closed' && lead.close) {
+              <div class="terminal-panel__actions">
+                <app-ui-button
+                  variant="secondary"
+                  size="small"
+                  (pressed)="openEditCloseDialog(lead)"
+                >
+                  <app-ui-icon name="edit" [size]="16" />
+                  Редагувати
+                </app-ui-button>
+                @if (canDeleteLead(lead)) {
+                  <app-ui-button
+                    variant="danger"
+                    size="small"
+                    [loading]="deletingLead()"
+                    (pressed)="confirmDeleteLead(lead)"
+                  >
+                    <app-ui-icon name="delete" [size]="16" />
+                    Видалити назавжди
+                  </app-ui-button>
+                }
+              </div>
+            }
           </article>
         }
 
@@ -312,7 +348,12 @@ const NO_MANAGER_VALUE = '__none__';
                         <p class="timeline-audit">{{ auditText }}</p>
                       }
                       <small>
-                        {{ employeeName(event.actorId) }} · {{ formatDateTime(event.occurredAt) }}
+                        <app-ui-user
+                          [userId]="event.actorId || null"
+                          [name]="employeeName(event.actorId)"
+                          size="xs"
+                        />
+                        · {{ formatDateTime(event.occurredAt) }}
                       </small>
                     </div>
                   </li>
@@ -353,7 +394,17 @@ const NO_MANAGER_VALUE = '__none__';
                 </div>
                 <div>
                   <dt>Менеджер</dt>
-                  <dd>{{ employeeName(lead.assignedToId) }}</dd>
+                  <dd>
+                    @if (lead.assignedToId) {
+                      <app-ui-user
+                        [userId]="lead.assignedToId"
+                        [name]="employeeName(lead.assignedToId)"
+                        size="sm"
+                      />
+                    } @else {
+                      <span class="muted">Не призначено</span>
+                    }
+                  </dd>
                 </div>
                 <div>
                   <dt>Продукт</dt>
@@ -399,13 +450,11 @@ const NO_MANAGER_VALUE = '__none__';
         </div>
 
         @if (editLeadDialogOpen()) {
-          <div class="modal-backdrop" role="presentation">
-            <section
-              class="modal modal--wide"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="edit-lead-dialog-title"
-            >
+          <app-ui-modal
+            [wide]="true"
+            labelledBy="edit-lead-dialog-title"
+            (dismissed)="closeLeadEditDialog()"
+          >
               <h2 id="edit-lead-dialog-title">Редагувати дані ліда</h2>
               <p>Контакти, деталі заявки та відповідальний менеджер.</p>
               @if (dialogError()) {
@@ -446,18 +495,14 @@ const NO_MANAGER_VALUE = '__none__';
                 </app-ui-button>
                 <app-ui-button (pressed)="submitLeadEdit(lead)">Зберегти</app-ui-button>
               </div>
-            </section>
-          </div>
+          </app-ui-modal>
         }
 
         @if (editHistoryDialogOpen()) {
-          <div class="modal-backdrop" role="presentation">
-            <section
-              class="modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="edit-history-dialog-title"
-            >
+          <app-ui-modal
+            labelledBy="edit-history-dialog-title"
+            (dismissed)="closeHistoryEditDialog()"
+          >
               <h2 id="edit-history-dialog-title">Редагувати історію</h2>
               <p>Дата події не змінюється. Позначка про редагування буде видима всім.</p>
               @if (dialogError()) {
@@ -479,49 +524,48 @@ const NO_MANAGER_VALUE = '__none__';
                 </app-ui-button>
                 <app-ui-button (pressed)="submitHistoryEdit(lead)">Зберегти</app-ui-button>
               </div>
-            </section>
-          </div>
+          </app-ui-modal>
         }
 
         @if (closeDialogOpen()) {
-          <div class="modal-backdrop" role="presentation">
-            <section
-              class="modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="close-dialog-title"
-            >
-              <h2 id="close-dialog-title">Закрити лід</h2>
-              <p>Після закриття основні дії стануть неактивними.</p>
+          <app-ui-modal labelledBy="close-dialog-title" (dismissed)="closeCloseDialog()">
+              <h2 id="close-dialog-title">
+                {{
+                  closeDialogMode() === 'edit' ? 'Редагувати причину закриття' : 'Закрити лід'
+                }}
+              </h2>
+              <p>
+                {{
+                  closeDialogMode() === 'edit'
+                    ? 'Оновіть причину або коментар закритого ліда.'
+                    : 'Після закриття основні дії стануть неактивними.'
+                }}
+              </p>
               @if (dialogError()) {
                 <div class="inline-error" role="alert">{{ dialogError() }}</div>
               }
               <app-ui-select
                 label="Причина"
-                [options]="closeReasonOptions"
+                [options]="closeReasonOptions()"
                 [(value)]="closeReason"
               />
               <app-ui-textarea label="Коментар" [rows]="4" [(value)]="closeComment" />
               <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="closeDialogOpen.set(false)"
-                  >Скасувати</app-ui-button
+                <app-ui-button variant="ghost" (pressed)="closeCloseDialog()">
+                  Скасувати
+                </app-ui-button>
+                <app-ui-button
+                  [variant]="closeDialogMode() === 'edit' ? 'primary' : 'danger'"
+                  (pressed)="submitClose(lead)"
                 >
-                <app-ui-button variant="danger" (pressed)="submitClose(lead)"
-                  >Закрити</app-ui-button
-                >
+                  {{ closeDialogMode() === 'edit' ? 'Зберегти' : 'Закрити' }}
+                </app-ui-button>
               </div>
-            </section>
-          </div>
+          </app-ui-modal>
         }
 
         @if (successDialogOpen()) {
-          <div class="modal-backdrop" role="presentation">
-            <section
-              class="modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="success-dialog-title"
-            >
+          <app-ui-modal labelledBy="success-dialog-title" (dismissed)="closeSuccessDialog()">
               <h2 id="success-dialog-title">Договір заключений</h2>
               <p>Номер і сума договору є обовʼязковими.</p>
               @if (dialogError()) {
@@ -532,13 +576,10 @@ const NO_MANAGER_VALUE = '__none__';
               <app-ui-text-field label="Передоплата, EUR" [(value)]="contractPrepayment" />
               <app-ui-textarea label="Коментар" [rows]="3" [(value)]="contractComment" />
               <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="successDialogOpen.set(false)"
-                  >Скасувати</app-ui-button
-                >
+                <app-ui-button variant="ghost" (pressed)="closeSuccessDialog()">Скасувати</app-ui-button>
                 <app-ui-button (pressed)="submitSuccess(lead)">Зберегти договір</app-ui-button>
               </div>
-            </section>
-          </div>
+          </app-ui-modal>
         }
       </section>
     } @else {
@@ -583,6 +624,18 @@ const NO_MANAGER_VALUE = '__none__';
       font-weight: 750;
       letter-spacing: 0.08em;
       text-transform: uppercase;
+    }
+
+    .source-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .source-pill app-ui-icon {
+      color: currentColor;
+      transform: translateY(1px);
     }
 
     h1 {
@@ -687,7 +740,7 @@ const NO_MANAGER_VALUE = '__none__';
     }
 
     .terminal-panel {
-      grid-template-columns: auto 1fr;
+      grid-template-columns: auto 1fr auto;
       align-items: start;
       background: var(--ui-danger-soft);
       color: var(--ui-danger);
@@ -700,6 +753,13 @@ const NO_MANAGER_VALUE = '__none__';
 
     .terminal-panel p {
       color: color-mix(in srgb, currentColor 82%, black);
+    }
+
+    .terminal-panel__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ui-space-2);
+      justify-content: flex-end;
     }
 
     .summary-panel header,
@@ -871,6 +931,12 @@ const NO_MANAGER_VALUE = '__none__';
       font-size: 0.75rem;
     }
 
+    .timeline-content small app-ui-user {
+      display: inline-flex;
+      vertical-align: middle;
+      max-width: 16rem;
+    }
+
     .inline-error {
       padding: var(--ui-space-3) var(--ui-space-4);
       border: 1px solid color-mix(in srgb, var(--ui-danger) 24%, white);
@@ -879,42 +945,6 @@ const NO_MANAGER_VALUE = '__none__';
       color: var(--ui-danger);
       font-size: 0.875rem;
       font-weight: 650;
-    }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: var(--ui-z-overlay);
-      padding: var(--ui-space-6);
-      background: rgb(23 16 32 / 48%);
-      display: grid;
-      place-items: center;
-    }
-
-    .modal {
-      width: min(100%, 32rem);
-      max-height: calc(100vh - 3rem);
-      overflow: auto;
-      padding: var(--ui-space-6);
-      border-radius: var(--ui-radius-lg);
-      background: var(--ui-surface-raised);
-      display: grid;
-      gap: var(--ui-space-4);
-      box-shadow: var(--ui-shadow-3);
-    }
-
-    .modal--wide {
-      width: min(100%, 43rem);
-    }
-
-    .modal h2 {
-      font-family: var(--ui-font-display);
-      font-size: 1.5rem;
-    }
-
-    .modal h3 {
-      margin: 0;
-      font-size: 0.875rem;
     }
 
     .modal-section {
@@ -1003,10 +1033,13 @@ const NO_MANAGER_VALUE = '__none__';
 export class LeadDetailPage {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(UiDialogService);
   private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
   private readonly workflowService = inject(LeadWorkflowService);
   private readonly usersService = inject(UsersService);
+  private readonly lossReasonsService = inject(LossReasonsService);
 
   protected readonly leadId = this.route.snapshot.paramMap.get('leadId') ?? '';
   protected readonly leadResource = resource({
@@ -1015,6 +1048,9 @@ export class LeadDetailPage {
   });
   protected readonly employeesResource = resource({
     loader: () => this.usersService.listEmployees(),
+  });
+  protected readonly lossReasonsResource = resource({
+    loader: () => this.lossReasonsService.list(),
   });
 
   protected readonly lead = computed(() => this.leadResource.value() ?? null);
@@ -1025,7 +1061,9 @@ export class LeadDetailPage {
   protected readonly actionError = signal('');
   protected readonly dialogError = signal('');
   protected readonly actionPending = signal(false);
+  protected readonly deletingLead = signal(false);
   protected readonly closeDialogOpen = signal(false);
+  protected readonly closeDialogMode = signal<'close' | 'edit'>('close');
   protected readonly successDialogOpen = signal(false);
   protected readonly editLeadDialogOpen = signal(false);
   protected readonly editHistoryDialogOpen = signal(false);
@@ -1060,11 +1098,19 @@ export class LeadDetailPage {
       label: result,
     }),
   );
-  protected readonly closeReasonOptions: readonly UiSelectOption[] = Object.entries(
-    CLOSE_REASON_LABELS,
-  ).map(([value, label]) => ({ value, label }));
+  protected readonly closeReasonOptions = computed((): readonly UiSelectOption[] => {
+    const reasons = this.lossReasonsResource.value();
+    if (reasons?.length) {
+      return reasons.map((reason) => ({ value: reason.code, label: reason.label_uk }));
+    }
+    return Object.entries(CLOSE_REASON_LABELS).map(([value, label]) => ({ value, label }));
+  });
+  protected readonly defaultCloseReason = computed(
+    () => this.closeReasonOptions()[0]?.value ?? 'not_target',
+  );
   protected readonly historyEventTypeOptions: readonly UiSelectOption[] = [
     { value: 'created', label: 'Заявка створена' },
+    { value: 'lead_assigned', label: 'Лід призначено' },
     { value: 'taken', label: 'Лід взято в роботу' },
     { value: 'contact_attempt', label: 'Перший дзвінок' },
     { value: 'first_call', label: 'Перший дзвінок (старий тип)' },
@@ -1097,6 +1143,39 @@ export class LeadDetailPage {
         (office) => office.code === lead.officeCode,
       )
     );
+  }
+
+  protected canDeleteLead(lead: MockLead): boolean {
+    if (lead.workflowStatus !== 'closed') return false;
+    return this.canEditLead(lead);
+  }
+
+  protected async confirmDeleteLead(lead: MockLead): Promise<void> {
+    if (!this.canDeleteLead(lead) || this.deletingLead()) return;
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .confirm({
+          title: 'Видалити лід назавжди',
+          description: `Лід «${lead.name}» буде видалений без можливості відновлення. Уся історія та вкладення також зникнуть.`,
+          confirmLabel: 'Видалити',
+          cancelLabel: 'Скасувати',
+          danger: true,
+        })
+        .afterClosed(),
+    );
+    if (!confirmed) return;
+
+    this.actionError.set('');
+    this.deletingLead.set(true);
+    try {
+      await this.leadsService.deleteLead(lead.id);
+      await this.router.navigate(['/crm/leads']);
+    } catch (error) {
+      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося видалити лід');
+    } finally {
+      this.deletingLead.set(false);
+    }
   }
 
   protected managerOptions(lead: MockLead): readonly UiSelectOption[] {
@@ -1132,6 +1211,10 @@ export class LeadDetailPage {
     return LEAD_SOURCE_LABELS[lead.source];
   }
 
+  protected sourceIcon(lead: MockLead) {
+    return LEAD_SOURCE_ICONS[lead.source];
+  }
+
   protected workflowLabel(lead: MockLead): string {
     return WORKFLOW_LABELS[lead.workflowStatus];
   }
@@ -1159,7 +1242,8 @@ export class LeadDetailPage {
       return `Договір ${lead.contract.contractNumber}, сума ${formatMoney(lead.contract.amount)}.`;
     }
     if (lead.close) {
-      return `${CLOSE_REASON_LABELS[lead.close.reason]}. ${lead.close.comment || 'Без додаткового коментаря.'}`;
+      const reasonLabel = lossReasonLabel(lead.close.reason, this.lossReasonsResource.value());
+      return `${reasonLabel}. ${lead.close.comment || 'Без додаткового коментаря.'}`;
     }
     return 'Основні дії недоступні для завершеного ліда.';
   }
@@ -1341,7 +1425,30 @@ export class LeadDetailPage {
 
   protected openCloseDialog(): void {
     this.dialogError.set('');
+    this.closeDialogMode.set('close');
+    this.closeReason.set(this.defaultCloseReason());
+    this.closeComment.set('');
     this.closeDialogOpen.set(true);
+  }
+
+  protected openEditCloseDialog(lead: MockLead): void {
+    if (!lead.close) return;
+    this.dialogError.set('');
+    this.closeDialogMode.set('edit');
+    this.closeReason.set(lead.close.reason);
+    this.closeComment.set(lead.close.comment);
+    this.closeDialogOpen.set(true);
+  }
+
+  protected closeCloseDialog(): void {
+    this.dialogError.set('');
+    this.closeDialogMode.set('close');
+    this.closeDialogOpen.set(false);
+  }
+
+  protected closeSuccessDialog(): void {
+    this.dialogError.set('');
+    this.successDialogOpen.set(false);
   }
 
   protected openSuccessDialog(): void {
@@ -1350,15 +1457,22 @@ export class LeadDetailPage {
   }
 
   protected async submitClose(lead: MockLead): Promise<void> {
-    const validationError = await this.workflowService.closeLead(lead.id, {
+    this.dialogError.set('');
+    const payload = {
       reason: this.closeReason() as CloseReason,
       comment: this.closeComment(),
-    });
+    };
+
+    const validationError =
+      this.closeDialogMode() === 'edit'
+        ? await this.leadsService.updateCloseDetails(lead.id, payload)
+        : await this.workflowService.closeLead(lead.id, payload);
     if (validationError) {
       this.dialogError.set(validationError);
       return;
     }
-    this.closeDialogOpen.set(false);
+
+    this.closeCloseDialog();
     this.closeComment.set('');
     await this.leadResource.reload();
   }

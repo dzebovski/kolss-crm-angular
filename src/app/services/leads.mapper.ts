@@ -13,12 +13,13 @@ import type {
   OfficeId,
   ShowroomVisit,
 } from './crm-mock.types';
+import { resolveCloseUserComment } from './crm-mock.helpers';
 import { toSimplifiedWorkflowStatus } from './workflow-legacy.mapper';
 
 export const LEAD_LIST_SELECT = `
   id, name, phone, email, lead_status, workflow_status,
   office_id, assigned_to, source_created_at, created_at, updated_at,
-  last_comment, callback_due_at, source_channel, source_note,
+  last_comment, callback_due_at, source_system, source_channel, source_note,
   product_interest, estimated_budget, city_region, order_comment,
   offices (id, code, name_uk, name_pl),
   profiles:assigned_to (id, display_name)
@@ -89,21 +90,30 @@ function officeCodeFromRow(row: LeadListRow): OfficeId {
   return code === 'warsaw' ? 'warsaw' : 'kyiv';
 }
 
-function mapSource(channel: string | null): LeadSource {
+function mapSource(channel: string | null | undefined, sourceSystem: string | null | undefined): LeadSource {
   if (channel === 'facebook') return 'facebook';
-  if (channel === 'manual') return 'manual';
+  if (channel === 'office') return 'office';
+  if (channel === 'other') return 'other';
+  if (channel === 'website') return 'website';
+  if (channel === 'manual') return 'office';
+  if (sourceSystem === 'meta_lead_ads') return 'facebook';
+  if (sourceSystem === 'site_form') return 'website';
+  if (sourceSystem === 'manual') return 'office';
   return 'website';
 }
 
+export function mapCreateLeadSource(source: LeadSource): {
+  readonly source_system: string;
+  readonly source_channel: string;
+} {
+  return {
+    source_system: 'manual',
+    source_channel: source,
+  };
+}
+
 function mapCloseReason(value: string | null | undefined): CloseReason {
-  const allowed: CloseReason[] = [
-    'no_contact',
-    'not_target',
-    'location_mismatch',
-    'expensive',
-    'lost_client',
-  ];
-  return allowed.includes(value as CloseReason) ? (value as CloseReason) : 'lost_client';
+  return value?.trim() || 'not_target';
 }
 
 function mapEventType(eventType: string): LeadEventType {
@@ -124,6 +134,7 @@ function mapEventType(eventType: string): LeadEventType {
     contract_signed: 'successful',
     attachment: 'attachment',
     lead_updated: 'lead_updated',
+    lead_assigned: 'comment',
   };
   return map[eventType] ?? 'comment';
 }
@@ -194,12 +205,16 @@ function buildClose(
   workflowStatus: LeadWorkflowStatus,
   lossReason: string | null,
   events: readonly LeadEventRow[],
+  lastComment: string | null,
 ): LeadClose | null {
   if (workflowStatus !== 'closed') return null;
   const closeEvent = events.find((event) => event.event_type === 'closed' || event.event_type === 'bad_lead');
+  const reason = mapCloseReason(lossReason);
+  const eventComment = resolveCloseUserComment(closeEvent?.comment, reason);
+  const leadComment = resolveCloseUserComment(lastComment, reason);
   return {
-    reason: mapCloseReason(lossReason),
-    comment: closeEvent?.comment ?? '',
+    reason,
+    comment: leadComment || eventComment,
     closedAt: closeEvent?.created_at ?? new Date().toISOString(),
     actorId: closeEvent?.actor_id ?? '',
   };
@@ -235,6 +250,7 @@ function eventTitle(eventType: string): string {
     comment: 'Коментар',
     lead_updated: 'Дані ліда відредаговано',
     attachment: 'Вкладення',
+    lead_assigned: 'Лід призначено',
   };
   return titles[eventType] ?? eventType;
 }
@@ -283,7 +299,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
   const firstCall = buildFirstCall(relations.contactAttempts);
   const visit = buildVisit(relations.showroomVisits);
   const contract = buildContract(relations.contracts);
-  const close = buildClose(workflowStatus, row.loss_reason, relations.events);
+  const close = buildClose(workflowStatus, row.loss_reason, relations.events, row.last_comment);
 
   const firstManagerId =
     relations.contactAttempts.at(-1)?.manager_id ??
@@ -298,7 +314,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     leadStatus: mapLeadStatus(row.lead_status),
     workflowStatus,
     officeCode,
-    source: mapSource(row.source_channel),
+    source: mapSource(row.source_channel, row.source_system),
     sourceCreatedAt: row.source_created_at ?? row.created_at,
     initialMessage: row.order_comment ?? row.source_note ?? '',
     cityRegion: row.city_region ?? '',

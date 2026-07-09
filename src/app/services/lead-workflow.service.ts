@@ -180,6 +180,9 @@ export class LeadWorkflowService {
     const error = validateCloseLead(payload);
     if (error) return error;
 
+    const reasonError = await this.leads.ensureLossReasonExists(payload.reason);
+    if (reasonError) return reasonError;
+
     const actorId = this.leads.currentUserId();
     const now = new Date().toISOString();
     const { error: updateError } = await this.supabase
