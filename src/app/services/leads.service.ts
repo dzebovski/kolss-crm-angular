@@ -180,14 +180,12 @@ export class LeadsService {
   }
 
   async deleteLead(leadId: string): Promise<void> {
-    const { data, error } = await this.supabase
+    const { error, count } = await this.supabase
       .from('leads')
-      .delete()
-      .eq('id', leadId)
-      .select('id')
-      .maybeSingle();
+      .delete({ count: 'exact' })
+      .eq('id', leadId);
     if (error) throw error;
-    if (!data) {
+    if (!count) {
       throw new Error('error.leadDeleteFailed');
     }
   }

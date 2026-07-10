@@ -109,13 +109,9 @@ describe('LeadsService.createLead', () => {
 });
 
 describe('LeadsService.deleteLead', () => {
-  it('deletes lead by id', async () => {
+  function setupDelete(eqResult: { error: null; count: number }) {
     const leadsDelete = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'lead-1' }, error: null }),
-        }),
-      }),
+      eq: vi.fn().mockResolvedValue(eqResult),
     });
     const supabase = {
       from: vi.fn((table: string) => {
@@ -143,12 +139,22 @@ describe('LeadsService.deleteLead', () => {
       ],
     });
 
-    const service = TestBed.inject(LeadsService);
+    return { service: TestBed.inject(LeadsService), leadsDelete };
+  }
+
+  it('deletes lead by id', async () => {
+    const { service, leadsDelete } = setupDelete({ error: null, count: 1 });
+
     await service.deleteLead('lead-1');
 
-    expect(leadsDelete).toHaveBeenCalled();
+    expect(leadsDelete).toHaveBeenCalledWith({ count: 'exact' });
     const deleteChain = leadsDelete.mock.results[0]?.value;
     expect(deleteChain.eq).toHaveBeenCalledWith('id', 'lead-1');
-    expect(deleteChain.eq.mock.results[0]?.value.select).toHaveBeenCalledWith('id');
+  });
+
+  it('throws when no rows are deleted', async () => {
+    const { service } = setupDelete({ error: null, count: 0 });
+
+    await expect(service.deleteLead('lead-1')).rejects.toThrow('error.leadDeleteFailed');
   });
 });

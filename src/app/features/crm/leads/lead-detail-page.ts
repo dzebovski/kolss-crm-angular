@@ -1249,9 +1249,8 @@ export class LeadDetailPage {
       await this.leadsService.deleteLead(lead.id);
       await this.router.navigate(['/crm/leads']);
     } catch (error) {
-      this.actionError.set(
-        error instanceof Error ? error.message : this.i18n.t('error.leadDeleteFailed'),
-      );
+      const message = error instanceof Error ? error.message : 'error.leadDeleteFailed';
+      this.actionError.set(this.i18n.localizeError(message));
     } finally {
       this.deletingLead.set(false);
     }
