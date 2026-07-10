@@ -29,28 +29,24 @@
 | Файл | Коли використовується |
 |------|----------------------|
 | `src/environments/environment.ts` | Базовий шаблон |
-| `src/environments/environment.development.ts` | `ng serve` (file replacement) |
-| `src/environments/environment.prod.ts` | `ng build` production |
+| `src/environments/environment.local.ts` | `ng serve` / watch (генерує `scripts/sync-env.mjs`) |
+| `src/environments/environment.prod.ts` | `ng build` (генерує `scripts/sync-env.mjs --prod`) |
 
-### Обовʼязкові значення
+Локально: `.env.local` → `npm start` / `npm run sync-env`.  
+Vercel: Environment Variables → `prebuild` → `environment.prod.ts`.
 
-```typescript
-export const environment = {
-  production: false,
-  supabaseUrl: 'https://YOUR_PROJECT.supabase.co',
-  supabaseAnonKey: 'eyJ...',          // anon public key ONLY
-  siteUrl: 'http://localhost:4200',
-  siteUrlPublic: 'https://crm.kolss.com',
-};
+### Обовʼязкові значення (env)
+
+```bash
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_ANON_KEY=eyJ...   # anon public key ONLY
+SITE_URL=https://your-app.vercel.app
+SITE_URL_PUBLIC=https://your-app.vercel.app
 ```
 
-**Звідки взяти:**
+Aliases `NEXT_PUBLIC_*` також працюють. На Vercel без `SITE_URL` підставляється `https://$VERCEL_URL`.
 
-1. Supabase Dashboard → **Project Settings** → **API**
-2. `supabaseUrl` = Project URL
-3. `supabaseAnonKey` = `anon` `public` key
-
-**Ніколи не додавати у фронтенд:** `SUPABASE_SERVICE_ROLE_KEY`, `IMPORT_WEBHOOK_SECRET`, Telegram/Slack tokens.
+**Ніколи не додавати у фронтенд / Vercel для цього SPA:** `SUPABASE_SERVICE_ROLE_KEY`, `IMPORT_WEBHOOK_SECRET`, Telegram/Slack tokens, `DATABASE_URL`.
 
 ### Supabase Auth (Dashboard)
 
