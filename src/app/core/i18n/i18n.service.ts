@@ -1,5 +1,6 @@
-import { computed, inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
+import type { LocaleCode } from '../../services/crm-mock.types';
 import { SessionService } from '../session/session.service';
 import {
   compareForLocale,
@@ -14,7 +15,9 @@ import { messages, type MessageKey, type MessageParams, translateMessage } from 
 export class I18nService {
   private readonly session = inject(SessionService);
 
-  readonly locale = computed(() => this.session.locale());
+  locale(): LocaleCode {
+    return this.session.locale();
+  }
 
   t(key: MessageKey, params?: MessageParams): string {
     return translateMessage(key, this.locale(), params);

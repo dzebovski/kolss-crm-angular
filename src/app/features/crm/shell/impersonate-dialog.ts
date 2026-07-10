@@ -2,7 +2,9 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import type { UserRole } from '../../../models/database';
-import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
+import { ASSIGNABLE_ROLES } from '../../../core/roles/roles';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { AdminUsersService, type AdminUserRow } from '../../../services/admin-users.service';
 import { ImpersonationService } from '../../../core/impersonation/impersonation.service';
 import { SessionService } from '../../../core/session/session.service';
@@ -16,33 +18,37 @@ export interface ImpersonateDialogData {
 
 @Component({
   selector: 'app-impersonate-dialog',
-  imports: [UiAlert, UiButton, UiSelect],
+  imports: [UiAlert, UiButton, UiSelect, TranslatePipe],
   template: `
     <div class="impersonate-dialog" aria-labelledby="impersonate-title">
       <div class="impersonate-dialog__mark" aria-hidden="true"></div>
       <header class="impersonate-dialog__header">
-        <h2 id="impersonate-title">Увійти як…</h2>
-        <p>Це перемикає Supabase сесію та RLS-доступи на обраного співробітника.</p>
+        <h2 id="impersonate-title">{{ 'nav.impersonate' | translate }}</h2>
+        <p>{{ 'impersonate.description' | translate }}</p>
       </header>
 
       @if (error()) {
-        <app-ui-alert tone="danger" title="Не вдалося виконати імперсонацію">
+        <app-ui-alert tone="danger" [title]="'impersonate.errorTitle' | translate">
           {{ error() }}
         </app-ui-alert>
       }
 
       <div class="impersonate-dialog__grid">
-        <app-ui-select label="Роль" [options]="roleOptions()" [(value)]="role" />
         <app-ui-select
-          label="Офіс"
-          placeholder="Оберіть офіс"
+          [label]="'common.role' | translate"
+          [options]="roleOptions()"
+          [(value)]="role"
+        />
+        <app-ui-select
+          [label]="'common.office' | translate"
+          [placeholder]="'impersonate.selectOffice' | translate"
           [disabled]="officeOptions().length === 0"
           [options]="officeOptions()"
           [(value)]="officeId"
         />
         <app-ui-select
-          label="Менеджер"
-          placeholder="Оберіть співробітника"
+          [label]="'common.manager' | translate"
+          [placeholder]="'impersonate.selectEmployee' | translate"
           [disabled]="managerOptions().length === 0"
           [options]="managerOptions()"
           [(value)]="userId"
@@ -50,14 +56,16 @@ export interface ImpersonateDialogData {
       </div>
 
       <footer class="impersonate-dialog__actions">
-        <app-ui-button variant="ghost" (pressed)="close()">Скасувати</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="close()">
+          {{ 'common.cancel' | translate }}
+        </app-ui-button>
         <app-ui-button
           variant="primary"
           [loading]="submitting()"
           [disabled]="!canSubmit()"
           (pressed)="submit()"
         >
-          Увійти
+          {{ 'login.submit' | translate }}
         </app-ui-button>
       </footer>
     </div>
@@ -114,6 +122,7 @@ export class ImpersonateDialog {
   private readonly adminUsers = inject(AdminUsersService);
   private readonly impersonation = inject(ImpersonationService);
   private readonly session = inject(SessionService);
+  private readonly i18n = inject(I18nService);
 
   protected readonly submitting = signal(false);
   protected readonly error = signal('');
@@ -126,21 +135,27 @@ export class ImpersonateDialog {
 
   private readonly activeUsers = computed(() => this.users().filter((u) => u.profile.is_active));
 
-  protected readonly roleOptions = computed<readonly UiSelectOption[]>(() =>
-    ASSIGNABLE_ROLES.map((value) => ({ value, label: roleLabel(value) })),
-  );
+  protected readonly roleOptions = computed<readonly UiSelectOption[]>(() => {
+    this.i18n.locale();
+    return ASSIGNABLE_ROLES.map((value) => ({ value, label: this.i18n.roleLabel(value) }));
+  });
 
   protected readonly officeOptions = computed<readonly UiSelectOption[]>(() => {
+    this.i18n.locale();
     const byId = new Map<string, UiSelectOption>();
     for (const row of this.activeUsers()) {
       for (const office of row.offices ?? []) {
-        byId.set(office.id, { value: office.id, label: office.name_uk });
+        byId.set(office.id, {
+          value: office.id,
+          label: this.i18n.tField(office as unknown as Record<string, unknown>, 'name', office.id),
+        });
       }
     }
-    return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label, 'uk'));
+    return [...byId.values()].sort((a, b) => this.i18n.compare(a.label, b.label));
   });
 
   protected readonly managerOptions = computed<readonly UiSelectOption[]>(() => {
+    this.i18n.locale();
     const role = this.role();
     const officeId = this.officeId();
     if (!role || !officeId) return [];
@@ -152,7 +167,7 @@ export class ImpersonateDialog {
       const name = row.profile.display_name?.trim() || row.email || row.id;
       matches.push({ value: row.id, label: name });
     }
-    return matches.sort((a, b) => a.label.localeCompare(b.label, 'uk'));
+    return matches.sort((a, b) => this.i18n.compare(a.label, b.label));
   });
 
   protected readonly canSubmit = computed(() => Boolean(this.userId()) && !this.submitting());
@@ -177,7 +192,7 @@ export class ImpersonateDialog {
       const users = await this.adminUsers.listUsers(true);
       this.users.set(users);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Не вдалося завантажити список співробітників');
+      this.error.set(e instanceof Error ? e.message : this.i18n.t('impersonate.loadFailed'));
     }
   }
 
@@ -197,10 +212,9 @@ export class ImpersonateDialog {
       await this.session.loadOfficeContext();
       this.dialogRef.close(true);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Не вдалося виконати імперсонацію');
+      this.error.set(e instanceof Error ? e.message : this.i18n.t('impersonate.submitFailed'));
     } finally {
       this.submitting.set(false);
     }
   }
 }
-

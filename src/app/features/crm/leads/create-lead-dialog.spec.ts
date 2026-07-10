@@ -20,6 +20,7 @@ describe('CreateLeadDialog', () => {
         {
           provide: SessionService,
           useValue: {
+            locale: () => 'uk',
             officeContext: () => ({
               filterOffices: [kyivOffice],
             }),

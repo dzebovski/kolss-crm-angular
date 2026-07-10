@@ -1,7 +1,8 @@
 import { Component, computed, effect, inject, output, signal } from '@angular/core';
 
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
-import { CREATE_LEAD_SOURCE_OPTIONS } from '../../../services/crm-mock.helpers';
 import type { LeadSource } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
 import { UiButton } from '../../../ui/button/ui-button';
@@ -12,15 +13,15 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
 
 @Component({
   selector: 'app-create-lead-dialog',
-  imports: [UiButton, UiModal, UiSelect, UiTextField, UiTextarea],
+  imports: [UiButton, UiModal, UiSelect, UiTextField, UiTextarea, TranslatePipe],
   template: `
     <app-ui-modal
       [wide]="true"
       labelledBy="create-lead-dialog-title"
       (dismissed)="dismiss()"
     >
-      <h2 id="create-lead-dialog-title">Створити лід</h2>
-      <p>Заповніть контакти клієнта та оберіть джерело заявки.</p>
+      <h2 id="create-lead-dialog-title">{{ 'lead.create' | translate }}</h2>
+      <p>{{ 'lead.createHint' | translate }}</p>
 
       @if (error()) {
         <div class="inline-error" role="alert">{{ error() }}</div>
@@ -41,7 +42,7 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
             label="Джерело"
             [required]="true"
             [error]="sourceError()"
-            [options]="sourceOptions"
+            [options]="sourceOptions()"
             [(value)]="source"
           />
         </div>
@@ -142,6 +143,7 @@ import { UiTextarea } from '../../../ui/form/ui-textarea';
 export class CreateLeadDialog {
   private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
+  private readonly i18n = inject(I18nService);
 
   readonly dismissed = output<void>();
   readonly created = output<string>();
@@ -165,18 +167,18 @@ export class CreateLeadDialog {
   protected readonly budget = signal('');
   protected readonly initialMessage = signal('');
 
-  protected readonly sourceOptions: readonly UiSelectOption[] = CREATE_LEAD_SOURCE_OPTIONS.map(
-    (option) => ({
-      value: option.value,
-      label: option.label,
-    }),
+  protected readonly sourceOptions = computed((): readonly UiSelectOption[] =>
+    (['office', 'website', 'facebook', 'other'] as const).map((value) => ({
+      value,
+      label: this.i18n.sourceLabel(value),
+    })),
   );
 
   protected readonly officeOptions = computed<readonly UiSelectOption[]>(() => {
     const offices = this.session.officeContext()?.filterOffices ?? [];
     return offices.map((office) => ({
       value: office.id,
-      label: office.name_uk,
+      label: this.i18n.tField(office as unknown as Record<string, unknown>, 'name', office.code),
     }));
   });
 

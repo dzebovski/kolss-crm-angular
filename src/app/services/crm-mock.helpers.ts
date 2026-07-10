@@ -240,19 +240,19 @@ export function calculateFunnel(
   const counts = [
     {
       key: 'created',
-      label: 'Зайшло лідів',
+      label: 'funnel.created',
       count: total,
       tone: 'brand' as const,
     },
     {
       key: 'taken',
-      label: 'Взяли в роботу',
+      label: 'funnel.taken',
       count: cohort.filter((lead) => lead.assignedToId || lead.workflowStatus !== 'new').length,
       tone: 'info' as const,
     },
     {
       key: 'scheduled',
-      label: 'Очікуються в салоні',
+      label: 'funnel.scheduled',
       count: cohort.filter(
         (lead) =>
           lead.workflowStatus === 'visit_scheduled' || lead.workflowStatus === 'visit_rescheduled',
@@ -261,7 +261,7 @@ export function calculateFunnel(
     },
     {
       key: 'visited',
-      label: 'Прийшли в салон',
+      label: 'funnel.visited',
       count: cohort.filter(
         (lead) => lead.workflowStatus === 'visit_completed' || lead.workflowStatus === 'successful',
       ).length,
@@ -269,13 +269,13 @@ export function calculateFunnel(
     },
     {
       key: 'successful',
-      label: 'Успішні',
+      label: 'funnel.successful',
       count: cohort.filter((lead) => lead.workflowStatus === 'successful').length,
       tone: 'success' as const,
     },
     {
       key: 'closed',
-      label: 'Закриті',
+      label: 'funnel.closed',
       count: cohort.filter((lead) => lead.workflowStatus === 'closed').length,
       tone: 'danger' as const,
     },

@@ -26,6 +26,7 @@ describe('ReportsPage', () => {
         {
           provide: SessionService,
           useValue: {
+            locale: () => 'uk',
             selectedOfficeId: () => null,
           },
         },

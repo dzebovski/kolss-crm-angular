@@ -7,15 +7,31 @@ export function isViewAsMode(value: string | null | undefined): value is ViewAsM
 }
 
 export function readViewAsMode(): ViewAsMode {
-  if (typeof localStorage === 'undefined') return 'super_admin';
-  const raw = localStorage.getItem(VIEW_AS_STORAGE_KEY);
-  return isViewAsMode(raw) ? raw : 'super_admin';
+  try {
+    if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
+      return 'super_admin';
+    }
+    const raw = localStorage.getItem(VIEW_AS_STORAGE_KEY);
+    return isViewAsMode(raw) ? raw : 'super_admin';
+  } catch {
+    return 'super_admin';
+  }
 }
 
 export function writeViewAsMode(mode: ViewAsMode): void {
-  localStorage.setItem(VIEW_AS_STORAGE_KEY, mode);
+  try {
+    if (typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') return;
+    localStorage.setItem(VIEW_AS_STORAGE_KEY, mode);
+  } catch {
+    // ignore
+  }
 }
 
 export function clearViewAsMode(): void {
-  localStorage.removeItem(VIEW_AS_STORAGE_KEY);
+  try {
+    if (typeof localStorage === 'undefined' || typeof localStorage.removeItem !== 'function') return;
+    localStorage.removeItem(VIEW_AS_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 }

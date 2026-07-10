@@ -9,6 +9,7 @@ import {
   presentHistoryAuditText,
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { canEditLeads } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
@@ -39,10 +40,25 @@ const NO_MANAGER_VALUE = '__none__';
 
 @Component({
   selector: 'app-lead-detail-page',
-  imports: [RouterLink, UiBadge, UiButton, UiIcon, UiModal, UiSelect, UiTextField, UiTextarea, UiUser],
+  imports: [
+    RouterLink,
+    UiBadge,
+    UiButton,
+    UiIcon,
+    UiModal,
+    UiSelect,
+    UiTextField,
+    UiTextarea,
+    UiUser,
+    TranslatePipe,
+  ],
   template: `
     @if (leadResource.isLoading()) {
-      <section class="lead-page lead-page--loading" aria-busy="true" aria-label="Завантаження ліда">
+      <section
+        class="lead-page lead-page--loading"
+        aria-busy="true"
+        [attr.aria-label]="'lead.loading' | translate"
+      >
         <span class="skeleton" style="--skeleton-w: 9rem; --skeleton-h: 1.25rem"></span>
 
         <header class="lead-header">
@@ -138,15 +154,15 @@ const NO_MANAGER_VALUE = '__none__';
     } @else if (loadError()) {
       <section class="missing-state" role="alert">
         <app-ui-icon name="inbox" [size]="30" />
-        <h1>Не вдалося завантажити лід</h1>
+        <h1>{{ 'lead.loadFailedTitle' | translate }}</h1>
         <p>{{ loadError() }}</p>
-        <a routerLink="/crm/leads">Повернутись до списку</a>
+        <a routerLink="/crm/leads">{{ 'lead.backToList' | translate }}</a>
       </section>
     } @else if (lead(); as lead) {
       <section class="lead-page" [attr.aria-labelledby]="'lead-' + lead.id">
         <a class="back-link" routerLink="/crm/leads">
           <app-ui-icon name="arrow_back" [size]="17" />
-          До списку лідів
+          {{ 'lead.backToLeads' | translate }}
         </a>
 
         <header class="lead-header">
@@ -173,17 +189,17 @@ const NO_MANAGER_VALUE = '__none__';
               [disabled]="lead.assignedToId !== null || isTerminal(lead)"
               (pressed)="takeLead(lead)"
             >
-              Взяти в роботу
+              {{ 'lead.takeInWork' | translate }}
             </app-ui-button>
             <app-ui-button
               variant="secondary"
               [disabled]="isTerminal(lead)"
               (pressed)="openCloseDialog()"
             >
-              Закрити лід
+              {{ 'lead.closeLead' | translate }}
             </app-ui-button>
             <app-ui-button [disabled]="isTerminal(lead)" (pressed)="openSuccessDialog()">
-              Позначити успішним
+              {{ 'lead.markSuccessful' | translate }}
             </app-ui-button>
           </div>
         </header>
@@ -214,7 +230,7 @@ const NO_MANAGER_VALUE = '__none__';
                   (pressed)="openEditCloseDialog(lead)"
                 >
                   <app-ui-icon name="edit" [size]="16" />
-                  Редагувати
+                  {{ 'common.edit' | translate }}
                 </app-ui-button>
                 @if (canDeleteLead(lead)) {
                   <app-ui-button
@@ -224,7 +240,7 @@ const NO_MANAGER_VALUE = '__none__';
                     (pressed)="confirmDeleteLead(lead)"
                   >
                     <app-ui-icon name="delete" [size]="16" />
-                    Видалити назавжди
+                    {{ 'lead.deleteForeverShort' | translate }}
                   </app-ui-button>
                 }
               </div>
@@ -239,24 +255,26 @@ const NO_MANAGER_VALUE = '__none__';
                 <header>
                   <span>01</span>
                   <div>
-                    <h2 id="first-call-title">Перший дзвінок</h2>
-                    <p>Після збереження блок стане подією в історії.</p>
+                    <h2 id="first-call-title">{{ 'workflow.first_call_done' | translate }}</h2>
+                    <p>{{ 'lead.afterSaveHistory' | translate }}</p>
                   </div>
                 </header>
                 <div class="workflow-grid">
                   <app-ui-select
-                    label="Результат"
+                    [label]="'common.result' | translate"
                     [options]="firstCallOptions()"
                     [(value)]="firstCallResult"
                   />
                   <app-ui-textarea
-                    label="Коментар"
+                    [label]="'lead.comment' | translate"
                     [rows]="3"
-                    placeholder="Що зʼясували під час дзвінка"
+                    [placeholder]="'lead.callCommentPlaceholder' | translate"
                     [(value)]="firstCallComment"
                   />
                 </div>
-                <app-ui-button (pressed)="saveFirstCall(lead)">Зберегти дзвінок</app-ui-button>
+                <app-ui-button (pressed)="saveFirstCall(lead)">
+                  {{ 'lead.saveCall' | translate }}
+                </app-ui-button>
               </section>
             }
 
@@ -265,36 +283,36 @@ const NO_MANAGER_VALUE = '__none__';
                 <header>
                   <span>02</span>
                   <div>
-                    <h2 id="visit-title">Візит у салон</h2>
-                    <p>Планування, перенесення або фіксація завершеного візиту.</p>
+                    <h2 id="visit-title">{{ 'lead.visitSalon' | translate }}</h2>
+                    <p>{{ 'lead.visitHint' | translate }}</p>
                   </div>
                 </header>
                 <div class="workflow-grid">
                   <app-ui-text-field
-                    label="Дата"
+                    [label]="'common.date' | translate"
                     type="date"
                     [(value)]="visitDate"
                   />
                   <app-ui-textarea
-                    label="Коментар"
+                    [label]="'lead.comment' | translate"
                     [rows]="3"
-                    placeholder="Причина перенесення або результат візиту"
+                    [placeholder]="'lead.visitCommentPlaceholder' | translate"
                     [(value)]="visitComment"
                   />
                 </div>
                 <div class="workflow-actions">
                   <app-ui-button variant="secondary" (pressed)="scheduleVisit(lead)">
-                    Запланувати
+                    {{ 'lead.schedule' | translate }}
                   </app-ui-button>
                   <app-ui-button
                     variant="secondary"
                     [disabled]="!lead.visit"
                     (pressed)="rescheduleVisit(lead)"
                   >
-                    Перенести
+                    {{ 'lead.reschedule' | translate }}
                   </app-ui-button>
                   <app-ui-button [disabled]="!lead.visit" (pressed)="completeVisit(lead)">
-                    Візит відбувся
+                    {{ 'workflow.visit_completed' | translate }}
                   </app-ui-button>
                 </div>
               </section>
@@ -303,26 +321,26 @@ const NO_MANAGER_VALUE = '__none__';
                 <header>
                   <span>03</span>
                   <div>
-                    <h2 id="comment-title">Коментар</h2>
-                    <p>Звичайна нотатка менеджера додається у timeline.</p>
+                    <h2 id="comment-title">{{ 'lead.comment' | translate }}</h2>
+                    <p>{{ 'lead.commentHint' | translate }}</p>
                   </div>
                 </header>
                 <app-ui-textarea
-                  label="Новий коментар"
+                  [label]="'lead.newComment' | translate"
                   [rows]="3"
-                  placeholder="Наступний крок або контекст розмови"
+                  [placeholder]="'lead.commentPlaceholder' | translate"
                   [(value)]="commentDraft"
                 />
                 <app-ui-button variant="secondary" (pressed)="addComment(lead)">
-                  Додати коментар
+                  {{ 'lead.addComment' | translate }}
                 </app-ui-button>
               </section>
             }
 
             <section class="timeline-panel" aria-labelledby="timeline-title">
               <header>
-                <h2 id="timeline-title">Історія активності</h2>
-                <span>{{ lead.events.length }} подій</span>
+                <h2 id="timeline-title">{{ 'lead.activityHistory' | translate }}</h2>
+                <span>{{ 'lead.eventsCount' | translate: { count: lead.events.length } }}</span>
               </header>
               <ol class="timeline-list">
                 @for (event of lead.events; track event.id) {
@@ -338,7 +356,7 @@ const NO_MANAGER_VALUE = '__none__';
                             (pressed)="openHistoryEditDialog(event)"
                           >
                             <app-ui-icon name="edit" [size]="16" />
-                            Редагувати
+                            {{ 'common.edit' | translate }}
                           </app-ui-button>
                         }
                       </div>
@@ -363,13 +381,13 @@ const NO_MANAGER_VALUE = '__none__';
             </section>
           </main>
 
-          <aside class="lead-side" aria-label="Дані клієнта">
+          <aside class="lead-side" [attr.aria-label]="'lead.clientData' | translate">
             <section class="summary-panel">
               <header class="summary-panel__header">
                 <div class="summary-panel__title">
                   <div class="avatar" aria-hidden="true">{{ initials(lead.name) }}</div>
                   <div>
-                    <h2>Контакти</h2>
+                    <h2>{{ 'lead.contacts' | translate }}</h2>
                     <p>{{ lead.cityRegion }}</p>
                   </div>
                 </div>
@@ -380,21 +398,21 @@ const NO_MANAGER_VALUE = '__none__';
                     (pressed)="openLeadEditDialog(lead)"
                   >
                     <app-ui-icon name="edit" [size]="16" />
-                    Редагувати
+                    {{ 'common.edit' | translate }}
                   </app-ui-button>
                 }
               </header>
               <dl>
                 <div>
-                  <dt>Телефон</dt>
+                  <dt>{{ 'common.phone' | translate }}</dt>
                   <dd>{{ lead.phone }}</dd>
                 </div>
                 <div>
-                  <dt>Email</dt>
+                  <dt>{{ 'common.email' | translate }}</dt>
                   <dd>{{ lead.email ?? '—' }}</dd>
                 </div>
                 <div>
-                  <dt>Менеджер</dt>
+                  <dt>{{ 'common.manager' | translate }}</dt>
                   <dd>
                     @if (lead.assignedToId) {
                       <app-ui-user
@@ -403,32 +421,32 @@ const NO_MANAGER_VALUE = '__none__';
                         size="sm"
                       />
                     } @else {
-                      <span class="muted">Не призначено</span>
+                      <span class="muted">{{ 'common.unassigned' | translate }}</span>
                     }
                   </dd>
                 </div>
                 <div>
-                  <dt>Продукт</dt>
+                  <dt>{{ 'common.product' | translate }}</dt>
                   <dd>{{ lead.productInterest }}</dd>
                 </div>
                 <div>
-                  <dt>Бюджет</dt>
+                  <dt>{{ 'common.budget' | translate }}</dt>
                   <dd>{{ formatMoney(lead.estimatedBudget) }}</dd>
                 </div>
                 <div>
-                  <dt>Остання активність</dt>
+                  <dt>{{ 'accounts.lastActivity' | translate }}</dt>
                   <dd>{{ formatDateTime(lead.lastActivityAt) }}</dd>
                 </div>
               </dl>
             </section>
 
             <section class="summary-panel">
-              <h2>Початкове повідомлення</h2>
+              <h2>{{ 'lead.initialMessage' | translate }}</h2>
               <p>{{ lead.initialMessage }}</p>
             </section>
 
             <section class="summary-panel">
-              <h2>Вкладення</h2>
+              <h2>{{ 'event.attachment' | translate }}</h2>
               @if (lead.attachments.length) {
                 <ul class="attachments">
                   @for (attachment of lead.attachments; track attachment.id) {
@@ -440,11 +458,11 @@ const NO_MANAGER_VALUE = '__none__';
                   }
                 </ul>
               } @else {
-                <p class="muted">Файлів поки немає.</p>
+                <p class="muted">{{ 'lead.noFiles' | translate }}</p>
               }
               <app-ui-button variant="secondary" [disabled]="true">
                 <app-ui-icon name="add" [size]="17" />
-                Додати файл
+                {{ 'lead.addFile' | translate }}
               </app-ui-button>
             </section>
           </aside>
@@ -456,35 +474,52 @@ const NO_MANAGER_VALUE = '__none__';
             labelledBy="edit-lead-dialog-title"
             (dismissed)="closeLeadEditDialog()"
           >
-              <h2 id="edit-lead-dialog-title">Редагувати дані ліда</h2>
-              <p>Контакти, деталі заявки та відповідальний менеджер.</p>
+              <h2 id="edit-lead-dialog-title">{{ 'lead.editLeadTitle' | translate }}</h2>
+              <p>{{ 'lead.editLeadHint' | translate }}</p>
               @if (dialogError()) {
                 <div class="inline-error" role="alert">{{ dialogError() }}</div>
               }
 
               <div class="modal-section">
-                <h3>Контакти</h3>
+                <h3>{{ 'lead.contacts' | translate }}</h3>
                 <div class="modal-grid">
-                  <app-ui-text-field label="Імʼя" [(value)]="editLeadName" />
-                  <app-ui-text-field label="Телефон" type="tel" [(value)]="editLeadPhone" />
-                  <app-ui-text-field label="Email" type="email" [(value)]="editLeadEmail" />
-                  <app-ui-text-field label="Місто / район" [(value)]="editLeadCityRegion" />
+                  <app-ui-text-field [label]="'common.name' | translate" [(value)]="editLeadName" />
+                  <app-ui-text-field
+                    [label]="'common.phone' | translate"
+                    type="tel"
+                    [(value)]="editLeadPhone"
+                  />
+                  <app-ui-text-field
+                    [label]="'common.email' | translate"
+                    type="email"
+                    [(value)]="editLeadEmail"
+                  />
+                  <app-ui-text-field
+                    [label]="'common.cityRegion' | translate"
+                    [(value)]="editLeadCityRegion"
+                  />
                 </div>
               </div>
 
               <div class="modal-section">
-                <h3>Дані ліда</h3>
+                <h3>{{ 'lead.leadData' | translate }}</h3>
                 <div class="modal-grid">
-                  <app-ui-text-field label="Продукт" [(value)]="editLeadProductInterest" />
-                  <app-ui-text-field label="Бюджет, EUR" [(value)]="editLeadBudget" />
+                  <app-ui-text-field
+                    [label]="'common.product' | translate"
+                    [(value)]="editLeadProductInterest"
+                  />
+                  <app-ui-text-field
+                    [label]="'common.budgetEur' | translate"
+                    [(value)]="editLeadBudget"
+                  />
                   <app-ui-select
-                    label="Менеджер"
+                    [label]="'common.manager' | translate"
                     [options]="managerOptions(lead)"
                     [(value)]="editLeadAssignedToId"
                   />
                 </div>
                 <app-ui-textarea
-                  label="Початкове повідомлення"
+                  [label]="'lead.initialMessage' | translate"
                   [rows]="4"
                   [(value)]="editLeadInitialMessage"
                 />
@@ -492,9 +527,11 @@ const NO_MANAGER_VALUE = '__none__';
 
               <div class="modal-actions">
                 <app-ui-button variant="ghost" (pressed)="closeLeadEditDialog()">
-                  Скасувати
+                  {{ 'common.cancel' | translate }}
                 </app-ui-button>
-                <app-ui-button (pressed)="submitLeadEdit(lead)">Зберегти</app-ui-button>
+                <app-ui-button (pressed)="submitLeadEdit(lead)">
+                  {{ 'common.save' | translate }}
+                </app-ui-button>
               </div>
           </app-ui-modal>
         }
@@ -504,26 +541,28 @@ const NO_MANAGER_VALUE = '__none__';
             labelledBy="edit-history-dialog-title"
             (dismissed)="closeHistoryEditDialog()"
           >
-              <h2 id="edit-history-dialog-title">Редагувати історію</h2>
-              <p>Дата події не змінюється. Позначка про редагування буде видима всім.</p>
+              <h2 id="edit-history-dialog-title">{{ 'lead.editHistory' | translate }}</h2>
+              <p>{{ 'lead.editHistoryHint' | translate }}</p>
               @if (dialogError()) {
                 <div class="inline-error" role="alert">{{ dialogError() }}</div>
               }
               <app-ui-select
-                label="Тип"
+                [label]="'common.type' | translate"
                 [options]="historyEventTypeOptions()"
                 [(value)]="editHistoryType"
               />
               <app-ui-textarea
-                label="Повідомлення"
+                [label]="'common.message' | translate"
                 [rows]="4"
                 [(value)]="editHistoryComment"
               />
               <div class="modal-actions">
                 <app-ui-button variant="ghost" (pressed)="closeHistoryEditDialog()">
-                  Скасувати
+                  {{ 'common.cancel' | translate }}
                 </app-ui-button>
-                <app-ui-button (pressed)="submitHistoryEdit(lead)">Зберегти</app-ui-button>
+                <app-ui-button (pressed)="submitHistoryEdit(lead)">
+                  {{ 'common.save' | translate }}
+                </app-ui-button>
               </div>
           </app-ui-modal>
         }
@@ -532,34 +571,44 @@ const NO_MANAGER_VALUE = '__none__';
           <app-ui-modal labelledBy="close-dialog-title" (dismissed)="closeCloseDialog()">
               <h2 id="close-dialog-title">
                 {{
-                  closeDialogMode() === 'edit' ? 'Редагувати причину закриття' : 'Закрити лід'
+                  closeDialogMode() === 'edit'
+                    ? ('lead.editCloseTitle' | translate)
+                    : ('lead.closeLead' | translate)
                 }}
               </h2>
               <p>
                 {{
                   closeDialogMode() === 'edit'
-                    ? 'Оновіть причину або коментар закритого ліда.'
-                    : 'Після закриття основні дії стануть неактивними.'
+                    ? ('lead.editCloseHint' | translate)
+                    : ('lead.closeHint' | translate)
                 }}
               </p>
               @if (dialogError()) {
                 <div class="inline-error" role="alert">{{ dialogError() }}</div>
               }
               <app-ui-select
-                label="Причина"
+                [label]="'common.reason' | translate"
                 [options]="closeReasonOptions()"
                 [(value)]="closeReason"
               />
-              <app-ui-textarea label="Коментар" [rows]="4" [(value)]="closeComment" />
+              <app-ui-textarea
+                [label]="'lead.comment' | translate"
+                [rows]="4"
+                [(value)]="closeComment"
+              />
               <div class="modal-actions">
                 <app-ui-button variant="ghost" (pressed)="closeCloseDialog()">
-                  Скасувати
+                  {{ 'common.cancel' | translate }}
                 </app-ui-button>
                 <app-ui-button
                   [variant]="closeDialogMode() === 'edit' ? 'primary' : 'danger'"
                   (pressed)="submitClose(lead)"
                 >
-                  {{ closeDialogMode() === 'edit' ? 'Зберегти' : 'Закрити' }}
+                  {{
+                    closeDialogMode() === 'edit'
+                      ? ('common.save' | translate)
+                      : ('common.close' | translate)
+                  }}
                 </app-ui-button>
               </div>
           </app-ui-modal>
@@ -567,18 +616,35 @@ const NO_MANAGER_VALUE = '__none__';
 
         @if (successDialogOpen()) {
           <app-ui-modal labelledBy="success-dialog-title" (dismissed)="closeSuccessDialog()">
-              <h2 id="success-dialog-title">Договір заключений</h2>
-              <p>Номер і сума договору є обовʼязковими.</p>
+              <h2 id="success-dialog-title">{{ 'workflow.successful' | translate }}</h2>
+              <p>{{ 'lead.successHint' | translate }}</p>
               @if (dialogError()) {
                 <div class="inline-error" role="alert">{{ dialogError() }}</div>
               }
-              <app-ui-text-field label="Номер договору" [(value)]="contractNumber" />
-              <app-ui-text-field label="Сума договору, EUR" [(value)]="contractAmount" />
-              <app-ui-text-field label="Передоплата, EUR" [(value)]="contractPrepayment" />
-              <app-ui-textarea label="Коментар" [rows]="3" [(value)]="contractComment" />
+              <app-ui-text-field
+                [label]="'lead.contractNumber' | translate"
+                [(value)]="contractNumber"
+              />
+              <app-ui-text-field
+                [label]="'lead.contractAmount' | translate"
+                [(value)]="contractAmount"
+              />
+              <app-ui-text-field
+                [label]="'lead.contractPrepayment' | translate"
+                [(value)]="contractPrepayment"
+              />
+              <app-ui-textarea
+                [label]="'lead.comment' | translate"
+                [rows]="3"
+                [(value)]="contractComment"
+              />
               <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="closeSuccessDialog()">Скасувати</app-ui-button>
-                <app-ui-button (pressed)="submitSuccess(lead)">Зберегти договір</app-ui-button>
+                <app-ui-button variant="ghost" (pressed)="closeSuccessDialog()">
+                  {{ 'common.cancel' | translate }}
+                </app-ui-button>
+                <app-ui-button (pressed)="submitSuccess(lead)">
+                  {{ 'lead.saveContract' | translate }}
+                </app-ui-button>
               </div>
           </app-ui-modal>
         }
@@ -586,8 +652,8 @@ const NO_MANAGER_VALUE = '__none__';
     } @else {
       <section class="missing-state">
         <app-ui-icon name="inbox" [size]="30" />
-        <h1>Лід не знайдено</h1>
-        <a routerLink="/crm/leads">Повернутись до списку</a>
+        <h1>{{ 'lead.notFound' | translate }}</h1>
+        <a routerLink="/crm/leads">{{ 'lead.backToList' | translate }}</a>
       </section>
     }
   `,
@@ -1167,10 +1233,10 @@ export class LeadDetailPage {
     const confirmed = await firstValueFrom(
       this.dialog
         .confirm({
-          title: 'Видалити лід назавжди',
-          description: `Лід «${lead.name}» буде видалений без можливості відновлення. Уся історія та вкладення також зникнуть.`,
-          confirmLabel: 'Видалити',
-          cancelLabel: 'Скасувати',
+          title: this.i18n.t('lead.deleteForever'),
+          description: this.i18n.t('lead.deleteForeverDesc', { name: lead.name }),
+          confirmLabel: this.i18n.t('common.delete'),
+          cancelLabel: this.i18n.t('common.cancel'),
           danger: true,
         })
         .afterClosed(),
@@ -1183,7 +1249,9 @@ export class LeadDetailPage {
       await this.leadsService.deleteLead(lead.id);
       await this.router.navigate(['/crm/leads']);
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося видалити лід');
+      this.actionError.set(
+        error instanceof Error ? error.message : this.i18n.t('error.leadDeleteFailed'),
+      );
     } finally {
       this.deletingLead.set(false);
     }
@@ -1208,7 +1276,7 @@ export class LeadDetailPage {
         label: this.employeeName(lead.assignedToId),
       });
     }
-    return [{ value: NO_MANAGER_VALUE, label: 'Не призначено' }, ...options];
+    return [{ value: NO_MANAGER_VALUE, label: this.i18n.t('common.unassigned') }, ...options];
   }
 
   protected eventTitle(event: LeadEvent): string {
@@ -1343,7 +1411,7 @@ export class LeadDetailPage {
 
   protected openLeadEditDialog(lead: MockLead): void {
     this.dialogError.set('');
-    this.editLeadName.set(lead.name === 'Без імені' ? '' : lead.name);
+    this.editLeadName.set(lead.name === this.i18n.t('lead.noName') ? '' : lead.name);
     this.editLeadPhone.set(lead.phone === '—' ? '' : lead.phone);
     this.editLeadEmail.set(lead.email ?? '');
     this.editLeadCityRegion.set(lead.cityRegion);
@@ -1362,7 +1430,7 @@ export class LeadDetailPage {
   protected async submitLeadEdit(lead: MockLead): Promise<void> {
     this.dialogError.set('');
     if (!this.canEditLead(lead)) {
-      this.dialogError.set('Недостатньо прав для редагування ліда.');
+      this.dialogError.set(this.i18n.t('lead.editForbidden'));
       return;
     }
 
@@ -1371,19 +1439,19 @@ export class LeadDetailPage {
     const email = this.nullableText(this.editLeadEmail());
     const estimatedBudget = this.parseOptionalMoney(this.editLeadBudget());
     if (!name) {
-      this.dialogError.set('Вкажіть імʼя клієнта.');
+      this.dialogError.set(this.i18n.t('lead.nameRequired'));
       return;
     }
     if (!phone) {
-      this.dialogError.set('Вкажіть телефон клієнта.');
+      this.dialogError.set(this.i18n.t('lead.phoneRequired'));
       return;
     }
     if (email && !this.isValidEmail(email)) {
-      this.dialogError.set('Email має некоректний формат.');
+      this.dialogError.set(this.i18n.t('lead.emailInvalid'));
       return;
     }
     if (Number.isNaN(estimatedBudget) || (estimatedBudget != null && estimatedBudget < 0)) {
-      this.dialogError.set('Бюджет має бути додатним числом або порожнім.');
+      this.dialogError.set(this.i18n.t('lead.budgetInvalid'));
       return;
     }
 
@@ -1410,7 +1478,7 @@ export class LeadDetailPage {
       await this.leadResource.reload();
     } catch (error) {
       this.dialogError.set(
-        error instanceof Error ? error.message : 'Не вдалося зберегти зміни',
+        error instanceof Error ? error.message : this.i18n.t('lead.saveChangesFailed'),
       );
     }
   }
@@ -1432,17 +1500,17 @@ export class LeadDetailPage {
   protected async submitHistoryEdit(lead: MockLead): Promise<void> {
     this.dialogError.set('');
     if (!this.canEditLead(lead)) {
-      this.dialogError.set('Недостатньо прав для редагування історії.');
+      this.dialogError.set(this.i18n.t('error.historyEditForbidden'));
       return;
     }
     const event = this.editingHistoryEvent();
     if (!event) {
-      this.dialogError.set('Подію історії не знайдено.');
+      this.dialogError.set(this.i18n.t('error.historyNotFound'));
       return;
     }
     const comment = this.editHistoryComment().trim();
     if (!comment) {
-      this.dialogError.set('Повідомлення не може бути порожнім.');
+      this.dialogError.set(this.i18n.t('lead.messageRequired'));
       return;
     }
 
@@ -1455,7 +1523,7 @@ export class LeadDetailPage {
       await this.leadResource.reload();
     } catch (error) {
       this.dialogError.set(
-        error instanceof Error ? error.message : 'Не вдалося зберегти історію',
+        error instanceof Error ? error.message : this.i18n.t('lead.saveHistoryFailed'),
       );
     }
   }

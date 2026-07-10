@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { SessionService } from '../../../core/session/session.service';
 import { LoginPage } from './login-page';
 
 describe('LoginPage', () => {
@@ -14,6 +15,13 @@ describe('LoginPage', () => {
           provide: AuthService,
           useValue: {
             signIn: vi.fn(),
+          },
+        },
+        {
+          provide: SessionService,
+          useValue: {
+            locale: () => 'uk',
+            setLocale: vi.fn(),
           },
         },
       ],

@@ -29,7 +29,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
     <section class="crm-page" aria-labelledby="leads-title">
       <header class="page-header">
         <div>
-          <p class="page-kicker">CRM pipeline</p>
+          <p class="page-kicker">{{ 'leads.kicker' | translate }}</p>
           <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
           <p>{{ 'leads.subtitle' | translate }}</p>
         </div>
@@ -65,18 +65,18 @@ import { CreateLeadDialog } from './create-lead-dialog';
           [placeholder]="'leads.searchPlaceholder' | translate"
           [(value)]="query"
         />
-        <div class="toolbar-metrics" aria-label="Поточні показники">
+        <div class="toolbar-metrics" [attr.aria-label]="'leads.metricsAria' | translate">
           <div>
             <strong>{{ filteredLeads().length }}</strong>
-            <span>знайдено</span>
+            <span>{{ 'leads.found' | translate }}</span>
           </div>
           <div>
             <strong>{{ activeCount() }}</strong>
-            <span>активні</span>
+            <span>{{ 'leads.active' | translate }}</span>
           </div>
           <div>
             <strong>{{ terminalCount() }}</strong>
-            <span>завершені</span>
+            <span>{{ 'leads.terminal' | translate }}</span>
           </div>
         </div>
       </div>
@@ -90,12 +90,12 @@ import { CreateLeadDialog } from './create-lead-dialog';
       } @else if (!filteredLeads().length) {
         <article class="empty-state">
           <app-ui-icon name="inbox" [size]="28" />
-          <h2>Немає результатів</h2>
-          <p>Спробуйте інший телефон, дату або імʼя клієнта.</p>
+          <h2>{{ 'leads.emptyTitle' | translate }}</h2>
+          <p>{{ 'leads.emptyHint' | translate }}</p>
         </article>
       } @else {
         <div class="leads-table-panel">
-          <table class="leads-table" aria-label="Ліди за місяцем створення">
+          <table class="leads-table" [attr.aria-label]="'leads.tableAria' | translate">
             <colgroup>
               <col class="col-date" />
               <col class="col-client" />
@@ -106,12 +106,12 @@ import { CreateLeadDialog } from './create-lead-dialog';
             </colgroup>
             <thead>
               <tr>
-                <th class="date-heading" scope="col">Дата</th>
-                <th class="client-heading" scope="col">Клієнт</th>
-                <th class="call-heading" scope="col">Перший дзвінок</th>
-                <th class="source-heading" scope="col">Джерело</th>
-                <th class="manager-heading" scope="col">Перший менеджер</th>
-                <th class="visit-heading" scope="col">Візит у салон</th>
+                <th class="date-heading" scope="col">{{ 'common.date' | translate }}</th>
+                <th class="client-heading" scope="col">{{ 'leads.colClient' | translate }}</th>
+                <th class="call-heading" scope="col">{{ 'workflow.first_call_done' | translate }}</th>
+                <th class="source-heading" scope="col">{{ 'leads.colSource' | translate }}</th>
+                <th class="manager-heading" scope="col">{{ 'leads.colFirstManager' | translate }}</th>
+                <th class="visit-heading" scope="col">{{ 'leads.colVisit' | translate }}</th>
               </tr>
             </thead>
             <tbody>
@@ -119,7 +119,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
                 <tr class="month-row">
                   <th scope="rowgroup" colspan="6">
                     <span [id]="'group-' + group.key">{{ group.label }}</span>
-                    <small>{{ group.rows.length }} лідів</small>
+                    <small>{{ 'leads.count' | translate: { count: group.rows.length } }}</small>
                   </th>
                 </tr>
 
@@ -129,33 +129,33 @@ import { CreateLeadDialog } from './create-lead-dialog';
                     tabindex="0"
                     role="link"
                     [attr.data-lead-id]="lead.id"
-                    [attr.aria-label]="'Відкрити лід ' + lead.name"
+                    [attr.aria-label]="'leads.openAria' | translate: { name: lead.name }"
                     (click)="openLead(lead)"
                     (keydown.enter)="openLead(lead)"
                   >
-                    <td class="date-cell" data-label="Дата">
+                    <td class="date-cell" [attr.data-label]="'common.date' | translate">
                       <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
                       <small>{{ officeName(lead.officeCode) }}</small>
                     </td>
-                    <td class="client-cell" data-label="Клієнт">
+                    <td class="client-cell" [attr.data-label]="'leads.colClient' | translate">
                       <strong>{{ lead.name }}</strong>
                       <small>{{ lead.phone }}</small>
                     </td>
-                    <td class="call-cell" data-label="Перший дзвінок">
+                    <td class="call-cell" [attr.data-label]="'workflow.first_call_done' | translate">
                       @if (lead.firstCall) {
                         <span>{{ firstCallResultLabel(lead) }}</span>
                         <small>{{ formatDateTime(lead.firstCall.date) }}</small>
                       } @else {
-                        <span class="muted">Ще не зафіксовано</span>
+                        <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>
                       }
                     </td>
-                    <td class="source-cell" data-label="Джерело">
+                    <td class="source-cell" [attr.data-label]="'leads.colSource' | translate">
                       <span class="source-pill">
                         <app-ui-icon [name]="sourceIcon(lead)" [size]="14" />
                         <span class="source-pill__text">{{ sourceLabel(lead) }}</span>
                       </span>
                     </td>
-                    <td class="manager-cell" data-label="Перший менеджер">
+                    <td class="manager-cell" [attr.data-label]="'leads.colFirstManager' | translate">
                       @if (lead.firstManagerId) {
                         <app-ui-user
                           [userId]="lead.firstManagerId"
@@ -163,10 +163,10 @@ import { CreateLeadDialog } from './create-lead-dialog';
                           size="sm"
                         />
                       } @else {
-                        <span class="muted">Не призначено</span>
+                        <span class="muted">{{ 'common.unassigned' | translate }}</span>
                       }
                     </td>
-                    <td class="visit-cell" data-label="Візит у салон">
+                    <td class="visit-cell" [attr.data-label]="'leads.colVisit' | translate">
                       <div class="status-cell">
                         <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
                           {{ workflowLabel(lead) }}

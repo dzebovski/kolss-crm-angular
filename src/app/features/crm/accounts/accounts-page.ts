@@ -2,7 +2,9 @@ import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { SessionService } from '../../../core/session/session.service';
-import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { ASSIGNABLE_ROLES } from '../../../core/roles/roles';
 import type { UserRole } from '../../../models/database';
 import { formatDateTime, officeName } from '../../../services/crm-mock.helpers';
 import { UsersService, type CrmEmployee } from '../../../services/users.service';
@@ -17,29 +19,29 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
 @Component({
   selector: 'app-accounts-page',
-  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiSelect, UiTextField, UiUser],
+  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiSelect, UiTextField, UiUser, TranslatePipe],
   template: `
     <section class="accounts-page" aria-labelledby="accounts-title">
       <header class="page-header">
         <div>
           <p class="page-kicker">Access management</p>
-          <h1 id="accounts-title">Акаунти</h1>
-          <p>Керування користувачами CRM через admin Edge Function.</p>
+          <h1 id="accounts-title">{{ 'accounts.title' | translate }}</h1>
+          <p>{{ 'accounts.subtitle' | translate }}</p>
         </div>
         <app-ui-button (pressed)="toggleCreatePanel()">
           <app-ui-icon [name]="showCreatePanel() ? 'close' : 'add'" [size]="17" />
-          {{ showCreatePanel() ? 'Скасувати' : 'Створити акаунт' }}
+          {{ showCreatePanel() ? ('common.cancel' | translate) : ('accounts.create' | translate) }}
         </app-ui-button>
       </header>
 
       @if (loadError()) {
-        <app-ui-alert tone="danger" title="Не вдалося завантажити акаунти">
+        <app-ui-alert tone="danger" [title]="'accounts.loadError' | translate">
           {{ loadError() }}
         </app-ui-alert>
       }
 
       @if (actionError()) {
-        <app-ui-alert tone="danger" title="Помилка">
+        <app-ui-alert tone="danger" [title]="'common.error' | translate">
           {{ actionError() }}
         </app-ui-alert>
       }
@@ -80,7 +82,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
             />
             <app-ui-select
               label="Роль"
-              [options]="assignableRoleOptions"
+              [options]="assignableRoleOptions()"
               [(value)]="createRole"
             />
             <fieldset class="office-fieldset">
@@ -115,8 +117,8 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
           placeholder="Імʼя, email або ID"
           [(value)]="query"
         />
-        <app-ui-select label="Офіс" [options]="officeOptions" [(value)]="officeFilter" />
-        <app-ui-select label="Роль" [options]="roleOptions" [(value)]="roleFilter" />
+        <app-ui-select [label]="'common.office' | translate" [options]="officeOptions()" [(value)]="officeFilter" />
+        <app-ui-select [label]="'common.role' | translate" [options]="roleOptions()" [(value)]="roleFilter" />
       </div>
 
       @if (employeesResource.isLoading()) {
@@ -137,7 +139,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
             </colgroup>
             <thead>
               <tr>
-                @for (column of tableColumns; track column) {
+                @for (column of tableColumns(); track column) {
                   <th>{{ column }}</th>
                 }
               </tr>
@@ -168,7 +170,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                       size="small"
                       (pressed)="openEmployee(employee)"
                     >
-                      Профіль
+                      {{ 'common.profile' | translate }}
                     </app-ui-button>
                   </td>
                 </tr>
@@ -205,7 +207,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                 </colgroup>
                 <thead>
                   <tr>
-                    @for (column of tableColumns; track column) {
+                    @for (column of tableColumns(); track column) {
                       <th>{{ column }}</th>
                     }
                   </tr>
@@ -236,7 +238,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                           size="small"
                           (pressed)="openEmployee(employee)"
                         >
-                          Профіль
+                          {{ 'common.profile' | translate }}
                         </app-ui-button>
                       </td>
                     </tr>
@@ -273,7 +275,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
             </colgroup>
             <thead>
               <tr>
-                @for (column of tableColumns; track column) {
+                @for (column of tableColumns(); track column) {
                   <th>{{ column }}</th>
                 }
               </tr>
@@ -304,7 +306,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                       size="small"
                       (pressed)="openEmployee(employee)"
                     >
-                      Профіль
+                      {{ 'common.profile' | translate }}
                     </app-ui-button>
                   </td>
                 </tr>
@@ -567,6 +569,7 @@ export class AccountsPage {
   private readonly usersService = inject(UsersService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly query = signal('');
   protected readonly officeFilter = signal<OfficeFilter>('all');
@@ -583,31 +586,31 @@ export class AccountsPage {
   protected readonly selectedOfficeIds = signal<string[]>([]);
 
   protected readonly formatDateTime = formatDateTime;
-  protected readonly roleLabel = roleLabel;
-  protected readonly officeOptions: readonly UiSelectOption[] = [
-    { value: 'all', label: 'Усі офіси' },
-    { value: 'kyiv', label: 'Київ' },
-    { value: 'warsaw', label: 'Варшава' },
-  ];
-  protected readonly roleOptions: readonly UiSelectOption[] = [
-    { value: 'all', label: 'Усі ролі' },
-    { value: 'super_admin', label: roleLabel('super_admin') },
-    { value: 'curator', label: roleLabel('curator') },
-    { value: 'office_admin', label: roleLabel('office_admin') },
-    { value: 'office_member', label: roleLabel('office_member') },
-  ];
-  protected readonly assignableRoleOptions: readonly UiSelectOption[] = ASSIGNABLE_ROLES.map(
-    (role) => ({ value: role, label: roleLabel(role) }),
+  protected roleLabel = (role: string) => this.i18n.roleLabel(role);
+  protected readonly officeOptions = computed((): readonly UiSelectOption[] => [
+    { value: 'all', label: this.i18n.t('office.all') },
+    { value: 'kyiv', label: this.i18n.t('office.kyiv') },
+    { value: 'warsaw', label: this.i18n.t('office.warsaw') },
+  ]);
+  protected readonly roleOptions = computed((): readonly UiSelectOption[] => [
+    { value: 'all', label: this.i18n.t('role.all') },
+    { value: 'super_admin', label: this.i18n.roleLabel('super_admin') },
+    { value: 'curator', label: this.i18n.roleLabel('curator') },
+    { value: 'office_admin', label: this.i18n.roleLabel('office_admin') },
+    { value: 'office_member', label: this.i18n.roleLabel('office_member') },
+  ]);
+  protected readonly assignableRoleOptions = computed((): readonly UiSelectOption[] =>
+    ASSIGNABLE_ROLES.map((role) => ({ value: role, label: this.i18n.roleLabel(role) })),
   );
-  protected readonly tableColumns = [
-    'Співробітник',
+  protected readonly tableColumns = computed(() => [
+    this.i18n.t('accounts.employee'),
     'Email',
-    'Роль',
-    'Офіс',
-    'Статус',
-    'Остання активність',
-    'Дії',
-  ] as const;
+    this.i18n.t('common.role'),
+    this.i18n.t('common.office'),
+    this.i18n.t('common.status'),
+    this.i18n.t('accounts.lastActivity'),
+    this.i18n.t('common.actions'),
+  ]);
 
   protected readonly availableOffices = computed(
     () => this.session.officeContext()?.offices ?? this.session.offices(),
@@ -665,22 +668,22 @@ export class AccountsPage {
   protected readonly employeeSections = computed(() => [
     {
       id: 'accounts-super-admins',
-      title: 'Супер адмін',
+      title: this.i18n.t('accounts.section.superAdmin'),
       employees: this.superAdmins(),
     },
     {
       id: 'accounts-office-admins',
-      title: 'Адміни офісу',
+      title: this.i18n.t('accounts.section.officeAdmins'),
       employees: this.officeAdmins(),
     },
     {
       id: 'accounts-kyiv-managers',
-      title: 'Менеджери Київ',
+      title: this.i18n.t('accounts.section.managersKyiv'),
       employees: this.kyivManagers(),
     },
     {
       id: 'accounts-warsaw-managers',
-      title: 'Менеджери Варшава',
+      title: this.i18n.t('accounts.section.managersWarsaw'),
       employees: this.warsawManagers(),
     },
   ]);

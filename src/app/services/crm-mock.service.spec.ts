@@ -49,15 +49,15 @@ describe('crm helpers', () => {
     expect(created.conversionFromPrevious).toBe(0);
     expect(created.conversionBaseLabel).toBeNull();
     expect(taken.conversionFromPrevious).toBe(pct(taken.count, created.count));
-    expect(taken.conversionBaseLabel).toBe('Зайшло лідів');
+    expect(taken.conversionBaseLabel).toBe('funnel.created');
     expect(scheduled.conversionFromPrevious).toBe(pct(scheduled.count, taken.count));
-    expect(scheduled.conversionBaseLabel).toBe('Взяли в роботу');
+    expect(scheduled.conversionBaseLabel).toBe('funnel.taken');
     expect(visited.conversionFromPrevious).toBe(pct(visited.count, scheduled.count));
-    expect(visited.conversionBaseLabel).toBe('Очікуються в салоні');
+    expect(visited.conversionBaseLabel).toBe('funnel.scheduled');
     expect(successful.conversionFromPrevious).toBe(pct(successful.count, taken.count));
-    expect(successful.conversionBaseLabel).toBe('Взяли в роботу');
+    expect(successful.conversionBaseLabel).toBe('funnel.taken');
     expect(closed.conversionFromPrevious).toBe(pct(closed.count, taken.count));
-    expect(closed.conversionBaseLabel).toBe('Взяли в роботу');
+    expect(closed.conversionBaseLabel).toBe('funnel.taken');
   });
 
   it('calculates manager taken report per office', () => {

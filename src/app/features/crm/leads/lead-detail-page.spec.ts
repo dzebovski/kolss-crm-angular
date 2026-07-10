@@ -140,6 +140,7 @@ describe('LeadDetailPage', () => {
         {
           provide: SessionService,
           useValue: {
+            locale: () => 'uk',
             officeContext: () => ({
               isSuperAdmin: role === 'super_admin',
               canFilter: role === 'super_admin' || role === 'curator',

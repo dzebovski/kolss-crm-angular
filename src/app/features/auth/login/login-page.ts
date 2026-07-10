@@ -3,6 +3,7 @@ import { form, FormField, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { safeCrmReturnTo } from '../../../core/navigation/safe-return-to';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiButton } from '../../../ui/button/ui-button';
@@ -32,7 +33,7 @@ function withImpersonateParam(url: string): string {
 
 @Component({
   selector: 'app-login-page',
-  imports: [RouterLink, FormField, UiAlert, UiButton, UiCheckbox, UiIcon, UiTextField],
+  imports: [RouterLink, FormField, UiAlert, UiButton, UiCheckbox, UiIcon, UiTextField, TranslatePipe],
   template: `
     <main class="login-page">
       <section class="login-frame" aria-labelledby="login-title">
@@ -46,8 +47,8 @@ function withImpersonateParam(url: string): string {
           </a>
 
           <div class="login-copy">
-            <p class="login-copy__eyebrow">Операційний доступ</p>
-            <h1 id="login-title">Вхід до CRM</h1>
+            <p class="login-copy__eyebrow">{{ 'login.eyebrow' | translate }}</p>
+            <h1 id="login-title">{{ 'login.title' | translate }}</h1>
             <p>
               Використайте корпоративну пошту та пароль, щоб перейти до лідів, звітності й керування
               акаунтами.

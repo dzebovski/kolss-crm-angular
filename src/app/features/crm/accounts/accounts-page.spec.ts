@@ -14,6 +14,7 @@ describe('AccountsPage', () => {
         {
           provide: SessionService,
           useValue: {
+            locale: () => 'uk',
             officeContext: () => ({
               offices: [
                 { id: 'office-kyiv', code: 'kyiv', name_uk: 'Київ', name_pl: 'Kijów', is_active: true },

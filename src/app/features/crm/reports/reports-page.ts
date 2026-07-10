@@ -1,5 +1,8 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 
+import { I18nService } from '../../../core/i18n/i18n.service';
+import type { MessageKey } from '../../../core/i18n/messages';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import { calculateFunnel, calculateManagerTakenReport } from '../../../services/crm-mock.helpers';
 import { LeadsService } from '../../../services/leads.service';
@@ -11,18 +14,18 @@ import { UiUser } from '../../../ui/user/ui-user';
 
 @Component({
   selector: 'app-reports-page',
-  imports: [UiAlert, UiBadge, UiUser],
+  imports: [UiAlert, UiBadge, UiUser, TranslatePipe],
   template: `
     <section class="reports-page" aria-labelledby="reports-title">
       <header class="page-header">
         <div>
           <p class="page-kicker">Cohort analytics</p>
-          <h1 id="reports-title">Звітність</h1>
-          <p>Метрики рахуються по лідах, створених у вибраному періоді.</p>
+          <h1 id="reports-title">{{ 'reports.title' | translate }}</h1>
+          <p>{{ 'reports.subtitle' | translate }}</p>
         </div>
 
-        <div class="period-switcher" aria-label="Період звітності">
-          @for (period of periods; track period.days) {
+        <div class="period-switcher" [attr.aria-label]="'reports.period' | translate">
+          @for (period of periods(); track period.days) {
             <button
               type="button"
               [class.is-active]="periodDays() === period.days"
@@ -35,17 +38,19 @@ import { UiUser } from '../../../ui/user/ui-user';
       </header>
 
       @if (loadError()) {
-        <app-ui-alert tone="danger" title="Не вдалося завантажити звітність">
+        <app-ui-alert tone="danger" [title]="'reports.loadError' | translate">
           {{ loadError() }}
         </app-ui-alert>
       }
 
-      <div class="metrics-grid" aria-label="Основні метрики">
+      <div class="metrics-grid" [attr.aria-label]="'reports.metrics' | translate">
         @for (stage of funnel(); track stage.key) {
           <article class="metric-card">
-            <span>{{ stage.label }}</span>
+            <span>{{ funnelLabel(stage.label) }}</span>
             <strong>{{ stage.count }}</strong>
-            <app-ui-badge [tone]="stage.tone">{{ stage.percentOfTotal }}% від усіх</app-ui-badge>
+            <app-ui-badge [tone]="stage.tone">{{
+              'reports.percentOfAll' | translate: { percent: stage.percentOfTotal }
+            }}</app-ui-badge>
           </article>
         }
       </div>
@@ -53,8 +58,8 @@ import { UiUser } from '../../../ui/user/ui-user';
       <section class="funnel-panel" aria-labelledby="funnel-title">
         <header>
           <div>
-            <h2 id="funnel-title">Воронка за період</h2>
-            <p>{{ totalLeads() }} лідів у когорті, офісний фільтр береться з CRM shell.</p>
+            <h2 id="funnel-title">{{ 'reports.funnel' | translate }}</h2>
+            <p>{{ 'reports.cohort' | translate: { count: totalLeads() } }}</p>
           </div>
           <app-ui-badge tone="brand">{{ periodLabel() }}</app-ui-badge>
         </header>
@@ -67,7 +72,14 @@ import { UiUser } from '../../../ui/user/ui-user';
                 <div>
                   <strong>{{ stage.label }}</strong>
                   @if (stage.conversionBaseLabel) {
-                    <small>{{ stage.conversionFromPrevious }}% від {{ stage.conversionBaseLabel }}</small>
+                    <small>{{
+                      'reports.conversionFrom'
+                        | translate
+                          : {
+                              percent: stage.conversionFromPrevious,
+                              base: funnelLabel(stage.conversionBaseLabel),
+                            }
+                    }}</small>
                   }
                 </div>
                 <b>{{ stage.count }}</b>
@@ -86,10 +98,10 @@ import { UiUser } from '../../../ui/user/ui-user';
       <section class="manager-reports" aria-labelledby="manager-reports-title">
         <header class="manager-reports__header">
           <div>
-            <h2 id="manager-reports-title">Звіт по менеджерам</h2>
-            <p>Кількість лідів, взятих у роботу за обраний період.</p>
+            <h2 id="manager-reports-title">{{ 'reports.managerReports' | translate }}</h2>
+            <p>{{ 'reports.managerReportsDesc' | translate }}</p>
           </div>
-          <app-ui-badge tone="info">Київ і Варшава</app-ui-badge>
+          <app-ui-badge tone="info">{{ 'reports.kyivAndWarsaw' | translate }}</app-ui-badge>
         </header>
 
         <div class="manager-reports__grid">
@@ -103,8 +115,8 @@ import { UiUser } from '../../../ui/user/ui-user';
               <table class="manager-table">
                 <thead>
                   <tr>
-                    <th scope="col">Менеджер</th>
-                    <th scope="col">Взято в роботу</th>
+                    <th scope="col">{{ 'reports.manager' | translate }}</th>
+                    <th scope="col">{{ 'reports.takenCount' | translate }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -123,7 +135,7 @@ import { UiUser } from '../../../ui/user/ui-user';
                   }
                   @if (report.unassignedCount > 0) {
                     <tr>
-                      <td>Без менеджера</td>
+                      <td>{{ 'common.noManager' | translate }}</td>
                       <td class="manager-table__count">{{ report.unassignedCount }}</td>
                     </tr>
                   }
@@ -389,13 +401,14 @@ export class ReportsPage {
   private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
   private readonly usersService = inject(UsersService);
+  protected readonly i18n = inject(I18nService);
 
-  protected readonly periods = [
-    { label: '40 днів', days: 40 },
-    { label: 'Тиждень', days: 7 },
-    { label: 'Місяць', days: 30 },
-    { label: '6 місяців', days: 180 },
-  ] as const;
+  protected readonly periods = computed(() => [
+    { label: this.i18n.t('reports.period.40days'), days: 40 },
+    { label: this.i18n.t('reports.period.week'), days: 7 },
+    { label: this.i18n.t('reports.period.month'), days: 30 },
+    { label: this.i18n.t('reports.period.6months'), days: 180 },
+  ]);
   protected readonly periodDays = signal(40);
 
   protected readonly leadsResource = resource({
@@ -422,7 +435,7 @@ export class ReportsPage {
   );
   protected readonly totalLeads = computed(() => this.funnel()[0]?.count ?? 0);
   protected readonly periodLabel = computed(
-    () => this.periods.find((period) => period.days === this.periodDays())?.label ?? 'Період',
+    () => this.periods().find((period) => period.days === this.periodDays())?.label ?? this.i18n.t('reports.period'),
   );
 
   protected readonly managerReports = computed((): readonly ManagerOfficeReport[] => {
@@ -435,6 +448,11 @@ export class ReportsPage {
       calculateManagerTakenReport(leads, employees, 'warsaw', periodDays),
     ];
   });
+
+  protected funnelLabel(key: string | null): string {
+    if (!key) return '';
+    return this.i18n.t(key as MessageKey);
+  }
 
   protected barWidth(stage: FunnelStage): number {
     return Math.max(stage.percentOfTotal, stage.count > 0 ? 6 : 0);
