@@ -82,7 +82,7 @@ export interface ImpersonateDialogData {
 
     .impersonate-dialog__header h2 {
       margin: var(--ui-space-4) 0 var(--ui-space-2);
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.5rem;
       letter-spacing: -0.03em;
     }

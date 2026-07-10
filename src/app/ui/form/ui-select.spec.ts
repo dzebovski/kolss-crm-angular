@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField } from '@angular/forms/signals';
-import { UiSelect, UiSelectOption } from './ui-select';
+import { UiSelect, type UiSelectOption } from './ui-select';
 
 const options: readonly UiSelectOption[] = [
   { value: 'new', label: 'New lead' },

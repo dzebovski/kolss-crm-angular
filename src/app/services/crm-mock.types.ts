@@ -65,9 +65,9 @@ export interface LeadAttachment {
 export interface LeadEvent {
   readonly id: string;
   readonly type: LeadEventType;
-  readonly rawType?: string;
-  readonly title: string;
-  readonly body: string;
+  readonly rawType: string;
+  readonly comment: string | null;
+  readonly newValue: unknown;
   readonly actorId: string;
   readonly occurredAt: string;
   readonly editAudit?: LeadEventEditAudit | null;

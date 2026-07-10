@@ -3,7 +3,6 @@ import type { UiIconName } from '../ui/icon/ui-icon';
 import { CRM_MOCK_NOW } from './crm-mock.data';
 import type {
   CloseLeadPayload,
-  CloseReason,
   FunnelStage,
   LeadMonthGroup,
   ManagerOfficeReport,
@@ -17,24 +16,13 @@ import type {
   SuccessfulLeadPayload,
 } from './crm-mock.types';
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat('uk-UA', { month: 'long' });
-const DATE_FORMATTER = new Intl.DateTimeFormat('uk-UA', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-});
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('uk-UA', {
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-const MONEY_FORMATTER = new Intl.NumberFormat('uk-UA', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
+import { getActiveLocale } from '../core/i18n/locale-storage';
+import {
+  formatDateForLocale,
+  formatDateTimeForLocale,
+  formatMoneyForLocale,
+  formatMonthYearForLocale,
+} from '../core/i18n/locale-format';
 
 export const OFFICE_FILTER_LABELS: Record<OfficeFilter, string> = {
   all: 'Усі офіси',
@@ -107,6 +95,11 @@ export function resolveCloseUserComment(
   return reasonLabels.has(comment) ? '' : comment;
 }
 
+export const FIRST_CALL_RESULT_CODES = ['reached', 'no_answer', 'cannot_talk', 'bad_lead'] as const;
+
+export type FirstCallResultCode = (typeof FIRST_CALL_RESULT_CODES)[number];
+
+/** @deprecated Use FIRST_CALL_RESULT_CODES with I18nService.firstCallResultLabel */
 export const FIRST_CALL_RESULTS = [
   'Потреба підтверджена',
   'Заплановано візит',
@@ -155,18 +148,15 @@ export function leadIsTerminal(lead: MockLead): boolean {
 }
 
 export function formatDate(value: string | null | undefined): string {
-  if (!value) return '—';
-  return DATE_FORMATTER.format(new Date(value));
+  return formatDateForLocale(value, getActiveLocale());
 }
 
 export function formatDateTime(value: string | null | undefined): string {
-  if (!value) return '—';
-  return DATE_TIME_FORMATTER.format(new Date(value));
+  return formatDateTimeForLocale(value, getActiveLocale());
 }
 
 export function formatMoney(value: number | null | undefined): string {
-  if (value == null) return '—';
-  return MONEY_FORMATTER.format(value);
+  return formatMoneyForLocale(value, getActiveLocale());
 }
 
 export function filterLeadsByOffice(
@@ -213,27 +203,27 @@ export function groupLeadsByYearMonth(leads: readonly MockLead[]): readonly Lead
     const [year, month] = key.split('-').map(Number);
     return {
       key,
-      label: `${MONTH_FORMATTER.format(new Date(year, month - 1, 1))} ${year}`,
+      label: formatMonthYearForLocale(year, month, getActiveLocale()),
       rows,
     };
   });
 }
 
 export function validateCloseLead(payload: CloseLeadPayload): string | null {
-  if (!payload.reason) return 'Оберіть причину закриття.';
+  if (!payload.reason) return 'validation.closeReasonRequired';
   if (payload.reason === 'lost_client' && !payload.comment.trim()) {
-    return 'Для причини "Втрачений клієнт" потрібен коментар.';
+    return 'validation.lostClientComment';
   }
   return null;
 }
 
 export function validateSuccessfulLead(payload: SuccessfulLeadPayload): string | null {
-  if (!payload.contractNumber.trim()) return 'Вкажіть номер договору.';
+  if (!payload.contractNumber.trim()) return 'validation.contractNumber';
   if (!Number.isFinite(payload.amount) || payload.amount <= 0) {
-    return 'Сума договору має бути числом більше нуля.';
+    return 'validation.contractAmount';
   }
   if (payload.prepayment != null && payload.prepayment < 0) {
-    return 'Передоплата не може бути відʼємною.';
+    return 'validation.prepaymentNegative';
   }
   return null;
 }
@@ -377,7 +367,7 @@ export function calculateManagerTakenReport(
       managerName: employee.displayName,
       takenCount: counts.get(employee.id) ?? 0,
     }))
-    .sort((left, right) => right.takenCount - left.takenCount || left.managerName.localeCompare(right.managerName, 'uk'));
+    .sort((left, right) => right.takenCount - left.takenCount || left.managerName.localeCompare(right.managerName, getActiveLocale()));
 
   return {
     officeCode,

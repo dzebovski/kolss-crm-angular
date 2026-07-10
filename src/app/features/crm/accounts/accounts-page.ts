@@ -5,15 +5,14 @@ import { SessionService } from '../../../core/session/session.service';
 import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
 import type { UserRole } from '../../../models/database';
 import { formatDateTime, officeName } from '../../../services/crm-mock.helpers';
-import type { CrmEmployee } from '../../../services/users.service';
-import { UsersService } from '../../../services/users.service';
+import { UsersService, type CrmEmployee } from '../../../services/users.service';
 import type { OfficeFilter } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
-import { UiBadge, UiBadgeTone } from '../../../ui/feedback/ui-badge';
+import { UiBadge, type UiBadgeTone } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
-import { UiSelect, UiSelectOption } from '../../../ui/form/ui-select';
+import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 
 @Component({
@@ -345,7 +344,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
     h1,
     h2 {
       margin: 0;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       letter-spacing: 0;
     }
 

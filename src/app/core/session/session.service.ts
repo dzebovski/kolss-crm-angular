@@ -6,6 +6,7 @@ import { injectSupabase } from '../supabase/supabase.service';
 import { AuthService } from '../auth/auth.service';
 import { readViewAsMode, writeViewAsMode, type ViewAsMode } from './view-as';
 import type { LocaleCode, OfficeFilter } from '../../services/crm-mock.types';
+import { readStoredLocale, setActiveLocale } from '../i18n/locale-storage';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -17,7 +18,7 @@ export class SessionService {
   private readonly loadedSignal = signal(false);
   private readonly viewAsSignal = signal<ViewAsMode>(readViewAsMode());
   private readonly officeFilterSignal = signal<OfficeFilter>('all');
-  private readonly localeSignal = signal<LocaleCode>('uk');
+  private readonly localeSignal = signal<LocaleCode>(readStoredLocale() ?? 'uk');
   private lastUserId: string | null = null;
 
   readonly offices = this.officesSignal.asReadonly();
@@ -61,6 +62,7 @@ export class SessionService {
   });
 
   constructor() {
+    setActiveLocale(this.localeSignal());
     effect(() => {
       const userId = this.auth.sessionContext()?.user.id ?? null;
       if (userId === this.lastUserId) return;
@@ -117,6 +119,7 @@ export class SessionService {
 
   setLocale(locale: LocaleCode): void {
     this.localeSignal.set(locale);
+    setActiveLocale(locale);
   }
 
   setViewAs(mode: ViewAsMode): void {

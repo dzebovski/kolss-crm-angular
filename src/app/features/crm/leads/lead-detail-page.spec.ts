@@ -274,14 +274,14 @@ describe('LeadDetailPage', () => {
         phone: '+380 67 000 00 00',
         assignedToId: 'emp-kyiv-1',
       }),
-      expect.arrayContaining(['телефон', 'менеджер']),
+      expect.arrayContaining(['phone', 'manager']),
     );
   });
 
   it('submits history edits without changing the original event date', async () => {
     const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
     const event = lead.events[0]!;
-    const updateHistoryEvent = vi.fn(async () => ['повідомлення', 'тип']);
+    const updateHistoryEvent = vi.fn(async () => ['message', 'type']);
     const fixture = await createLeadDetail({ leadId: lead.id, updateHistoryEvent });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -313,7 +313,7 @@ describe('LeadDetailPage', () => {
 
     const harness = fixture.componentInstance as unknown as LeadDetailHarness;
     harness.openHistoryEditDialog(event);
-    harness.editHistoryComment.set(event.body);
+    harness.editHistoryComment.set(event.comment ?? '');
 
     await harness.submitHistoryEdit(lead);
     fixture.detectChanges();
@@ -437,7 +437,7 @@ describe('LeadDetailPage', () => {
 
     expect(updateCloseDetails).toHaveBeenCalled();
     expect(harness.closeDialogOpen()).toBe(true);
-    expect(harness.dialogError()).toContain('коментар');
+    expect(harness.dialogError()).toContain('validation.lostClientComment');
   });
 
   it('renders history edit audit for regular users', async () => {
@@ -449,7 +449,7 @@ describe('LeadDetailPage', () => {
           ...lead.events[0]!,
           rawType: 'comment',
           editAudit: {
-            fields: ['повідомлення', 'тип'],
+            fields: ['message', 'type'],
             editedAt: '2026-07-07T17:30:00.000Z',
             editedById: 'admin-1',
             editedByName: 'Admin User',

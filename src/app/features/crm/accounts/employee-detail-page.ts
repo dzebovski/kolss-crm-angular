@@ -12,15 +12,14 @@ import {
   workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadsService } from '../../../services/leads.service';
-import type { CrmEmployee } from '../../../services/users.service';
-import { UsersService } from '../../../services/users.service';
+import { UsersService, type CrmEmployee } from '../../../services/users.service';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
-import { UiSelect, UiSelectOption } from '../../../ui/form/ui-select';
+import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 
 @Component({
@@ -285,7 +284,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
     h1,
     h2 {
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       letter-spacing: 0;
     }
 

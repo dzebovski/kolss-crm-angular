@@ -178,7 +178,7 @@ function withImpersonateParam(url: string): string {
 
     .login-brand strong {
       display: block;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.25rem;
       line-height: 1;
     }
@@ -203,7 +203,7 @@ function withImpersonateParam(url: string): string {
 
     .login-copy h1,
     .login-form-heading h2 {
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       line-height: 1.1;
     }
 

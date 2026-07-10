@@ -3,20 +3,21 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import {
+  presentEventBodyFromLeadEvent,
+  presentEventTitleFromLeadEvent,
+  presentHistoryAuditText,
+} from '../../../core/i18n/event-presenter';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { canEditLeads } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
   CLOSE_REASON_LABELS,
   employeeInitials,
-  FIRST_CALL_RESULTS,
-  formatDateTime,
-  formatMoney,
+  FIRST_CALL_RESULT_CODES,
   LEAD_SOURCE_ICONS,
-  LEAD_SOURCE_LABELS,
   leadIsTerminal,
-  lossReasonLabel,
   officeName,
-  WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadWorkflowService } from '../../../services/lead-workflow.service';
@@ -30,7 +31,7 @@ import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiModal } from '../../../ui/dialog/ui-modal';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
-import { UiSelect, UiSelectOption } from '../../../ui/form/ui-select';
+import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiTextarea } from '../../../ui/form/ui-textarea';
 
@@ -245,7 +246,7 @@ const NO_MANAGER_VALUE = '__none__';
                 <div class="workflow-grid">
                   <app-ui-select
                     label="Результат"
-                    [options]="firstCallOptions"
+                    [options]="firstCallOptions()"
                     [(value)]="firstCallResult"
                   />
                   <app-ui-textarea
@@ -329,7 +330,7 @@ const NO_MANAGER_VALUE = '__none__';
                     <span class="timeline-dot" aria-hidden="true"></span>
                     <div class="timeline-content">
                       <div class="timeline-item__header">
-                        <strong>{{ event.title }}</strong>
+                        <strong>{{ eventTitle(event) }}</strong>
                         @if (canEditLead(lead)) {
                           <app-ui-button
                             variant="ghost"
@@ -341,8 +342,8 @@ const NO_MANAGER_VALUE = '__none__';
                           </app-ui-button>
                         }
                       </div>
-                      @if (event.body) {
-                        <p>{{ event.body }}</p>
+                      @if (eventBody(event); as body) {
+                        <p>{{ body }}</p>
                       }
                       @if (historyAuditText(event); as auditText) {
                         <p class="timeline-audit">{{ auditText }}</p>
@@ -510,7 +511,7 @@ const NO_MANAGER_VALUE = '__none__';
               }
               <app-ui-select
                 label="Тип"
-                [options]="historyEventTypeOptions"
+                [options]="historyEventTypeOptions()"
                 [(value)]="editHistoryType"
               />
               <app-ui-textarea
@@ -640,7 +641,7 @@ const NO_MANAGER_VALUE = '__none__';
 
     h1 {
       margin: 0;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 2.25rem;
       letter-spacing: 0;
     }
@@ -1040,6 +1041,7 @@ export class LeadDetailPage {
   private readonly workflowService = inject(LeadWorkflowService);
   private readonly usersService = inject(UsersService);
   private readonly lossReasonsService = inject(LossReasonsService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly leadId = this.route.snapshot.paramMap.get('leadId') ?? '';
   protected readonly leadResource = resource({
@@ -1056,7 +1058,7 @@ export class LeadDetailPage {
   protected readonly lead = computed(() => this.leadResource.value() ?? null);
   protected readonly loadError = computed(() => {
     const error = this.leadResource.error();
-    return error ? 'Не вдалося завантажити дані ліда.' : '';
+    return error ? this.i18n.t('error.leadLoadFailed') : '';
   });
   protected readonly actionError = signal('');
   protected readonly dialogError = signal('');
@@ -1069,7 +1071,7 @@ export class LeadDetailPage {
   protected readonly editHistoryDialogOpen = signal(false);
   protected readonly editingHistoryEvent = signal<LeadEvent | null>(null);
 
-  protected readonly firstCallResult = signal<string>(FIRST_CALL_RESULTS[0]);
+  protected readonly firstCallResult = signal<string>(FIRST_CALL_RESULT_CODES[0]);
   protected readonly firstCallComment = signal('');
   protected readonly visitDate = signal('2026-07-10');
   protected readonly visitComment = signal('');
@@ -1092,44 +1094,53 @@ export class LeadDetailPage {
   protected readonly contractComment = signal('');
   protected readonly skeletonPanels = [1, 2, 3];
 
-  protected readonly firstCallOptions: readonly UiSelectOption[] = FIRST_CALL_RESULTS.map(
-    (result) => ({
-      value: result,
-      label: result,
-    }),
+  protected readonly firstCallOptions = computed((): readonly UiSelectOption[] =>
+    FIRST_CALL_RESULT_CODES.map((code) => ({
+      value: code,
+      label: this.i18n.firstCallResultLabel(code),
+    })),
   );
   protected readonly closeReasonOptions = computed((): readonly UiSelectOption[] => {
     const reasons = this.lossReasonsResource.value();
     if (reasons?.length) {
-      return reasons.map((reason) => ({ value: reason.code, label: reason.label_uk }));
+      return reasons.map((reason) => ({
+        value: reason.code,
+        label: this.i18n.tField(reason as unknown as Record<string, unknown>, 'label', reason.code),
+      }));
     }
-    return Object.entries(CLOSE_REASON_LABELS).map(([value, label]) => ({ value, label }));
+    return Object.keys(CLOSE_REASON_LABELS).map((value) => ({
+      value,
+      label: this.i18n.closeReasonLabel(value),
+    }));
   });
   protected readonly defaultCloseReason = computed(
     () => this.closeReasonOptions()[0]?.value ?? 'not_target',
   );
-  protected readonly historyEventTypeOptions: readonly UiSelectOption[] = [
-    { value: 'created', label: 'Заявка створена' },
-    { value: 'lead_assigned', label: 'Лід призначено' },
-    { value: 'taken', label: 'Лід взято в роботу' },
-    { value: 'contact_attempt', label: 'Перший дзвінок' },
-    { value: 'first_call', label: 'Перший дзвінок (старий тип)' },
-    { value: 'showroom_visit_scheduled', label: 'Візит заплановано' },
-    { value: 'visit_scheduled', label: 'Візит заплановано (старий тип)' },
-    { value: 'visit_rescheduled', label: 'Візит перенесено' },
-    { value: 'showroom_visit_completed', label: 'Візит відбувся' },
-    { value: 'visit_completed', label: 'Візит відбувся (старий тип)' },
-    { value: 'comment', label: 'Коментар' },
-    { value: 'closed', label: 'Лід закрито' },
-    { value: 'bad_lead', label: 'Нецільовий лід' },
-    { value: 'contract_signed', label: 'Договір заключений' },
-    { value: 'successful', label: 'Договір заключений (старий тип)' },
-    { value: 'attachment', label: 'Вкладення' },
-    { value: 'lead_updated', label: 'Дані ліда відредаговано' },
-  ];
+  protected readonly historyEventTypeOptions = computed((): readonly UiSelectOption[] => {
+    const types = [
+      'created',
+      'lead_assigned',
+      'taken',
+      'contact_attempt',
+      'first_call',
+      'showroom_visit_scheduled',
+      'visit_scheduled',
+      'visit_rescheduled',
+      'showroom_visit_completed',
+      'visit_completed',
+      'comment',
+      'closed',
+      'bad_lead',
+      'contract_signed',
+      'successful',
+      'attachment',
+      'lead_updated',
+    ] as const;
+    return types.map((value) => ({ value, label: this.i18n.eventTitle(value) }));
+  });
 
-  protected readonly formatDateTime = formatDateTime;
-  protected readonly formatMoney = formatMoney;
+  protected formatDateTime = (value: string | null | undefined) => this.i18n.formatDateTime(value);
+  protected formatMoney = (value: number | null | undefined) => this.i18n.formatMoney(value);
   protected readonly officeName = officeName;
   protected readonly workflowTone = workflowTone;
 
@@ -1200,15 +1211,25 @@ export class LeadDetailPage {
     return [{ value: NO_MANAGER_VALUE, label: 'Не призначено' }, ...options];
   }
 
+  protected eventTitle(event: LeadEvent): string {
+    this.i18n.locale();
+    return presentEventTitleFromLeadEvent(event, this.i18n.locale());
+  }
+
+  protected eventBody(event: LeadEvent): string {
+    this.i18n.locale();
+    return presentEventBodyFromLeadEvent(event, this.i18n.locale());
+  }
+
   protected historyAuditText(event: LeadEvent): string {
-    if (!event.editAudit || !event.editAudit.fields.length) return '';
-    const fields = event.editAudit.fields.join(', ');
-    const editedAt = formatDateTime(event.editAudit.editedAt);
-    return `Відредаговано: ${fields}. Редагував: ${event.editAudit.editedByName} · ${editedAt}`;
+    this.i18n.locale();
+    return presentHistoryAuditText(event, this.i18n.locale(), (value) =>
+      this.i18n.formatDateTime(value),
+    );
   }
 
   protected sourceLabel(lead: MockLead): string {
-    return LEAD_SOURCE_LABELS[lead.source];
+    return this.i18n.sourceLabel(lead.source);
   }
 
   protected sourceIcon(lead: MockLead) {
@@ -1216,13 +1237,16 @@ export class LeadDetailPage {
   }
 
   protected workflowLabel(lead: MockLead): string {
-    return WORKFLOW_LABELS[lead.workflowStatus];
+    return this.i18n.workflowLabel(lead.workflowStatus);
   }
 
   protected employeeName(employeeId: string | null): string {
     const employees = this.employeesResource.value() ?? [];
-    if (!employeeId) return 'Не призначено';
-    return employees.find((employee) => employee.id === employeeId)?.displayName ?? 'Невідомий';
+    if (!employeeId) return this.i18n.t('common.unassigned');
+    return (
+      employees.find((employee) => employee.id === employeeId)?.displayName ??
+      this.i18n.t('common.unknown')
+    );
   }
 
   protected initials(name: string): string {
@@ -1234,18 +1258,26 @@ export class LeadDetailPage {
   }
 
   protected terminalTitle(lead: MockLead): string {
-    return lead.workflowStatus === 'successful' ? 'Лід успішно завершено' : 'Лід закрито';
+    return lead.workflowStatus === 'successful'
+      ? this.i18n.t('lead.terminalSuccess')
+      : this.i18n.t('lead.terminalClosed');
   }
 
   protected terminalDescription(lead: MockLead): string {
     if (lead.contract) {
-      return `Договір ${lead.contract.contractNumber}, сума ${formatMoney(lead.contract.amount)}.`;
+      return this.i18n.t('lead.contractSummary', {
+        number: lead.contract.contractNumber,
+        amount: this.i18n.formatMoney(lead.contract.amount),
+      });
     }
     if (lead.close) {
-      const reasonLabel = lossReasonLabel(lead.close.reason, this.lossReasonsResource.value());
-      return `${reasonLabel}. ${lead.close.comment || 'Без додаткового коментаря.'}`;
+      const reasonLabel = this.i18n.closeReasonLabel(
+        lead.close.reason,
+        this.lossReasonsResource.value(),
+      );
+      return `${reasonLabel}. ${lead.close.comment || this.i18n.t('common.noAdditionalComment')}`;
     }
-    return 'Основні дії недоступні для завершеного ліда.';
+    return this.i18n.t('lead.terminalUnavailable');
   }
 
   protected async takeLead(lead: MockLead): Promise<void> {
@@ -1256,11 +1288,12 @@ export class LeadDetailPage {
     await this.runAction(async () => {
       const error = await this.workflowService.recordFirstCall(
         lead.id,
-        this.firstCallResult(),
+        this.firstCallResult() as (typeof FIRST_CALL_RESULT_CODES)[number],
         this.firstCallComment(),
       );
-      if (error) throw new Error(error);
+      if (error) return error;
       this.firstCallComment.set('');
+      return;
     });
   }
 
@@ -1271,8 +1304,9 @@ export class LeadDetailPage {
         this.normalizedVisitDate(),
         this.visitComment(),
       );
-      if (error) throw new Error(error);
+      if (error) return error;
       this.visitComment.set('');
+      return;
     });
   }
 
@@ -1283,24 +1317,27 @@ export class LeadDetailPage {
         this.normalizedVisitDate(),
         this.visitComment(),
       );
-      if (error) throw new Error(error);
+      if (error) return error;
       this.visitComment.set('');
+      return;
     });
   }
 
   protected async completeVisit(lead: MockLead): Promise<void> {
     await this.runAction(async () => {
       const error = await this.workflowService.completeVisit(lead.id, this.visitComment());
-      if (error) throw new Error(error);
+      if (error) return error;
       this.visitComment.set('');
+      return;
     });
   }
 
   protected async addComment(lead: MockLead): Promise<void> {
     await this.runAction(async () => {
       const error = await this.workflowService.addComment(lead.id, this.commentDraft());
-      if (error) throw new Error(error);
+      if (error) return error;
       this.commentDraft.set('');
+      return;
     });
   }
 
@@ -1382,7 +1419,7 @@ export class LeadDetailPage {
     this.dialogError.set('');
     this.editingHistoryEvent.set(event);
     this.editHistoryType.set(event.rawType ?? event.type);
-    this.editHistoryComment.set(event.body);
+    this.editHistoryComment.set(event.comment ?? '');
     this.editHistoryDialogOpen.set(true);
   }
 
@@ -1499,14 +1536,19 @@ export class LeadDetailPage {
     await this.leadResource.reload();
   }
 
-  private async runAction(action: () => Promise<void>): Promise<void> {
+  private async runAction(action: () => Promise<string | null | void>): Promise<void> {
     this.clearErrors();
     this.actionPending.set(true);
     try {
-      await action();
+      const error = await action();
+      if (error) {
+        this.actionError.set(this.i18n.localizeError(error));
+        return;
+      }
       await this.leadResource.reload();
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося виконати дію');
+      const message = error instanceof Error ? error.message : 'error.actionFailed';
+      this.actionError.set(this.i18n.localizeError(message));
     } finally {
       this.actionPending.set(false);
     }
@@ -1536,14 +1578,14 @@ export class LeadDetailPage {
     },
   ): readonly string[] {
     const fields: string[] = [];
-    if ((lead.name === 'Без імені' ? '' : lead.name) !== payload.name) fields.push('імʼя');
-    if ((lead.phone === '—' ? '' : lead.phone) !== payload.phone) fields.push('телефон');
+    if ((lead.name === this.i18n.t('lead.noName') ? '' : lead.name) !== payload.name) fields.push('name');
+    if ((lead.phone === '—' ? '' : lead.phone) !== payload.phone) fields.push('phone');
     if ((lead.email ?? null) !== payload.email) fields.push('email');
-    if (lead.cityRegion !== payload.cityRegion) fields.push('місто/район');
-    if (lead.productInterest !== payload.productInterest) fields.push('продукт');
-    if ((lead.estimatedBudget ?? null) !== payload.estimatedBudget) fields.push('бюджет');
-    if (lead.initialMessage !== payload.initialMessage) fields.push('початкове повідомлення');
-    if ((lead.assignedToId ?? null) !== payload.assignedToId) fields.push('менеджер');
+    if (lead.cityRegion !== payload.cityRegion) fields.push('cityRegion');
+    if (lead.productInterest !== payload.productInterest) fields.push('product');
+    if ((lead.estimatedBudget ?? null) !== payload.estimatedBudget) fields.push('budget');
+    if (lead.initialMessage !== payload.initialMessage) fields.push('initialMessage');
+    if ((lead.assignedToId ?? null) !== payload.assignedToId) fields.push('manager');
     return fields;
   }
 

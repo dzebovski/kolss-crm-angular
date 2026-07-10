@@ -160,7 +160,7 @@ import { UiUser } from '../../../ui/user/ui-user';
     h1,
     h2 {
       margin: 0;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       letter-spacing: 0;
     }
 
@@ -232,7 +232,7 @@ import { UiUser } from '../../../ui/user/ui-user';
     }
 
     .metric-card strong {
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 2rem;
       line-height: 1;
     }
@@ -294,7 +294,7 @@ import { UiUser } from '../../../ui/user/ui-user';
     }
 
     .funnel-row b {
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.35rem;
     }
 
@@ -351,7 +351,7 @@ import { UiUser } from '../../../ui/user/ui-user';
     .manager-office-panel h3 {
       margin: 0;
       padding: var(--ui-space-4) var(--ui-space-4) var(--ui-space-3);
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.05rem;
     }
 
@@ -378,7 +378,7 @@ import { UiUser } from '../../../ui/user/ui-user';
 
     .manager-table__count {
       width: 6rem;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.1rem;
       font-weight: 700;
       text-align: right;

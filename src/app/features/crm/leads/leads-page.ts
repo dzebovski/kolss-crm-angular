@@ -2,15 +2,13 @@ import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { SessionService } from '../../../core/session/session.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import {
-  formatDate,
-  formatDateTime,
   groupLeadsByYearMonth,
   LEAD_SOURCE_ICONS,
-  LEAD_SOURCE_LABELS,
   matchesLeadSearch,
   officeName,
-  WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadsService } from '../../../services/leads.service';
@@ -26,29 +24,29 @@ import { CreateLeadDialog } from './create-lead-dialog';
 
 @Component({
   selector: 'app-leads-page',
-  imports: [CreateLeadDialog, UiAlert, UiBadge, UiButton, UiIcon, UiTextField, UiUser],
+  imports: [CreateLeadDialog, UiAlert, UiBadge, UiButton, UiIcon, UiTextField, UiUser, TranslatePipe],
   template: `
     <section class="crm-page" aria-labelledby="leads-title">
       <header class="page-header">
         <div>
           <p class="page-kicker">CRM pipeline</p>
-          <h1 id="leads-title">Ліди</h1>
-          <p>Робочий список лідів з Supabase, згруповані за місяцем створення.</p>
+          <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
+          <p>{{ 'leads.subtitle' | translate }}</p>
         </div>
         <div class="page-actions">
           <app-ui-button (pressed)="openCreateDialog()">
             <app-ui-icon name="add" [size]="17" />
-            Створити лід
+            {{ 'lead.create' | translate }}
           </app-ui-button>
           <app-ui-button variant="secondary" (pressed)="leadsResource.reload()">
             <app-ui-icon name="history" [size]="17" />
-            Оновити
+            {{ 'leads.refresh' | translate }}
           </app-ui-button>
         </div>
       </header>
 
       @if (loadError()) {
-        <app-ui-alert tone="danger" title="Не вдалося завантажити ліди">
+        <app-ui-alert tone="danger" [title]="'leads.loadError' | translate">
           {{ loadError() }}
         </app-ui-alert>
       }
@@ -62,9 +60,9 @@ import { CreateLeadDialog } from './create-lead-dialog';
 
       <div class="leads-toolbar">
         <app-ui-text-field
-          label="Пошук"
+          [label]="'common.search' | translate"
           type="search"
-          placeholder="Телефон, ПІБ або дата"
+          [placeholder]="'leads.searchPlaceholder' | translate"
           [(value)]="query"
         />
         <div class="toolbar-metrics" aria-label="Поточні показники">
@@ -145,7 +143,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
                     </td>
                     <td class="call-cell" data-label="Перший дзвінок">
                       @if (lead.firstCall) {
-                        <span>{{ lead.firstCall.result }}</span>
+                        <span>{{ firstCallResultLabel(lead) }}</span>
                         <small>{{ formatDateTime(lead.firstCall.date) }}</small>
                       } @else {
                         <span class="muted">Ще не зафіксовано</span>
@@ -218,7 +216,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
 
     h1 {
       margin: 0;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 2rem;
       letter-spacing: 0;
     }
@@ -298,7 +296,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
     }
 
     .toolbar-metrics strong {
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.5rem;
       line-height: 1;
     }
@@ -525,6 +523,7 @@ export class LeadsPage {
   private readonly leadsService = inject(LeadsService);
   private readonly usersService = inject(UsersService);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly query = signal('');
   protected readonly notice = signal('');
@@ -563,19 +562,22 @@ export class LeadsPage {
       ).length,
   );
 
-  protected readonly formatDateTime = formatDateTime;
-  protected readonly formatDate = formatDate;
+  protected formatDateTime = (value: string | null | undefined) => this.i18n.formatDateTime(value);
+  protected formatDate = (value: string | null | undefined) => this.i18n.formatDate(value);
   protected readonly officeName = officeName;
   protected readonly workflowTone = workflowTone;
 
   protected employeeName(employeeId: string | null): string {
     const employees = this.employeesResource.value() ?? [];
-    if (!employeeId) return 'Не призначено';
-    return employees.find((employee) => employee.id === employeeId)?.displayName ?? 'Невідомий';
+    if (!employeeId) return this.i18n.t('common.unassigned');
+    return (
+      employees.find((employee) => employee.id === employeeId)?.displayName ??
+      this.i18n.t('common.unknown')
+    );
   }
 
   protected sourceLabel(lead: MockLead): string {
-    return LEAD_SOURCE_LABELS[lead.source];
+    return this.i18n.sourceLabel(lead.source);
   }
 
   protected sourceIcon(lead: MockLead) {
@@ -583,7 +585,12 @@ export class LeadsPage {
   }
 
   protected workflowLabel(lead: MockLead): string {
-    return WORKFLOW_LABELS[lead.workflowStatus];
+    return this.i18n.workflowLabel(lead.workflowStatus);
+  }
+
+  protected firstCallResultLabel(lead: MockLead): string {
+    if (!lead.firstCall) return '';
+    return this.i18n.firstCallResultLabel(lead.firstCall.result);
   }
 
   protected async openLead(lead: MockLead): Promise<void> {

@@ -14,7 +14,6 @@ import { Component, input, output } from '@angular/core';
         role="dialog"
         aria-modal="true"
         [attr.aria-labelledby]="labelledBy()"
-        (click)="$event.stopPropagation()"
       >
         <ng-content />
       </section>
@@ -48,7 +47,7 @@ import { Component, input, output } from '@angular/core';
     }
 
     .ui-modal :where(h2) {
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       font-size: 1.5rem;
     }
 

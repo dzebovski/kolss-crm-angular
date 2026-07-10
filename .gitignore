@@ -40,6 +40,7 @@ testem.log
 /typings
 __screenshots__/
 src/environments/environment.local.ts
+supabase/.temp/
 
 # System files
 .DS_Store

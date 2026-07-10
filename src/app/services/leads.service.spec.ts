@@ -101,6 +101,8 @@ describe('LeadsService.createLead', () => {
         lead_id: 'lead-new-1',
         actor_id: 'user-1',
         event_type: 'created',
+        comment: null,
+        new_value: expect.objectContaining({ source: 'office' }),
       }),
     );
   });

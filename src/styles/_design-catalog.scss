@@ -31,7 +31,7 @@
 
 .design-brand {
   gap: var(--ui-space-2);
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: 1.05rem;
   font-weight: 720;
   letter-spacing: -0.03em;
@@ -41,7 +41,7 @@
   padding-left: var(--ui-space-2);
   border-left: 1px solid var(--ui-border);
   color: var(--ui-text-subtle);
-  font-family: var(--ui-font-body);
+  font-family: var(--ui-font-body), sans-serif;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0;
@@ -142,7 +142,7 @@
   position: relative;
   max-width: 58rem;
   margin: var(--ui-space-5) 0 var(--ui-space-5);
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: clamp(3.25rem, 7.5vw, 7rem);
   font-weight: 560;
   letter-spacing: -0.072em;
@@ -176,7 +176,7 @@
 }
 
 .design-hero__meta strong {
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: 1.35rem;
   letter-spacing: -0.04em;
 }
@@ -324,7 +324,7 @@
 .catalog-section__intro h2,
 .coming-soon h2 {
   margin: var(--ui-space-2) 0 var(--ui-space-3);
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: clamp(2rem, 4vw, 3.75rem);
   font-weight: 560;
   letter-spacing: -0.055em;
@@ -400,7 +400,7 @@
   padding: clamp(2rem, 5vw, 4rem);
   background: var(--ui-ink-950);
   color: white;
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: clamp(3rem, 6vw, 6rem);
   font-weight: 520;
   letter-spacing: -0.07em;
@@ -435,7 +435,7 @@
 }
 
 .type-specimen__details strong {
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: 2.5rem;
 }
 
@@ -446,7 +446,7 @@
 }
 
 .type-specimen__details h3 {
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: 1.6rem;
   letter-spacing: -0.04em;
 }
@@ -638,7 +638,7 @@
 }
 
 .breakpoints strong {
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: 1.5rem;
 }
 
@@ -838,7 +838,7 @@
   background: var(--ui-brand-gradient);
   background-clip: text;
   color: transparent;
-  font-family: var(--ui-font-display);
+  font-family: var(--ui-font-display), sans-serif;
   font-size: clamp(6rem, 18vw, 14rem);
   font-weight: 650;
   letter-spacing: -0.09em;

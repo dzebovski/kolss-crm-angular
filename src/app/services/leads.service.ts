@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { AuthService } from '../core/auth/auth.service';
 import { injectSupabase } from '../core/supabase/supabase.service';
-import { CLOSE_REASON_LABELS, lossReasonLabel, LEAD_SOURCE_LABELS, validateCloseLead } from './crm-mock.helpers';
+import { validateCloseLead } from './crm-mock.helpers';
 import type { CloseLeadPayload, CloseReason, LeadSource, MockLead } from './crm-mock.types';
 import {
   LEAD_LIST_SELECT,
@@ -132,16 +132,16 @@ export class LeadsService {
       .single();
 
     if (error) throw error;
-    if (!data) throw new Error('Не вдалося створити лід.');
+    if (!data) throw new Error('error.leadCreateFailed');
 
-    const sourceLabel = LEAD_SOURCE_LABELS[payload.source];
     const { error: eventError } = await this.supabase.from('lead_events').insert({
       lead_id: data.id,
       actor_id: actorId,
       event_type: 'created',
-      comment: `Лід створено вручну. Джерело: ${sourceLabel}.`,
+      comment: null,
       old_value: null,
       new_value: {
+        source: payload.source,
         source_system,
         source_channel,
         workflow_status: 'new',
@@ -188,7 +188,7 @@ export class LeadsService {
       .maybeSingle();
     if (error) throw error;
     if (!data) {
-      throw new Error('Не вдалося видалити лід. Перевірте права доступу.');
+      throw new Error('error.leadDeleteFailed');
     }
   }
 
@@ -204,16 +204,16 @@ export class LeadsService {
       .eq('lead_id', leadId)
       .maybeSingle();
     if (loadError) throw loadError;
-    if (!data) throw new Error('Подію історії не знайдено.');
+    if (!data) throw new Error('error.historyNotFound');
 
     const current = data as EditableLeadEventRow;
     const nextComment = payload.comment.trim();
     const changedFields = [
-      ...(current.comment?.trim() !== nextComment ? ['повідомлення'] : []),
-      ...(current.event_type !== payload.eventType ? ['тип'] : []),
+      ...(current.comment?.trim() !== nextComment ? ['message'] : []),
+      ...(current.event_type !== payload.eventType ? ['type'] : []),
     ];
     if (!changedFields.length) {
-      throw new Error('Нічого не змінено');
+      throw new Error('error.nothingChanged');
     }
 
     const now = new Date().toISOString();
@@ -240,7 +240,7 @@ export class LeadsService {
       .maybeSingle();
     if (updateError) throw updateError;
     if (!updatedEvent) {
-      throw new Error('Не вдалося зберегти подію. Перевірте права доступу.');
+      throw new Error('error.historySaveFailed');
     }
 
     if (this.isCloseEventType(current.event_type) || this.isCloseEventType(payload.eventType)) {
@@ -263,16 +263,16 @@ export class LeadsService {
       .eq('id', leadId)
       .maybeSingle();
     if (leadError) throw leadError;
-    if (!lead) return 'Лід не знайдено.';
-    if (lead.workflow_status !== 'closed') return 'Лід не закритий.';
+    if (!lead) return 'error.leadNotFound';
+    if (lead.workflow_status !== 'closed') return 'error.leadNotClosed';
 
     const userComment = payload.comment.trim();
-    const nextComment = userComment || lossReasonLabel(payload.reason);
+    const nextComment = userComment || null;
     const changedFields = [
-      ...(lead.loss_reason !== payload.reason ? ['причина закриття'] : []),
-      ...((lead.last_comment ?? '') !== nextComment ? ['коментар'] : []),
+      ...(lead.loss_reason !== payload.reason ? ['closeReason'] : []),
+      ...((lead.last_comment ?? '') !== (nextComment ?? '') ? ['message'] : []),
     ];
-    if (!changedFields.length) return 'Нічого не змінено';
+    if (!changedFields.length) return 'error.nothingChanged';
 
     const now = new Date().toISOString();
     const { error: updateLeadError } = await this.supabase
@@ -295,7 +295,7 @@ export class LeadsService {
       .maybeSingle();
     if (eventError) throw eventError;
 
-    const closeEventComment = userComment || lossReasonLabel(payload.reason);
+    const closeEventComment = userComment || null;
     const nextValue = {
       reason: payload.reason,
       workflow_status: 'closed',
@@ -317,7 +317,7 @@ export class LeadsService {
         .maybeSingle();
       if (updateEventError) throw updateEventError;
       if (!updatedEvent) {
-        throw new Error('Не вдалося зберегти подію закриття. Перевірте права доступу.');
+        throw new Error('error.historySaveFailed');
       }
     } else {
       const { error: insertEventError } = await this.supabase.from('lead_events').insert({
@@ -388,7 +388,7 @@ export class LeadsService {
 
   currentUserId(): string {
     const userId = this.auth.sessionContext()?.user.id;
-    if (!userId) throw new Error('Користувач не автентифікований');
+    if (!userId) throw new Error('error.authRequired');
     return userId;
   }
 
@@ -400,7 +400,7 @@ export class LeadsService {
       .maybeSingle();
     if (error) throw error;
     if (!data) {
-      return `Причина "${reason}" відсутня в довіднику. Застосуйте міграцію loss_reasons.`;
+      return `error.lossReasonMissing:${reason}`;
     }
     return null;
   }
@@ -416,7 +416,7 @@ export class LeadsService {
       lead_id: leadId,
       actor_id: actorId,
       event_type: 'lead_updated',
-      comment: `Дані ліда відредаговано: ${editedFields.join(', ')}. Редагував: ${actorName}.`,
+      comment: null,
       old_value: null,
       new_value: {
         edit_audit: {
@@ -432,7 +432,7 @@ export class LeadsService {
 
   private currentActorName(): string {
     const context = this.auth.sessionContext();
-    return context?.profile.display_name?.trim() || context?.user.email || 'Невідомий';
+    return context?.profile.display_name?.trim() || context?.user.email || 'common.unknown';
   }
 
   private toEditableRecord(value: unknown): Record<string, unknown> {
@@ -464,8 +464,8 @@ export class LeadsService {
     if (!lead) return;
 
     const reason = this.closeReasonFromValue(eventValue);
-    const nextComment = comment || (reason ? CLOSE_REASON_LABELS[reason] : '');
-    const leadUpdates: Record<string, string> = { updated_at: updatedAt };
+    const nextComment = comment || null;
+    const leadUpdates: Record<string, string | null> = { updated_at: updatedAt };
     let hasChanges = false;
 
     if (reason && lead.loss_reason !== reason) {

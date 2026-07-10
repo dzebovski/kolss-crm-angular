@@ -20,11 +20,11 @@ describe('crm helpers', () => {
   });
 
   it('validates close and successful lead payloads', () => {
-    expect(validateCloseLead({ reason: 'lost_client', comment: '' })).toContain('коментар');
+    expect(validateCloseLead({ reason: 'lost_client', comment: '' })).toBe('validation.lostClientComment');
     expect(validateCloseLead({ reason: 'expensive', comment: '' })).toBeNull();
     expect(
       validateSuccessfulLead({ contractNumber: '', amount: 1000, prepayment: null, comment: '' }),
-    ).toContain('номер');
+    ).toBe('validation.contractNumber');
   });
 
   it('calculates funnel metrics from leads', () => {

@@ -168,8 +168,25 @@ function buildVisit(visits: readonly ShowroomVisitRow[]): ShowroomVisit | null {
   };
 }
 
-function buildContract(contracts: readonly ContractRow[]): LeadContract | null {
+function buildContract(
+  contracts: readonly ContractRow[],
+  events: readonly LeadEventRow[],
+): LeadContract | null {
   const signed = contracts.find((contract) => contract.status === 'signed') ?? contracts[0];
+  const successEvent = events.find(
+    (event) => event.event_type === 'successful' || event.event_type === 'contract_signed',
+  );
+  const structured = parseContractFromNewValue(successEvent?.new_value);
+  if (structured) {
+    return {
+      contractNumber: structured.contractNumber,
+      amount: structured.amount,
+      prepayment: structured.prepayment,
+      comment: successEvent?.comment?.trim() || structured.comment,
+      signedAt: signed?.signed_at ?? successEvent?.created_at ?? new Date().toISOString(),
+    };
+  }
+
   if (!signed) return null;
 
   const parsed = parseContractComment(signed.comment);
@@ -179,6 +196,25 @@ function buildContract(contracts: readonly ContractRow[]): LeadContract | null {
     prepayment: parsed.prepayment,
     comment: parsed.comment,
     signedAt: signed.signed_at ?? signed.created_at,
+  };
+}
+
+function parseContractFromNewValue(value: unknown): {
+  contractNumber: string;
+  amount: number;
+  prepayment: number | null;
+  comment: string;
+} | null {
+  if (!isRecord(value)) return null;
+  const contractNumber = value['contract_number'];
+  const amount = value['amount'];
+  if (typeof contractNumber !== 'string' || typeof amount !== 'number') return null;
+  const prepayment = value['prepayment'];
+  return {
+    contractNumber,
+    amount,
+    prepayment: typeof prepayment === 'number' ? prepayment : null,
+    comment: '',
   };
 }
 
@@ -225,42 +261,12 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
     id: event.id,
     type: mapEventType(event.event_type),
     rawType: event.event_type,
-    title: eventTitle(event.event_type),
-    body: event.comment ?? eventBody(event),
+    comment: event.comment ?? null,
+    newValue: event.new_value,
     actorId: event.actor_id ?? '',
     occurredAt: event.created_at,
     editAudit: eventEditAudit(event.new_value),
   }));
-}
-
-function eventTitle(eventType: string): string {
-  const titles: Record<string, string> = {
-    taken: 'Лід взято в роботу',
-    contact_attempt: 'Перший дзвінок зафіксовано',
-    first_call: 'Перший дзвінок зафіксовано',
-    showroom_visit_scheduled: 'Візит заплановано',
-    visit_scheduled: 'Візит заплановано',
-    visit_rescheduled: 'Візит перенесено',
-    showroom_visit_completed: 'Візит відбувся',
-    visit_completed: 'Візит відбувся',
-    closed: 'Лід закрито',
-    bad_lead: 'Лід закрито',
-    successful: 'Договір заключений',
-    contract_signed: 'Договір заключений',
-    comment: 'Коментар',
-    lead_updated: 'Дані ліда відредаговано',
-    attachment: 'Вкладення',
-    lead_assigned: 'Лід призначено',
-  };
-  return titles[eventType] ?? eventType;
-}
-
-function eventBody(event: LeadEventRow): string {
-  if (typeof event.new_value === 'object' && event.new_value && 'result' in event.new_value) {
-    const result = (event.new_value as { result?: string }).result;
-    return result ? `${result}` : '';
-  }
-  return '';
 }
 
 function eventEditAudit(value: unknown): LeadEventEditAudit | null {
@@ -298,7 +304,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
   const officeCode = officeCodeFromRow(row);
   const firstCall = buildFirstCall(relations.contactAttempts);
   const visit = buildVisit(relations.showroomVisits);
-  const contract = buildContract(relations.contracts);
+  const contract = buildContract(relations.contracts, relations.events);
   const close = buildClose(workflowStatus, row.loss_reason, relations.events, row.last_comment);
 
   const firstManagerId =

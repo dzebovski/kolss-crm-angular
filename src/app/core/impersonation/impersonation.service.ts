@@ -151,11 +151,8 @@ export class ImpersonationService {
   }
 
   private currentSession(): Session | null {
-    const session = (this.auth as unknown as { session?: unknown }).session;
-    if (typeof session === 'function') {
-      return (session as () => Session | null)();
-    }
-    return null;
+    const session = this.auth.session;
+    return typeof session === 'function' ? session() : null;
   }
 }
 

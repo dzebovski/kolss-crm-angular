@@ -2,7 +2,8 @@ import { inject, Injectable } from '@angular/core';
 
 import { injectSupabase } from '../core/supabase/supabase.service';
 import type { CloseLeadPayload, SuccessfulLeadPayload } from './crm-mock.types';
-import { CLOSE_REASON_LABELS, validateCloseLead, validateSuccessfulLead } from './crm-mock.helpers';
+import type { FirstCallResultCode } from '../core/i18n/event-storage';
+import { validateCloseLead, validateSuccessfulLead } from './crm-mock.helpers';
 import { LeadsService } from './leads.service';
 
 @Injectable({ providedIn: 'root' })
@@ -26,44 +27,43 @@ export class LeadWorkflowService {
       .eq('id', leadId);
 
     if (error) throw error;
-    await this.insertEvent(leadId, actorId, 'taken', 'Лід взято в роботу', {
+    await this.insertEvent(leadId, actorId, 'taken', null, {
       workflow_status: 'new',
     }, {
       workflow_status: 'taken',
     });
   }
 
-  async recordFirstCall(leadId: string, result: string, comment: string): Promise<string | null> {
-    if (!result.trim()) return 'Оберіть результат першого дзвінка.';
-    if (!comment.trim()) return 'Додайте короткий коментар до дзвінка.';
+  async recordFirstCall(leadId: string, result: FirstCallResultCode, comment: string): Promise<string | null> {
+    if (!result.trim()) return 'validation.firstCallResult';
+    if (!comment.trim()) return 'validation.firstCallComment';
 
     const actorId = this.leads.currentUserId();
-    const mappedResult = mapFirstCallResult(result);
 
     const { error: insertError } = await this.supabase.from('lead_contact_attempts').insert({
       lead_id: leadId,
       manager_id: actorId,
-      result: mappedResult,
+      result,
       comment: comment.trim(),
     });
     if (insertError) throw insertError;
 
     await this.updateWorkflow(leadId, 'first_call_done', {
       lead_status: 'in_progress',
-      callback_due_at: mappedResult === 'reached' ? null : undefined,
+      callback_due_at: result === 'reached' ? null : undefined,
     });
 
     await this.insertEvent(leadId, actorId, 'contact_attempt', comment.trim(), null, {
-      result: mappedResult,
+      result,
       workflow_status: 'first_call_done',
     });
     return null;
   }
 
   async scheduleVisit(leadId: string, scheduledAt: string, comment: string): Promise<string | null> {
-    if (!scheduledAt.trim()) return 'Вкажіть дату візиту.';
+    if (!scheduledAt.trim()) return 'validation.visitDate';
     const when = new Date(scheduledAt);
-    if (Number.isNaN(when.getTime())) return 'Некоректна дата візиту.';
+    if (Number.isNaN(when.getTime())) return 'validation.visitDateInvalid';
 
     const actorId = this.leads.currentUserId();
     const { error } = await this.supabase.from('lead_showroom_visits').insert({
@@ -88,10 +88,10 @@ export class LeadWorkflowService {
     scheduledAt: string,
     comment: string,
   ): Promise<string | null> {
-    if (!scheduledAt.trim()) return 'Вкажіть нову дату візиту.';
-    if (!comment.trim()) return 'Вкажіть причину або коментар до перенесення.';
+    if (!scheduledAt.trim()) return 'validation.visitDate';
+    if (!comment.trim()) return 'validation.rescheduleComment';
     const when = new Date(scheduledAt);
-    if (Number.isNaN(when.getTime())) return 'Некоректна дата візиту.';
+    if (Number.isNaN(when.getTime())) return 'validation.visitDateInvalid';
 
     const actorId = this.leads.currentUserId();
     const { data: latestVisit } = await this.supabase
@@ -127,7 +127,7 @@ export class LeadWorkflowService {
   }
 
   async completeVisit(leadId: string, comment: string): Promise<string | null> {
-    if (!comment.trim()) return 'Додайте короткий результат візиту.';
+    if (!comment.trim()) return 'validation.visitResult';
 
     const actorId = this.leads.currentUserId();
     const { data: latestVisit } = await this.supabase
@@ -153,7 +153,7 @@ export class LeadWorkflowService {
   }
 
   async addComment(leadId: string, comment: string): Promise<string | null> {
-    if (!comment.trim()) return 'Коментар не може бути порожнім.';
+    if (!comment.trim()) return 'validation.commentEmpty';
 
     const actorId = this.leads.currentUserId();
     const { data: lead, error: leadError } = await this.supabase
@@ -185,6 +185,7 @@ export class LeadWorkflowService {
 
     const actorId = this.leads.currentUserId();
     const now = new Date().toISOString();
+    const userComment = payload.comment.trim();
     const { error: updateError } = await this.supabase
       .from('leads')
       .update({
@@ -194,7 +195,7 @@ export class LeadWorkflowService {
         workflow_status_changed_at: now,
         lead_status_changed_at: now,
         callback_due_at: null,
-        last_comment: payload.comment || CLOSE_REASON_LABELS[payload.reason],
+        last_comment: userComment || null,
       })
       .eq('id', leadId);
     if (updateError) throw updateError;
@@ -203,7 +204,7 @@ export class LeadWorkflowService {
       leadId,
       actorId,
       'closed',
-      payload.comment || CLOSE_REASON_LABELS[payload.reason],
+      userComment || null,
       null,
       { reason: payload.reason, workflow_status: 'closed' },
     );
@@ -216,20 +217,13 @@ export class LeadWorkflowService {
 
     const actorId = this.leads.currentUserId();
     const now = new Date().toISOString();
-    const contractComment = [
-      `№ ${payload.contractNumber}`,
-      `сума ${payload.amount} EUR`,
-      payload.prepayment != null ? `передоплата ${payload.prepayment} EUR` : null,
-      payload.comment,
-    ]
-      .filter(Boolean)
-      .join(', ');
+    const userComment = payload.comment.trim();
 
     const { error: contractError } = await this.supabase.from('lead_contracts').insert({
       lead_id: leadId,
       status: 'signed',
       signed_at: now,
-      comment: contractComment,
+      comment: userComment || null,
       created_by: actorId,
     });
     if (contractError) throw contractError;
@@ -242,15 +236,16 @@ export class LeadWorkflowService {
         workflow_status_changed_at: now,
         lead_status_changed_at: now,
         callback_due_at: null,
-        last_comment: payload.comment || `Договір ${payload.contractNumber} заключений.`,
+        last_comment: userComment || null,
       })
       .eq('id', leadId);
     if (updateError) throw updateError;
 
-    await this.insertEvent(leadId, actorId, 'successful', contractComment, null, {
+    await this.insertEvent(leadId, actorId, 'successful', userComment || null, null, {
       workflow_status: 'successful',
       contract_number: payload.contractNumber,
       amount: payload.amount,
+      prepayment: payload.prepayment,
     });
     return null;
   }
@@ -290,12 +285,4 @@ export class LeadWorkflowService {
     });
     if (error) throw error;
   }
-}
-
-function mapFirstCallResult(result: string): 'reached' | 'no_answer' | 'cannot_talk' | 'bad_lead' {
-  const normalized = result.toLocaleLowerCase('uk-UA');
-  if (normalized.includes('нецільов')) return 'bad_lead';
-  if (normalized.includes('не відпов')) return 'no_answer';
-  if (normalized.includes('передзвон')) return 'cannot_talk';
-  return 'reached';
 }

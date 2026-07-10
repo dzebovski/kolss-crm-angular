@@ -2,19 +2,20 @@ import { Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { ImpersonationService } from '../../../core/impersonation/impersonation.service';
 import { SessionService } from '../../../core/session/session.service';
-import { roleLabel } from '../../../core/roles/roles';
 import type { LocaleCode, OfficeFilter } from '../../../services/crm-mock.types';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiIcon } from '../../../ui/icon/ui-icon';
-import { UiMenu, UiMenuItem } from '../../../ui/menu/ui-menu';
+import { UiMenu, type UiMenuItem } from '../../../ui/menu/ui-menu';
 import { UiUser } from '../../../ui/user/ui-user';
 import { ImpersonateDialog } from './impersonate-dialog';
 
 @Component({
   selector: 'app-crm-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIcon, UiMenu, UiUser],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIcon, UiMenu, UiUser, TranslatePipe],
   template: `
     <div class="crm-shell" data-density="compact">
       <header class="crm-shell__header">
@@ -84,28 +85,28 @@ import { ImpersonateDialog } from './impersonate-dialog';
             </span>
           </a>
 
-          <nav class="crm-shell__nav" aria-label="Основна навігація">
+          <nav class="crm-shell__nav" [attr.aria-label]="'nav.main' | translate">
             <a routerLink="/crm/leads" routerLinkActive="is-active">
               <app-ui-icon name="view_kanban" [size]="17" />
-              Ліди
+              {{ 'nav.leads' | translate }}
             </a>
             <a routerLink="/crm/reports" routerLinkActive="is-active">
               <app-ui-icon name="automation" [size]="17" />
-              Звітність
+              {{ 'nav.reports' | translate }}
             </a>
             @if (canManageAccounts()) {
               <a routerLink="/crm/accounts" routerLinkActive="is-active">
                 <app-ui-icon name="history" [size]="17" />
-                Акаунти
+                {{ 'nav.accounts' | translate }}
               </a>
             }
           </nav>
 
-          <div class="crm-shell__context-controls" aria-label="CRM controls">
+          <div class="crm-shell__context-controls" [attr.aria-label]="'nav.crmControls' | translate">
             @if (showOfficeFilter()) {
               <div
                 class="crm-shell__segmented crm-shell__segmented--office"
-                aria-label="Офісний контекст"
+                [attr.aria-label]="'nav.officeContext' | translate"
               >
                 @for (item of officeFilters(); track item.value) {
                   <button
@@ -119,7 +120,7 @@ import { ImpersonateDialog } from './impersonate-dialog';
               </div>
             }
 
-            <div class="crm-shell__segmented crm-shell__segmented--language" aria-label="Мова">
+            <div class="crm-shell__segmented crm-shell__segmented--language" [attr.aria-label]="'nav.language' | translate">
               @for (item of locales; track item.value) {
                 <button
                   type="button"
@@ -133,7 +134,7 @@ import { ImpersonateDialog } from './impersonate-dialog';
           </div>
         </div>
 
-        <div class="crm-shell__user" aria-label="Поточний користувач">
+        <div class="crm-shell__user" [attr.aria-label]="'nav.currentUser' | translate">
           <app-ui-user
             class="crm-shell__user-avatar"
             [userId]="userId()"
@@ -147,7 +148,7 @@ import { ImpersonateDialog } from './impersonate-dialog';
             <span>{{ displayName() }}</span>
             <small>{{ roleName() }}</small>
           </div>
-          <app-ui-menu label="Меню" [items]="userMenuItems()" (selected)="handleUserMenu($event)" />
+          <app-ui-menu [label]="'nav.menu' | translate" [items]="userMenuItems()" (selected)="handleUserMenu($event)" />
         </div>
       </header>
 
@@ -202,7 +203,7 @@ import { ImpersonateDialog } from './impersonate-dialog';
       gap: var(--ui-space-3);
       color: inherit;
       text-decoration: none;
-      font-family: var(--ui-font-display);
+      font-family: var(--ui-font-display), sans-serif;
       line-height: 1.1;
       flex: 0 0 auto;
     }
@@ -319,6 +320,7 @@ export class CrmShell {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(UiDialogService);
   private readonly impersonation = inject(ImpersonationService);
+  private readonly i18n = inject(I18nService);
   private impersonatePromptHandled = false;
 
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
@@ -327,26 +329,40 @@ export class CrmShell {
     { value: 'en', label: 'EN' },
   ];
   protected readonly userMenuItems = computed<readonly UiMenuItem[]>(() => {
-    const items: UiMenuItem[] = [{ value: 'design', label: 'Дизайн-система', icon: 'view_kanban' }];
+    const items: UiMenuItem[] = [
+      { value: 'design', label: this.i18n.t('nav.designSystem'), icon: 'view_kanban' },
+    ];
 
     if (this.session.officeContext()?.isSuperAdmin || this.impersonation.isImpersonating()) {
-      items.push({ value: 'impersonate', label: 'Увійти як…', icon: 'history' });
+      items.push({ value: 'impersonate', label: this.i18n.t('nav.impersonate'), icon: 'history' });
     }
     if (this.impersonation.isImpersonating()) {
-      items.push({ value: 'impersonationStop', label: 'Повернутись до супер-адміна', icon: 'arrow_back' });
-      items.push({ value: 'impersonationClear', label: 'Очистити імперсонацію', icon: 'delete' });
+      items.push({
+        value: 'impersonationStop',
+        label: this.i18n.t('nav.impersonationStop'),
+        icon: 'arrow_back',
+      });
+      items.push({
+        value: 'impersonationClear',
+        label: this.i18n.t('nav.impersonationClear'),
+        icon: 'delete',
+      });
     } else if (this.impersonation.superAdminSession()) {
-      items.push({ value: 'impersonationClear', label: 'Очистити імперсонацію', icon: 'delete' });
+      items.push({
+        value: 'impersonationClear',
+        label: this.i18n.t('nav.impersonationClear'),
+        icon: 'delete',
+      });
     }
 
-    items.push({ value: 'logout', label: 'Вийти', icon: 'arrow_back' });
+    items.push({ value: 'logout', label: this.i18n.t('common.logout'), icon: 'arrow_back' });
     return items;
   });
 
   readonly displayName = () =>
-    this.auth.profile()?.display_name ?? this.auth.sessionContext()?.user.email ?? 'Користувач';
+    this.auth.profile()?.display_name ?? this.auth.sessionContext()?.user.email ?? this.i18n.t('common.user');
   readonly userId = () => this.auth.profile()?.id ?? null;
-  readonly roleName = () => roleLabel(this.auth.profile()?.role ?? 'office_member');
+  readonly roleName = () => this.i18n.roleLabel(this.auth.profile()?.role ?? 'office_member');
   readonly canManageAccounts = () => this.session.officeContext()?.isSuperAdmin ?? false;
   readonly showOfficeFilter = this.session.showOfficeFilter;
   readonly officeFilter = this.session.officeFilter;
@@ -354,12 +370,14 @@ export class CrmShell {
 
   protected readonly officeFilters = computed(() => {
     const offices = this.session.officeContext()?.filterOffices ?? [];
-    const items: { value: OfficeFilter; label: string }[] = [{ value: 'all', label: 'Усі офіси' }];
+    const items: { value: OfficeFilter; label: string }[] = [
+      { value: 'all', label: this.i18n.t('office.all') },
+    ];
     for (const office of offices) {
       if (office.code === 'kyiv' || office.code === 'warsaw') {
         items.push({
           value: office.code,
-          label: office.name_uk,
+          label: this.i18n.tField(office as unknown as Record<string, unknown>, 'name', office.code),
         });
       }
     }
