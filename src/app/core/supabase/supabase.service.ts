@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { environment } from '../../../environments/environment';
@@ -33,8 +33,4 @@ export class SupabaseService {
   isConfigured(): boolean {
     return this.configured;
   }
-}
-
-export function injectSupabase(): SupabaseClient {
-  return inject(SupabaseService).getClient();
 }

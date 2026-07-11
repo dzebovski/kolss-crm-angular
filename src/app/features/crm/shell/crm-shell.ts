@@ -1,17 +1,14 @@
-import { Component, computed, effect, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, computed, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { ImpersonationService } from '../../../core/impersonation/impersonation.service';
 import { SessionService } from '../../../core/session/session.service';
 import type { LocaleCode, OfficeFilter } from '../../../services/crm-mock.types';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiMenu, type UiMenuItem } from '../../../ui/menu/ui-menu';
 import { UiUser } from '../../../ui/user/ui-user';
-import { ImpersonateDialog } from './impersonate-dialog';
 
 @Component({
   selector: 'app-crm-shell',
@@ -317,11 +314,7 @@ export class CrmShell {
   private readonly auth = inject(AuthService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
-  private readonly dialog = inject(UiDialogService);
-  private readonly impersonation = inject(ImpersonationService);
   private readonly i18n = inject(I18nService);
-  private impersonatePromptHandled = false;
 
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
     { value: 'uk', label: 'UK' },
@@ -332,28 +325,6 @@ export class CrmShell {
     const items: UiMenuItem[] = [
       { value: 'design', label: this.i18n.t('nav.designSystem'), icon: 'view_kanban' },
     ];
-
-    if (this.session.officeContext()?.isSuperAdmin || this.impersonation.isImpersonating()) {
-      items.push({ value: 'impersonate', label: this.i18n.t('nav.impersonate'), icon: 'history' });
-    }
-    if (this.impersonation.isImpersonating()) {
-      items.push({
-        value: 'impersonationStop',
-        label: this.i18n.t('nav.impersonationStop'),
-        icon: 'arrow_back',
-      });
-      items.push({
-        value: 'impersonationClear',
-        label: this.i18n.t('nav.impersonationClear'),
-        icon: 'delete',
-      });
-    } else if (this.impersonation.superAdminSession()) {
-      items.push({
-        value: 'impersonationClear',
-        label: this.i18n.t('nav.impersonationClear'),
-        icon: 'delete',
-      });
-    }
 
     items.push({ value: 'logout', label: this.i18n.t('common.logout'), icon: 'arrow_back' });
     return items;
@@ -384,19 +355,6 @@ export class CrmShell {
     return items;
   });
 
-  constructor() {
-    effect(() => {
-      const role = this.auth.profile()?.role ?? null;
-      if (role !== 'super_admin') return;
-      if (this.impersonatePromptHandled) return;
-      const shouldPrompt = this.route.snapshot.queryParamMap.get('impersonate') === '1';
-      if (!shouldPrompt) return;
-      this.impersonatePromptHandled = true;
-      this.openImpersonateDialog();
-      void this.router.navigate([], { relativeTo: this.route, queryParams: { impersonate: null }, replaceUrl: true });
-    });
-  }
-
   protected setOfficeFilter(filter: OfficeFilter): void {
     this.session.setOfficeFilter(filter);
   }
@@ -410,21 +368,6 @@ export class CrmShell {
       await this.router.navigateByUrl('/design');
       return;
     }
-    if (value === 'impersonate') {
-      this.openImpersonateDialog();
-      return;
-    }
-    if (value === 'impersonationStop') {
-      await this.stopImpersonation();
-      return;
-    }
-    if (value === 'impersonationClear') {
-      if (this.impersonation.isImpersonating()) {
-        await this.stopImpersonation();
-      }
-      this.impersonation.clearStoredSuperAdminSession();
-      return;
-    }
     if (value === 'logout') {
       await this.signOut();
     }
@@ -433,18 +376,5 @@ export class CrmShell {
   async signOut(): Promise<void> {
     await this.auth.signOut();
     await this.router.navigateByUrl('/login');
-  }
-
-  private openImpersonateDialog(): void {
-    this.dialog.open(ImpersonateDialog, {
-      data: {},
-    });
-  }
-
-  private async stopImpersonation(): Promise<void> {
-    await this.impersonation.stopImpersonation();
-    await this.session.loadOfficeContext();
-    const current = this.router.url;
-    await this.router.navigateByUrl(current);
   }
 }

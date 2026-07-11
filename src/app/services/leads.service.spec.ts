@@ -1,160 +1,71 @@
 import { TestBed } from '@angular/core/testing';
 
+import { KolssApiClient } from '../core/api/generated/kolss-api.client';
 import { AuthService } from '../core/auth/auth.service';
-import { SupabaseService } from '../core/supabase/supabase.service';
 import { LeadsService } from './leads.service';
+import type { LeadListRow } from './leads.mapper';
 
-describe('LeadsService.createLead', () => {
-  function setup() {
-    const leadEventsInsert = vi.fn().mockResolvedValue({ error: null });
-    const leadsSingle = vi.fn().mockResolvedValue({
-      data: {
-        id: 'lead-new-1',
-        name: 'Тест Клієнт',
-        phone: '+380501112233',
-        email: null,
-        lead_status: 'new',
-        workflow_status: 'new',
-        office_id: 'office-kyiv',
-        assigned_to: null,
-        source_created_at: '2026-07-09T12:00:00.000Z',
-        created_at: '2026-07-09T12:00:00.000Z',
-        updated_at: '2026-07-09T12:00:00.000Z',
-        last_comment: null,
-        callback_due_at: null,
-        source_system: 'manual',
-        source_channel: 'office',
-        source_note: null,
-        product_interest: null,
-        estimated_budget: null,
-        city_region: null,
-        order_comment: null,
-        offices: { id: 'office-kyiv', code: 'kyiv', name_uk: 'Київ', name_pl: 'Kijów', is_active: true },
-        profiles: null,
-      },
-      error: null,
-    });
-    const leadsInsert = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({ single: leadsSingle }),
-    });
+const row: LeadListRow = {
+  id: 'lead-1',
+  office_id: 'office-1',
+  source_system: 'manual',
+  external_lead_id: 'crm:1',
+  lead_status: 'new',
+  lead_status_changed_at: null,
+  workflow_status: 'new',
+  workflow_status_changed_at: null,
+  assigned_to: null,
+  loss_reason: null,
+  converted_project_id: null,
+  estimated_budget: null,
+  our_quote: null,
+  callback_due_at: null,
+  source_channel: 'office',
+  source_note: null,
+  next_task_due_at: null,
+  next_task_title: null,
+  last_comment: null,
+  last_comment_at: null,
+  name: 'Test',
+  phone: '+380501112233',
+  email: null,
+  product_interest: null,
+  order_comment: null,
+  city_region: null,
+  project_stage_source: null,
+  source_created_at: null,
+  created_at: '2026-07-10T00:00:00Z',
+  updated_at: '2026-07-10T00:00:00Z',
+  offices: { id: 'office-1', code: 'kyiv', name_uk: 'Київ', name_pl: 'Kijów', is_active: true },
+};
 
-    const supabase = {
-      from: vi.fn((table: string) => {
-        if (table === 'leads') return { insert: leadsInsert };
-        if (table === 'lead_events') return { insert: leadEventsInsert };
-        throw new Error(`Unexpected table: ${table}`);
-      }),
-    };
-
+describe('LeadsService', () => {
+  function setup(api: Partial<KolssApiClient>) {
     TestBed.configureTestingModule({
       providers: [
         LeadsService,
-        {
-          provide: SupabaseService,
-          useValue: { getClient: () => supabase },
-        },
-        {
-          provide: AuthService,
-          useValue: {
-            sessionContext: () => ({
-              user: { id: 'user-1', email: 'manager@example.com' },
-              profile: { display_name: 'Менеджер' },
-            }),
-          },
-        },
+        { provide: KolssApiClient, useValue: api },
+        { provide: AuthService, useValue: { sessionContext: () => null } },
       ],
     });
-
-    return {
-      service: TestBed.inject(LeadsService),
-      leadsInsert,
-      leadEventsInsert,
-    };
+    return TestBed.inject(LeadsService);
   }
 
-  it('inserts lead and created event with mapped source fields', async () => {
-    const { service, leadsInsert, leadEventsInsert } = setup();
-
-    const lead = await service.createLead({
-      officeId: 'office-kyiv',
-      source: 'office',
-      name: 'Тест Клієнт',
-      phone: '+380501112233',
-      email: null,
-      cityRegion: 'Київ',
-      productInterest: 'Кухня',
-      estimatedBudget: 12000,
-      initialMessage: 'Потрібна консультація',
+  it('creates a lead through Go API', async () => {
+    const createLead = vi.fn().mockResolvedValue(row);
+    const service = setup({ createLead } as Partial<KolssApiClient>);
+    const result = await service.createLead({
+      officeId: 'office-1', source: 'office', name: 'Test', phone: '+380501112233',
+      email: null, cityRegion: '', productInterest: '', estimatedBudget: null, initialMessage: '',
     });
-
-    expect(lead.id).toBe('lead-new-1');
-    expect(leadsInsert).toHaveBeenCalledTimes(1);
-    const insertPayload = leadsInsert.mock.calls[0][0];
-    expect(insertPayload.office_id).toBe('office-kyiv');
-    expect(insertPayload.source_system).toBe('manual');
-    expect(insertPayload.source_channel).toBe('office');
-    expect(insertPayload.external_lead_id).toMatch(/^crm:/);
-    expect(insertPayload.name).toBe('Тест Клієнт');
-
-    expect(leadEventsInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        lead_id: 'lead-new-1',
-        actor_id: 'user-1',
-        event_type: 'created',
-        comment: null,
-        new_value: expect.objectContaining({ source: 'office' }),
-      }),
-    );
-  });
-});
-
-describe('LeadsService.deleteLead', () => {
-  function setupDelete(eqResult: { error: null; count: number }) {
-    const leadsDelete = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue(eqResult),
-    });
-    const supabase = {
-      from: vi.fn((table: string) => {
-        if (table === 'leads') return { delete: leadsDelete };
-        throw new Error(`Unexpected table: ${table}`);
-      }),
-    };
-
-    TestBed.configureTestingModule({
-      providers: [
-        LeadsService,
-        {
-          provide: SupabaseService,
-          useValue: { getClient: () => supabase },
-        },
-        {
-          provide: AuthService,
-          useValue: {
-            sessionContext: () => ({
-              user: { id: 'user-1', email: 'admin@example.com' },
-              profile: { display_name: 'Admin' },
-            }),
-          },
-        },
-      ],
-    });
-
-    return { service: TestBed.inject(LeadsService), leadsDelete };
-  }
-
-  it('deletes lead by id', async () => {
-    const { service, leadsDelete } = setupDelete({ error: null, count: 1 });
-
-    await service.deleteLead('lead-1');
-
-    expect(leadsDelete).toHaveBeenCalledWith({ count: 'exact' });
-    const deleteChain = leadsDelete.mock.results[0]?.value;
-    expect(deleteChain.eq).toHaveBeenCalledWith('id', 'lead-1');
+    expect(result.id).toBe('lead-1');
+    expect(createLead).toHaveBeenCalledOnce();
   });
 
-  it('throws when no rows are deleted', async () => {
-    const { service } = setupDelete({ error: null, count: 0 });
-
-    await expect(service.deleteLead('lead-1')).rejects.toThrow('error.leadDeleteFailed');
+  it('archives instead of deleting a lead', async () => {
+    const archiveLead = vi.fn().mockResolvedValue(undefined);
+    const service = setup({ archiveLead } as Partial<KolssApiClient>);
+    await service.archiveLead('lead-1');
+    expect(archiveLead).toHaveBeenCalledWith('lead-1');
   });
 });

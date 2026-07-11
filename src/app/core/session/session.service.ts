@@ -2,7 +2,6 @@ import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import type { Office, UserOfficeContext } from '../../models/database';
 import { hasOfficeLeadFilter, isSuperAdminRole } from '../roles/roles';
-import { injectSupabase } from '../supabase/supabase.service';
 import { AuthService } from '../auth/auth.service';
 import { readViewAsMode, writeViewAsMode, type ViewAsMode } from './view-as';
 import type { LocaleCode, OfficeFilter } from '../../services/crm-mock.types';
@@ -10,7 +9,6 @@ import { readStoredLocale, setActiveLocale } from '../i18n/locale-storage';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
-  private readonly supabase = injectSupabase();
   private readonly auth = inject(AuthService);
 
   private readonly officesSignal = signal<Office[]>([]);
@@ -80,27 +78,10 @@ export class SessionService {
       return;
     }
 
-    const isSuperAdmin = isSuperAdminRole(ctx.profile.role);
-
-    const [officesResult, membershipsResult] = await Promise.all([
-      this.supabase.from('offices').select('*').eq('is_active', true).order('code'),
-      !isSuperAdmin
-        ? this.supabase
-            .from('user_office_memberships')
-            .select('office_id, offices(*)')
-            .eq('user_id', ctx.user.id)
-        : Promise.resolve({ data: null, error: null }),
-    ]);
-
-    if (officesResult.error) throw officesResult.error;
-    if (membershipsResult.error) throw membershipsResult.error;
-
-    const offices = (officesResult.data ?? []) as Office[];
-    const userOffices: Office[] = isSuperAdmin
-      ? offices
-      : (membershipsResult.data ?? [])
-          .map((row) => row.offices as unknown as Office)
-          .filter(Boolean);
+    const me = this.auth.me();
+    if (!me) return;
+    const offices = [...me.offices];
+    const userOffices = [...me.userOffices];
 
     this.officesSignal.set(offices);
     this.userOfficesSignal.set(userOffices);

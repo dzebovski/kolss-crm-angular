@@ -48,7 +48,7 @@ describe('LeadDetailPage', () => {
     updateLeadDetails?: ReturnType<typeof vi.fn>;
     updateHistoryEvent?: ReturnType<typeof vi.fn>;
     updateCloseDetails?: ReturnType<typeof vi.fn>;
-    deleteLead?: ReturnType<typeof vi.fn>;
+    archiveLead?: ReturnType<typeof vi.fn>;
     dialogConfirm?: boolean;
   }) {
     const leadId = options?.leadId ?? 'lead-1007';
@@ -61,7 +61,7 @@ describe('LeadDetailPage', () => {
     const updateLeadDetails = options?.updateLeadDetails ?? vi.fn(async () => undefined);
     const updateHistoryEvent = options?.updateHistoryEvent ?? vi.fn(async () => []);
     const updateCloseDetails = options?.updateCloseDetails ?? vi.fn(async () => null);
-    const deleteLead = options?.deleteLead ?? vi.fn(async () => undefined);
+    const archiveLead = options?.archiveLead ?? vi.fn(async () => undefined);
     const dialogConfirm = options?.dialogConfirm ?? false;
 
     TestBed.resetTestingModule();
@@ -79,7 +79,7 @@ describe('LeadDetailPage', () => {
         },
         {
           provide: LeadsService,
-          useValue: { getById, updateLeadDetails, updateHistoryEvent, updateCloseDetails, deleteLead },
+          useValue: { getById, updateLeadDetails, updateHistoryEvent, updateCloseDetails, archiveLead },
         },
         {
           provide: UsersService,
@@ -356,32 +356,32 @@ describe('LeadDetailPage', () => {
     expect(element.textContent).toContain('Редагувати');
   });
 
-  it('shows permanent delete for super admin on closed lead', async () => {
+  it('shows archive for super admin on closed lead', async () => {
     const fixture = await createLeadDetail({ leadId: 'lead-1008', role: 'super_admin' });
     await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.textContent).toContain('Видалити назавжди');
+    expect(element.textContent).toContain('Архівувати');
   });
 
-  it('hides permanent delete for office member on closed lead', async () => {
+  it('hides archive for office member on closed lead', async () => {
     const fixture = await createLeadDetail({ leadId: 'lead-1008', role: 'office_member' });
     await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.textContent).not.toContain('Видалити назавжди');
+    expect(element.textContent).not.toContain('Архівувати');
   });
 
-  it('deletes closed lead after confirmation', async () => {
-    const deleteLead = vi.fn(async () => undefined);
+  it('archives closed lead after confirmation', async () => {
+    const archiveLead = vi.fn(async () => undefined);
     const fixture = await createLeadDetail({
       leadId: 'lead-1008',
       role: 'super_admin',
-      deleteLead,
+      archiveLead,
       dialogConfirm: true,
     });
     const router = TestBed.inject(Router);
@@ -392,9 +392,9 @@ describe('LeadDetailPage', () => {
     await fixture.whenStable();
 
     const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1008')!;
-    await fixture.componentInstance['confirmDeleteLead'](lead);
+    await fixture.componentInstance['confirmArchiveLead'](lead);
 
-    expect(deleteLead).toHaveBeenCalledWith('lead-1008');
+    expect(archiveLead).toHaveBeenCalledWith('lead-1008');
     expect(navigateSpy).toHaveBeenCalledWith(['/crm/leads']);
   });
 

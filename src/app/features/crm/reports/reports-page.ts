@@ -4,9 +4,8 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import type { MessageKey } from '../../../core/i18n/messages';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
-import { calculateFunnel, calculateManagerTakenReport } from '../../../services/crm-mock.helpers';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
+import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
+import { officeName } from '../../../services/crm-mock.helpers';
 import type { FunnelStage, ManagerOfficeReport } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
@@ -399,8 +398,7 @@ import { UiUser } from '../../../ui/user/ui-user';
 })
 export class ReportsPage {
   private readonly session = inject(SessionService);
-  private readonly leadsService = inject(LeadsService);
-  private readonly usersService = inject(UsersService);
+  private readonly api = inject(KolssApiClient);
   protected readonly i18n = inject(I18nService);
 
   protected readonly periods = computed(() => [
@@ -411,43 +409,72 @@ export class ReportsPage {
   ]);
   protected readonly periodDays = signal(40);
 
-  protected readonly leadsResource = resource({
-    params: () => ({ officeId: this.session.selectedOfficeId() }),
-    loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
-  });
-
-  protected readonly allLeadsResource = resource({
-    loader: () => this.leadsService.list(),
-  });
-
-  protected readonly employeesResource = resource({
-    loader: () => this.usersService.listEmployees(),
+  protected readonly reportResource = resource({
+    params: () => ({ officeId: this.session.selectedOfficeId(), days: this.periodDays() }),
+    loader: ({ params }) => this.api.report(params) as Promise<LeadReportResponse>,
   });
 
   protected readonly loadError = computed(() => {
-    const error =
-      this.leadsResource.error() ?? this.allLeadsResource.error() ?? this.employeesResource.error();
+    const error = this.reportResource.error();
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
 
-  protected readonly funnel = computed(() =>
-    calculateFunnel(this.leadsResource.value() ?? [], this.periodDays()),
-  );
+  protected readonly funnel = computed(() => this.buildFunnel(this.reportResource.value()?.funnel ?? {}));
   protected readonly totalLeads = computed(() => this.funnel()[0]?.count ?? 0);
   protected readonly periodLabel = computed(
     () => this.periods().find((period) => period.days === this.periodDays())?.label ?? this.i18n.t('reports.period'),
   );
 
   protected readonly managerReports = computed((): readonly ManagerOfficeReport[] => {
-    const leads = this.allLeadsResource.value() ?? [];
-    const employees = this.employeesResource.value() ?? [];
-    const periodDays = this.periodDays();
-
-    return [
-      calculateManagerTakenReport(leads, employees, 'kyiv', periodDays),
-      calculateManagerTakenReport(leads, employees, 'warsaw', periodDays),
-    ];
+    const rows = this.reportResource.value()?.managers ?? [];
+    return (['kyiv', 'warsaw'] as const).map((officeCode) => ({
+      officeCode,
+      officeLabel: officeName(officeCode),
+      managers: rows
+        .filter((row) => row.officeCode === officeCode && row.managerId)
+        .map((row) => ({
+          managerId: row.managerId ?? '',
+          managerName: row.managerName || this.i18n.t('common.unknown'),
+          takenCount: row.takenCount,
+        })),
+      unassignedCount: rows
+        .filter((row) => row.officeCode === officeCode && !row.managerId)
+        .reduce((sum, row) => sum + row.takenCount, 0),
+    }));
   });
+
+  private buildFunnel(counts: Readonly<Record<string, number>>): readonly FunnelStage[] {
+    const stages = [
+      ['created', 'funnel.created', 'brand'],
+      ['taken', 'funnel.taken', 'info'],
+      ['scheduled', 'funnel.scheduled', 'warning'],
+      ['visited', 'funnel.visited', 'success'],
+      ['successful', 'funnel.successful', 'success'],
+      ['closed', 'funnel.closed', 'danger'],
+    ] as const;
+    const total = counts['created'] ?? 0;
+    const base: Readonly<Record<string, string>> = {
+      taken: 'created',
+      scheduled: 'taken',
+      visited: 'scheduled',
+      successful: 'taken',
+      closed: 'taken',
+    };
+    return stages.map(([key, label, tone]) => {
+      const count = counts[key] ?? 0;
+      const baseKey = base[key];
+      const baseCount = baseKey ? (counts[baseKey] ?? 0) : 0;
+      return {
+        key,
+        label,
+        tone,
+        count,
+        percentOfTotal: total ? Math.round((count / total) * 100) : 0,
+        conversionFromPrevious: baseCount ? Math.round((count / baseCount) * 100) : 0,
+        conversionBaseLabel: baseKey ? `funnel.${baseKey}` : null,
+      };
+    });
+  }
 
   protected funnelLabel(key: string | null): string {
     if (!key) return '';
@@ -457,4 +484,15 @@ export class ReportsPage {
   protected barWidth(stage: FunnelStage): number {
     return Math.max(stage.percentOfTotal, stage.count > 0 ? 6 : 0);
   }
+}
+
+interface LeadReportResponse {
+  readonly days: number;
+  readonly funnel: Readonly<Record<string, number>>;
+  readonly managers: readonly {
+    readonly officeCode: string;
+    readonly managerId: string | null;
+    readonly managerName: string;
+    readonly takenCount: number;
+  }[];
 }

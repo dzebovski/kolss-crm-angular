@@ -7,33 +7,12 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { safeCrmReturnTo } from '../../../core/navigation/safe-return-to';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiButton } from '../../../ui/button/ui-button';
-import { UiCheckbox } from '../../../ui/form/ui-checkbox';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 
-const IMPERSONATE_AFTER_LOGIN_KEY = 'kolss_impersonate_after_login';
-
-function readImpersonateAfterLogin(): boolean {
-  if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') return false;
-  return localStorage.getItem(IMPERSONATE_AFTER_LOGIN_KEY) === '1';
-}
-
-function writeImpersonateAfterLogin(value: boolean): void {
-  if (typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') return;
-  localStorage.setItem(IMPERSONATE_AFTER_LOGIN_KEY, value ? '1' : '0');
-}
-
-function withImpersonateParam(url: string): string {
-  const [path, query = ''] = url.split('?');
-  const params = new URLSearchParams(query);
-  params.set('impersonate', '1');
-  const qs = params.toString();
-  return qs ? `${path}?${qs}` : path;
-}
-
 @Component({
   selector: 'app-login-page',
-  imports: [RouterLink, FormField, UiAlert, UiButton, UiCheckbox, UiIcon, UiTextField, TranslatePipe],
+  imports: [RouterLink, FormField, UiAlert, UiButton, UiIcon, UiTextField, TranslatePipe],
   template: `
     <main class="login-page">
       <section class="login-frame" aria-labelledby="login-title">
@@ -94,11 +73,6 @@ function withImpersonateParam(url: string): string {
               placeholder="name@kolss.com"
             />
             <app-ui-text-field [formField]="loginForm.password" label="Пароль" type="password" />
-
-            <app-ui-checkbox
-              label="Після входу відкрити “Увійти як…” (лише для супер-адміна)"
-              [(checked)]="impersonateAfterLogin"
-            />
 
             <app-ui-button type="submit" variant="primary" [block]="true" [loading]="submitting()">
               Увійти
@@ -299,7 +273,6 @@ export class LoginPage {
 
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(this.resolveInitialError());
-  readonly impersonateAfterLogin = signal(readImpersonateAfterLogin());
 
   readonly formModel = signal({
     email: '',
@@ -317,17 +290,13 @@ export class LoginPage {
 
     this.errorMessage.set(null);
     this.submitting.set(true);
-    writeImpersonateAfterLogin(this.impersonateAfterLogin());
-
     try {
       await this.auth.signIn(
         this.loginForm.email().value().trim(),
         this.loginForm.password().value(),
       );
       const next = safeCrmReturnTo(this.route.snapshot.queryParamMap.get('next'));
-      const shouldPromptImpersonation =
-        this.impersonateAfterLogin() && this.auth.profile()?.role === 'super_admin';
-      await this.router.navigateByUrl(shouldPromptImpersonation ? withImpersonateParam(next) : next);
+      await this.router.navigateByUrl(next);
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'Помилка входу');
     } finally {

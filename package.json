@@ -15,13 +15,17 @@
     "lint": "ng lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npx tsc -p tsconfig.app.json --noEmit && npm run lint && npm test",
+    "check:api-boundary": "node scripts/check-api-boundary.mjs",
+    "check": "npm run check:api-boundary && npx tsc -p tsconfig.app.json --noEmit && npm run lint && npm test",
     "functions:deploy": "npx supabase functions deploy import-lead --no-verify-jwt && npx supabase functions deploy site-lead --no-verify-jwt && npx supabase functions deploy process-notifications --no-verify-jwt && npx supabase functions deploy admin-users",
     "functions:deploy:webhooks": "npx supabase functions deploy import-lead --no-verify-jwt && npx supabase functions deploy site-lead --no-verify-jwt && npx supabase functions deploy process-notifications --no-verify-jwt",
     "functions:deploy:admin": "npx supabase functions deploy admin-users",
     "functions:smoke": "bash scripts/smoke-edge-functions.sh"
   },
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "packageManager": "npm@11.17.0",
   "dependencies": {
     "@angular/aria": "^22.0.2",
@@ -36,6 +40,7 @@
     "@fontsource-variable/inter": "^5.2.8",
     "@fontsource-variable/inter-tight": "^5.2.7",
     "@supabase/supabase-js": "^2.110.1",
+    "@vercel/analytics": "^2.0.1",
     "axe-core": "^4.12.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

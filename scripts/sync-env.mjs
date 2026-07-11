@@ -11,14 +11,16 @@ const fallbacks = {
   local: {
     supabaseUrl: 'http://127.0.0.1:54321',
     supabaseAnonKey: 'prototype-anon-key',
+    apiBaseUrl: 'http://localhost:8080',
     siteUrl: 'http://localhost:4200',
     siteUrlPublic: 'http://localhost:4200',
   },
   prod: {
     supabaseUrl: '',
     supabaseAnonKey: '',
-    siteUrl: 'https://crm.kolss.com',
-    siteUrlPublic: 'https://crm.kolss.com',
+    apiBaseUrl: 'https://api.kolss.eu',
+    siteUrl: 'https://crm.kolss.eu',
+    siteUrlPublic: 'https://crm.kolss.eu',
   },
 };
 
@@ -73,6 +75,7 @@ const environment = {
     ['SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY'],
     fallback.supabaseAnonKey,
   ),
+  apiBaseUrl: pick(sources, ['API_BASE_URL'], fallback.apiBaseUrl),
   siteUrl: pick(
     sources,
     ['SITE_URL', 'NEXT_PUBLIC_SITE_URL'],

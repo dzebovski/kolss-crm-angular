@@ -1,13 +1,13 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { SessionService } from '../../../core/session/session.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import {
   groupLeadsByYearMonth,
   LEAD_SOURCE_ICONS,
-  matchesLeadSearch,
   officeName,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
@@ -42,6 +42,12 @@ import { CreateLeadDialog } from './create-lead-dialog';
             <app-ui-icon name="history" [size]="17" />
             {{ 'leads.refresh' | translate }}
           </app-ui-button>
+          @if (isSuperAdmin()) {
+            <app-ui-button variant="secondary" (pressed)="toggleArchived()">
+              <app-ui-icon name="archive" [size]="17" />
+              {{ showArchived() ? ('leads.showActive' | translate) : ('leads.showArchived' | translate) }}
+            </app-ui-button>
+          }
         </div>
       </header>
 
@@ -519,6 +525,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
   `,
 })
 export class LeadsPage {
+  private readonly auth = inject(AuthService);
   private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
   private readonly usersService = inject(UsersService);
@@ -526,13 +533,18 @@ export class LeadsPage {
   protected readonly i18n = inject(I18nService);
 
   protected readonly query = signal('');
+  protected readonly showArchived = signal(false);
   protected readonly notice = signal('');
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
 
   protected readonly leadsResource = resource({
-    params: () => ({ officeId: this.session.selectedOfficeId() }),
-    loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
+    params: () => ({
+      officeId: this.session.selectedOfficeId(),
+      search: this.query().trim(),
+      archived: this.showArchived() ? ('only' as const) : ('active' as const),
+    }),
+    loader: ({ params }) => this.leadsService.list(params),
   });
 
   protected readonly employeesResource = resource({
@@ -546,7 +558,7 @@ export class LeadsPage {
 
   protected readonly filteredLeads = computed(() => {
     const leads = this.leadsResource.value() ?? [];
-    return leads.filter((lead) => matchesLeadSearch(lead, this.query()));
+    return leads;
   });
   protected readonly groupedLeads = computed(() => groupLeadsByYearMonth(this.filteredLeads()));
   protected readonly activeCount = computed(
@@ -566,6 +578,11 @@ export class LeadsPage {
   protected formatDate = (value: string | null | undefined) => this.i18n.formatDate(value);
   protected readonly officeName = officeName;
   protected readonly workflowTone = workflowTone;
+  protected readonly isSuperAdmin = () => this.auth.profile()?.role === 'super_admin';
+
+  protected toggleArchived(): void {
+    this.showArchived.update((value) => !value);
+  }
 
   protected employeeName(employeeId: string | null): string {
     const employees = this.employeesResource.value() ?? [];

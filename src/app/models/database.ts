@@ -88,6 +88,9 @@ export interface Lead {
   source_created_at: string | null;
   created_at: string;
   updated_at: string;
+  version?: number;
+  archived_at?: string | null;
+  archived_by?: string | null;
   offices?: Office;
   profiles?: { display_name: string | null };
 }

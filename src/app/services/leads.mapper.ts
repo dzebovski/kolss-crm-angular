@@ -314,6 +314,8 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
 
   return {
     id: row.id,
+    version: row.version ?? 1,
+    archivedAt: row.archived_at ?? null,
     name: row.name ?? 'Без імені',
     phone: row.phone ?? '—',
     email: row.email,

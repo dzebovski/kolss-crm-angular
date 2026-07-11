@@ -57,17 +57,6 @@ export const messages = {
   'nav.currentUser': { uk: 'Поточний користувач', pl: 'Bieżący użytkownik', en: 'Current user' },
   'nav.menu': { uk: 'Меню', pl: 'Menu', en: 'Menu' },
   'nav.designSystem': { uk: 'Дизайн-система', pl: 'System projektowy', en: 'Design system' },
-  'nav.impersonate': { uk: 'Увійти як…', pl: 'Zaloguj jako…', en: 'Impersonate…' },
-  'nav.impersonationStop': {
-    uk: 'Повернутись до супер-адміна',
-    pl: 'Wróć do super-admina',
-    en: 'Return to super admin',
-  },
-  'nav.impersonationClear': {
-    uk: 'Очистити імперсонацію',
-    pl: 'Wyczyść podszywanie',
-    en: 'Clear impersonation',
-  },
 
   'office.all': { uk: 'Усі офіси', pl: 'Wszystkie biura', en: 'All offices' },
   'office.kyiv': { uk: 'Київ', pl: 'Kijów', en: 'Kyiv' },
@@ -170,12 +159,15 @@ export const messages = {
   'lead.comment': { uk: 'Коментар', pl: 'Komentarz', en: 'Comment' },
   'lead.history': { uk: 'Історія', pl: 'Historia', en: 'History' },
   'lead.editHistory': { uk: 'Редагувати історію', pl: 'Edytuj historię', en: 'Edit history' },
-  'lead.deleteForever': { uk: 'Видалити лід назавжди', pl: 'Usuń lead na zawsze', en: 'Delete lead permanently' },
-  'lead.deleteForeverDesc': {
-    uk: 'Лід «{name}» буде видалений без можливості відновлення. Уся історія та вкладення також зникнуть.',
-    pl: 'Lead „{name}” zostanie trwale usunięty wraz z historią i załącznikami.',
-    en: 'Lead "{name}" will be permanently deleted along with history and attachments.',
+  'lead.archive': { uk: 'Архівувати лід', pl: 'Archiwizuj lead', en: 'Archive lead' },
+  'lead.archiveDesc': {
+    uk: 'Лід «{name}» буде приховано в архіві. Супер-адміністратор зможе його відновити.',
+    pl: 'Lead „{name}” zostanie przeniesiony do archiwum i może zostać przywrócony.',
+    en: 'Lead "{name}" will be archived and can be restored by a super admin.',
   },
+  'lead.restore': { uk: 'Відновити з архіву', pl: 'Przywróć z archiwum', en: 'Restore from archive' },
+  'leads.showArchived': { uk: 'Показати архів', pl: 'Pokaż archiwum', en: 'Show archive' },
+  'leads.showActive': { uk: 'Показати активні', pl: 'Pokaż aktywne', en: 'Show active' },
   'lead.terminalSuccess': { uk: 'Лід успішно завершено', pl: 'Lead zakończony sukcesem', en: 'Lead completed successfully' },
   'lead.terminalClosed': { uk: 'Лід закрито', pl: 'Lead zamknięty', en: 'Lead closed' },
   'lead.terminalUnavailable': {
@@ -213,10 +205,10 @@ export const messages = {
     pl: 'Oznacz jako sukces',
     en: 'Mark as successful',
   },
-  'lead.deleteForeverShort': {
-    uk: 'Видалити назавжди',
-    pl: 'Usuń na zawsze',
-    en: 'Delete forever',
+  'lead.archiveShort': {
+    uk: 'Архівувати',
+    pl: 'Archiwizuj',
+    en: 'Archive',
   },
   'lead.visitSalon': { uk: 'Візит у салон', pl: 'Wizyta w salonie', en: 'Showroom visit' },
   'lead.visitHint': {
@@ -392,37 +384,6 @@ export const messages = {
   },
   'leads.kicker': { uk: 'CRM pipeline', pl: 'CRM pipeline', en: 'CRM pipeline' },
 
-  'impersonate.description': {
-    uk: 'Це перемикає Supabase сесію та RLS-доступи на обраного співробітника.',
-    pl: 'Przełącza sesję Supabase i uprawnienia RLS na wybranego pracownika.',
-    en: 'This switches the Supabase session and RLS access to the selected employee.',
-  },
-  'impersonate.errorTitle': {
-    uk: 'Не вдалося виконати імперсонацію',
-    pl: 'Nie udało się wykonać podszywania',
-    en: 'Failed to impersonate',
-  },
-  'impersonate.selectOffice': {
-    uk: 'Оберіть офіс',
-    pl: 'Wybierz biuro',
-    en: 'Select office',
-  },
-  'impersonate.selectEmployee': {
-    uk: 'Оберіть співробітника',
-    pl: 'Wybierz pracownika',
-    en: 'Select employee',
-  },
-  'impersonate.loadFailed': {
-    uk: 'Не вдалося завантажити список співробітників',
-    pl: 'Nie udało się załadować listy pracowników',
-    en: 'Failed to load employee list',
-  },
-  'impersonate.submitFailed': {
-    uk: 'Не вдалося виконати імперсонацію',
-    pl: 'Nie udało się wykonać podszywania',
-    en: 'Failed to impersonate',
-  },
-
   'login.eyebrow': { uk: 'Операційний доступ', pl: 'Dostęp operacyjny', en: 'Operational access' },
   'login.title': { uk: 'Вхід до CRM', pl: 'Logowanie do CRM', en: 'CRM sign in' },
   'login.email': { uk: 'Email', pl: 'Email', en: 'Email' },
@@ -524,10 +485,10 @@ export const messages = {
     en: 'Failed to perform action',
   },
   'error.leadCreateFailed': { uk: 'Не вдалося створити лід.', pl: 'Nie udało się utworzyć leada.', en: 'Failed to create lead.' },
-  'error.leadDeleteFailed': {
-    uk: 'Не вдалося видалити лід. Перевірте права доступу.',
-    pl: 'Nie udało się usunąć leada. Sprawdź uprawnienia.',
-    en: 'Failed to delete lead. Check permissions.',
+  'error.leadArchiveFailed': {
+    uk: 'Не вдалося архівувати лід. Перевірте права доступу.',
+    pl: 'Nie udało się zarchiwizować leada. Sprawdź uprawnienia.',
+    en: 'Failed to archive lead. Check permissions.',
   },
   'error.historyNotFound': { uk: 'Подію історії не знайдено.', pl: 'Nie znaleziono wpisu historii.', en: 'History event not found.' },
   'error.nothingChanged': { uk: 'Нічого не змінено', pl: 'Nic nie zmieniono', en: 'Nothing changed' },

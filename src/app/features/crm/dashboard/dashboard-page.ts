@@ -2,8 +2,7 @@ import { Component, computed, inject, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { SessionService } from '../../../core/session/session.service';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
+import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
@@ -28,22 +27,22 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
       <div class="dashboard-grid">
         <article>
           <span>Ліди</span>
-          <strong>{{ leads().length }}</strong>
+          <strong>{{ overview()?.totalLeads ?? 0 }}</strong>
           <app-ui-badge tone="brand">live</app-ui-badge>
         </article>
         <article>
           <span>Активні</span>
-          <strong>{{ activeLeads() }}</strong>
+          <strong>{{ overview()?.activeLeads ?? 0 }}</strong>
           <app-ui-badge tone="info">workflow</app-ui-badge>
         </article>
         <article>
           <span>Успішні</span>
-          <strong>{{ successfulLeads() }}</strong>
+          <strong>{{ overview()?.successfulLeads ?? 0 }}</strong>
           <app-ui-badge tone="success">contract</app-ui-badge>
         </article>
         <article>
           <span>Співробітники</span>
-          <strong>{{ employees().length }}</strong>
+          <strong>{{ overview()?.employees ?? 0 }}</strong>
           <app-ui-badge tone="neutral">profiles</app-ui-badge>
         </article>
       </div>
@@ -115,26 +114,11 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
 })
 export class DashboardPage {
   private readonly session = inject(SessionService);
-  private readonly leadsService = inject(LeadsService);
-  private readonly usersService = inject(UsersService);
+  private readonly api = inject(KolssApiClient);
 
-  protected readonly leadsResource = resource({
+  protected readonly overviewResource = resource({
     params: () => ({ officeId: this.session.selectedOfficeId() }),
-    loader: ({ params }) => this.leadsService.list({ officeId: params.officeId }),
+    loader: ({ params }) => this.api.dashboard(params),
   });
-  protected readonly employeesResource = resource({
-    loader: () => this.usersService.listEmployees(),
-  });
-
-  protected readonly leads = computed(() => this.leadsResource.value() ?? []);
-  protected readonly employees = computed(() => this.employeesResource.value() ?? []);
-  protected readonly activeLeads = computed(
-    () =>
-      this.leads().filter(
-        (lead) => lead.workflowStatus !== 'closed' && lead.workflowStatus !== 'successful',
-      ).length,
-  );
-  protected readonly successfulLeads = computed(
-    () => this.leads().filter((lead) => lead.workflowStatus === 'successful').length,
-  );
+  protected readonly overview = computed(() => this.overviewResource.value());
 }

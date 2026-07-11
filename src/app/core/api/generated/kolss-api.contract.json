@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "sha256": "299c62b44903f77e192a95b2e8dce9628a38b7413f62c2e46e21fd048f0b613e",
+  "operationIds": [
+    "getMe",
+    "listOffices",
+    "listLossReasons",
+    "listLeads",
+    "createLead",
+    "getLead",
+    "updateLead",
+    "updateLeadEvent",
+    "performLeadAction",
+    "archiveLead",
+    "restoreLead",
+    "listUsers",
+    "listManagers",
+    "createUser",
+    "getUser",
+    "updateUser",
+    "changeUserStatus",
+    "getDashboardOverview",
+    "getLeadReport",
+    "createFileDownloadURL"
+  ]
+}

@@ -1,9 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
+import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
 import { SessionService } from '../../../core/session/session.service';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
 import { ReportsPage } from './reports-page';
 
 describe('ReportsPage', () => {
@@ -12,15 +10,16 @@ describe('ReportsPage', () => {
       imports: [ReportsPage],
       providers: [
         {
-          provide: LeadsService,
+          provide: KolssApiClient,
           useValue: {
-            list: async () => CRM_MOCK_LEADS,
-          },
-        },
-        {
-          provide: UsersService,
-          useValue: {
-            listEmployees: async () => CRM_MOCK_EMPLOYEES,
+            report: async () => ({
+              days: 40,
+              funnel: { created: 12, taken: 10, scheduled: 6, visited: 4, successful: 2, closed: 2 },
+              managers: [
+                { officeCode: 'kyiv', managerId: 'manager-1', managerName: 'Kyiv Manager', takenCount: 3 },
+                { officeCode: 'warsaw', managerId: 'manager-2', managerName: 'Warsaw Manager', takenCount: 2 },
+              ],
+            }),
           },
         },
         {

@@ -184,23 +184,29 @@ const NO_MANAGER_VALUE = '__none__';
           </div>
 
           <div class="lead-actions">
-            <app-ui-button
-              variant="secondary"
-              [disabled]="lead.assignedToId !== null || isTerminal(lead)"
-              (pressed)="takeLead(lead)"
-            >
-              {{ 'lead.takeInWork' | translate }}
-            </app-ui-button>
-            <app-ui-button
-              variant="secondary"
-              [disabled]="isTerminal(lead)"
-              (pressed)="openCloseDialog()"
-            >
-              {{ 'lead.closeLead' | translate }}
-            </app-ui-button>
-            <app-ui-button [disabled]="isTerminal(lead)" (pressed)="openSuccessDialog()">
-              {{ 'lead.markSuccessful' | translate }}
-            </app-ui-button>
+            @if (lead.archivedAt && auth.profile()?.role === 'super_admin') {
+              <app-ui-button [loading]="actionPending()" (pressed)="restoreLead(lead)">
+                {{ 'lead.restore' | translate }}
+              </app-ui-button>
+            } @else if (!lead.archivedAt) {
+              <app-ui-button
+                variant="secondary"
+                [disabled]="lead.assignedToId !== null || isTerminal(lead)"
+                (pressed)="takeLead(lead)"
+              >
+                {{ 'lead.takeInWork' | translate }}
+              </app-ui-button>
+              <app-ui-button
+                variant="secondary"
+                [disabled]="isTerminal(lead)"
+                (pressed)="openCloseDialog()"
+              >
+                {{ 'lead.closeLead' | translate }}
+              </app-ui-button>
+              <app-ui-button [disabled]="isTerminal(lead)" (pressed)="openSuccessDialog()">
+                {{ 'lead.markSuccessful' | translate }}
+              </app-ui-button>
+            }
           </div>
         </header>
 
@@ -232,15 +238,15 @@ const NO_MANAGER_VALUE = '__none__';
                   <app-ui-icon name="edit" [size]="16" />
                   {{ 'common.edit' | translate }}
                 </app-ui-button>
-                @if (canDeleteLead(lead)) {
+                @if (canArchiveLead(lead)) {
                   <app-ui-button
-                    variant="danger"
+                    variant="secondary"
                     size="small"
                     [loading]="deletingLead()"
-                    (pressed)="confirmDeleteLead(lead)"
+                    (pressed)="confirmArchiveLead(lead)"
                   >
-                    <app-ui-icon name="delete" [size]="16" />
-                    {{ 'lead.deleteForeverShort' | translate }}
+                    <app-ui-icon name="archive" [size]="16" />
+                    {{ 'lead.archiveShort' | translate }}
                   </app-ui-button>
                 }
               </div>
@@ -1098,7 +1104,7 @@ const NO_MANAGER_VALUE = '__none__';
   `,
 })
 export class LeadDetailPage {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(UiDialogService);
@@ -1211,6 +1217,7 @@ export class LeadDetailPage {
   protected readonly workflowTone = workflowTone;
 
   protected canEditLead(lead: MockLead): boolean {
+    if (lead.archivedAt) return false;
     const role = this.auth.profile()?.role;
     if (!canEditLeads(role)) return false;
     if (role === 'super_admin') return true;
@@ -1222,20 +1229,20 @@ export class LeadDetailPage {
     );
   }
 
-  protected canDeleteLead(lead: MockLead): boolean {
+  protected canArchiveLead(lead: MockLead): boolean {
     if (lead.workflowStatus !== 'closed') return false;
     return this.canEditLead(lead);
   }
 
-  protected async confirmDeleteLead(lead: MockLead): Promise<void> {
-    if (!this.canDeleteLead(lead) || this.deletingLead()) return;
+  protected async confirmArchiveLead(lead: MockLead): Promise<void> {
+    if (!this.canArchiveLead(lead) || this.deletingLead()) return;
 
     const confirmed = await firstValueFrom(
       this.dialog
         .confirm({
-          title: this.i18n.t('lead.deleteForever'),
-          description: this.i18n.t('lead.deleteForeverDesc', { name: lead.name }),
-          confirmLabel: this.i18n.t('common.delete'),
+          title: this.i18n.t('lead.archive'),
+          description: this.i18n.t('lead.archiveDesc', { name: lead.name }),
+          confirmLabel: this.i18n.t('lead.archiveShort'),
           cancelLabel: this.i18n.t('common.cancel'),
           danger: true,
         })
@@ -1246,13 +1253,27 @@ export class LeadDetailPage {
     this.actionError.set('');
     this.deletingLead.set(true);
     try {
-      await this.leadsService.deleteLead(lead.id);
+      await this.leadsService.archiveLead(lead.id);
       await this.router.navigate(['/crm/leads']);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'error.leadDeleteFailed';
+      const message = error instanceof Error ? error.message : 'error.leadArchiveFailed';
       this.actionError.set(this.i18n.localizeError(message));
     } finally {
       this.deletingLead.set(false);
+    }
+  }
+
+  protected async restoreLead(lead: MockLead): Promise<void> {
+    if (this.auth.profile()?.role !== 'super_admin' || this.actionPending()) return;
+    this.actionPending.set(true);
+    this.actionError.set('');
+    try {
+      await this.leadsService.restoreLead(lead.id);
+      await this.leadResource.reload();
+    } catch (error) {
+      this.actionError.set(error instanceof Error ? error.message : 'error.actionFailed');
+    } finally {
+      this.actionPending.set(false);
     }
   }
 

@@ -110,6 +110,8 @@ export interface LeadClose {
 
 export interface MockLead {
   readonly id: string;
+  readonly version?: number;
+  readonly archivedAt?: string | null;
   readonly name: string;
   readonly phone: string;
   readonly email: string | null;
