@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
         order_comment: data.order_comment || null,
         raw_payload: data,
       })
-      .select('id, name, phone, email, product_interest, office_id, source_system')
+      .select('id, name, phone, email, product_interest, order_comment, office_id, source_system')
       .single();
 
     if (error || !lead) {

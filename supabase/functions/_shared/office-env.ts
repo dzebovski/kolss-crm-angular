@@ -16,16 +16,27 @@ export function getTelegramBotToken(officeCode: string | undefined): string | nu
 }
 
 export function getTelegramChatId(officeCode: string | undefined): string | null {
+  return getTelegramChatIds(officeCode)[0] ?? null;
+}
+
+export function getTelegramChatIds(officeCode: string | undefined): string[] {
   const prefix = officeEnvPrefix(officeCode);
+  const values: string[] = [];
   if (prefix) {
     const chatId = Deno.env.get(`TELEGRAM_CHAT_ID_${prefix}`)?.trim();
-    if (chatId) return chatId;
+    if (chatId) values.push(chatId);
+    const additional = Deno.env.get(`TELEGRAM_ADDITIONAL_CHAT_IDS_${prefix}`);
+    if (additional) values.push(...additional.split(','));
   }
-  return Deno.env.get('TELEGRAM_CHAT_ID_KYIV')?.trim() ?? null;
+  if (!prefix) {
+    const fallback = Deno.env.get('TELEGRAM_CHAT_ID_KYIV')?.trim();
+    if (fallback) values.push(fallback);
+  }
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
 export function telegramConfigured(officeCode: string | undefined): boolean {
-  return !!(getTelegramBotToken(officeCode) && getTelegramChatId(officeCode));
+  return !!(getTelegramBotToken(officeCode) && getTelegramChatIds(officeCode).length);
 }
 
 export function getSlackWebhookUrl(officeCode: string | undefined): string | null {
@@ -37,10 +48,16 @@ export function getSlackWebhookUrl(officeCode: string | undefined): string | nul
 }
 
 export function getSiteUrlPublic(): string {
-  return (
+  const raw =
     Deno.env.get('SITE_URL_PUBLIC')?.trim() ||
     Deno.env.get('NEXT_PUBLIC_SITE_URL_PUBLIC')?.trim() ||
     Deno.env.get('NEXT_PUBLIC_SITE_URL')?.trim() ||
-    ''
-  );
+    '';
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.origin : '';
+  } catch {
+    return '';
+  }
 }

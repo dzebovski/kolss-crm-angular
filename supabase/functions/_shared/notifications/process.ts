@@ -1,29 +1,35 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.110.1';
 
-import {
-  getSlackWebhookUrl,
-  getTelegramBotToken,
-  getTelegramChatId,
-} from '../office-env.ts';
+import { getSlackWebhookUrl, getTelegramBotToken, getTelegramChatId } from '../office-env.ts';
 
 type NotificationRow = {
   id: string;
   lead_id: string;
   channel: 'telegram' | 'slack';
+  destination: string;
   payload: Record<string, unknown>;
   attempts: number;
 };
 
-async function sendTelegram(text: string, officeCode: string | undefined): Promise<void> {
+async function sendTelegram(
+  text: string,
+  officeCode: string | undefined,
+  destination: string,
+): Promise<void> {
   const token = getTelegramBotToken(officeCode);
-  const chatId = getTelegramChatId(officeCode);
+  const chatId = destination.trim() || getTelegramChatId(officeCode);
   if (!token || !chatId) {
     throw new Error(`Missing Telegram config for office: ${officeCode ?? 'unknown'}`);
   }
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    }),
   });
   if (!res.ok) {
     throw new Error(`Telegram error: ${res.status} ${await res.text()}`);
@@ -50,25 +56,58 @@ const SOURCE_LABELS: Record<string, string> = {
   manual: 'Вручну',
 };
 
-function buildMessage(payload: Record<string, unknown>): string {
+function payloadValue(payload: Record<string, unknown>, key: string): string {
+  const value = payload[key];
+  return value === null || value === undefined ? '' : String(value).trim();
+}
+
+function escapeHtml(value: string): string {
+  const escaped: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return value.replace(/[&<>"']/g, (character) => escaped[character] ?? character);
+}
+
+function messageValues(payload: Record<string, unknown>) {
   const source = String(payload.source_system ?? '');
   const sourceLabel = SOURCE_LABELS[source] ?? (source || '—');
-  const lines = [
-    '🔔 Нова заявка!',
-    `👤 Ім'я: ${payload.name ?? '—'}`,
-    `📞 Тел: ${payload.phone ?? '—'}`,
-    `🌐 Джерело: ${sourceLabel}`,
-  ];
-  if (payload.crm_url) {
-    lines.push(`🔗 Посилання на CRM: ${payload.crm_url}`);
+  const name = payloadValue(payload, 'name') || '—';
+  const phone = payloadValue(payload, 'phone') || '—';
+  const clientInfo = payloadValue(payload, 'client_info');
+  const crmUrl = payloadValue(payload, 'crm_url');
+  return { sourceLabel, name, phone, clientInfo, crmUrl };
+}
+
+function buildTelegramMessage(payload: Record<string, unknown>): string {
+  const { sourceLabel, name, phone, clientInfo, crmUrl } = messageValues(payload);
+  const lines = ['🔔 Нова заявка!', `👤 Ім'я: ${escapeHtml(name)}`];
+  if (clientInfo) {
+    lines.push('', escapeHtml(clientInfo));
   }
+  lines.push(`📞 Тел: ${escapeHtml(phone)}`, `🌐 Джерело: ${escapeHtml(sourceLabel)}`);
+  if (crmUrl) {
+    lines.push(`🔗 Посилання на CRM: <a href="${escapeHtml(crmUrl)}">Відкрити в CRM</a>`);
+  }
+  return lines.join('\n');
+}
+
+function buildSlackMessage(payload: Record<string, unknown>): string {
+  const { sourceLabel, name, phone, clientInfo, crmUrl } = messageValues(payload);
+  const lines = ['🔔 Нова заявка!', `👤 Ім'я: ${name}`];
+  if (clientInfo) lines.push('', clientInfo);
+  lines.push(`📞 Тел: ${phone}`, `🌐 Джерело: ${sourceLabel}`);
+  if (crmUrl) lines.push(`🔗 Посилання на CRM: ${crmUrl}`);
   return lines.join('\n');
 }
 
 export async function processPendingNotifications(supabase: SupabaseClient) {
   const { data: pending, error } = await supabase
     .from('lead_notifications')
-    .select('id, lead_id, channel, payload, attempts')
+    .select('id, lead_id, channel, destination, payload, attempts')
     .in('status', ['pending', 'failed'])
     .lt('attempts', 10)
     .order('created_at', { ascending: true })
@@ -83,13 +122,12 @@ export async function processPendingNotifications(supabase: SupabaseClient) {
   for (const row of pending as NotificationRow[]) {
     const payload = row.payload as Record<string, unknown>;
     const officeCode = payload.office_code as string | undefined;
-    const text = buildMessage(payload);
 
     try {
       if (row.channel === 'telegram') {
-        await sendTelegram(text, officeCode);
+        await sendTelegram(buildTelegramMessage(payload), officeCode, row.destination);
       } else {
-        await sendSlack(text, officeCode);
+        await sendSlack(buildSlackMessage(payload), officeCode);
       }
       await supabase
         .from('lead_notifications')

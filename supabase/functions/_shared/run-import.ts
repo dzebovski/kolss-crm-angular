@@ -34,6 +34,7 @@ function marketingFieldsFromMapped(mapped: MappedLeadRow) {
     email: mapped.email,
     product_interest: mapped.product_interest,
     project_stage_source: mapped.project_stage_source,
+    source_note: mapped.source_note,
     source_created_at: mapped.source_created_at,
     ad_id: mapped.ad_id,
     ad_name: mapped.ad_name,
@@ -79,9 +80,7 @@ async function runWithConcurrency<T>(
       await fn(items[i]);
     }
   }
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
-  );
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
 }
 
 async function batchUpsertMappedLeads(
@@ -144,7 +143,7 @@ async function batchUpsertMappedLeads(
           ...marketingFieldsFromMapped(mapped),
         })),
       )
-      .select('id, name, phone, email, product_interest, office_id, source_system');
+      .select('id, name, phone, email, product_interest, source_note, office_id, source_system');
 
     if (error) throw error;
 

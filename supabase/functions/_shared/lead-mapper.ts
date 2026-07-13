@@ -10,6 +10,7 @@ const DEFAULT_META_COLUMNS = {
   email: 'email',
   product_interest: 'що_ви_хочете_замовити?',
   project_stage_source: 'на_якому_етапі_ваш_проєкт?',
+  communication_preference: 'як_вам_зручно_спілкуватися?',
   ad_id: 'ad_id',
   ad_name: 'ad_name',
   campaign_id: 'campaign_id',
@@ -22,7 +23,9 @@ const DEFAULT_META_COLUMNS = {
 
 export type MetaColumns = Record<keyof typeof DEFAULT_META_COLUMNS, string>;
 
-export function resolveMetaColumns(columnMap: Record<string, unknown> | null | undefined): MetaColumns {
+export function resolveMetaColumns(
+  columnMap: Record<string, unknown> | null | undefined,
+): MetaColumns {
   const overrides = columnMap ?? {};
   const resolved = { ...DEFAULT_META_COLUMNS };
   for (const key of Object.keys(DEFAULT_META_COLUMNS) as (keyof typeof DEFAULT_META_COLUMNS)[]) {
@@ -42,6 +45,7 @@ export type MappedLeadRow = {
   email: string | null;
   product_interest: string | null;
   project_stage_source: string | null;
+  source_note: string | null;
   source_created_at: string | null;
   ad_id: string | null;
   ad_name: string | null;
@@ -86,6 +90,30 @@ function get(record: Record<string, string>, key: string): string | undefined {
   return v?.trim() ? v.trim() : undefined;
 }
 
+function firstValue(record: Record<string, string>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = get(record, key);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function kyivClientInfo(
+  productInterest: string | null,
+  projectStage: string | null,
+  communicationPreference: string | null,
+): string | null {
+  const entries: [string, string | null][] = [
+    ['Які меблі вам потрібно виготовити?', productInterest],
+    ['На якому етапі перебуває ваш проєкт?', projectStage],
+    ['Як вам зручно спілкуватися?', communicationPreference],
+  ];
+  const lines = entries
+    .filter(([, value]) => !!value)
+    .map(([label, value]) => `${label}: ${value}`);
+  return lines.length ? lines.join('\n') : null;
+}
+
 function mapRecordToLead(
   record: Record<string, string>,
   options: {
@@ -110,14 +138,29 @@ function mapRecordToLead(
 
   const email = get(record, columns.email) ?? null;
 
+  const productInterest =
+    firstValue(record, columns.product_interest, 'які_меблі_вам_потрібно_виготовити?') ?? null;
+  const projectStage =
+    firstValue(record, columns.project_stage_source, 'на_якому_етапі_перебуває_ваш_проєкт?') ??
+    null;
+  const communicationPreference =
+    firstValue(record, columns.communication_preference, 'як_вам_зручно_спілкуватися?') ?? null;
+
   const mapped: MappedLeadRow = {
     source_system,
     external_lead_id: externalId,
     name: get(record, columns.full_name) ?? null,
-    phone: normalizePhoneForOffice(get(record, columns.phone_number), options.officeCode),
+    phone: normalizePhoneForOffice(
+      firstValue(record, columns.phone_number, 'phone'),
+      options.officeCode,
+    ),
     email,
-    product_interest: get(record, columns.product_interest) ?? null,
-    project_stage_source: get(record, columns.project_stage_source) ?? null,
+    product_interest: productInterest,
+    project_stage_source: projectStage,
+    source_note:
+      options.officeCode === 'kyiv'
+        ? kyivClientInfo(productInterest, projectStage, communicationPreference)
+        : null,
     source_created_at: parseCreatedTime(get(record, columns.created_time)),
     ad_id: get(record, columns.ad_id) ?? null,
     ad_name: get(record, columns.ad_name) ?? null,
