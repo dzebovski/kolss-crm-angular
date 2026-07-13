@@ -22,7 +22,7 @@ describe('LeadsPage', () => {
         {
           provide: UsersService,
           useValue: {
-            listEmployees: async () => [],
+            listManagers: async () => [],
           },
         },
         {

@@ -548,7 +548,7 @@ export class LeadsPage {
   });
 
   protected readonly employeesResource = resource({
-    loader: () => this.usersService.listEmployees(),
+    loader: () => this.usersService.listManagers(),
   });
 
   protected readonly loadError = computed(() => {

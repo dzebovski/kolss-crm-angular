@@ -1121,7 +1121,7 @@ export class LeadDetailPage {
     loader: ({ params }) => this.leadsService.getById(params.leadId),
   });
   protected readonly employeesResource = resource({
-    loader: () => this.usersService.listEmployees(),
+    loader: () => this.usersService.listManagers(),
   });
   protected readonly lossReasonsResource = resource({
     loader: () => this.lossReasonsService.list(),

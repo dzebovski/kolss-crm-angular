@@ -29,9 +29,13 @@ export class UsersService {
   private readonly api = inject(KolssApiClient);
   private readonly auth = inject(AuthService);
 
+  async listManagers(): Promise<readonly CrmEmployee[]> {
+    return (await this.api.managers<CrmEmployee>()).items;
+  }
+
   async listEmployees(): Promise<readonly CrmEmployee[]> {
     if (this.auth.profile()?.role !== 'super_admin') {
-      return (await this.api.managers<CrmEmployee>()).items;
+      return this.listManagers();
     }
     return (await this.adminUsers.listUsers(true)).map((row) => this.mapAdminUser(row));
   }

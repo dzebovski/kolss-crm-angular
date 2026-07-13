@@ -84,7 +84,7 @@ describe('LeadDetailPage', () => {
         {
           provide: UsersService,
           useValue: {
-            listEmployees: async () => [
+            listManagers: async () => [
               {
                 id: 'emp-kyiv-1',
                 displayName: 'Kyiv Manager',
