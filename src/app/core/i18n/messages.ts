@@ -57,6 +57,46 @@ export const messages = {
   'nav.currentUser': { uk: 'Поточний користувач', pl: 'Bieżący użytkownik', en: 'Current user' },
   'nav.menu': { uk: 'Меню', pl: 'Menu', en: 'Menu' },
   'nav.designSystem': { uk: 'Дизайн-система', pl: 'System projektowy', en: 'Design system' },
+  'nav.loginAs': { uk: 'Увійти як…', pl: 'Zaloguj jako…', en: 'Login as…' },
+  'nav.returnToAdmin': {
+    uk: 'Повернутися до супер-адміна',
+    pl: 'Wróć do super-admina',
+    en: 'Return to super admin',
+  },
+  'impersonation.banner': {
+    uk: 'Ви увійшли як {name}',
+    pl: 'Jesteś zalogowany jako {name}',
+    en: 'You are logged in as {name}',
+  },
+  'impersonation.dialogTitle': {
+    uk: 'Увійти як менеджер',
+    pl: 'Zaloguj jako menedżer',
+    en: 'Login as manager',
+  },
+  'impersonation.dialogHint': {
+    uk: 'Оберіть активного співробітника. CRM працюватиме від його імені; сесія супер-адміна залишиться активною.',
+    pl: 'Wybierz aktywnego pracownika. CRM będzie działać w jego imieniu; sesja super-admina pozostanie aktywna.',
+    en: 'Choose an active employee. CRM will act as them; your super-admin session stays active.',
+  },
+  'impersonation.officeFilter': { uk: 'Офіс', pl: 'Biuro', en: 'Office' },
+  'impersonation.roleFilter': { uk: 'Роль', pl: 'Rola', en: 'Role' },
+  'impersonation.manager': { uk: 'Співробітник', pl: 'Pracownik', en: 'Employee' },
+  'impersonation.managerPlaceholder': {
+    uk: 'Оберіть співробітника',
+    pl: 'Wybierz pracownika',
+    en: 'Select employee',
+  },
+  'impersonation.confirm': { uk: 'Увійти', pl: 'Zaloguj', en: 'Login' },
+  'impersonation.loadFailed': {
+    uk: 'Не вдалося завантажити список співробітників',
+    pl: 'Nie udało się wczytać listy pracowników',
+    en: 'Could not load employees',
+  },
+  'impersonation.empty': {
+    uk: 'Немає співробітників за обраними фільтрами',
+    pl: 'Brak pracowników dla wybranych filtrów',
+    en: 'No employees match the selected filters',
+  },
 
   'office.all': { uk: 'Усі офіси', pl: 'Wszystkie biura', en: 'All offices' },
   'office.kyiv': { uk: 'Київ', pl: 'Kijów', en: 'Kyiv' },

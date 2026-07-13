@@ -1,20 +1,42 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ImpersonationService } from '../../../core/auth/impersonation.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import type { LocaleCode, OfficeFilter } from '../../../services/crm-mock.types';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiMenu, type UiMenuItem } from '../../../ui/menu/ui-menu';
 import { UiUser } from '../../../ui/user/ui-user';
+import { ImpersonationDialog } from './impersonation-dialog';
 
 @Component({
   selector: 'app-crm-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, UiIcon, UiMenu, UiUser, TranslatePipe],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    UiIcon,
+    UiMenu,
+    UiUser,
+    TranslatePipe,
+    ImpersonationDialog,
+  ],
   template: `
     <div class="crm-shell" data-density="compact">
+      @if (impersonationActive()) {
+        <div class="crm-shell__impersonation" role="status">
+          <app-ui-icon name="person" [size]="16" />
+          <span>{{ impersonationBanner() }}</span>
+          <button type="button" class="crm-shell__impersonation-action" (click)="stopImpersonation()">
+            {{ 'nav.returnToAdmin' | translate }}
+          </button>
+        </div>
+      }
+
       <header class="crm-shell__header">
         <div class="crm-shell__left">
           <a class="crm-shell__brand" routerLink="/crm/leads" aria-label="KOLSS CRM">
@@ -152,14 +174,49 @@ import { UiUser } from '../../../ui/user/ui-user';
       <main class="crm-shell__main">
         <router-outlet />
       </main>
+
+      @if (showImpersonationDialog()) {
+        <app-impersonation-dialog
+          (selected)="onImpersonationSelected($event)"
+          (cancelled)="closeImpersonationDialog()"
+        />
+      }
     </div>
   `,
   styles: `
     .crm-shell {
       min-height: 100dvh;
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto auto 1fr;
       background: linear-gradient(180deg, var(--ui-surface-subtle), var(--ui-surface-canvas) 18rem);
+    }
+
+    .crm-shell:not(:has(.crm-shell__impersonation)) {
+      grid-template-rows: auto 1fr;
+    }
+
+    .crm-shell__impersonation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--ui-space-3);
+      padding: var(--ui-space-2) var(--ui-space-6);
+      background: color-mix(in srgb, var(--ui-warning) 16%, var(--ui-surface-raised));
+      border-bottom: 1px solid color-mix(in srgb, var(--ui-warning) 28%, var(--ui-border));
+      color: var(--ui-text);
+      font-size: 0.8125rem;
+      font-weight: 650;
+    }
+
+    .crm-shell__impersonation-action {
+      margin-left: var(--ui-space-2);
+      border: 0;
+      background: transparent;
+      color: var(--ui-action);
+      font: inherit;
+      font-weight: 700;
+      text-decoration: underline;
+      cursor: pointer;
     }
 
     .crm-shell__header {
@@ -312,19 +369,43 @@ import { UiUser } from '../../../ui/user/ui-user';
 })
 export class CrmShell {
   private readonly auth = inject(AuthService);
+  private readonly impersonation = inject(ImpersonationService);
   private readonly session = inject(SessionService);
   private readonly router = inject(Router);
   private readonly i18n = inject(I18nService);
+
+  protected readonly showImpersonationDialog = signal(false);
 
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
     { value: 'uk', label: 'UK' },
     { value: 'pl', label: 'PL' },
     { value: 'en', label: 'EN' },
   ];
+
+  protected readonly impersonationActive = this.impersonation.isActive;
+
+  protected readonly impersonationBanner = computed(() =>
+    this.i18n.t('impersonation.banner', { name: this.displayName() }),
+  );
+
   protected readonly userMenuItems = computed<readonly UiMenuItem[]>(() => {
     const items: UiMenuItem[] = [
       { value: 'design', label: this.i18n.t('nav.designSystem'), icon: 'view_kanban' },
     ];
+
+    if (this.impersonation.isActive()) {
+      items.push({
+        value: 'stop-impersonation',
+        label: this.i18n.t('nav.returnToAdmin'),
+        icon: 'arrow_back',
+      });
+    } else if (isSuperAdminRole(this.auth.profile()?.role)) {
+      items.push({
+        value: 'login-as',
+        label: this.i18n.t('nav.loginAs'),
+        icon: 'person',
+      });
+    }
 
     items.push({ value: 'logout', label: this.i18n.t('common.logout'), icon: 'arrow_back' });
     return items;
@@ -368,9 +449,32 @@ export class CrmShell {
       await this.router.navigateByUrl('/design');
       return;
     }
+    if (value === 'login-as') {
+      this.showImpersonationDialog.set(true);
+      return;
+    }
+    if (value === 'stop-impersonation') {
+      this.stopImpersonation();
+      return;
+    }
     if (value === 'logout') {
       await this.signOut();
     }
+  }
+
+  protected closeImpersonationDialog(): void {
+    this.showImpersonationDialog.set(false);
+  }
+
+  protected onImpersonationSelected(userId: string): void {
+    this.impersonation.start(userId);
+    this.showImpersonationDialog.set(false);
+    globalThis.location.reload();
+  }
+
+  protected stopImpersonation(): void {
+    this.impersonation.stop();
+    globalThis.location.reload();
   }
 
   async signOut(): Promise<void> {

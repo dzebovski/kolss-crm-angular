@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import type { Session } from '@supabase/supabase-js';
 
@@ -5,12 +6,25 @@ import type { Profile, SessionContext } from '../../models/database';
 import { KolssApiClient } from '../api/generated/kolss-api.client';
 import type { MeResponse } from '../api/generated/kolss-api.types';
 import { SupabaseService } from '../supabase/supabase.service';
+import { ImpersonationService } from './impersonation.service';
+
+function isInvalidImpersonationError(error: unknown): boolean {
+  if (!(error instanceof Error) || !(error.cause instanceof HttpErrorResponse)) {
+    return false;
+  }
+  if (error.cause.status !== 403) {
+    return false;
+  }
+  const body = error.cause.error as { code?: unknown } | null;
+  return body?.code === 'invalid_impersonation';
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly supabaseService = inject(SupabaseService);
   private readonly supabase = this.supabaseService.getClient();
   private readonly api = inject(KolssApiClient);
+  private readonly impersonation = inject(ImpersonationService);
 
   private readonly sessionSignal = signal<Session | null>(null);
   private readonly profileSignal = signal<Profile | null>(null);
@@ -28,11 +42,11 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => Boolean(this.sessionSignal()));
   readonly sessionContext = computed<SessionContext | null>(() => {
-    const session = this.sessionSignal();
+    const me = this.meSignal();
     const profile = this.profileSignal();
-    if (!session?.user || !profile) return null;
+    if (!me?.user?.id || !profile) return null;
     return {
-      user: { id: session.user.id, email: session.user.email },
+      user: { id: me.user.id, email: me.user.email ?? this.sessionSignal()?.user.email },
       profile,
     };
   });
@@ -101,6 +115,7 @@ export class AuthService {
   async signOut(): Promise<void> {
     this.loadingSignal.set(true);
     try {
+      this.impersonation.clear();
       if (!this.supabaseService.isConfigured()) {
         this.sessionSignal.set(null);
         this.profileSignal.set(null);
@@ -126,10 +141,13 @@ export class AuthService {
       return;
     }
 
-    const me = await this.api.me();
+    const me = await this.loadMeOnce();
+    if (!me) return;
+
     const profile = me.profile;
     if (profile && !profile.is_active) {
       await this.supabase.auth.signOut();
+      this.impersonation.clear();
       this.sessionSignal.set(null);
       this.profileSignal.set(null);
       this.meSignal.set(null);
@@ -138,5 +156,18 @@ export class AuthService {
     }
     this.meSignal.set(me);
     this.profileSignal.set(profile);
+  }
+
+  /** Loads /v1/me; on exact invalid_impersonation clears mode and retries once. */
+  private async loadMeOnce(): Promise<MeResponse | null> {
+    try {
+      return await this.api.me();
+    } catch (error) {
+      if (!isInvalidImpersonationError(error) || !this.impersonation.isActive()) {
+        throw error;
+      }
+      this.impersonation.clear();
+      return await this.api.me();
+    }
   }
 }

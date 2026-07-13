@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "sha256": "299c62b44903f77e192a95b2e8dce9628a38b7413f62c2e46e21fd048f0b613e",
+  "sha256": "73cc7c5d74e2e7c57348936b3934381059cf69341d0ac931470af3645536a3a9",
   "operationIds": [
     "getMe",
     "listOffices",

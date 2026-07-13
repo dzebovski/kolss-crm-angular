@@ -1,12 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ImpersonationService } from '../../../core/auth/impersonation.service';
 import { SessionService } from '../../../core/session/session.service';
 import { CrmShell } from './crm-shell';
 
 describe('CrmShell', () => {
+  const impersonationActive = signal(false);
+
   beforeEach(async () => {
+    impersonationActive.set(false);
     await TestBed.configureTestingModule({
       imports: [CrmShell],
       providers: [
@@ -26,6 +31,16 @@ describe('CrmShell', () => {
             session: () => null,
             sessionContext: () => null,
             signOut: async () => undefined,
+          },
+        },
+        {
+          provide: ImpersonationService,
+          useValue: {
+            isActive: impersonationActive.asReadonly(),
+            targetUserId: () => (impersonationActive() ? 'manager-1' : null),
+            start: vi.fn(),
+            stop: vi.fn(),
+            clear: vi.fn(),
           },
         },
         {
@@ -80,5 +95,29 @@ describe('CrmShell', () => {
     expect(left?.querySelector('.crm-shell__segmented--language')).toBeTruthy();
     expect(user?.querySelector('.crm-shell__user-meta')).toBeTruthy();
     expect(user?.querySelector('app-ui-menu')).toBeTruthy();
+  });
+
+  it('offers login-as for super admin when not impersonating', async () => {
+    const fixture = TestBed.createComponent(CrmShell);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const items = fixture.componentInstance['userMenuItems']();
+    expect(items.some((item) => item.value === 'login-as')).toBe(true);
+    expect(items.some((item) => item.value === 'stop-impersonation')).toBe(false);
+  });
+
+  it('shows impersonation banner and return menu while impersonating', async () => {
+    impersonationActive.set(true);
+    const fixture = TestBed.createComponent(CrmShell);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.crm-shell__impersonation')).toBeTruthy();
+
+    const items = fixture.componentInstance['userMenuItems']();
+    expect(items.some((item) => item.value === 'stop-impersonation')).toBe(true);
+    expect(items.some((item) => item.value === 'login-as')).toBe(false);
   });
 });
