@@ -377,9 +377,9 @@ export class CrmShell {
   protected readonly showImpersonationDialog = signal(false);
 
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
-    { value: 'uk', label: 'UK' },
-    { value: 'pl', label: 'PL' },
     { value: 'en', label: 'EN' },
+    { value: 'pl', label: 'PL' },
+    { value: 'uk', label: 'UA' },
   ];
 
   protected readonly impersonationActive = this.impersonation.isActive;

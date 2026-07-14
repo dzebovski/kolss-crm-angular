@@ -16,7 +16,7 @@ export class SessionService {
   private readonly loadedSignal = signal(false);
   private readonly viewAsSignal = signal<ViewAsMode>(readViewAsMode());
   private readonly officeFilterSignal = signal<OfficeFilter>('all');
-  private readonly localeSignal = signal<LocaleCode>(readStoredLocale() ?? 'uk');
+  private readonly localeSignal = signal<LocaleCode>(readStoredLocale() ?? 'en');
   private lastUserId: string | null = null;
 
   readonly offices = this.officesSignal.asReadonly();

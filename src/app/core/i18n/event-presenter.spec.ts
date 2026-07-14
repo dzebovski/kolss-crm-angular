@@ -56,4 +56,27 @@ describe('event-presenter', () => {
     expect(isUserCommentEventType('comment')).toBe(true);
     expect(isUserCommentEventType('lead_updated')).toBe(false);
   });
+
+  it('does not throw for created event with unknown source', () => {
+    expect(() =>
+      presentEventBody(
+        {
+          event_type: 'created',
+          comment: 'Лід створено вручну.',
+          new_value: { source: 'legacy_channel' },
+        },
+        'uk',
+      ),
+    ).not.toThrow();
+
+    const body = presentEventBody(
+      {
+        event_type: 'created',
+        comment: 'Лід створено вручну.',
+        new_value: { source: 'legacy_channel' },
+      },
+      'uk',
+    );
+    expect(body).toContain('legacy_channel');
+  });
 });

@@ -2,7 +2,7 @@ import type { LocaleCode } from '../../services/crm-mock.types';
 
 const STORAGE_KEY = 'kolss.locale';
 
-let activeLocale: LocaleCode = readStoredLocale() ?? 'uk';
+let activeLocale: LocaleCode = readStoredLocale() ?? 'en';
 
 export function readStoredLocale(): LocaleCode | null {
   try {

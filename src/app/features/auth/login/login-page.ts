@@ -1,10 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { safeCrmReturnTo } from '../../../core/navigation/safe-return-to';
+import { SessionService } from '../../../core/session/session.service';
+import type { LocaleCode } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiTextField } from '../../../ui/form/ui-text-field';
@@ -12,29 +15,26 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
 
 @Component({
   selector: 'app-login-page',
-  imports: [RouterLink, FormField, UiAlert, UiButton, UiIcon, UiTextField, TranslatePipe],
+  imports: [FormField, UiAlert, UiButton, UiIcon, UiTextField, TranslatePipe],
   template: `
     <main class="login-page">
       <section class="login-frame" aria-labelledby="login-title">
         <div class="login-panel login-panel--brand">
-          <a class="login-brand" routerLink="/design" aria-label="KOLSS design system">
+          <div class="login-brand">
             <span class="login-brand__mark" aria-hidden="true"></span>
             <span>
               <strong>KOLSS</strong>
               <small>CRM workspace</small>
             </span>
-          </a>
+          </div>
 
           <div class="login-copy">
             <p class="login-copy__eyebrow">{{ 'login.eyebrow' | translate }}</p>
             <h1 id="login-title">{{ 'login.title' | translate }}</h1>
-            <p>
-              Використайте корпоративну пошту та пароль, щоб перейти до лідів, звітності й керування
-              акаунтами.
-            </p>
+            <p>{{ 'login.description' | translate }}</p>
           </div>
 
-          <div class="login-status" aria-label="Стан системи">
+          <div class="login-status" [attr.aria-label]="'login.systemStatus' | translate">
             <div>
               <app-ui-icon name="check_circle" [size]="18" [filled]="true" />
               <span>Auth</span>
@@ -54,13 +54,29 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
         </div>
 
         <div class="login-panel login-panel--form">
+          <div
+            class="login-language"
+            [attr.aria-label]="'nav.language' | translate"
+            role="group"
+          >
+            @for (item of locales; track item.value) {
+              <button
+                type="button"
+                [class.is-active]="locale() === item.value"
+                (click)="setLocale(item.value)"
+              >
+                {{ item.label }}
+              </button>
+            }
+          </div>
+
           <div class="login-form-heading">
-            <span>Secure sign in</span>
-            <h2>Пошта і пароль</h2>
+            <span>{{ 'login.secureSignIn' | translate }}</span>
+            <h2>{{ 'login.formTitle' | translate }}</h2>
           </div>
 
           @if (errorMessage()) {
-            <app-ui-alert tone="danger" title="Не вдалося увійти">
+            <app-ui-alert tone="danger" [title]="'login.errorTitle' | translate">
               {{ errorMessage() }}
             </app-ui-alert>
           }
@@ -68,18 +84,20 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
           <form class="login-form" (submit)="onSubmit($event)">
             <app-ui-text-field
               [formField]="loginForm.email"
-              label="Email"
+              [label]="'login.email' | translate"
               type="email"
               placeholder="name@kolss.com"
             />
-            <app-ui-text-field [formField]="loginForm.password" label="Пароль" type="password" />
+            <app-ui-text-field
+              [formField]="loginForm.password"
+              [label]="'login.password' | translate"
+              type="password"
+            />
 
             <app-ui-button type="submit" variant="primary" [block]="true" [loading]="submitting()">
-              Увійти
+              {{ (submitting() ? 'login.submitting' : 'login.submit') | translate }}
             </app-ui-button>
           </form>
-
-          <a class="login-card__back" routerLink="/design">Відкрити дизайн-систему</a>
         </div>
       </section>
     </main>
@@ -139,7 +157,6 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
       align-items: center;
       gap: var(--ui-space-3);
       color: var(--ui-text);
-      text-decoration: none;
     }
 
     .login-brand__mark {
@@ -223,6 +240,36 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
       text-transform: uppercase;
     }
 
+    .login-language {
+      width: fit-content;
+      display: inline-flex;
+      padding: 0.2rem;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-pill);
+      background: var(--ui-surface-muted);
+      gap: 0.15rem;
+    }
+
+    .login-language button {
+      min-width: 2.25rem;
+      min-height: 2rem;
+      padding: 0 var(--ui-space-3);
+      border: 0;
+      border-radius: var(--ui-radius-pill);
+      background: transparent;
+      color: var(--ui-text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .login-language button.is-active {
+      background: var(--ui-surface-raised);
+      color: var(--ui-action);
+      box-shadow: var(--ui-shadow-1);
+    }
+
     .login-form-heading {
       display: grid;
       gap: var(--ui-space-2);
@@ -236,17 +283,6 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
     .login-form {
       display: grid;
       gap: var(--ui-space-4);
-    }
-
-    .login-card__back {
-      width: fit-content;
-      color: var(--ui-text-muted);
-      font-size: 0.875rem;
-      text-decoration: none;
-    }
-
-    .login-card__back:hover {
-      color: var(--ui-action);
     }
 
     @media (max-width: 52rem) {
@@ -270,9 +306,18 @@ export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly i18n = inject(I18nService);
+  private readonly session = inject(SessionService);
 
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(this.resolveInitialError());
+  readonly locale = this.session.locale;
+
+  readonly locales: readonly { value: LocaleCode; label: string }[] = [
+    { value: 'en', label: 'EN' },
+    { value: 'pl', label: 'PL' },
+    { value: 'uk', label: 'UA' },
+  ];
 
   readonly formModel = signal({
     email: '',
@@ -280,9 +325,13 @@ export class LoginPage {
   });
 
   readonly loginForm = form(this.formModel, (schema) => {
-    required(schema.email, { message: 'Вкажіть email' });
-    required(schema.password, { message: 'Вкажіть пароль' });
+    required(schema.email, { message: this.i18n.t('login.emailRequired') });
+    required(schema.password, { message: this.i18n.t('login.passwordRequired') });
   });
+
+  setLocale(locale: LocaleCode): void {
+    this.session.setLocale(locale);
+  }
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
@@ -298,7 +347,9 @@ export class LoginPage {
       const next = safeCrmReturnTo(this.route.snapshot.queryParamMap.get('next'));
       await this.router.navigateByUrl(next);
     } catch (error) {
-      this.errorMessage.set(error instanceof Error ? error.message : 'Помилка входу');
+      this.errorMessage.set(
+        error instanceof Error ? error.message : this.i18n.t('login.errorGeneric'),
+      );
     } finally {
       this.submitting.set(false);
     }
@@ -307,10 +358,10 @@ export class LoginPage {
   private resolveInitialError(): string | null {
     const error = this.route.snapshot.queryParamMap.get('error');
     if (error === 'deactivated') {
-      return 'Обліковий запис деактивовано. Зверніться до адміністратора.';
+      return this.i18n.t('login.errorDeactivated');
     }
     if (error === 'session') {
-      return 'Не вдалося завантажити контекст офісу. Спробуйте ще раз.';
+      return this.i18n.t('login.errorSession');
     }
     return null;
   }

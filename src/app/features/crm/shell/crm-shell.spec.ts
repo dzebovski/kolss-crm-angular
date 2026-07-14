@@ -97,6 +97,20 @@ describe('CrmShell', () => {
     expect(user?.querySelector('app-ui-menu')).toBeTruthy();
   });
 
+  it('lists language options as EN, PL, UA', async () => {
+    const fixture = TestBed.createComponent(CrmShell);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const labels = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        '.crm-shell__segmented--language button',
+      ),
+    ).map((button) => button.textContent?.trim());
+
+    expect(labels).toEqual(['EN', 'PL', 'UA']);
+  });
+
   it('offers login-as for super admin when not impersonating', async () => {
     const fixture = TestBed.createComponent(CrmShell);
     await fixture.whenStable();

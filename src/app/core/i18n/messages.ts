@@ -425,11 +425,37 @@ export const messages = {
   'leads.kicker': { uk: 'CRM pipeline', pl: 'CRM pipeline', en: 'CRM pipeline' },
 
   'login.eyebrow': { uk: 'Операційний доступ', pl: 'Dostęp operacyjny', en: 'Operational access' },
-  'login.title': { uk: 'Вхід до CRM', pl: 'Logowanie do CRM', en: 'CRM sign in' },
+  'login.title': { uk: 'Вхід до CRM', pl: 'Logowanie do CRM', en: 'CRM Login' },
+  'login.description': {
+    uk: 'Використайте корпоративну пошту та пароль, щоб перейти до лідів, звітності й керування акаунтами.',
+    pl: 'Użyj firmowego e-maila i hasła, aby przejść do leadów, raportów i zarządzania kontami.',
+    en: 'Use your work email and password to access leads, reporting, and account management.',
+  },
+  'login.secureSignIn': { uk: 'Безпечний вхід', pl: 'Bezpieczne logowanie', en: 'Secure sign in' },
+  'login.formTitle': { uk: 'Пошта і пароль', pl: 'E-mail i hasło', en: 'Email and password' },
   'login.email': { uk: 'Email', pl: 'Email', en: 'Email' },
   'login.password': { uk: 'Пароль', pl: 'Hasło', en: 'Password' },
+  'login.emailRequired': { uk: 'Вкажіть email', pl: 'Podaj e-mail', en: 'Enter your email' },
+  'login.passwordRequired': { uk: 'Вкажіть пароль', pl: 'Podaj hasło', en: 'Enter your password' },
   'login.submit': { uk: 'Увійти', pl: 'Zaloguj', en: 'Sign in' },
   'login.submitting': { uk: 'Вхід…', pl: 'Logowanie…', en: 'Signing in…' },
+  'login.errorTitle': {
+    uk: 'Не вдалося увійти',
+    pl: 'Nie udało się zalogować',
+    en: 'Could not sign in',
+  },
+  'login.errorGeneric': { uk: 'Помилка входу', pl: 'Błąd logowania', en: 'Sign-in error' },
+  'login.errorDeactivated': {
+    uk: 'Обліковий запис деактивовано. Зверніться до адміністратора.',
+    pl: 'Konto zostało dezaktywowane. Skontaktuj się z administratorem.',
+    en: 'This account has been deactivated. Contact an administrator.',
+  },
+  'login.errorSession': {
+    uk: 'Не вдалося завантажити контекст офісу. Спробуйте ще раз.',
+    pl: 'Nie udało się wczytać kontekstu biura. Spróbuj ponownie.',
+    en: 'Could not load office context. Please try again.',
+  },
+  'login.systemStatus': { uk: 'Стан системи', pl: 'Status systemu', en: 'System status' },
 
   'accounts.title': { uk: 'Акаунти', pl: 'Konta', en: 'Accounts' },
   'accounts.subtitle': {
@@ -505,6 +531,7 @@ export const messages = {
   'reports.period.week': { uk: 'Тиждень', pl: 'Tydzień', en: 'Week' },
   'reports.period.month': { uk: 'Місяць', pl: 'Miesiąc', en: 'Month' },
   'reports.period.6months': { uk: '6 місяців', pl: '6 miesięcy', en: '6 months' },
+  'reports.period.all': { uk: 'Всі', pl: 'Wszystkie', en: 'All' },
   'reports.conversionFrom': { uk: '{percent}% від {base}', pl: '{percent}% z {base}', en: '{percent}% from {base}' },
 
   'funnel.created': { uk: 'Зайшло лідів', pl: 'Nowe leady', en: 'Leads entered' },
@@ -597,6 +624,9 @@ export function translateMessage(
   locale: LocaleCode,
   params?: MessageParams,
 ): string {
+  if (!(key in messages)) {
+    return String(key);
+  }
   const entry = messages[key];
   const template = entry[locale] ?? entry.uk;
   if (!params) return template;

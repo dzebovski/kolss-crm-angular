@@ -49,7 +49,10 @@ function fieldLabel(fieldKey: string, locale: LocaleCode): string {
   }
   const legacyKey = leadFieldKeyFromLegacyUkrainian(fieldKey);
   if (legacyKey) {
-    return translateMessage(`field.${legacyKey}` as MessageKey, locale);
+    const legacyMessageKey = `field.${legacyKey}` as MessageKey;
+    if (legacyMessageKey in messages) {
+      return translateMessage(legacyMessageKey, locale);
+    }
   }
   return fieldKey;
 }
@@ -89,8 +92,11 @@ export function presentEventBody(row: RawLeadEventRow, locale: LocaleCode): stri
     if (comment && !isLegacySystemComment(comment)) return comment;
     const source = extractCreatedSource(row.new_value);
     if (source) {
+      const sourceKey = `source.${source}` as MessageKey;
+      const sourceLabel =
+        sourceKey in messages ? translateMessage(sourceKey, locale) : source;
       return translateMessage('event.leadCreatedManual', locale, {
-        source: translateMessage(`source.${source}` as MessageKey, locale),
+        source: sourceLabel,
       });
     }
     return '';

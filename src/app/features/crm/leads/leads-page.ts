@@ -34,7 +34,7 @@ import { CreateLeadDialog } from './create-lead-dialog';
         </div>
         <div class="page-header-actions">
           <div class="period-switcher" [attr.aria-label]="'reports.period' | translate">
-            @for (period of periods(); track period.days) {
+            @for (period of periods(); track period.days ?? 'all') {
               <button
                 type="button"
                 [class.is-active]="periodDays() === period.days"
@@ -582,19 +582,21 @@ export class LeadsPage {
 
   protected readonly query = signal('');
   protected readonly showArchived = signal(false);
-  protected readonly periodDays = signal(40);
+  protected readonly periodDays = signal<number | null>(7);
   protected readonly notice = signal('');
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
 
   protected readonly periods = computed(() => {
     this.i18n.locale();
-    return [
-      { label: this.i18n.t('reports.period.40days'), days: 40 },
+    const options: { label: string; days: number | null }[] = [
       { label: this.i18n.t('reports.period.week'), days: 7 },
       { label: this.i18n.t('reports.period.month'), days: 30 },
+      { label: this.i18n.t('reports.period.40days'), days: 40 },
       { label: this.i18n.t('reports.period.6months'), days: 180 },
+      { label: this.i18n.t('reports.period.all'), days: null },
     ];
+    return options;
   });
 
   protected readonly leadsResource = resource({
