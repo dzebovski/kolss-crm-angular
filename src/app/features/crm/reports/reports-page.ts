@@ -5,7 +5,6 @@ import type { MessageKey } from '../../../core/i18n/messages';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
-import { officeName } from '../../../services/crm-mock.helpers';
 import type { FunnelStage, ManagerOfficeReport } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
@@ -429,7 +428,7 @@ export class ReportsPage {
     const rows = this.reportResource.value()?.managers ?? [];
     return (['kyiv', 'warsaw'] as const).map((officeCode) => ({
       officeCode,
-      officeLabel: officeName(officeCode),
+      officeLabel: this.i18n.officeFilterLabel(officeCode),
       managers: rows
         .filter((row) => row.officeCode === officeCode && row.managerId)
         .map((row) => ({

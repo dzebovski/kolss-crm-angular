@@ -13,6 +13,7 @@ export interface LeadsListFilters {
   source?: string | null;
   workflow?: string | null;
   archived?: 'active' | 'only' | 'all';
+  days?: number | null;
   limit?: number;
 }
 
@@ -61,6 +62,7 @@ export class LeadsService {
         source: filters.source,
         workflow: filters.workflow,
         archived: filters.archived === 'active' ? undefined : filters.archived,
+        days: filters.days ?? undefined,
         cursor,
         limit: Math.min(100, requested - rows.length),
       });

@@ -8,7 +8,6 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import {
   groupLeadsByYearMonth,
   LEAD_SOURCE_ICONS,
-  officeName,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadsService } from '../../../services/leads.service';
@@ -33,21 +32,34 @@ import { CreateLeadDialog } from './create-lead-dialog';
           <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
           <p>{{ 'leads.subtitle' | translate }}</p>
         </div>
-        <div class="page-actions">
-          <app-ui-button (pressed)="openCreateDialog()">
-            <app-ui-icon name="add" [size]="17" />
-            {{ 'lead.create' | translate }}
-          </app-ui-button>
-          <app-ui-button variant="secondary" (pressed)="leadsResource.reload()">
-            <app-ui-icon name="history" [size]="17" />
-            {{ 'leads.refresh' | translate }}
-          </app-ui-button>
-          @if (isSuperAdmin()) {
-            <app-ui-button variant="secondary" (pressed)="toggleArchived()">
-              <app-ui-icon name="archive" [size]="17" />
-              {{ showArchived() ? ('leads.showActive' | translate) : ('leads.showArchived' | translate) }}
+        <div class="page-header-actions">
+          <div class="period-switcher" [attr.aria-label]="'reports.period' | translate">
+            @for (period of periods(); track period.days) {
+              <button
+                type="button"
+                [class.is-active]="periodDays() === period.days"
+                (click)="periodDays.set(period.days)"
+              >
+                {{ period.label }}
+              </button>
+            }
+          </div>
+          <div class="page-actions">
+            <app-ui-button (pressed)="openCreateDialog()">
+              <app-ui-icon name="add" [size]="17" />
+              {{ 'lead.create' | translate }}
             </app-ui-button>
-          }
+            <app-ui-button variant="secondary" (pressed)="leadsResource.reload()">
+              <app-ui-icon name="history" [size]="17" />
+              {{ 'leads.refresh' | translate }}
+            </app-ui-button>
+            @if (isSuperAdmin()) {
+              <app-ui-button variant="secondary" (pressed)="toggleArchived()">
+                <app-ui-icon name="archive" [size]="17" />
+                {{ showArchived() ? ('leads.showActive' | translate) : ('leads.showArchived' | translate) }}
+              </app-ui-button>
+            }
+          </div>
         </div>
       </header>
 
@@ -162,9 +174,9 @@ import { CreateLeadDialog } from './create-lead-dialog';
                       </span>
                     </td>
                     <td class="manager-cell" [attr.data-label]="'leads.colFirstManager' | translate">
-                      @if (lead.firstManagerId) {
+                      @if (hasActiveManager(lead.firstManagerId)) {
                         <app-ui-user
-                          [userId]="lead.firstManagerId"
+                          [userId]="lead.firstManagerId!"
                           [name]="employeeName(lead.firstManagerId)"
                           size="sm"
                         />
@@ -232,10 +244,46 @@ import { CreateLeadDialog } from './create-lead-dialog';
       color: var(--ui-text-muted);
     }
 
+    .page-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ui-space-3);
+      align-items: center;
+      justify-content: flex-end;
+    }
+
     .page-actions {
       display: flex;
       gap: var(--ui-space-2);
       white-space: nowrap;
+    }
+
+    .period-switcher {
+      padding: 0.1875rem;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-md);
+      background: var(--ui-surface-subtle);
+      display: flex;
+      gap: 0.125rem;
+    }
+
+    .period-switcher button {
+      min-height: 2rem;
+      min-width: 5rem;
+      padding: 0 var(--ui-space-3);
+      border: 0;
+      border-radius: calc(var(--ui-radius-md) - 0.1875rem);
+      background: transparent;
+      color: var(--ui-text-muted);
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 700;
+    }
+
+    .period-switcher button.is-active {
+      background: var(--ui-surface-raised);
+      color: var(--ui-action);
+      box-shadow: var(--ui-shadow-1);
     }
 
     .notice {
@@ -534,15 +582,27 @@ export class LeadsPage {
 
   protected readonly query = signal('');
   protected readonly showArchived = signal(false);
+  protected readonly periodDays = signal(40);
   protected readonly notice = signal('');
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
+
+  protected readonly periods = computed(() => {
+    this.i18n.locale();
+    return [
+      { label: this.i18n.t('reports.period.40days'), days: 40 },
+      { label: this.i18n.t('reports.period.week'), days: 7 },
+      { label: this.i18n.t('reports.period.month'), days: 30 },
+      { label: this.i18n.t('reports.period.6months'), days: 180 },
+    ];
+  });
 
   protected readonly leadsResource = resource({
     params: () => ({
       officeId: this.session.selectedOfficeId(),
       search: this.query().trim(),
       archived: this.showArchived() ? ('only' as const) : ('active' as const),
+      days: this.periodDays(),
     }),
     loader: ({ params }) => this.leadsService.list(params),
   });
@@ -576,7 +636,7 @@ export class LeadsPage {
 
   protected formatDateTime = (value: string | null | undefined) => this.i18n.formatDateTime(value);
   protected formatDate = (value: string | null | undefined) => this.i18n.formatDate(value);
-  protected readonly officeName = officeName;
+  protected officeName = (code: string) => this.i18n.officeFilterLabel(code);
   protected readonly workflowTone = workflowTone;
   protected readonly isSuperAdmin = () => this.auth.profile()?.role === 'super_admin';
 
@@ -589,8 +649,13 @@ export class LeadsPage {
     if (!employeeId) return this.i18n.t('common.unassigned');
     return (
       employees.find((employee) => employee.id === employeeId)?.displayName ??
-      this.i18n.t('common.unknown')
+      this.i18n.t('common.unassigned')
     );
+  }
+
+  protected hasActiveManager(employeeId: string | null): boolean {
+    if (!employeeId) return false;
+    return (this.employeesResource.value() ?? []).some((employee) => employee.id === employeeId);
   }
 
   protected sourceLabel(lead: MockLead): string {

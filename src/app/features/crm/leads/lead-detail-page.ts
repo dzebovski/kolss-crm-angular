@@ -1,4 +1,4 @@
-import { Component, computed, inject, resource, signal } from '@angular/core';
+import { Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -18,7 +18,6 @@ import {
   FIRST_CALL_RESULT_CODES,
   LEAD_SOURCE_ICONS,
   leadIsTerminal,
-  officeName,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadWorkflowService } from '../../../services/lead-workflow.service';
@@ -191,7 +190,7 @@ const NO_MANAGER_VALUE = '__none__';
             } @else if (!lead.archivedAt) {
               <app-ui-button
                 variant="secondary"
-                [disabled]="lead.assignedToId !== null || isTerminal(lead)"
+                [disabled]="effectiveAssignedToId(lead) !== null || isTerminal(lead)"
                 (pressed)="takeLead(lead)"
               >
                 {{ 'lead.takeInWork' | translate }}
@@ -420,10 +419,10 @@ const NO_MANAGER_VALUE = '__none__';
                 <div>
                   <dt>{{ 'common.manager' | translate }}</dt>
                   <dd>
-                    @if (lead.assignedToId) {
+                    @if (effectiveAssignedToId(lead); as managerId) {
                       <app-ui-user
-                        [userId]="lead.assignedToId"
-                        [name]="employeeName(lead.assignedToId)"
+                        [userId]="managerId"
+                        [name]="employeeName(managerId)"
                         size="sm"
                       />
                     } @else {
@@ -1132,6 +1131,19 @@ export class LeadDetailPage {
     const error = this.leadResource.error();
     return error ? this.i18n.t('error.leadLoadFailed') : '';
   });
+  private readonly attemptedOrphanClearIds = new Set<string>();
+
+  constructor() {
+    effect(() => {
+      const lead = this.lead();
+      const employees = this.employeesResource.value();
+      if (!lead?.assignedToId || employees == null) return;
+      if (employees.some((employee) => employee.id === lead.assignedToId)) return;
+      if (this.attemptedOrphanClearIds.has(lead.id)) return;
+      this.attemptedOrphanClearIds.add(lead.id);
+      void this.clearOrphanAssignee(lead);
+    });
+  }
   protected readonly actionError = signal('');
   protected readonly dialogError = signal('');
   protected readonly actionPending = signal(false);
@@ -1213,8 +1225,37 @@ export class LeadDetailPage {
 
   protected formatDateTime = (value: string | null | undefined) => this.i18n.formatDateTime(value);
   protected formatMoney = (value: number | null | undefined) => this.i18n.formatMoney(value);
-  protected readonly officeName = officeName;
+  protected officeName = (code: string) => this.i18n.officeFilterLabel(code);
   protected readonly workflowTone = workflowTone;
+
+  protected effectiveAssignedToId(lead: MockLead): string | null {
+    if (!lead.assignedToId) return null;
+    const employees = this.employeesResource.value();
+    if (!employees) return lead.assignedToId;
+    return employees.some((employee) => employee.id === lead.assignedToId) ? lead.assignedToId : null;
+  }
+
+  private async clearOrphanAssignee(lead: MockLead): Promise<void> {
+    try {
+      await this.leadsService.updateLeadDetails(
+        lead.id,
+        {
+          name: lead.name,
+          phone: lead.phone,
+          email: lead.email,
+          cityRegion: lead.cityRegion,
+          productInterest: lead.productInterest,
+          estimatedBudget: lead.estimatedBudget,
+          initialMessage: lead.initialMessage,
+          assignedToId: null,
+        },
+        ['manager'],
+      );
+      await this.leadResource.reload();
+    } catch {
+      // Keep UI treating assignee as unassigned via effectiveAssignedToId.
+    }
+  }
 
   protected canEditLead(lead: MockLead): boolean {
     if (lead.archivedAt) return false;
@@ -1290,12 +1331,6 @@ export class LeadDetailPage {
         value: employee.id,
         label: employee.displayName,
       }));
-    if (lead.assignedToId && !options.some((option) => option.value === lead.assignedToId)) {
-      options.push({
-        value: lead.assignedToId,
-        label: this.employeeName(lead.assignedToId),
-      });
-    }
     return [{ value: NO_MANAGER_VALUE, label: this.i18n.t('common.unassigned') }, ...options];
   }
 
@@ -1333,7 +1368,7 @@ export class LeadDetailPage {
     if (!employeeId) return this.i18n.t('common.unassigned');
     return (
       employees.find((employee) => employee.id === employeeId)?.displayName ??
-      this.i18n.t('common.unknown')
+      this.i18n.t('common.unassigned')
     );
   }
 
@@ -1438,7 +1473,7 @@ export class LeadDetailPage {
     this.editLeadProductInterest.set(lead.productInterest);
     this.editLeadBudget.set(lead.estimatedBudget == null ? '' : String(lead.estimatedBudget));
     this.editLeadInitialMessage.set(lead.initialMessage);
-    this.editLeadAssignedToId.set(lead.assignedToId ?? NO_MANAGER_VALUE);
+    this.editLeadAssignedToId.set(this.effectiveAssignedToId(lead) ?? NO_MANAGER_VALUE);
     this.editLeadDialogOpen.set(true);
   }
 

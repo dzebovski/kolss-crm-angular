@@ -429,7 +429,7 @@ export class CrmShell {
       if (office.code === 'kyiv' || office.code === 'warsaw') {
         items.push({
           value: office.code,
-          label: this.i18n.tField(office as unknown as Record<string, unknown>, 'name', office.code),
+          label: this.i18n.officeFilterLabel(office.code),
         });
       }
     }

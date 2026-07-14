@@ -3,11 +3,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { SessionService } from '../../../core/session/session.service';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
 import type { UserRole } from '../../../models/database';
 import {
   formatDateTime,
-  officeName,
   WORKFLOW_LABELS,
   workflowTone,
 } from '../../../services/crm-mock.helpers';
@@ -130,7 +130,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                       [checked]="isOfficeSelected(office.id)"
                       (change)="toggleOffice(office.id)"
                     />
-                    {{ office.name_uk }}
+                    {{ officeLabel(office.code) }}
                   </label>
                 }
               </fieldset>
@@ -198,7 +198,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                         {{ WORKFLOW_LABELS[lead.workflowStatus] }}
                       </app-ui-badge>
                     </td>
-                    <td>{{ officeName(lead.officeCode) }}</td>
+                    <td>{{ officeLabel(lead.officeCode) }}</td>
                     <td>{{ formatDateTime(lead.lastActivityAt) }}</td>
                   </tr>
                 }
@@ -460,6 +460,7 @@ export class EmployeeDetailPage {
   private readonly leadsService = inject(LeadsService);
   private readonly session = inject(SessionService);
   private readonly dialog = inject(UiDialogService);
+  private readonly i18n = inject(I18nService);
 
   protected readonly employeeId = this.route.snapshot.paramMap.get('employeeId') ?? '';
   protected readonly editing = signal(false);
@@ -494,12 +495,15 @@ export class EmployeeDetailPage {
 
   protected readonly roleLabel = roleLabel;
   protected readonly formatDateTime = formatDateTime;
-  protected readonly officeName = officeName;
   protected readonly workflowTone = workflowTone;
   protected readonly WORKFLOW_LABELS = WORKFLOW_LABELS;
 
+  protected officeLabel(code: string): string {
+    return this.i18n.officeFilterLabel(code);
+  }
+
   protected officeLabels(employee: CrmEmployee): string {
-    return employee.officeIds.map((officeId) => officeName(officeId)).join(', ');
+    return employee.officeIds.map((officeId) => this.officeLabel(officeId)).join(', ');
   }
 
   protected permissions(employee: CrmEmployee): readonly string[] {

@@ -6,7 +6,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { ASSIGNABLE_ROLES } from '../../../core/roles/roles';
 import type { UserRole } from '../../../models/database';
-import { formatDateTime, officeName } from '../../../services/crm-mock.helpers';
+import { formatDateTime } from '../../../services/crm-mock.helpers';
 import { UsersService, type CrmEmployee } from '../../../services/users.service';
 import type { OfficeFilter } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
@@ -94,7 +94,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                     [checked]="isOfficeSelected(office.id)"
                     (change)="toggleOffice(office.id)"
                   />
-                  {{ office.name_uk }}
+                  {{ officeLabel(office.code) }}
                 </label>
               }
             </fieldset>
@@ -713,7 +713,11 @@ export class AccountsPage {
   }
 
   protected officeLabels(employee: CrmEmployee): string {
-    return employee.officeIds.map((officeId) => officeName(officeId)).join(', ') || '—';
+    return employee.officeIds.map((officeId) => this.officeLabel(officeId)).join(', ') || '—';
+  }
+
+  protected officeLabel(code: string): string {
+    return this.i18n.officeFilterLabel(code);
   }
 
   protected statusTone(employee: CrmEmployee): UiBadgeTone {
