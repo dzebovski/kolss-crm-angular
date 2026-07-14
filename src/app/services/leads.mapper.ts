@@ -25,9 +25,18 @@ export const LEAD_LIST_SELECT = `
   profiles:assigned_to (id, display_name)
 `;
 
+/** Embedded first contact attempt from GET /v1/leads (optional). */
+export interface FirstContactAttemptEmbed {
+  readonly result: string;
+  readonly comment: string;
+  readonly created_at: string;
+  readonly manager_id: string;
+}
+
 export type LeadListRow = Lead & {
   offices?: Office | Office[] | null;
   profiles?: { id: string; display_name: string | null } | { id: string; display_name: string | null }[] | null;
+  first_contact_attempt?: FirstContactAttemptEmbed | null;
 };
 
 export interface LeadDetailRelations {
@@ -134,6 +143,7 @@ function mapEventType(eventType: string): LeadEventType {
     contract_signed: 'successful',
     attachment: 'attachment',
     lead_updated: 'lead_updated',
+    lead_edited: 'lead_updated',
     lead_assigned: 'comment',
   };
   return map[eventType] ?? 'comment';
@@ -242,6 +252,7 @@ function buildClose(
   lossReason: string | null,
   events: readonly LeadEventRow[],
   lastComment: string | null,
+  closedAtFallback: string,
 ): LeadClose | null {
   if (workflowStatus !== 'closed') return null;
   const closeEvent = events.find((event) => event.event_type === 'closed' || event.event_type === 'bad_lead');
@@ -251,7 +262,7 @@ function buildClose(
   return {
     reason,
     comment: leadComment || eventComment,
-    closedAt: closeEvent?.created_at ?? new Date().toISOString(),
+    closedAt: closeEvent?.created_at ?? closedAtFallback,
     actorId: closeEvent?.actor_id ?? '',
   };
 }
@@ -264,6 +275,7 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
     comment: event.comment ?? null,
     newValue: event.new_value,
     actorId: event.actor_id ?? '',
+    actorName: event.profiles?.display_name?.trim() || '',
     occurredAt: event.created_at,
     editAudit: eventEditAudit(event.new_value),
   }));
@@ -291,8 +303,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function mapLeadListRow(row: LeadListRow): MockLead {
+  const attempt = row.first_contact_attempt;
+  const contactAttempts: ContactAttemptRow[] = attempt
+    ? [
+        {
+          id: '',
+          lead_id: row.id,
+          manager_id: attempt.manager_id,
+          result: attempt.result,
+          comment: attempt.comment,
+          created_at: attempt.created_at,
+        },
+      ]
+    : [];
+
   return mapLeadDetail(row, {
-    contactAttempts: [],
+    contactAttempts,
     showroomVisits: [],
     contracts: [],
     events: [],
@@ -305,7 +331,13 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
   const firstCall = buildFirstCall(relations.contactAttempts);
   const visit = buildVisit(relations.showroomVisits);
   const contract = buildContract(relations.contracts, relations.events);
-  const close = buildClose(workflowStatus, row.loss_reason, relations.events, row.last_comment);
+  const close = buildClose(
+    workflowStatus,
+    row.loss_reason,
+    relations.events,
+    row.last_comment,
+    row.workflow_status_changed_at ?? row.last_comment_at ?? row.updated_at,
+  );
 
   const firstManagerId =
     relations.contactAttempts.at(-1)?.manager_id ??

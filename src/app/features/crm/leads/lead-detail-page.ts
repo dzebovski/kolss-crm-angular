@@ -10,7 +10,7 @@ import {
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { canEditLeads } from '../../../core/roles/roles';
+import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
   CLOSE_REASON_LABELS,
@@ -190,7 +190,7 @@ const NO_MANAGER_VALUE = '__none__';
             } @else if (!lead.archivedAt) {
               <app-ui-button
                 variant="secondary"
-                [disabled]="effectiveAssignedToId(lead) !== null || isTerminal(lead)"
+                [disabled]="isTerminal(lead)"
                 (pressed)="takeLead(lead)"
               >
                 {{ 'lead.takeInWork' | translate }}
@@ -345,10 +345,10 @@ const NO_MANAGER_VALUE = '__none__';
             <section class="timeline-panel" aria-labelledby="timeline-title">
               <header>
                 <h2 id="timeline-title">{{ 'lead.activityHistory' | translate }}</h2>
-                <span>{{ 'lead.eventsCount' | translate: { count: lead.events.length } }}</span>
+                <span>{{ 'lead.eventsCount' | translate: { count: timelineEvents().length } }}</span>
               </header>
               <ol class="timeline-list">
-                @for (event of lead.events; track event.id) {
+                @for (event of timelineEvents(); track event.id) {
                   <li class="timeline-item">
                     <span class="timeline-dot" aria-hidden="true"></span>
                     <div class="timeline-content">
@@ -374,7 +374,7 @@ const NO_MANAGER_VALUE = '__none__';
                       <small>
                         <app-ui-user
                           [userId]="event.actorId || null"
-                          [name]="employeeName(event.actorId)"
+                          [name]="eventActorName(event)"
                           size="xs"
                         />
                         · {{ formatDateTime(event.occurredAt) }}
@@ -418,15 +418,33 @@ const NO_MANAGER_VALUE = '__none__';
                 </div>
                 <div>
                   <dt>{{ 'common.manager' | translate }}</dt>
-                  <dd>
+                  <dd class="manager-row">
                     @if (effectiveAssignedToId(lead); as managerId) {
                       <app-ui-user
                         [userId]="managerId"
                         [name]="employeeName(managerId)"
                         size="sm"
                       />
+                      @if (isSuperAdmin()) {
+                        <button
+                          type="button"
+                          class="manager-replace-link"
+                          (click)="openAssignManagerDialog(lead)"
+                        >
+                          {{ 'lead.replaceManager' | translate }}
+                        </button>
+                      }
                     } @else {
                       <span class="muted">{{ 'common.unassigned' | translate }}</span>
+                      @if (isSuperAdmin()) {
+                        <app-ui-button
+                          variant="secondary"
+                          size="small"
+                          (pressed)="openAssignManagerDialog(lead)"
+                        >
+                          {{ 'lead.assignManager' | translate }}
+                        </app-ui-button>
+                      }
                     }
                   </dd>
                 </div>
@@ -538,6 +556,32 @@ const NO_MANAGER_VALUE = '__none__';
                   {{ 'common.save' | translate }}
                 </app-ui-button>
               </div>
+          </app-ui-modal>
+        }
+
+        @if (assignManagerDialogOpen()) {
+          <app-ui-modal
+            labelledBy="assign-manager-dialog-title"
+            (dismissed)="closeAssignManagerDialog()"
+          >
+            <h2 id="assign-manager-dialog-title">{{ 'lead.assignManagerTitle' | translate }}</h2>
+            <p>{{ 'lead.assignManagerHint' | translate }}</p>
+            @if (dialogError()) {
+              <div class="inline-error" role="alert">{{ dialogError() }}</div>
+            }
+            <app-ui-select
+              [label]="'common.manager' | translate"
+              [options]="managerOptions(lead)"
+              [(value)]="assignManagerId"
+            />
+            <div class="modal-actions">
+              <app-ui-button variant="ghost" (pressed)="closeAssignManagerDialog()">
+                {{ 'common.cancel' | translate }}
+              </app-ui-button>
+              <app-ui-button (pressed)="submitAssignManager(lead)">
+                {{ 'common.save' | translate }}
+              </app-ui-button>
+            </div>
           </app-ui-modal>
         }
 
@@ -885,6 +929,32 @@ const NO_MANAGER_VALUE = '__none__';
       font-size: 0.875rem;
     }
 
+    .manager-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--ui-space-2);
+    }
+
+    .manager-replace-link {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ui-action);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 650;
+      text-decoration: underline;
+      text-underline-offset: 0.125rem;
+    }
+
+    .manager-replace-link:focus-visible {
+      outline: 2px solid var(--ui-focus-ring, var(--ui-action));
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+
     .attachments {
       margin: 0;
       padding: 0;
@@ -1127,6 +1197,12 @@ export class LeadDetailPage {
   });
 
   protected readonly lead = computed(() => this.leadResource.value() ?? null);
+  protected readonly timelineEvents = computed(() => {
+    const events = this.lead()?.events ?? [];
+    return events.filter(
+      (event) => event.rawType !== 'lead_edited' && event.type !== 'lead_updated',
+    );
+  });
   protected readonly loadError = computed(() => {
     const error = this.leadResource.error();
     return error ? this.i18n.t('error.leadLoadFailed') : '';
@@ -1152,6 +1228,8 @@ export class LeadDetailPage {
   protected readonly closeDialogMode = signal<'close' | 'edit'>('close');
   protected readonly successDialogOpen = signal(false);
   protected readonly editLeadDialogOpen = signal(false);
+  protected readonly assignManagerDialogOpen = signal(false);
+  protected readonly assignManagerId = signal(NO_MANAGER_VALUE);
   protected readonly editHistoryDialogOpen = signal(false);
   protected readonly editingHistoryEvent = signal<LeadEvent | null>(null);
 
@@ -1189,7 +1267,7 @@ export class LeadDetailPage {
     if (reasons?.length) {
       return reasons.map((reason) => ({
         value: reason.code,
-        label: this.i18n.tField(reason as unknown as Record<string, unknown>, 'label', reason.code),
+        label: this.i18n.closeReasonLabel(reason.code, reasons),
       }));
     }
     return Object.keys(CLOSE_REASON_LABELS).map((value) => ({
@@ -1218,7 +1296,6 @@ export class LeadDetailPage {
       'contract_signed',
       'successful',
       'attachment',
-      'lead_updated',
     ] as const;
     return types.map((value) => ({ value, label: this.i18n.eventTitle(value) }));
   });
@@ -1330,6 +1407,7 @@ export class LeadDetailPage {
       .map((employee) => ({
         value: employee.id,
         label: employee.displayName,
+        userId: employee.id,
       }));
     return [{ value: NO_MANAGER_VALUE, label: this.i18n.t('common.unassigned') }, ...options];
   }
@@ -1370,6 +1448,12 @@ export class LeadDetailPage {
       employees.find((employee) => employee.id === employeeId)?.displayName ??
       this.i18n.t('common.unassigned')
     );
+  }
+
+  protected eventActorName(event: LeadEvent): string {
+    const fromProfile = event.actorName?.trim();
+    if (fromProfile) return fromProfile;
+    return this.employeeName(event.actorId || null);
   }
 
   protected initials(name: string): string {
@@ -1416,8 +1500,65 @@ export class LeadDetailPage {
       );
       if (error) return error;
       this.firstCallComment.set('');
+      if (!this.effectiveAssignedToId(lead)) {
+        await this.workflowService.takeLead(lead.id);
+      }
       return;
     });
+  }
+
+  protected openAssignManagerDialog(lead: MockLead): void {
+    if (!this.isSuperAdmin()) return;
+    this.dialogError.set('');
+    this.assignManagerId.set(this.effectiveAssignedToId(lead) ?? NO_MANAGER_VALUE);
+    this.assignManagerDialogOpen.set(true);
+  }
+
+  protected closeAssignManagerDialog(): void {
+    this.dialogError.set('');
+    this.assignManagerDialogOpen.set(false);
+  }
+
+  protected async submitAssignManager(lead: MockLead): Promise<void> {
+    this.dialogError.set('');
+    if (!this.isSuperAdmin()) {
+      this.dialogError.set(this.i18n.t('lead.editForbidden'));
+      return;
+    }
+
+    const assignedToId =
+      this.assignManagerId() === NO_MANAGER_VALUE ? null : this.assignManagerId();
+    if ((lead.assignedToId ?? null) === assignedToId) {
+      this.assignManagerDialogOpen.set(false);
+      return;
+    }
+
+    try {
+      await this.leadsService.updateLeadDetails(
+        lead.id,
+        {
+          name: lead.name,
+          phone: lead.phone,
+          email: lead.email,
+          cityRegion: lead.cityRegion,
+          productInterest: lead.productInterest,
+          estimatedBudget: lead.estimatedBudget,
+          initialMessage: lead.initialMessage,
+          assignedToId,
+        },
+        ['manager'],
+      );
+      this.assignManagerDialogOpen.set(false);
+      await this.leadResource.reload();
+    } catch (error) {
+      this.dialogError.set(
+        error instanceof Error ? error.message : this.i18n.t('lead.saveChangesFailed'),
+      );
+    }
+  }
+
+  protected isSuperAdmin(): boolean {
+    return isSuperAdminRole(this.auth.profile()?.role);
   }
 
   protected async scheduleVisit(lead: MockLead): Promise<void> {

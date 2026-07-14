@@ -332,7 +332,7 @@ function isLeadTaken(lead: MockLead): boolean {
 }
 
 function managerIdForTakenLead(lead: MockLead): string | null {
-  return lead.firstManagerId ?? lead.assignedToId;
+  return lead.assignedToId;
 }
 
 export function calculateManagerTakenReport(

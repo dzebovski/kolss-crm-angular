@@ -162,6 +162,9 @@ export const messages = {
   'event.contract_signed': { uk: 'Договір заключений', pl: 'Umowa podpisana', en: 'Contract signed' },
   'event.comment': { uk: 'Коментар', pl: 'Komentarz', en: 'Comment' },
   'event.lead_updated': { uk: 'Дані ліда відредаговано', pl: 'Dane leada edytowane', en: 'Lead data edited' },
+  'event.lead_edited': { uk: 'Дані ліда відредаговано', pl: 'Dane leada edytowane', en: 'Lead data edited' },
+  'event.archived': { uk: 'Лід архівовано', pl: 'Lead zarchiwizowany', en: 'Lead archived' },
+  'event.restored': { uk: 'Лід відновлено', pl: 'Lead przywrócony', en: 'Lead restored' },
   'event.attachment': { uk: 'Вкладення', pl: 'Załącznik', en: 'Attachment' },
   'event.lead_assigned': { uk: 'Лід призначено', pl: 'Lead przypisany', en: 'Lead assigned' },
   'event.leadCreatedManual': {
@@ -393,11 +396,6 @@ export const messages = {
   'leads.terminal': { uk: 'завершені', pl: 'zakończone', en: 'completed' },
   'leads.colClient': { uk: 'Клієнт', pl: 'Klient', en: 'Client' },
   'leads.colSource': { uk: 'Джерело', pl: 'Źródło', en: 'Source' },
-  'leads.colFirstManager': {
-    uk: 'Перший менеджер',
-    pl: 'Pierwszy menedżer',
-    en: 'First manager',
-  },
   'leads.colVisit': { uk: 'Візит у салон', pl: 'Wizyta w salonie', en: 'Showroom visit' },
   'leads.emptyTitle': { uk: 'Немає результатів', pl: 'Brak wyników', en: 'No results' },
   'leads.emptyHint': {
@@ -423,6 +421,37 @@ export const messages = {
     en: 'Leads by creation month',
   },
   'leads.kicker': { uk: 'CRM pipeline', pl: 'CRM pipeline', en: 'CRM pipeline' },
+  'leads.filterAria': {
+    uk: 'Фільтр за статусом воронки',
+    pl: 'Filtr statusu lejka',
+    en: 'Workflow status filter',
+  },
+  'leads.filter.new': { uk: 'Нова заявка', pl: 'Nowe zgłoszenie', en: 'New lead' },
+  'leads.filter.firstCall': { uk: 'Перший дзвінок', pl: 'Pierwszy telefon', en: 'First call' },
+  'leads.filter.visit': { uk: 'Візит у салон', pl: 'Wizyta w salonie', en: 'Showroom visit' },
+  'leads.filter.closed': { uk: 'Закриті', pl: 'Zamknięte', en: 'Closed' },
+  'leads.filter.contract': { uk: 'Договір', pl: 'Umowa', en: 'Contract' },
+
+  'lead.assignManager': {
+    uk: 'Призначити менеджера',
+    pl: 'Przypisz menedżera',
+    en: 'Assign manager',
+  },
+  'lead.replaceManager': {
+    uk: 'Замінити менеджера',
+    pl: 'Zastąp menedżera',
+    en: 'Replace manager',
+  },
+  'lead.assignManagerTitle': {
+    uk: 'Призначення менеджера',
+    pl: 'Przypisanie menedżera',
+    en: 'Assign manager',
+  },
+  'lead.assignManagerHint': {
+    uk: 'Оберіть менеджера офісу для цього ліда.',
+    pl: 'Wybierz menedżera biura dla tego leada.',
+    en: 'Choose an office manager for this lead.',
+  },
 
   'login.eyebrow': { uk: 'Операційний доступ', pl: 'Dostęp operacyjny', en: 'Operational access' },
   'login.title': { uk: 'Вхід до CRM', pl: 'Logowanie do CRM', en: 'CRM Login' },

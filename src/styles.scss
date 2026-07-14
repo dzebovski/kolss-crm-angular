@@ -133,6 +133,11 @@ a {
   outline-offset: 2px;
 }
 
+/* Outside component encapsulation — used by CDK Connected Overlay panes. */
+.ui-select__overlay-pane {
+  z-index: var(--ui-z-overlay);
+}
+
 ::selection {
   background: color-mix(in srgb, var(--ui-magenta) 22%, white);
   color: var(--ui-text);

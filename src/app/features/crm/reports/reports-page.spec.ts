@@ -47,6 +47,10 @@ describe('ReportsPage', () => {
     expect(element.textContent).toContain('Звіт по менеджерам');
     expect(element.textContent).toContain('Київ');
     expect(element.textContent).toContain('Варшава');
+    const funnelList = element.querySelector('.funnel-list');
+    expect(funnelList).not.toBeNull();
+    expect(funnelList!.textContent).toContain('Зайшло лідів');
+    expect(funnelList!.textContent).not.toContain('funnel.created');
     expect(element.querySelectorAll('.funnel-list li').length).toBeGreaterThan(3);
     expect(element.querySelectorAll('.manager-office-panel').length).toBe(2);
   });

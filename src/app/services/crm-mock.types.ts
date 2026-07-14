@@ -69,6 +69,8 @@ export interface LeadEvent {
   readonly comment: string | null;
   readonly newValue: unknown;
   readonly actorId: string;
+  /** Display name from API `profiles.display_name` join; empty when missing. */
+  readonly actorName?: string;
   readonly occurredAt: string;
   readonly editAudit?: LeadEventEditAudit | null;
 }

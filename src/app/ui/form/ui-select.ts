@@ -1,20 +1,38 @@
 import { Combobox, ComboboxPopup, ComboboxWidget } from '@angular/aria/combobox';
 import { Listbox, Option } from '@angular/aria/listbox';
+import {
+  CdkConnectedOverlay,
+  CdkOverlayOrigin,
+  STANDARD_DROPDOWN_BELOW_POSITIONS,
+} from '@angular/cdk/overlay';
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { UiIcon } from '../icon/ui-icon';
+import { UiUser } from '../user/ui-user';
 
 export interface UiSelectOption {
   readonly value: string;
   readonly label: string;
   readonly disabled?: boolean;
+  /** When set, show avatar + name via app-ui-user. */
+  readonly userId?: string;
 }
 
 let nextSelectId = 0;
 
 @Component({
   selector: 'app-ui-select',
-  imports: [Combobox, ComboboxPopup, ComboboxWidget, Listbox, Option, UiIcon],
+  imports: [
+    Combobox,
+    ComboboxPopup,
+    ComboboxWidget,
+    Listbox,
+    Option,
+    UiIcon,
+    UiUser,
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
+  ],
   template: `
     <label class="ui-select__label" [id]="labelId" [for]="controlId">
       {{ label() }}
@@ -28,6 +46,8 @@ let nextSelectId = 0;
         [id]="controlId"
         ngCombobox
         #combobox="ngCombobox"
+        cdkOverlayOrigin
+        #origin="cdkOverlayOrigin"
         class="ui-select__trigger"
         [class.ui-select__trigger--invalid]="invalid() || !!error()"
         [(expanded)]="expanded"
@@ -37,39 +57,59 @@ let nextSelectId = 0;
         [attr.aria-describedby]="error() || hint() ? descriptionId : null"
         (blur)="touch.emit()"
       >
-        <span [class.ui-select__placeholder]="!selectedLabel()">
-          {{ selectedLabel() || placeholder() }}
-        </span>
+        @if (selectedOption()?.userId; as userId) {
+          <app-ui-user class="ui-select__user" [userId]="userId" [name]="selectedLabel()" size="xs" />
+        } @else {
+          <span [class.ui-select__placeholder]="!selectedLabel()">
+            {{ selectedLabel() || placeholder() }}
+          </span>
+        }
         <app-ui-icon name="keyboard_arrow_down" [size]="20" />
       </button>
 
-      <ng-template ngComboboxPopup [combobox]="combobox">
-        <ul
-          ngComboboxWidget
-          ngListbox
-          #listbox="ngListbox"
-          class="ui-select__options"
-          focusMode="activedescendant"
-          selectionMode="explicit"
-          [value]="selectedValues()"
-          [activeDescendant]="listbox.activeDescendant()"
-          (valueChange)="selectValue($event)"
-        >
-          @for (option of options(); track option.value) {
-            <li
-              ngOption
-              class="ui-select__option"
-              [value]="option.value"
-              [label]="option.label"
-              [disabled]="option.disabled ?? false"
-            >
-              {{ option.label }}
-              @if (option.value === value()) {
-                <app-ui-icon name="check" [size]="18" />
-              }
-            </li>
-          }
-        </ul>
+      <ng-template
+        cdkConnectedOverlay
+        [cdkConnectedOverlayOrigin]="origin"
+        [cdkConnectedOverlayOpen]="expanded()"
+        [cdkConnectedOverlayMatchWidth]="true"
+        [cdkConnectedOverlayHasBackdrop]="false"
+        [cdkConnectedOverlayPositions]="dropdownPositions"
+        [cdkConnectedOverlayOffsetY]="8"
+        [cdkConnectedOverlayPanelClass]="'ui-select__overlay-pane'"
+        (overlayOutsideClick)="expanded.set(false)"
+      >
+        <ng-template ngComboboxPopup [combobox]="combobox">
+          <ul
+            ngComboboxWidget
+            ngListbox
+            #listbox="ngListbox"
+            class="ui-select__options"
+            focusMode="activedescendant"
+            selectionMode="explicit"
+            [value]="selectedValues()"
+            [activeDescendant]="listbox.activeDescendant()"
+            (valueChange)="selectValue($event)"
+          >
+            @for (option of options(); track option.value) {
+              <li
+                ngOption
+                class="ui-select__option"
+                [value]="option.value"
+                [label]="option.label"
+                [disabled]="option.disabled ?? false"
+              >
+                @if (option.userId; as userId) {
+                  <app-ui-user class="ui-select__user" [userId]="userId" [name]="option.label" size="xs" />
+                } @else {
+                  <span class="ui-select__option-label">{{ option.label }}</span>
+                }
+                @if (option.value === value()) {
+                  <app-ui-icon name="check" [size]="18" />
+                }
+              </li>
+            }
+          </ul>
+        </ng-template>
       </ng-template>
     </div>
     <span
@@ -119,6 +159,11 @@ let nextSelectId = 0;
       text-align: left;
     }
 
+    .ui-select__trigger .ui-select__user {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
     .ui-select__trigger[aria-expanded='true'] {
       border-color: var(--ui-focus);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus) 16%, transparent);
@@ -145,9 +190,6 @@ let nextSelectId = 0;
     }
 
     .ui-select__options {
-      position: absolute;
-      z-index: var(--ui-z-overlay);
-      inset: calc(100% + var(--ui-space-2)) 0 auto;
       max-height: 15rem;
       margin: 0;
       padding: var(--ui-space-2);
@@ -167,8 +209,15 @@ let nextSelectId = 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: var(--ui-space-2);
       font-size: 0.875rem;
       transition: background-color var(--ui-duration-fast) var(--ui-ease);
+    }
+
+    .ui-select__user,
+    .ui-select__option-label {
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .ui-select__option[data-active='true']:not([aria-selected='true']),
@@ -198,10 +247,12 @@ export class UiSelect implements FormValueControl<string> {
   readonly invalid = input(false);
   readonly touch = output<void>();
   protected readonly expanded = signal(false);
+  protected readonly dropdownPositions = STANDARD_DROPDOWN_BELOW_POSITIONS;
   protected readonly selectedValues = computed(() => (this.value() ? [this.value()] : []));
-  protected readonly selectedLabel = computed(
-    () => this.options().find((option) => option.value === this.value())?.label ?? '',
+  protected readonly selectedOption = computed(
+    () => this.options().find((option) => option.value === this.value()) ?? null,
   );
+  protected readonly selectedLabel = computed(() => this.selectedOption()?.label ?? '');
   protected readonly controlId = `ui-select-${nextSelectId++}`;
   protected readonly labelId = `${this.controlId}-label`;
   protected readonly descriptionId = `${this.controlId}-description`;

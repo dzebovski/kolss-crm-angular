@@ -57,7 +57,7 @@ import { Component, input, output } from '@angular/core';
     }
   `,
   host: {
-    '(document:keydown.escape)': 'dismiss()',
+    '(document:keydown.escape)': 'onEscape($event)',
   },
 })
 export class UiModal {
@@ -67,6 +67,14 @@ export class UiModal {
 
   protected onBackdropClick(event: MouseEvent): void {
     if (event.target !== event.currentTarget) return;
+    this.dismiss();
+  }
+
+  protected onEscape(event: Event): void {
+    if (event.defaultPrevented) return;
+    // Open select overlays sit outside the modal DOM; Escape should close the
+    // select first without dismissing the dialog.
+    if (document.querySelector('.ui-select__overlay-pane')) return;
     this.dismiss();
   }
 

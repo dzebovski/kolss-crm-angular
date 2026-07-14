@@ -21,6 +21,10 @@ import { UiUser } from '../../../ui/user/ui-user';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { CreateLeadDialog } from './create-lead-dialog';
 
+type WorkflowFilterKey = 'new' | 'first_call_done' | 'visit' | 'closed' | 'successful';
+
+const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_completed']);
+
 @Component({
   selector: 'app-leads-page',
   imports: [CreateLeadDialog, UiAlert, UiBadge, UiButton, UiIcon, UiTextField, UiUser, TranslatePipe],
@@ -105,100 +109,139 @@ import { CreateLeadDialog } from './create-lead-dialog';
             <span></span>
           }
         </div>
-      } @else if (!filteredLeads().length) {
-        <article class="empty-state">
-          <app-ui-icon name="inbox" [size]="28" />
-          <h2>{{ 'leads.emptyTitle' | translate }}</h2>
-          <p>{{ 'leads.emptyHint' | translate }}</p>
-        </article>
       } @else {
         <div class="leads-table-panel">
-          <table class="leads-table" [attr.aria-label]="'leads.tableAria' | translate">
-            <colgroup>
-              <col class="col-date" />
-              <col class="col-client" />
-              <col class="col-call" />
-              <col class="col-source" />
-              <col class="col-manager" />
-              <col class="col-visit" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th class="date-heading" scope="col">{{ 'common.date' | translate }}</th>
-                <th class="client-heading" scope="col">{{ 'leads.colClient' | translate }}</th>
-                <th class="call-heading" scope="col">{{ 'workflow.first_call_done' | translate }}</th>
-                <th class="source-heading" scope="col">{{ 'leads.colSource' | translate }}</th>
-                <th class="manager-heading" scope="col">{{ 'leads.colFirstManager' | translate }}</th>
-                <th class="visit-heading" scope="col">{{ 'leads.colVisit' | translate }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (group of groupedLeads(); track group.key) {
-                <tr class="month-row">
-                  <th scope="rowgroup" colspan="6">
-                    <span [id]="'group-' + group.key">{{ group.label }}</span>
-                    <small>{{ 'leads.count' | translate: { count: group.rows.length } }}</small>
-                  </th>
-                </tr>
-
-                @for (lead of group.rows; track lead.id) {
-                  <tr
-                    class="lead-row"
-                    tabindex="0"
-                    role="link"
-                    [attr.data-lead-id]="lead.id"
-                    [attr.aria-label]="'leads.openAria' | translate: { name: lead.name }"
-                    (click)="openLead(lead)"
-                    (keydown.enter)="openLead(lead)"
-                  >
-                    <td class="date-cell" [attr.data-label]="'common.date' | translate">
-                      <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
-                      <small>{{ officeName(lead.officeCode) }}</small>
-                    </td>
-                    <td class="client-cell" [attr.data-label]="'leads.colClient' | translate">
-                      <strong>{{ lead.name }}</strong>
-                      <small>{{ lead.phone }}</small>
-                    </td>
-                    <td class="call-cell" [attr.data-label]="'workflow.first_call_done' | translate">
-                      @if (lead.firstCall) {
-                        <span>{{ firstCallResultLabel(lead) }}</span>
-                        <small>{{ formatDateTime(lead.firstCall.date) }}</small>
-                      } @else {
-                        <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>
-                      }
-                    </td>
-                    <td class="source-cell" [attr.data-label]="'leads.colSource' | translate">
-                      <span class="source-pill">
-                        <app-ui-icon [name]="sourceIcon(lead)" [size]="14" />
-                        <span class="source-pill__text">{{ sourceLabel(lead) }}</span>
-                      </span>
-                    </td>
-                    <td class="manager-cell" [attr.data-label]="'leads.colFirstManager' | translate">
-                      @if (hasActiveManager(lead.firstManagerId)) {
-                        <app-ui-user
-                          [userId]="lead.firstManagerId!"
-                          [name]="employeeName(lead.firstManagerId)"
-                          size="sm"
-                        />
-                      } @else {
-                        <span class="muted">{{ 'common.unassigned' | translate }}</span>
-                      }
-                    </td>
-                    <td class="visit-cell" [attr.data-label]="'leads.colVisit' | translate">
-                      <div class="status-cell">
-                        <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
-                          {{ workflowLabel(lead) }}
-                        </app-ui-badge>
-                        @if (lead.visit) {
-                          <small>{{ formatDate(lead.visit.scheduledAt) }}</small>
-                        }
-                      </div>
-                    </td>
-                  </tr>
-                }
+          <div class="status-filter-bar">
+            <div class="period-switcher" [attr.aria-label]="'leads.filterAria' | translate">
+              @for (filter of workflowFilters(); track filter.key) {
+                <button
+                  type="button"
+                  [class.is-active]="workflowFilter() === filter.key"
+                  (click)="toggleWorkflowFilter(filter.key)"
+                >
+                  {{ filter.label }}
+                </button>
               }
-            </tbody>
-          </table>
+            </div>
+          </div>
+
+          @if (!filteredLeads().length) {
+            <article class="empty-state empty-state--inset">
+              <app-ui-icon name="inbox" [size]="28" />
+              <h2>{{ 'leads.emptyTitle' | translate }}</h2>
+              <p>{{ 'leads.emptyHint' | translate }}</p>
+            </article>
+          } @else {
+            <table class="leads-table" [attr.aria-label]="'leads.tableAria' | translate">
+              <colgroup>
+                <col class="col-date" />
+                <col class="col-client" />
+                <col class="col-call" />
+                <col class="col-source" />
+                <col class="col-manager" />
+                <col class="col-visit" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="date-heading" scope="col">{{ 'common.date' | translate }}</th>
+                  <th class="client-heading" scope="col">{{ 'leads.colClient' | translate }}</th>
+                  <th class="call-heading" scope="col">{{ 'common.status' | translate }}</th>
+                  <th class="source-heading" scope="col">{{ 'leads.colSource' | translate }}</th>
+                  <th class="manager-heading" scope="col">{{ 'common.manager' | translate }}</th>
+                  <th class="visit-heading" scope="col">{{ 'leads.colVisit' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (group of groupedLeads(); track group.key) {
+                  <tr class="month-row">
+                    <th scope="rowgroup" colspan="6">
+                      <span [id]="'group-' + group.key">{{ group.label }}</span>
+                      <small>{{ 'leads.count' | translate: { count: group.rows.length } }}</small>
+                    </th>
+                  </tr>
+
+                  @for (lead of group.rows; track lead.id) {
+                    <tr
+                      class="lead-row"
+                      tabindex="0"
+                      role="link"
+                      [attr.data-lead-id]="lead.id"
+                      [attr.aria-label]="'leads.openAria' | translate: { name: lead.name }"
+                      (click)="openLead(lead)"
+                      (keydown.enter)="openLead(lead)"
+                    >
+                      <td class="date-cell" [attr.data-label]="'common.date' | translate">
+                        <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
+                        <small>{{ officeName(lead.officeCode) }}</small>
+                      </td>
+                      <td class="client-cell" [attr.data-label]="'leads.colClient' | translate">
+                        <strong>{{ lead.name }}</strong>
+                        <small>{{ lead.phone }}</small>
+                      </td>
+                      <td class="call-cell" [attr.data-label]="'common.status' | translate">
+                        @if (lead.close; as close) {
+                          @if (close.comment.trim()) {
+                            <span class="call-cell__comment" [attr.title]="close.comment">{{
+                              close.comment
+                            }}</span>
+                            <small
+                              >{{ closeReasonLabel(lead) }} ·
+                              {{ formatDateTime(close.closedAt) }}</small
+                            >
+                          } @else {
+                            <span>{{ closeReasonLabel(lead) }}</span>
+                            <small>{{ formatDateTime(close.closedAt) }}</small>
+                          }
+                        } @else if (lead.firstCall; as call) {
+                          @if (call.comment.trim()) {
+                            <span class="call-cell__comment" [attr.title]="call.comment">{{
+                              call.comment
+                            }}</span>
+                            <small
+                              >{{ firstCallResultLabel(lead) }} ·
+                              {{ formatDateTime(call.date) }}</small
+                            >
+                          } @else {
+                            <span>{{ firstCallResultLabel(lead) }}</span>
+                            <small>{{ formatDateTime(call.date) }}</small>
+                          }
+                        } @else {
+                          <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>
+                        }
+                      </td>
+                      <td class="source-cell" [attr.data-label]="'leads.colSource' | translate">
+                        <span class="source-pill">
+                          <app-ui-icon [name]="sourceIcon(lead)" [size]="14" />
+                          <span class="source-pill__text">{{ sourceLabel(lead) }}</span>
+                        </span>
+                      </td>
+                      <td class="manager-cell" [attr.data-label]="'common.manager' | translate">
+                        @if (hasActiveManager(lead.assignedToId)) {
+                          <app-ui-user
+                            [userId]="lead.assignedToId!"
+                            [name]="employeeName(lead.assignedToId)"
+                            size="sm"
+                          />
+                        } @else {
+                          <span class="muted">{{ 'common.unassigned' | translate }}</span>
+                        }
+                      </td>
+                      <td class="visit-cell" [attr.data-label]="'leads.colVisit' | translate">
+                        <div class="status-cell">
+                          <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
+                            {{ workflowLabel(lead) }}
+                          </app-ui-badge>
+                          @if (lead.visit) {
+                            <small>{{ formatDate(lead.visit.scheduledAt) }}</small>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          }
         </div>
       }
     </section>
@@ -334,30 +377,37 @@ import { CreateLeadDialog } from './create-lead-dialog';
     }
 
     .toolbar-metrics {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(6.5rem, 1fr));
-      gap: var(--ui-space-2);
-    }
-
-    .toolbar-metrics div {
-      min-height: 4rem;
-      padding: var(--ui-space-3);
+      display: inline-flex;
+      align-items: stretch;
       border: 1px solid var(--ui-border);
       border-radius: var(--ui-radius-md);
       background: var(--ui-surface-raised);
-      display: grid;
-      gap: 0.125rem;
+      overflow: hidden;
+    }
+
+    .toolbar-metrics div {
+      min-height: 0;
+      padding: 0.375rem 0.75rem;
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.375rem;
+      border-right: 1px solid var(--ui-border);
+    }
+
+    .toolbar-metrics div:last-child {
+      border-right: 0;
     }
 
     .toolbar-metrics strong {
       font-family: var(--ui-font-display), sans-serif;
-      font-size: 1.5rem;
-      line-height: 1;
+      font-size: 1.0625rem;
+      line-height: 1.2;
     }
 
     .toolbar-metrics span {
       color: var(--ui-text-muted);
-      font-size: 0.75rem;
+      font-size: 0.6875rem;
+      font-weight: 650;
     }
 
     .leads-table-panel {
@@ -366,6 +416,23 @@ import { CreateLeadDialog } from './create-lead-dialog';
       background: var(--ui-surface-raised);
       box-shadow: var(--ui-shadow-1);
       overflow: hidden;
+    }
+
+    .status-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ui-space-2);
+      padding: var(--ui-space-3);
+      border-bottom: 1px solid var(--ui-border);
+      background: var(--ui-surface-subtle);
+    }
+
+    .status-filter-bar .period-switcher {
+      flex-wrap: wrap;
+    }
+
+    .status-filter-bar .period-switcher button {
+      min-width: auto;
     }
 
     .leads-table {
@@ -380,11 +447,11 @@ import { CreateLeadDialog } from './create-lead-dialog';
     }
 
     .col-client {
-      width: 28%;
+      width: 16%;
     }
 
     .col-call {
-      width: 16%;
+      width: 28%;
     }
 
     .col-source {
@@ -451,8 +518,13 @@ import { CreateLeadDialog } from './create-lead-dialog';
     }
 
     .lead-row td {
-      height: 3.875rem;
+      height: auto;
+      min-height: 3.875rem;
       line-height: 1.2;
+    }
+
+    .call-cell {
+      vertical-align: middle;
     }
 
     .lead-row strong,
@@ -462,6 +534,16 @@ import { CreateLeadDialog } from './create-lead-dialog';
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .lead-row .call-cell__comment {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      word-break: break-word;
     }
 
     .lead-row small,
@@ -529,6 +611,13 @@ import { CreateLeadDialog } from './create-lead-dialog';
       text-align: center;
     }
 
+    .empty-state--inset {
+      min-height: 14rem;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
     .empty-state h2,
     .empty-state p {
       margin: 0;
@@ -555,11 +644,11 @@ import { CreateLeadDialog } from './create-lead-dialog';
       }
 
       .col-client {
-        width: 34%;
+        width: 22%;
       }
 
       .col-call {
-        width: 21%;
+        width: 33%;
       }
 
       .col-visit {
@@ -583,6 +672,7 @@ export class LeadsPage {
   protected readonly query = signal('');
   protected readonly showArchived = signal(false);
   protected readonly periodDays = signal<number | null>(7);
+  protected readonly workflowFilter = signal<WorkflowFilterKey | null>(null);
   protected readonly notice = signal('');
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
@@ -595,6 +685,18 @@ export class LeadsPage {
       { label: this.i18n.t('reports.period.40days'), days: 40 },
       { label: this.i18n.t('reports.period.6months'), days: 180 },
       { label: this.i18n.t('reports.period.all'), days: null },
+    ];
+    return options;
+  });
+
+  protected readonly workflowFilters = computed(() => {
+    this.i18n.locale();
+    const options: { key: WorkflowFilterKey; label: string }[] = [
+      { key: 'new', label: this.i18n.t('leads.filter.new') },
+      { key: 'first_call_done', label: this.i18n.t('leads.filter.firstCall') },
+      { key: 'visit', label: this.i18n.t('leads.filter.visit') },
+      { key: 'closed', label: this.i18n.t('leads.filter.closed') },
+      { key: 'successful', label: this.i18n.t('leads.filter.contract') },
     ];
     return options;
   });
@@ -620,7 +722,9 @@ export class LeadsPage {
 
   protected readonly filteredLeads = computed(() => {
     const leads = this.leadsResource.value() ?? [];
-    return leads;
+    const filter = this.workflowFilter();
+    if (!filter) return leads;
+    return leads.filter((lead) => this.matchesWorkflowFilter(lead, filter));
   });
   protected readonly groupedLeads = computed(() => groupLeadsByYearMonth(this.filteredLeads()));
   protected readonly activeCount = computed(
@@ -642,8 +746,27 @@ export class LeadsPage {
   protected readonly workflowTone = workflowTone;
   protected readonly isSuperAdmin = () => this.auth.profile()?.role === 'super_admin';
 
+  protected toggleWorkflowFilter(key: WorkflowFilterKey): void {
+    this.workflowFilter.update((current) => (current === key ? null : key));
+  }
+
   protected toggleArchived(): void {
     this.showArchived.update((value) => !value);
+  }
+
+  private matchesWorkflowFilter(lead: MockLead, filter: WorkflowFilterKey): boolean {
+    switch (filter) {
+      case 'new':
+        return lead.workflowStatus === 'new';
+      case 'first_call_done':
+        return lead.workflowStatus === 'first_call_done';
+      case 'visit':
+        return VISIT_STATUSES.has(lead.workflowStatus);
+      case 'closed':
+        return lead.workflowStatus === 'closed';
+      case 'successful':
+        return lead.workflowStatus === 'successful';
+    }
   }
 
   protected employeeName(employeeId: string | null): string {
@@ -675,6 +798,11 @@ export class LeadsPage {
   protected firstCallResultLabel(lead: MockLead): string {
     if (!lead.firstCall) return '';
     return this.i18n.firstCallResultLabel(lead.firstCall.result);
+  }
+
+  protected closeReasonLabel(lead: MockLead): string {
+    if (!lead.close) return '';
+    return this.i18n.closeReasonLabel(lead.close.reason);
   }
 
   protected async openLead(lead: MockLead): Promise<void> {

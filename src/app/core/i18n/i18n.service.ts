@@ -86,12 +86,12 @@ export class I18nService {
     code: string,
     reasons?: readonly { readonly code: string; readonly label_uk: string; readonly label_pl: string }[],
   ): string {
+    const key = `closeReason.${code}` as MessageKey;
+    if (key in messages) return this.t(key);
     const fromDb = reasons?.find((item) => item.code === code);
     if (fromDb) {
       return this.tField(fromDb as unknown as Record<string, unknown>, 'label', code);
     }
-    const key = `closeReason.${code}` as MessageKey;
-    if (key in messages) return this.t(key);
     return code;
   }
 

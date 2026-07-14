@@ -132,6 +132,7 @@ export class ImpersonationDialog {
     this.filteredManagers().map((manager) => ({
       value: manager.id,
       label: `${manager.displayName} (${this.i18n.roleLabel(manager.role)})`,
+      userId: manager.id,
     })),
   );
 

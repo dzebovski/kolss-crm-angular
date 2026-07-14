@@ -83,6 +83,21 @@ describe('crm helpers', () => {
     expect(warsaw.unassignedCount).toBeGreaterThanOrEqual(0);
   });
 
+  it('attributes taken counts to current assignedToId over firstManagerId', () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1003')!;
+    const reassigned = {
+      ...lead,
+      assignedToId: 'emp-kyiv-2',
+      firstManagerId: 'emp-kyiv-1',
+    };
+    const report = calculateManagerTakenReport([reassigned], CRM_MOCK_EMPLOYEES, 'kyiv', 40);
+    const kyivMoroz = report.managers.find((row) => row.managerId === 'emp-kyiv-1');
+    const kyivLytvyn = report.managers.find((row) => row.managerId === 'emp-kyiv-2');
+
+    expect(kyivMoroz?.takenCount).toBe(0);
+    expect(kyivLytvyn?.takenCount).toBe(1);
+  });
+
   it('maps legacy workflow statuses to simplified model', () => {
     expect(toSimplifiedWorkflowStatus('showroom_scheduled')).toBe('visit_scheduled');
     expect(toSimplifiedWorkflowStatus('bad_lead')).toBe('closed');

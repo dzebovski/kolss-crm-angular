@@ -68,7 +68,7 @@ import { UiUser } from '../../../ui/user/ui-user';
               <div class="funnel-row">
                 <span class="funnel-index">{{ index + 1 }}</span>
                 <div>
-                  <strong>{{ stage.label }}</strong>
+                  <strong>{{ funnelLabel(stage.label) }}</strong>
                   @if (stage.conversionBaseLabel) {
                     <small>{{
                       'reports.conversionFrom'
@@ -84,7 +84,7 @@ import { UiUser } from '../../../ui/user/ui-user';
               </div>
               <div
                 class="funnel-track"
-                [attr.aria-label]="stage.label + ': ' + stage.percentOfTotal + '%'"
+                [attr.aria-label]="funnelLabel(stage.label) + ': ' + stage.percentOfTotal + '%'"
               >
                 <span [style.width.%]="barWidth(stage)"></span>
               </div>

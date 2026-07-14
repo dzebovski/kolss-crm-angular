@@ -49,6 +49,8 @@ describe('LeadDetailPage', () => {
     updateHistoryEvent?: ReturnType<typeof vi.fn>;
     updateCloseDetails?: ReturnType<typeof vi.fn>;
     archiveLead?: ReturnType<typeof vi.fn>;
+    recordFirstCall?: ReturnType<typeof vi.fn>;
+    takeLead?: ReturnType<typeof vi.fn>;
     dialogConfirm?: boolean;
   }) {
     const leadId = options?.leadId ?? 'lead-1007';
@@ -62,6 +64,8 @@ describe('LeadDetailPage', () => {
     const updateHistoryEvent = options?.updateHistoryEvent ?? vi.fn(async () => []);
     const updateCloseDetails = options?.updateCloseDetails ?? vi.fn(async () => null);
     const archiveLead = options?.archiveLead ?? vi.fn(async () => undefined);
+    const recordFirstCall = options?.recordFirstCall ?? vi.fn(async () => null);
+    const takeLead = options?.takeLead ?? vi.fn(async () => undefined);
     const dialogConfirm = options?.dialogConfirm ?? false;
 
     TestBed.resetTestingModule();
@@ -108,7 +112,7 @@ describe('LeadDetailPage', () => {
         },
         {
           provide: LeadWorkflowService,
-          useValue: {},
+          useValue: { recordFirstCall, takeLead },
         },
         {
           provide: LossReasonsService,
@@ -471,5 +475,216 @@ describe('LeadDetailPage', () => {
     expect(element.textContent).toContain('Відредаговано: повідомлення, тип');
     expect(element.textContent).toContain('Редагував: Admin User');
     expect(element.textContent).not.toContain('Редагувати');
+  });
+
+  it('auto-takes lead after first call when unassigned', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
+    expect(lead.assignedToId).toBeNull();
+    const recordFirstCall = vi.fn(async () => null);
+    const takeLead = vi.fn(async () => undefined);
+    const fixture = await createLeadDetail({
+      leadId: lead.id,
+      role: 'office_member',
+      recordFirstCall,
+      takeLead,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    await fixture.componentInstance['saveFirstCall'](lead);
+
+    expect(recordFirstCall).toHaveBeenCalledWith(lead.id, expect.any(String), expect.any(String));
+    expect(takeLead).toHaveBeenCalledWith(lead.id);
+  });
+
+  it('does not auto-take after first call when already assigned', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1003')!;
+    expect(lead.assignedToId).toBeTruthy();
+    const recordFirstCall = vi.fn(async () => null);
+    const takeLead = vi.fn(async () => undefined);
+    const uncalledLead: MockLead = {
+      ...lead,
+      firstCall: null,
+      workflowStatus: 'taken',
+    };
+    const fixture = await createLeadDetail({
+      leadId: uncalledLead.id,
+      role: 'office_member',
+      getById: async () => uncalledLead,
+      recordFirstCall,
+      takeLead,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    await fixture.componentInstance['saveFirstCall'](uncalledLead);
+
+    expect(recordFirstCall).toHaveBeenCalled();
+    expect(takeLead).not.toHaveBeenCalled();
+  });
+
+  it('keeps take in work enabled when lead already has a manager', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1003', role: 'office_member' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(element.querySelectorAll('app-ui-button button'));
+    const takeButton = buttons.find((button) => button.textContent?.includes('Взяти в роботу')) as
+      | HTMLButtonElement
+      | undefined;
+    expect(takeButton).toBeTruthy();
+    expect(takeButton!.disabled).toBe(false);
+  });
+
+  it('shows assign manager control for super admin on unassigned lead', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1001', role: 'super_admin' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Призначити менеджера');
+  });
+
+  it('shows replace manager control for super admin on assigned lead', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1003', role: 'super_admin' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Замінити менеджера');
+    expect(element.textContent).not.toContain('Призначити менеджера');
+  });
+
+  it('submits super-admin manager assignment via updateLeadDetails', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
+    const updateLeadDetails = vi.fn(async () => undefined);
+    const fixture = await createLeadDetail({
+      leadId: lead.id,
+      role: 'super_admin',
+      updateLeadDetails,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance['openAssignManagerDialog'](lead);
+    fixture.componentInstance['assignManagerId'].set('emp-kyiv-1');
+    await fixture.componentInstance['submitAssignManager'](lead);
+
+    expect(updateLeadDetails).toHaveBeenCalledWith(
+      lead.id,
+      expect.objectContaining({ assignedToId: 'emp-kyiv-1' }),
+      ['manager'],
+    );
+  });
+
+  it('hides lead_edited events from the timeline and events count', async () => {
+    const base = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
+    const lead: MockLead = {
+      ...base,
+      events: [
+        {
+          id: 'evt-visible',
+          type: 'created',
+          rawType: 'created',
+          comment: 'Created from site',
+          newValue: null,
+          actorId: 'emp-super-admin',
+          actorName: 'Platform Admin',
+          occurredAt: '2026-07-06T11:24:00.000Z',
+        },
+        {
+          id: 'evt-hidden-edited',
+          type: 'lead_updated',
+          rawType: 'lead_edited',
+          comment: null,
+          newValue: null,
+          actorId: 'emp-kyiv-1',
+          actorName: 'Kyiv Manager',
+          occurredAt: '2026-07-06T12:00:00.000Z',
+        },
+        {
+          id: 'evt-hidden-updated',
+          type: 'lead_updated',
+          rawType: 'lead_updated',
+          comment: null,
+          newValue: null,
+          actorId: 'emp-kyiv-1',
+          occurredAt: '2026-07-06T12:30:00.000Z',
+        },
+        {
+          id: 'evt-comment',
+          type: 'comment',
+          rawType: 'comment',
+          comment: 'Follow-up note',
+          newValue: null,
+          actorId: 'emp-kyiv-1',
+          occurredAt: '2026-07-06T13:00:00.000Z',
+        },
+      ],
+    };
+    const fixture = await createLeadDetail({
+      leadId: lead.id,
+      getById: async () => lead,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('2 подій');
+    expect(fixture.componentInstance['timelineEvents']()).toHaveLength(2);
+    expect(fixture.componentInstance['timelineEvents']().map((e) => e.id)).toEqual([
+      'evt-visible',
+      'evt-comment',
+    ]);
+    expect(element.textContent).toContain('Platform Admin');
+    expect(element.textContent).not.toContain('lead_edited');
+  });
+
+  it('uses event actorName when managers list does not include the actor', async () => {
+    const base = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1001')!;
+    const lead: MockLead = {
+      ...base,
+      events: [
+        {
+          id: 'evt-created-by-admin',
+          type: 'created',
+          rawType: 'created',
+          comment: null,
+          newValue: null,
+          actorId: 'emp-super-admin',
+          actorName: 'Platform Super Admin',
+          occurredAt: '2026-07-06T11:24:00.000Z',
+        },
+      ],
+    };
+    const fixture = await createLeadDetail({
+      leadId: lead.id,
+      getById: async () => lead,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Platform Super Admin');
+    expect(element.textContent).not.toContain('Непризначено');
+  });
+
+  it('omits lead_updated and lead_edited from history edit type options', async () => {
+    const fixture = await createLeadDetail({ leadId: 'lead-1001' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const values = fixture.componentInstance['historyEventTypeOptions']().map((o) => o.value);
+    expect(values).not.toContain('lead_updated');
+    expect(values).not.toContain('lead_edited');
   });
 });
