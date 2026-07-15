@@ -22,6 +22,7 @@ const LEGACY_TO_SIMPLIFIED: Record<string, LeadWorkflowStatus> = {
   visit_scheduled: 'visit_scheduled',
   visit_rescheduled: 'visit_rescheduled',
   visit_completed: 'visit_completed',
+  thinking: 'thinking',
   closed: 'closed',
   successful: 'successful',
 };

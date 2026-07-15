@@ -14,6 +14,7 @@ export type LeadWorkflowStatus =
   | 'visit_scheduled'
   | 'visit_rescheduled'
   | 'visit_completed'
+  | 'thinking'
   | 'closed'
   | 'successful';
 
@@ -27,6 +28,7 @@ export type LeadEventType =
   | 'visit_rescheduled'
   | 'visit_completed'
   | 'comment'
+  | 'thinking'
   | 'closed'
   | 'successful'
   | 'attachment'

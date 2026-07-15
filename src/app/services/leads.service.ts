@@ -111,6 +111,10 @@ export class LeadsService {
     await this.api.restoreLead(leadId);
   }
 
+  async deleteLeadPermanently(leadId: string): Promise<void> {
+    await this.api.deleteLead(leadId);
+  }
+
   async updateHistoryEvent(
     leadId: string,
     eventId: string,

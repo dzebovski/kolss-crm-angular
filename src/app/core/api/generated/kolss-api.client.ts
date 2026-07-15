@@ -60,6 +60,10 @@ export class KolssApiClient {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/restore`, {}).then(() => undefined);
   }
 
+  deleteLead(id: string): Promise<void> {
+    return this.post(`/v1/leads/${encodeURIComponent(id)}/delete`, {}).then(() => undefined);
+  }
+
   users(active?: boolean): Promise<UsersResponse> {
     return this.get('/v1/users', { active: active == null ? undefined : String(active) });
   }

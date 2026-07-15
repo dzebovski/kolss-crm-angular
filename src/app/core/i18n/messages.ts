@@ -119,6 +119,7 @@ export const messages = {
   'workflow.visit_scheduled': { uk: 'Очікуємо в салоні', pl: 'Oczekujemy w salonie', en: 'Awaiting showroom' },
   'workflow.visit_rescheduled': { uk: 'Візит перенесено', pl: 'Wizyta przełożona', en: 'Visit rescheduled' },
   'workflow.visit_completed': { uk: 'Візит відбувся', pl: 'Wizyta odbyła się', en: 'Visit completed' },
+  'workflow.thinking': { uk: 'Думає', pl: 'Myśli', en: 'Thinking' },
   'workflow.closed': { uk: 'Закритий', pl: 'Zamknięty', en: 'Closed' },
   'workflow.successful': { uk: 'Договір заключений', pl: 'Umowa podpisana', en: 'Contract signed' },
 
@@ -165,6 +166,11 @@ export const messages = {
   'event.lead_edited': { uk: 'Дані ліда відредаговано', pl: 'Dane leada edytowane', en: 'Lead data edited' },
   'event.archived': { uk: 'Лід архівовано', pl: 'Lead zarchiwizowany', en: 'Lead archived' },
   'event.restored': { uk: 'Лід відновлено', pl: 'Lead przywrócony', en: 'Lead restored' },
+  'event.thinking': {
+    uk: 'Клієнт пішов думати',
+    pl: 'Klient poszedł pomyśleć',
+    en: 'Client went to think',
+  },
   'event.attachment': { uk: 'Вкладення', pl: 'Załącznik', en: 'Attachment' },
   'event.lead_assigned': { uk: 'Лід призначено', pl: 'Lead przypisany', en: 'Lead assigned' },
   'event.leadCreatedManual': {
@@ -242,6 +248,26 @@ export const messages = {
   },
   'lead.backToLeads': { uk: 'До списку лідів', pl: 'Do listy leadów', en: 'Back to leads' },
   'lead.takeInWork': { uk: 'Взяти в роботу', pl: 'Przejmij', en: 'Take in work' },
+  'lead.clientThinking': {
+    uk: 'Кліент пішов думати',
+    pl: 'Klient poszedł pomyśleć',
+    en: 'Client went to think',
+  },
+  'lead.deletePermanently': {
+    uk: 'Видалити остаточно',
+    pl: 'Usuń trwale',
+    en: 'Delete permanently',
+  },
+  'lead.deletePermanentlyTitle': {
+    uk: 'Видалити заявку назавжди',
+    pl: 'Usuń zgłoszenie na zawsze',
+    en: 'Delete lead permanently',
+  },
+  'lead.deletePermanentlyDesc': {
+    uk: 'Заявку «{name}» буде видалено без можливості відновлення.',
+    pl: 'Zgłoszenie „{name}” zostanie usunięte bez możliwości przywrócenia.',
+    en: 'Lead "{name}" will be deleted with no way to restore it.',
+  },
   'lead.closeLead': { uk: 'Закрити лід', pl: 'Zamknij lead', en: 'Close lead' },
   'lead.markSuccessful': {
     uk: 'Позначити успішним',

@@ -57,6 +57,7 @@ export const WORKFLOW_LABELS: Record<LeadWorkflowStatus, string> = {
   visit_scheduled: 'Очікуємо в салоні',
   visit_rescheduled: 'Візит перенесено',
   visit_completed: 'Візит відбувся',
+  thinking: 'Думає',
   closed: 'Закритий',
   successful: 'Договір заключений',
 };
@@ -137,6 +138,7 @@ export function workflowTone(status: LeadWorkflowStatus): UiBadgeTone {
     visit_scheduled: 'warning',
     visit_rescheduled: 'warning',
     visit_completed: 'success',
+    thinking: 'warning',
     closed: 'danger',
     successful: 'success',
   };

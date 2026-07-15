@@ -51,6 +51,9 @@ describe('LeadDetailPage', () => {
     archiveLead?: ReturnType<typeof vi.fn>;
     recordFirstCall?: ReturnType<typeof vi.fn>;
     takeLead?: ReturnType<typeof vi.fn>;
+    markThinking?: ReturnType<typeof vi.fn>;
+    deleteLeadPermanently?: ReturnType<typeof vi.fn>;
+    restoreLead?: ReturnType<typeof vi.fn>;
     dialogConfirm?: boolean;
   }) {
     const leadId = options?.leadId ?? 'lead-1007';
@@ -64,8 +67,11 @@ describe('LeadDetailPage', () => {
     const updateHistoryEvent = options?.updateHistoryEvent ?? vi.fn(async () => []);
     const updateCloseDetails = options?.updateCloseDetails ?? vi.fn(async () => null);
     const archiveLead = options?.archiveLead ?? vi.fn(async () => undefined);
+    const restoreLead = options?.restoreLead ?? vi.fn(async () => undefined);
+    const deleteLeadPermanently = options?.deleteLeadPermanently ?? vi.fn(async () => undefined);
     const recordFirstCall = options?.recordFirstCall ?? vi.fn(async () => null);
     const takeLead = options?.takeLead ?? vi.fn(async () => undefined);
+    const markThinking = options?.markThinking ?? vi.fn(async () => undefined);
     const dialogConfirm = options?.dialogConfirm ?? false;
 
     TestBed.resetTestingModule();
@@ -83,7 +89,15 @@ describe('LeadDetailPage', () => {
         },
         {
           provide: LeadsService,
-          useValue: { getById, updateLeadDetails, updateHistoryEvent, updateCloseDetails, archiveLead },
+          useValue: {
+            getById,
+            updateLeadDetails,
+            updateHistoryEvent,
+            updateCloseDetails,
+            archiveLead,
+            restoreLead,
+            deleteLeadPermanently,
+          },
         },
         {
           provide: UsersService,
@@ -112,7 +126,7 @@ describe('LeadDetailPage', () => {
         },
         {
           provide: LeadWorkflowService,
-          useValue: { recordFirstCall, takeLead },
+          useValue: { recordFirstCall, takeLead, markThinking },
         },
         {
           provide: LossReasonsService,
@@ -525,7 +539,7 @@ describe('LeadDetailPage', () => {
     expect(takeLead).not.toHaveBeenCalled();
   });
 
-  it('keeps take in work enabled when lead already has a manager', async () => {
+  it('shows client thinking button instead of take in work', async () => {
     const fixture = await createLeadDetail({ leadId: 'lead-1003', role: 'office_member' });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -533,11 +547,64 @@ describe('LeadDetailPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     const buttons = Array.from(element.querySelectorAll('app-ui-button button'));
-    const takeButton = buttons.find((button) => button.textContent?.includes('Взяти в роботу')) as
-      | HTMLButtonElement
-      | undefined;
-    expect(takeButton).toBeTruthy();
-    expect(takeButton!.disabled).toBe(false);
+    const thinkingButton = buttons.find((button) =>
+      button.textContent?.includes('Кліент пішов думати'),
+    ) as HTMLButtonElement | undefined;
+    expect(thinkingButton).toBeTruthy();
+    expect(thinkingButton!.disabled).toBe(false);
+    expect(element.textContent).not.toContain('Взяти в роботу');
+  });
+
+  it('disables client thinking when lead is already thinking', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1003')!;
+    const thinkingLead: MockLead = {
+      ...lead,
+      workflowStatus: 'thinking',
+      archivedAt: null,
+    };
+    const fixture = await createLeadDetail({
+      leadId: thinkingLead.id,
+      role: 'office_member',
+      getById: async () => thinkingLead,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(element.querySelectorAll('app-ui-button button'));
+    const thinkingButton = buttons.find((button) =>
+      button.textContent?.includes('Кліент пішов думати'),
+    ) as HTMLButtonElement | undefined;
+    expect(thinkingButton).toBeTruthy();
+    expect(thinkingButton!.disabled).toBe(true);
+  });
+
+  it('shows permanent delete for super admin on archived lead', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1007')!;
+    const archivedLead: MockLead = {
+      ...lead,
+      workflowStatus: 'closed',
+      archivedAt: '2026-07-01T00:00:00.000Z',
+    };
+    const deleteLeadPermanently = vi.fn(async () => undefined);
+    const fixture = await createLeadDetail({
+      leadId: archivedLead.id,
+      role: 'super_admin',
+      getById: async () => archivedLead,
+      deleteLeadPermanently,
+      dialogConfirm: true,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Видалити остаточно');
+    expect(element.textContent).toContain('Відновити з архіву');
+
+    await fixture.componentInstance['confirmDeleteLead'](archivedLead);
+    expect(deleteLeadPermanently).toHaveBeenCalledWith(archivedLead.id);
   });
 
   it('shows assign manager control for super admin on unassigned lead', async () => {

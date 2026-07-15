@@ -188,13 +188,20 @@ const NO_MANAGER_VALUE = '__none__';
               <app-ui-button [loading]="actionPending()" (pressed)="restoreLead(lead)">
                 {{ 'lead.restore' | translate }}
               </app-ui-button>
+              <app-ui-button
+                variant="danger"
+                [loading]="deletingLead()"
+                (pressed)="confirmDeleteLead(lead)"
+              >
+                {{ 'lead.deletePermanently' | translate }}
+              </app-ui-button>
             } @else if (!lead.archivedAt) {
               <app-ui-button
                 variant="secondary"
-                [disabled]="isTerminal(lead)"
-                (pressed)="takeLead(lead)"
+                [disabled]="isTerminal(lead) || lead.workflowStatus === 'thinking'"
+                (pressed)="markThinking(lead)"
               >
-                {{ 'lead.takeInWork' | translate }}
+                {{ 'lead.clientThinking' | translate }}
               </app-ui-button>
               <app-ui-button
                 variant="secondary"
@@ -1291,6 +1298,7 @@ export class LeadDetailPage {
       'visit_rescheduled',
       'showroom_visit_completed',
       'visit_completed',
+      'thinking',
       'comment',
       'closed',
       'bad_lead',
@@ -1396,6 +1404,37 @@ export class LeadDetailPage {
     }
   }
 
+  protected async confirmDeleteLead(lead: MockLead): Promise<void> {
+    if (this.auth.profile()?.role !== 'super_admin' || !lead.archivedAt || this.deletingLead()) {
+      return;
+    }
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .confirm({
+          title: this.i18n.t('lead.deletePermanentlyTitle'),
+          description: this.i18n.t('lead.deletePermanentlyDesc', { name: lead.name }),
+          confirmLabel: this.i18n.t('lead.deletePermanently'),
+          cancelLabel: this.i18n.t('common.cancel'),
+          danger: true,
+        })
+        .afterClosed(),
+    );
+    if (!confirmed) return;
+
+    this.actionError.set('');
+    this.deletingLead.set(true);
+    try {
+      await this.leadsService.deleteLeadPermanently(lead.id);
+      await this.router.navigate(['/crm/leads']);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'error.actionFailed';
+      this.actionError.set(this.i18n.localizeError(message));
+    } finally {
+      this.deletingLead.set(false);
+    }
+  }
+
   protected managerOptions(lead: MockLead): readonly UiSelectOption[] {
     const employees = this.employeesResource.value() ?? [];
     const options = employees
@@ -1488,8 +1527,8 @@ export class LeadDetailPage {
     return this.i18n.t('lead.terminalUnavailable');
   }
 
-  protected async takeLead(lead: MockLead): Promise<void> {
-    await this.runAction(() => this.workflowService.takeLead(lead.id));
+  protected async markThinking(lead: MockLead): Promise<void> {
+    await this.runAction(() => this.workflowService.markThinking(lead.id));
   }
 
   protected async saveFirstCall(lead: MockLead): Promise<void> {

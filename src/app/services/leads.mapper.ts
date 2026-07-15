@@ -138,6 +138,7 @@ function mapEventType(eventType: string): LeadEventType {
     showroom_visit_completed: 'visit_completed',
     visit_completed: 'visit_completed',
     comment: 'comment',
+    thinking: 'thinking',
     closed: 'closed',
     bad_lead: 'closed',
     successful: 'successful',
