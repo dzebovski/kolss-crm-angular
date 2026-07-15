@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
+import { setActiveLocale } from '../../../core/i18n/locale-storage';
 import { SessionService } from '../../../core/session/session.service';
 import { LeadsService } from '../../../services/leads.service';
 import { CreateLeadDialog } from './create-lead-dialog';
@@ -14,6 +15,7 @@ describe('CreateLeadDialog', () => {
   };
 
   beforeEach(async () => {
+    setActiveLocale('uk');
     await TestBed.configureTestingModule({
       imports: [CreateLeadDialog],
       providers: [
@@ -54,5 +56,32 @@ describe('CreateLeadDialog', () => {
     expect(fixture.componentInstance['phoneError']()).toBe('Вкажіть телефон клієнта.');
     expect(element.textContent).toContain('Вкажіть телефон клієнта.');
     expect(TestBed.inject(LeadsService).createLead).not.toHaveBeenCalled();
+  });
+
+  it('normalizes phone before create and rejects invalid numbers', async () => {
+    const createLead = TestBed.inject(LeadsService).createLead as ReturnType<typeof vi.fn>;
+    const fixture = TestBed.createComponent(CreateLeadDialog);
+    await fixture.whenStable();
+
+    fixture.componentInstance['name'].set('Марина');
+    fixture.componentInstance['phone'].set('123');
+    await fixture.whenStable();
+
+    await fixture.componentInstance['submit']();
+    await fixture.whenStable();
+    expect(fixture.componentInstance['phoneError']()).toBe('Телефон має некоректний формат.');
+    expect(createLead).not.toHaveBeenCalled();
+
+    fixture.componentInstance['phone'].set('0672148819');
+    await fixture.whenStable();
+    await fixture.componentInstance['submit']();
+    await fixture.whenStable();
+
+    expect(createLead).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phone: '+38 067 2148819',
+        name: 'Марина',
+      }),
+    );
   });
 });

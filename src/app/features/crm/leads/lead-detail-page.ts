@@ -10,6 +10,7 @@ import {
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { normalizePhoneForOffice } from '../../../core/phone/phone';
 import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
@@ -1631,15 +1632,20 @@ export class LeadDetailPage {
     }
 
     const name = this.editLeadName().trim();
-    const phone = this.editLeadPhone().trim();
+    const phoneRaw = this.editLeadPhone().trim();
+    const phone = normalizePhoneForOffice(phoneRaw, lead.officeCode);
     const email = this.nullableText(this.editLeadEmail());
     const estimatedBudget = this.parseOptionalMoney(this.editLeadBudget());
     if (!name) {
       this.dialogError.set(this.i18n.t('lead.nameRequired'));
       return;
     }
-    if (!phone) {
+    if (!phoneRaw) {
       this.dialogError.set(this.i18n.t('lead.phoneRequired'));
+      return;
+    }
+    if (!phone) {
+      this.dialogError.set(this.i18n.t('lead.phoneInvalid'));
       return;
     }
     if (email && !this.isValidEmail(email)) {

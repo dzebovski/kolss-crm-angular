@@ -276,7 +276,7 @@ describe('LeadDetailPage', () => {
     expect(updateLeadDetails).toHaveBeenCalledWith(
       lead.id,
       expect.objectContaining({
-        phone: '+380 67 000 00 00',
+        phone: '+38 067 0000000',
         assignedToId: 'emp-kyiv-1',
       }),
       expect.arrayContaining(['phone', 'manager']),

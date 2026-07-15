@@ -1,4 +1,5 @@
 import type { Lead, Office } from '../models/database';
+import { formatPhoneDisplay } from '../core/phone/phone';
 import type {
   CloseReason,
   FirstCall,
@@ -349,7 +350,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     version: row.version ?? 1,
     archivedAt: row.archived_at ?? null,
     name: row.name ?? 'Без імені',
-    phone: row.phone ?? '—',
+    phone: formatPhoneDisplay(row.phone, officeCode),
     email: row.email,
     leadStatus: mapLeadStatus(row.lead_status),
     workflowStatus,

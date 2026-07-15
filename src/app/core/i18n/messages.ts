@@ -357,6 +357,11 @@ export const messages = {
     pl: 'Podaj telefon klienta.',
     en: 'Enter the client phone.',
   },
+  'lead.phoneInvalid': {
+    uk: 'Телефон має некоректний формат.',
+    pl: 'Telefon ma nieprawidłowy format.',
+    en: 'Phone format is invalid.',
+  },
   'lead.emailInvalid': {
     uk: 'Email має некоректний формат.',
     pl: 'Email ma nieprawidłowy format.',
@@ -426,11 +431,17 @@ export const messages = {
     pl: 'Filtr statusu lejka',
     en: 'Workflow status filter',
   },
+  'leads.filter.all': { uk: 'Всі', pl: 'Wszystkie', en: 'All' },
   'leads.filter.new': { uk: 'Нова заявка', pl: 'Nowe zgłoszenie', en: 'New lead' },
   'leads.filter.firstCall': { uk: 'Перший дзвінок', pl: 'Pierwszy telefon', en: 'First call' },
   'leads.filter.visit': { uk: 'Візит у салон', pl: 'Wizyta w salonie', en: 'Showroom visit' },
   'leads.filter.closed': { uk: 'Закриті', pl: 'Zamknięte', en: 'Closed' },
   'leads.filter.contract': { uk: 'Договір', pl: 'Umowa', en: 'Contract' },
+  'leads.filter.byManager': {
+    uk: 'Показати по менеджеру',
+    pl: 'Pokaż według menedżera',
+    en: 'Show by manager',
+  },
 
   'lead.assignManager': {
     uk: 'Призначити менеджера',

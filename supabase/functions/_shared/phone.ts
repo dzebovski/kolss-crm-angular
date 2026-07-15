@@ -28,7 +28,7 @@ function formatUkrainianPhone(digits: string): string | null {
     return `+38 ${normalized}`;
   }
 
-  return `+38 ${normalized.slice(0, 3)} ${normalized.slice(3, 6)} ${normalized.slice(6, 10)}`;
+  return `+38 ${normalized.slice(0, 3)} ${normalized.slice(3, 10)}`;
 }
 
 function formatPolishPhone(digits: string): string | null {

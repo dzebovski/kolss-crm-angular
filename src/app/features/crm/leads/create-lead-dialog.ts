@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, output, signal } from '@angular/co
 
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { normalizePhoneForOffice } from '../../../core/phone/phone';
 import { SessionService } from '../../../core/session/session.service';
 import type { LeadSource } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
@@ -220,9 +221,13 @@ export class CreateLeadDialog {
     const officeId = this.officeId();
     const source = this.source();
     const name = this.name().trim();
-    const phone = this.phone().trim();
+    const phoneRaw = this.phone().trim();
     const email = this.nullableText(this.email());
     const estimatedBudget = this.parseOptionalMoney(this.budget());
+    const officeCode =
+      (this.session.officeContext()?.filterOffices ?? []).find((office) => office.id === officeId)
+        ?.code ?? 'kyiv';
+    const phone = normalizePhoneForOffice(phoneRaw, officeCode);
 
     let valid = true;
     if (!officeId) {
@@ -237,8 +242,11 @@ export class CreateLeadDialog {
       this.nameError.set('Вкажіть імʼя клієнта.');
       valid = false;
     }
-    if (!phone) {
-      this.phoneError.set('Вкажіть телефон клієнта.');
+    if (!phoneRaw) {
+      this.phoneError.set(this.i18n.t('lead.phoneRequired'));
+      valid = false;
+    } else if (!phone) {
+      this.phoneError.set(this.i18n.t('lead.phoneInvalid'));
       valid = false;
     }
     if (email && !this.isValidEmail(email)) {
@@ -249,7 +257,7 @@ export class CreateLeadDialog {
       this.budgetError.set('Бюджет має бути додатним числом або порожнім.');
       valid = false;
     }
-    if (!valid) return;
+    if (!valid || !phone) return;
 
     this.submitting.set(true);
     try {

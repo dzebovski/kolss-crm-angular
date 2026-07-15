@@ -78,6 +78,32 @@ describe('mapLeadListRow first_contact_attempt', () => {
     expect(mapLeadListRow(baseRow).firstCall).toBeNull();
     expect(mapLeadListRow({ ...baseRow, first_contact_attempt: null }).firstCall).toBeNull();
   });
+
+  it('formats Ukrainian phone to +38 XXX XXXXXXX', () => {
+    expect(mapLeadListRow(baseRow).phone).toBe('+38 050 1112233');
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        phone: '+380 67 214 88 19',
+      }).phone,
+    ).toBe('+38 067 2148819');
+  });
+
+  it('formats Warsaw phone to +48 XXX XXX XXX', () => {
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        phone: '501223118',
+        offices: {
+          id: 'office-warsaw',
+          code: 'warsaw',
+          name_uk: 'Варшава',
+          name_pl: 'Warszawa',
+          is_active: true,
+        },
+      }).phone,
+    ).toBe('+48 501 223 118');
+  });
 });
 
 describe('mapLeadListRow close', () => {

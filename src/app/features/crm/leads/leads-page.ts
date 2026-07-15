@@ -1,4 +1,4 @@
-import { Component, computed, inject, resource, signal } from '@angular/core';
+import { Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -15,39 +15,90 @@ import { UsersService } from '../../../services/users.service';
 import type { MockLead } from '../../../services/crm-mock.types';
 import { UiAlert } from '../../../ui/feedback/ui-alert';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
+import { UiChip } from '../../../ui/feedback/ui-chip';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
+import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { CreateLeadDialog } from './create-lead-dialog';
-
-type WorkflowFilterKey = 'new' | 'first_call_done' | 'visit' | 'closed' | 'successful';
+import {
+  readLeadsPagePreferences,
+  writeLeadsPagePreferences,
+  type WorkflowFilterKey,
+} from './leads-page-preferences.storage';
 
 const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_completed']);
 
 @Component({
   selector: 'app-leads-page',
-  imports: [CreateLeadDialog, UiAlert, UiBadge, UiButton, UiIcon, UiTextField, UiUser, TranslatePipe],
+  imports: [
+    CreateLeadDialog,
+    UiAlert,
+    UiBadge,
+    UiButton,
+    UiChip,
+    UiIcon,
+    UiSelect,
+    UiTextField,
+    UiUser,
+    TranslatePipe,
+  ],
   template: `
     <section class="crm-page" aria-labelledby="leads-title">
-      <header class="page-header">
-        <div>
-          <p class="page-kicker">{{ 'leads.kicker' | translate }}</p>
+      <header class="leads-overview">
+        <div class="leads-overview__primary">
           <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
-          <p>{{ 'leads.subtitle' | translate }}</p>
-        </div>
-        <div class="page-header-actions">
-          <div class="period-switcher" [attr.aria-label]="'reports.period' | translate">
-            @for (period of periods(); track period.days ?? 'all') {
-              <button
-                type="button"
-                [class.is-active]="periodDays() === period.days"
-                (click)="periodDays.set(period.days)"
+
+          <app-ui-text-field
+            class="leads-search"
+            [label]="'common.search' | translate"
+            type="search"
+            [placeholder]="'leads.searchPlaceholder' | translate"
+            [(value)]="query"
+          />
+
+          <div class="manager-filter-bar">
+            <app-ui-select
+              class="manager-filter-select"
+              [label]="'leads.filter.byManager' | translate"
+              [placeholder]="'common.manager' | translate"
+              [options]="managerOptions()"
+              [(value)]="managerFilter"
+            />
+            @if (managerFilter(); as selectedManagerId) {
+              <app-ui-chip
+                class="manager-filter-chip"
+                [label]="employeeName(selectedManagerId)"
+                [removable]="true"
+                (removed)="clearManagerFilter()"
               >
-                {{ period.label }}
-              </button>
+                {{ employeeName(selectedManagerId) }}
+              </app-ui-chip>
             }
           </div>
+
+          <div class="status-filter-bar">
+            <div
+              class="period-switcher period-switcher--status"
+              role="group"
+              [attr.aria-label]="'leads.filterAria' | translate"
+            >
+              @for (filter of workflowFilters(); track filter.key ?? 'all') {
+                <button
+                  type="button"
+                  [class.is-active]="workflowFilter() === filter.key"
+                  [attr.aria-pressed]="workflowFilter() === filter.key"
+                  (click)="selectWorkflowFilter(filter.key)"
+                >
+                  {{ filter.label }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="leads-overview__secondary">
           <div class="page-actions">
             <app-ui-button (pressed)="openCreateDialog()">
               <app-ui-icon name="add" [size]="17" />
@@ -60,8 +111,29 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
             @if (isSuperAdmin()) {
               <app-ui-button variant="secondary" (pressed)="toggleArchived()">
                 <app-ui-icon name="archive" [size]="17" />
-                {{ showArchived() ? ('leads.showActive' | translate) : ('leads.showArchived' | translate) }}
+                {{
+                  showArchived()
+                    ? ('leads.showActive' | translate)
+                    : ('leads.showArchived' | translate)
+                }}
               </app-ui-button>
+            }
+          </div>
+
+          <div
+            class="period-switcher period-switcher--range"
+            role="group"
+            [attr.aria-label]="'reports.period' | translate"
+          >
+            @for (period of periods(); track period.days ?? 'all') {
+              <button
+                type="button"
+                [class.is-active]="periodDays() === period.days"
+                [attr.aria-pressed]="periodDays() === period.days"
+                (click)="periodDays.set(period.days)"
+              >
+                {{ period.label }}
+              </button>
             }
           </div>
         </div>
@@ -80,29 +152,6 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
         </div>
       }
 
-      <div class="leads-toolbar">
-        <app-ui-text-field
-          [label]="'common.search' | translate"
-          type="search"
-          [placeholder]="'leads.searchPlaceholder' | translate"
-          [(value)]="query"
-        />
-        <div class="toolbar-metrics" [attr.aria-label]="'leads.metricsAria' | translate">
-          <div>
-            <strong>{{ filteredLeads().length }}</strong>
-            <span>{{ 'leads.found' | translate }}</span>
-          </div>
-          <div>
-            <strong>{{ activeCount() }}</strong>
-            <span>{{ 'leads.active' | translate }}</span>
-          </div>
-          <div>
-            <strong>{{ terminalCount() }}</strong>
-            <span>{{ 'leads.terminal' | translate }}</span>
-          </div>
-        </div>
-      </div>
-
       @if (leadsResource.isLoading()) {
         <div class="table-state" aria-live="polite">
           @for (row of skeletonRows; track row) {
@@ -111,20 +160,6 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
         </div>
       } @else {
         <div class="leads-table-panel">
-          <div class="status-filter-bar">
-            <div class="period-switcher" [attr.aria-label]="'leads.filterAria' | translate">
-              @for (filter of workflowFilters(); track filter.key) {
-                <button
-                  type="button"
-                  [class.is-active]="workflowFilter() === filter.key"
-                  (click)="toggleWorkflowFilter(filter.key)"
-                >
-                  {{ filter.label }}
-                </button>
-              }
-            </div>
-          </div>
-
           @if (!filteredLeads().length) {
             <article class="empty-state empty-state--inset">
               <app-ui-icon name="inbox" [size]="28" />
@@ -247,10 +282,7 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
     </section>
 
     @if (createDialogOpen()) {
-      <app-create-lead-dialog
-        (dismissed)="closeCreateDialog()"
-        (created)="onLeadCreated($event)"
-      />
+      <app-create-lead-dialog (dismissed)="closeCreateDialog()" (created)="onLeadCreated($event)" />
     }
   `,
   styles: `
@@ -259,20 +291,23 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
       gap: var(--ui-space-5);
     }
 
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--ui-space-6);
+    .leads-overview {
+      display: grid;
+      grid-template-columns: minmax(30rem, 1fr) auto;
+      gap: clamp(var(--ui-space-8), 5vw, var(--ui-space-16));
       align-items: end;
     }
 
-    .page-kicker {
-      margin: 0 0 var(--ui-space-2);
-      color: var(--ui-text-subtle);
-      font-size: 0.75rem;
-      font-weight: 750;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+    .leads-overview__primary,
+    .leads-overview__secondary {
+      min-width: 0;
+      display: grid;
+      gap: var(--ui-space-3);
+    }
+
+    .leads-overview__secondary {
+      justify-items: end;
+      align-self: end;
     }
 
     h1 {
@@ -282,21 +317,14 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
       letter-spacing: 0;
     }
 
-    .page-header p:not(.page-kicker) {
-      margin: var(--ui-space-2) 0 0;
-      color: var(--ui-text-muted);
-    }
-
-    .page-header-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--ui-space-3);
-      align-items: center;
-      justify-content: flex-end;
+    .leads-search {
+      width: min(100%, 28rem);
     }
 
     .page-actions {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
       gap: var(--ui-space-2);
       white-space: nowrap;
     }
@@ -327,6 +355,11 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
       background: var(--ui-surface-raised);
       color: var(--ui-action);
       box-shadow: var(--ui-shadow-1);
+    }
+
+    .period-switcher button:hover:not(.is-active) {
+      background: var(--ui-surface-muted);
+      color: var(--ui-text);
     }
 
     .notice {
@@ -368,48 +401,6 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
       white-space: nowrap;
     }
 
-    .leads-toolbar {
-      display: grid;
-      grid-template-columns: minmax(20rem, 28rem) auto;
-      justify-content: space-between;
-      gap: var(--ui-space-4);
-      align-items: end;
-    }
-
-    .toolbar-metrics {
-      display: inline-flex;
-      align-items: stretch;
-      border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-md);
-      background: var(--ui-surface-raised);
-      overflow: hidden;
-    }
-
-    .toolbar-metrics div {
-      min-height: 0;
-      padding: 0.375rem 0.75rem;
-      display: inline-flex;
-      align-items: baseline;
-      gap: 0.375rem;
-      border-right: 1px solid var(--ui-border);
-    }
-
-    .toolbar-metrics div:last-child {
-      border-right: 0;
-    }
-
-    .toolbar-metrics strong {
-      font-family: var(--ui-font-display), sans-serif;
-      font-size: 1.0625rem;
-      line-height: 1.2;
-    }
-
-    .toolbar-metrics span {
-      color: var(--ui-text-muted);
-      font-size: 0.6875rem;
-      font-weight: 650;
-    }
-
     .leads-table-panel {
       border: 1px solid var(--ui-border);
       border-radius: var(--ui-radius-lg);
@@ -422,16 +413,29 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
       display: flex;
       flex-wrap: wrap;
       gap: var(--ui-space-2);
-      padding: var(--ui-space-3);
-      border-bottom: 1px solid var(--ui-border);
-      background: var(--ui-surface-subtle);
     }
 
-    .status-filter-bar .period-switcher {
+    .manager-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: var(--ui-space-3);
+    }
+
+    .manager-filter-select {
+      width: min(100%, 18rem);
+    }
+
+    /* UiSelect keeps a hint/message slot under the control; lift the chip to the trigger. */
+    .manager-filter-chip {
+      margin-bottom: calc(0.9375rem + var(--ui-space-2));
+    }
+
+    .period-switcher--status {
       flex-wrap: wrap;
     }
 
-    .status-filter-bar .period-switcher button {
+    .period-switcher--status button {
       min-width: auto;
     }
 
@@ -630,6 +634,22 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
     }
 
     @media (max-width: 64rem) {
+      .leads-overview {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .leads-overview__secondary {
+        justify-items: start;
+      }
+
+      .page-actions {
+        justify-content: flex-start;
+      }
+
+      .period-switcher--range {
+        flex-wrap: wrap;
+      }
+
       .col-source,
       .col-manager,
       .source-heading,
@@ -669,13 +689,28 @@ export class LeadsPage {
   private readonly router = inject(Router);
   protected readonly i18n = inject(I18nService);
 
+  private readonly initialPreferences = readLeadsPagePreferences();
+
   protected readonly query = signal('');
   protected readonly showArchived = signal(false);
-  protected readonly periodDays = signal<number | null>(7);
-  protected readonly workflowFilter = signal<WorkflowFilterKey | null>(null);
+  protected readonly periodDays = signal<number | null>(this.initialPreferences.periodDays);
+  protected readonly workflowFilter = signal<WorkflowFilterKey | null>(
+    this.initialPreferences.workflowFilter,
+  );
+  /** Empty string = no manager filter (matches UiSelect empty value). */
+  protected readonly managerFilter = signal('');
   protected readonly notice = signal('');
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
+
+  constructor() {
+    effect(() => {
+      writeLeadsPagePreferences({
+        periodDays: this.periodDays(),
+        workflowFilter: this.workflowFilter(),
+      });
+    });
+  }
 
   protected readonly periods = computed(() => {
     this.i18n.locale();
@@ -691,7 +726,8 @@ export class LeadsPage {
 
   protected readonly workflowFilters = computed(() => {
     this.i18n.locale();
-    const options: { key: WorkflowFilterKey; label: string }[] = [
+    const options: { key: WorkflowFilterKey | null; label: string }[] = [
+      { key: null, label: this.i18n.t('leads.filter.all') },
       { key: 'new', label: this.i18n.t('leads.filter.new') },
       { key: 'first_call_done', label: this.i18n.t('leads.filter.firstCall') },
       { key: 'visit', label: this.i18n.t('leads.filter.visit') },
@@ -715,16 +751,39 @@ export class LeadsPage {
     loader: () => this.usersService.listManagers(),
   });
 
+  protected readonly managerOptions = computed((): readonly UiSelectOption[] => {
+    const officeFilter = this.session.officeFilter();
+    const employees = this.employeesResource.value() ?? [];
+    return employees
+      .filter(
+        (employee) =>
+          employee.status === 'active' &&
+          employee.role !== 'super_admin' &&
+          (officeFilter === 'all' || employee.officeIds.includes(officeFilter)),
+      )
+      .map((employee) => ({
+        value: employee.id,
+        label: employee.displayName,
+        userId: employee.id,
+      }));
+  });
+
   protected readonly loadError = computed(() => {
     const error = this.leadsResource.error();
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
 
   protected readonly filteredLeads = computed(() => {
-    const leads = this.leadsResource.value() ?? [];
+    let leads = this.leadsResource.value() ?? [];
     const filter = this.workflowFilter();
-    if (!filter) return leads;
-    return leads.filter((lead) => this.matchesWorkflowFilter(lead, filter));
+    if (filter) {
+      leads = leads.filter((lead) => this.matchesWorkflowFilter(lead, filter));
+    }
+    const managerId = this.managerFilter();
+    if (managerId) {
+      leads = leads.filter((lead) => lead.assignedToId === managerId);
+    }
+    return leads;
   });
   protected readonly groupedLeads = computed(() => groupLeadsByYearMonth(this.filteredLeads()));
   protected readonly activeCount = computed(
@@ -746,8 +805,12 @@ export class LeadsPage {
   protected readonly workflowTone = workflowTone;
   protected readonly isSuperAdmin = () => this.auth.profile()?.role === 'super_admin';
 
-  protected toggleWorkflowFilter(key: WorkflowFilterKey): void {
-    this.workflowFilter.update((current) => (current === key ? null : key));
+  protected selectWorkflowFilter(key: WorkflowFilterKey | null): void {
+    this.workflowFilter.set(key);
+  }
+
+  protected clearManagerFilter(): void {
+    this.managerFilter.set('');
   }
 
   protected toggleArchived(): void {

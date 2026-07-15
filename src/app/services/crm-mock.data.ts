@@ -114,7 +114,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
   {
     id: 'lead-1001',
     name: 'Марина Гончар',
-    phone: '+380 67 214 88 19',
+    phone: '+38 067 2148819',
     email: 'maryna.honchar@example.com',
     leadStatus: 'new',
     workflowStatus: 'new',
@@ -195,7 +195,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
   {
     id: 'lead-1003',
     name: 'Олександр Бойко',
-    phone: '+380 93 118 44 02',
+    phone: '+38 093 1184402',
     email: null,
     leadStatus: 'in_progress',
     workflowStatus: 'first_call_done',
@@ -304,7 +304,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
   {
     id: 'lead-1005',
     name: 'Ігор Мельник',
-    phone: '+380 50 411 31 44',
+    phone: '+38 050 4113144',
     email: 'ihor.melnyk@example.com',
     leadStatus: 'in_progress',
     workflowStatus: 'visit_rescheduled',
@@ -418,7 +418,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
   {
     id: 'lead-1007',
     name: 'Катерина Савчук',
-    phone: '+380 68 901 77 30',
+    phone: '+38 068 9017730',
     email: 'kateryna.s@example.com',
     leadStatus: 'converted',
     workflowStatus: 'successful',
@@ -539,7 +539,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
   {
     id: 'lead-1009',
     name: 'Вікторія Дуб',
-    phone: '+380 97 600 12 85',
+    phone: '+38 097 6001285',
     email: 'victoria.dub@example.com',
     leadStatus: 'failed',
     workflowStatus: 'closed',
