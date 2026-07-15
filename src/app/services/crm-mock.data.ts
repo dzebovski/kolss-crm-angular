@@ -446,7 +446,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
     contract: {
       contractNumber: 'K-KY-2026-0618',
       amount: 29800,
-      prepayment: 9000,
+      currency: 'EUR',
       comment: 'Підписано після уточнення технічного завдання.',
       signedAt: '2026-06-18T13:20:00.000Z',
     },

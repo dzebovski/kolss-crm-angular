@@ -19,6 +19,14 @@ export class LeadWorkflowService {
     await this.api.leadAction(leadId, 'mark-thinking');
   }
 
+  async activateLead(leadId: string): Promise<void> {
+    await this.api.leadAction(leadId, 'activate');
+  }
+
+  async reopenLead(leadId: string): Promise<void> {
+    await this.api.leadAction(leadId, 'reopen');
+  }
+
   async recordFirstCall(
     leadId: string,
     result: FirstCallResultCode,

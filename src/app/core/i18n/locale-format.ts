@@ -21,11 +21,15 @@ export function formatDateTimeForLocale(value: string | null | undefined, locale
   }).format(new Date(value));
 }
 
-export function formatMoneyForLocale(value: number | null | undefined, locale: LocaleCode): string {
+export function formatMoneyForLocale(
+  value: number | null | undefined,
+  locale: LocaleCode,
+  currency = 'EUR',
+): string {
   if (value == null) return '—';
   return new Intl.NumberFormat(localeToBcp47(locale), {
     style: 'currency',
-    currency: 'EUR',
+    currency,
     maximumFractionDigits: 0,
   }).format(value);
 }

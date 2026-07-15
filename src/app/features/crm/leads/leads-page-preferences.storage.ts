@@ -1,4 +1,10 @@
-export type WorkflowFilterKey = 'new' | 'first_call_done' | 'visit' | 'closed' | 'successful';
+export type WorkflowFilterKey =
+  | 'new'
+  | 'callback_required'
+  | 'first_call_done'
+  | 'visit'
+  | 'closed'
+  | 'successful';
 
 export type LeadsPagePreferences = {
   periodDays: number | null;
@@ -10,6 +16,7 @@ export const LEADS_PAGE_PREFERENCES_STORAGE_KEY = 'kolss.leads-list-preferences'
 const ALLOWED_PERIOD_DAYS = new Set([7, 30, 40, 180]);
 const ALLOWED_WORKFLOW_FILTERS = new Set<WorkflowFilterKey>([
   'new',
+  'callback_required',
   'first_call_done',
   'visit',
   'closed',

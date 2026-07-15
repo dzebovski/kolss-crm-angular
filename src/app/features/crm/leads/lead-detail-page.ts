@@ -15,6 +15,8 @@ import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
   CLOSE_REASON_LABELS,
+  currenciesForOffice,
+  defaultCurrencyForOffice,
   employeeInitials,
   FIRST_CALL_RESULT_CODES,
   LEAD_SOURCE_ICONS,
@@ -25,7 +27,7 @@ import { LeadWorkflowService } from '../../../services/lead-workflow.service';
 import { LeadsService } from '../../../services/leads.service';
 import { LossReasonsService } from '../../../services/loss-reasons.service';
 import { UsersService } from '../../../services/users.service';
-import type { CloseReason, LeadEvent, MockLead } from '../../../services/crm-mock.types';
+import type { CloseReason, ContractCurrency, LeadEvent, MockLead } from '../../../services/crm-mock.types';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
@@ -186,6 +188,7 @@ const NO_MANAGER_VALUE = '__none__';
           <div class="lead-actions">
             @if (lead.archivedAt && auth.profile()?.role === 'super_admin') {
               <app-ui-button [loading]="actionPending()" (pressed)="restoreLead(lead)">
+                <app-ui-icon name="arrow_upward" [size]="16" />
                 {{ 'lead.restore' | translate }}
               </app-ui-button>
               <app-ui-button
@@ -193,24 +196,37 @@ const NO_MANAGER_VALUE = '__none__';
                 [loading]="deletingLead()"
                 (pressed)="confirmDeleteLead(lead)"
               >
+                <app-ui-icon name="delete" [size]="16" />
                 {{ 'lead.deletePermanently' | translate }}
               </app-ui-button>
             } @else if (!lead.archivedAt) {
-              <app-ui-button
-                variant="secondary"
-                [disabled]="isTerminal(lead) || lead.workflowStatus === 'thinking'"
-                (pressed)="markThinking(lead)"
-              >
-                {{ 'lead.clientThinking' | translate }}
-              </app-ui-button>
+              @if (lead.workflowStatus === 'thinking') {
+                <app-ui-button
+                  variant="secondary"
+                  (pressed)="activateLead(lead)"
+                >
+                  <app-ui-icon name="automation" [size]="16" />
+                  {{ 'lead.activate' | translate }}
+                </app-ui-button>
+              } @else if (!isTerminal(lead)) {
+                <app-ui-button
+                  variant="secondary"
+                  (pressed)="markThinking(lead)"
+                >
+                  <app-ui-icon name="warning" [size]="16" />
+                  {{ 'lead.clientThinking' | translate }}
+                </app-ui-button>
+              }
               <app-ui-button
                 variant="secondary"
                 [disabled]="isTerminal(lead)"
                 (pressed)="openCloseDialog()"
               >
+                <app-ui-icon name="close" [size]="16" />
                 {{ 'lead.closeLead' | translate }}
               </app-ui-button>
               <app-ui-button [disabled]="isTerminal(lead)" (pressed)="openSuccessDialog()">
+                <app-ui-icon name="check_circle" [size]="16" />
                 {{ 'lead.markSuccessful' | translate }}
               </app-ui-button>
             }
@@ -219,6 +235,16 @@ const NO_MANAGER_VALUE = '__none__';
 
         @if (actionError()) {
           <div class="inline-error" role="alert">{{ actionError() }}</div>
+        }
+
+        @if (lead.workflowStatus === 'thinking' && !lead.archivedAt) {
+          <article class="status-banner status-banner--thinking">
+            <app-ui-icon name="warning" [size]="24" />
+            <div>
+              <h2>{{ 'workflow.thinking' | translate }}</h2>
+              <p>{{ 'lead.thinkingBanner' | translate }}</p>
+            </div>
+          </article>
         }
 
         @if (isTerminal(lead)) {
@@ -245,6 +271,14 @@ const NO_MANAGER_VALUE = '__none__';
                   <app-ui-icon name="edit" [size]="16" />
                   {{ 'common.edit' | translate }}
                 </app-ui-button>
+                <app-ui-button
+                  variant="secondary"
+                  size="small"
+                  (pressed)="reopenLead(lead)"
+                >
+                  <app-ui-icon name="inbox" [size]="16" />
+                  {{ 'lead.reopen' | translate }}
+                </app-ui-button>
                 @if (canArchiveLead(lead)) {
                   <app-ui-button
                     variant="secondary"
@@ -263,7 +297,7 @@ const NO_MANAGER_VALUE = '__none__';
 
         <div class="lead-layout">
           <main class="lead-main">
-            @if (!lead.firstCall && !isTerminal(lead)) {
+            @if ((!lead.firstCall || lead.workflowStatus === 'callback_required') && !isTerminal(lead)) {
               <section class="workflow-panel" aria-labelledby="first-call-title">
                 <header>
                   <span>01</span>
@@ -286,7 +320,10 @@ const NO_MANAGER_VALUE = '__none__';
                   />
                 </div>
                 <app-ui-button (pressed)="saveFirstCall(lead)">
-                  {{ 'lead.saveCall' | translate }}
+                  {{
+                    (firstCallResult() === 'no_answer' ? 'lead.needsCallback' : 'lead.saveCall')
+                      | translate
+                  }}
                 </app-ui-button>
               </section>
             }
@@ -682,14 +719,30 @@ const NO_MANAGER_VALUE = '__none__';
                 [label]="'lead.contractNumber' | translate"
                 [(value)]="contractNumber"
               />
-              <app-ui-text-field
-                [label]="'lead.contractAmount' | translate"
-                [(value)]="contractAmount"
-              />
-              <app-ui-text-field
-                [label]="'lead.contractPrepayment' | translate"
-                [(value)]="contractPrepayment"
-              />
+              <div class="contract-amount-field">
+                <app-ui-text-field
+                  [label]="'lead.contractAmount' | translate"
+                  [(value)]="contractAmount"
+                />
+                <div
+                  class="currency-switcher"
+                  role="radiogroup"
+                  [attr.aria-label]="'lead.contractCurrency' | translate"
+                >
+                  @for (option of contractCurrencyOptions(); track option.code) {
+                    <button
+                      type="button"
+                      class="currency-switcher__option"
+                      role="radio"
+                      [class.currency-switcher__option--active]="contractCurrency() === option.code"
+                      [attr.aria-checked]="contractCurrency() === option.code"
+                      (click)="contractCurrency.set(option.code)"
+                    >
+                      {{ option.symbol }}
+                    </button>
+                  }
+                </div>
+              </div>
               <app-ui-textarea
                 [label]="'lead.comment' | translate"
                 [rows]="3"
@@ -801,7 +854,8 @@ const NO_MANAGER_VALUE = '__none__';
     .workflow-panel,
     .timeline-panel,
     .summary-panel,
-    .terminal-panel {
+    .terminal-panel,
+    .status-banner {
       border: 1px solid var(--ui-border);
       border-radius: var(--ui-radius-lg);
       background: var(--ui-surface-raised);
@@ -810,7 +864,8 @@ const NO_MANAGER_VALUE = '__none__';
 
     .workflow-panel,
     .summary-panel,
-    .terminal-panel {
+    .terminal-panel,
+    .status-banner {
       padding: var(--ui-space-5);
       display: grid;
       gap: var(--ui-space-4);
@@ -873,6 +928,27 @@ const NO_MANAGER_VALUE = '__none__';
     .terminal-panel--success {
       background: var(--ui-success-soft);
       color: var(--ui-success);
+    }
+
+    .status-banner {
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      margin-bottom: var(--ui-space-4);
+    }
+
+    .status-banner--thinking {
+      background: color-mix(in srgb, var(--ui-warning, #c17a2d) 12%, white);
+      color: var(--ui-warning, #8a5a16);
+    }
+
+    .status-banner h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .status-banner p {
+      margin: 0.25rem 0 0;
+      color: color-mix(in srgb, currentColor 75%, black);
     }
 
     .terminal-panel p {
@@ -1113,6 +1189,49 @@ const NO_MANAGER_VALUE = '__none__';
       justify-content: flex-end;
     }
 
+    .contract-amount-field {
+      display: grid;
+      gap: var(--ui-space-2);
+    }
+
+    .currency-switcher {
+      display: inline-flex;
+      width: fit-content;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-md);
+      overflow: hidden;
+      background: var(--ui-surface);
+    }
+
+    .currency-switcher__option {
+      min-width: 2.5rem;
+      min-height: 2rem;
+      padding: 0 var(--ui-space-3);
+      border: 0;
+      border-right: 1px solid var(--ui-border);
+      background: transparent;
+      color: var(--ui-text-muted);
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .currency-switcher__option:last-child {
+      border-right: 0;
+    }
+
+    .currency-switcher__option--active {
+      background: var(--ui-action);
+      color: #fff;
+    }
+
+    .currency-switcher__option:focus-visible {
+      outline: 2px solid var(--ui-focus);
+      outline-offset: -2px;
+      z-index: 1;
+    }
+
     @media (max-width: 48rem) {
       .lead-header,
       .lead-layout,
@@ -1260,10 +1379,14 @@ export class LeadDetailPage {
   protected readonly closeComment = signal('');
   protected readonly contractNumber = signal('');
   protected readonly contractAmount = signal('');
-  protected readonly contractPrepayment = signal('');
+  protected readonly contractCurrency = signal<ContractCurrency>('UAH');
   protected readonly contractComment = signal('');
   protected readonly skeletonPanels = [1, 2, 3];
 
+  protected readonly contractCurrencyOptions = computed(() => {
+    const office = this.leadResource.value()?.officeCode ?? 'kyiv';
+    return currenciesForOffice(office);
+  });
   protected readonly firstCallOptions = computed((): readonly UiSelectOption[] =>
     FIRST_CALL_RESULT_CODES.map((code) => ({
       value: code,
@@ -1299,6 +1422,8 @@ export class LeadDetailPage {
       'showroom_visit_completed',
       'visit_completed',
       'thinking',
+      'activated',
+      'reopened',
       'comment',
       'closed',
       'bad_lead',
@@ -1310,7 +1435,8 @@ export class LeadDetailPage {
   });
 
   protected formatDateTime = (value: string | null | undefined) => this.i18n.formatDateTime(value);
-  protected formatMoney = (value: number | null | undefined) => this.i18n.formatMoney(value);
+  protected formatMoney = (value: number | null | undefined, currency?: string) =>
+    this.i18n.formatMoney(value, currency);
   protected officeName = (code: string) => this.i18n.officeFilterLabel(code);
   protected readonly workflowTone = workflowTone;
 
@@ -1514,7 +1640,7 @@ export class LeadDetailPage {
     if (lead.contract) {
       return this.i18n.t('lead.contractSummary', {
         number: lead.contract.contractNumber,
-        amount: this.i18n.formatMoney(lead.contract.amount),
+        amount: this.i18n.formatMoney(lead.contract.amount, lead.contract.currency),
       });
     }
     if (lead.close) {
@@ -1529,6 +1655,14 @@ export class LeadDetailPage {
 
   protected async markThinking(lead: MockLead): Promise<void> {
     await this.runAction(() => this.workflowService.markThinking(lead.id));
+  }
+
+  protected async activateLead(lead: MockLead): Promise<void> {
+    await this.runAction(() => this.workflowService.activateLead(lead.id));
+  }
+
+  protected async reopenLead(lead: MockLead): Promise<void> {
+    await this.runAction(() => this.workflowService.reopenLead(lead.id));
   }
 
   protected async saveFirstCall(lead: MockLead): Promise<void> {
@@ -1799,6 +1933,8 @@ export class LeadDetailPage {
 
   protected openSuccessDialog(): void {
     this.dialogError.set('');
+    const office = this.leadResource.value()?.officeCode ?? 'kyiv';
+    this.contractCurrency.set(defaultCurrencyForOffice(office));
     this.successDialogOpen.set(true);
   }
 
@@ -1825,12 +1961,10 @@ export class LeadDetailPage {
 
   protected async submitSuccess(lead: MockLead): Promise<void> {
     const amount = this.parseMoney(this.contractAmount());
-    const prepaymentRaw = this.contractPrepayment().trim();
-    const prepayment = prepaymentRaw ? this.parseMoney(prepaymentRaw) : null;
     const validationError = await this.workflowService.markSuccessful(lead.id, {
       contractNumber: this.contractNumber(),
       amount,
-      prepayment,
+      currency: this.contractCurrency(),
       comment: this.contractComment(),
     });
     if (validationError) {
@@ -1840,7 +1974,7 @@ export class LeadDetailPage {
     this.successDialogOpen.set(false);
     this.contractNumber.set('');
     this.contractAmount.set('');
-    this.contractPrepayment.set('');
+    this.contractCurrency.set(defaultCurrencyForOffice(lead.officeCode));
     this.contractComment.set('');
     await this.leadResource.reload();
   }

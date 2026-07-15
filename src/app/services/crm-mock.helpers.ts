@@ -3,6 +3,7 @@ import type { UiIconName } from '../ui/icon/ui-icon';
 import { CRM_MOCK_NOW } from './crm-mock.data';
 import type {
   CloseLeadPayload,
+  ContractCurrency,
   FunnelStage,
   LeadMonthGroup,
   ManagerOfficeReport,
@@ -53,6 +54,7 @@ export const CREATE_LEAD_SOURCE_OPTIONS: readonly { readonly value: LeadSource; 
 export const WORKFLOW_LABELS: Record<LeadWorkflowStatus, string> = {
   new: 'Нова заявка',
   taken: 'В роботі',
+  callback_required: 'Потрібно передзвонити',
   first_call_done: 'Перший дзвінок',
   visit_scheduled: 'Очікуємо в салоні',
   visit_rescheduled: 'Візит перенесено',
@@ -134,6 +136,7 @@ export function workflowTone(status: LeadWorkflowStatus): UiBadgeTone {
   const tones: Record<LeadWorkflowStatus, UiBadgeTone> = {
     new: 'brand',
     taken: 'info',
+    callback_required: 'warning',
     first_call_done: 'info',
     visit_scheduled: 'warning',
     visit_rescheduled: 'warning',
@@ -157,8 +160,8 @@ export function formatDateTime(value: string | null | undefined): string {
   return formatDateTimeForLocale(value, getActiveLocale());
 }
 
-export function formatMoney(value: number | null | undefined): string {
-  return formatMoneyForLocale(value, getActiveLocale());
+export function formatMoney(value: number | null | undefined, currency = 'EUR'): string {
+  return formatMoneyForLocale(value, getActiveLocale(), currency);
 }
 
 export function filterLeadsByOffice(
@@ -211,6 +214,37 @@ export function groupLeadsByYearMonth(leads: readonly MockLead[]): readonly Lead
   });
 }
 
+export const CONTRACT_CURRENCIES = ['UAH', 'USD', 'EUR', 'PLN'] as const satisfies readonly ContractCurrency[];
+
+export interface ContractCurrencyOption {
+  readonly code: ContractCurrency;
+  readonly symbol: string;
+}
+
+const KYIV_CURRENCIES: readonly ContractCurrencyOption[] = [
+  { code: 'UAH', symbol: '₴' },
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+];
+
+const WARSAW_CURRENCIES: readonly ContractCurrencyOption[] = [
+  { code: 'PLN', symbol: 'zł' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'USD', symbol: '$' },
+];
+
+export function currenciesForOffice(office: OfficeId): readonly ContractCurrencyOption[] {
+  return office === 'warsaw' ? WARSAW_CURRENCIES : KYIV_CURRENCIES;
+}
+
+export function defaultCurrencyForOffice(office: OfficeId): ContractCurrency {
+  return office === 'warsaw' ? 'PLN' : 'UAH';
+}
+
+export function isContractCurrency(value: unknown): value is ContractCurrency {
+  return typeof value === 'string' && (CONTRACT_CURRENCIES as readonly string[]).includes(value);
+}
+
 export function validateCloseLead(payload: CloseLeadPayload): string | null {
   if (!payload.reason) return 'validation.closeReasonRequired';
   if (payload.reason === 'lost_client' && !payload.comment.trim()) {
@@ -224,8 +258,8 @@ export function validateSuccessfulLead(payload: SuccessfulLeadPayload): string |
   if (!Number.isFinite(payload.amount) || payload.amount <= 0) {
     return 'validation.contractAmount';
   }
-  if (payload.prepayment != null && payload.prepayment < 0) {
-    return 'validation.prepaymentNegative';
+  if (!isContractCurrency(payload.currency)) {
+    return 'validation.contractCurrency';
   }
   return null;
 }

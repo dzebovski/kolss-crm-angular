@@ -2,6 +2,7 @@ import type { Lead, Office } from '../models/database';
 import { formatPhoneDisplay } from '../core/phone/phone';
 import type {
   CloseReason,
+  ContractCurrency,
   FirstCall,
   LeadClose,
   LeadContract,
@@ -14,7 +15,7 @@ import type {
   OfficeId,
   ShowroomVisit,
 } from './crm-mock.types';
-import { resolveCloseUserComment } from './crm-mock.helpers';
+import { isContractCurrency, resolveCloseUserComment } from './crm-mock.helpers';
 import { toSimplifiedWorkflowStatus } from './workflow-legacy.mapper';
 
 export const LEAD_LIST_SELECT = `
@@ -38,6 +39,7 @@ export type LeadListRow = Lead & {
   offices?: Office | Office[] | null;
   profiles?: { id: string; display_name: string | null } | { id: string; display_name: string | null }[] | null;
   first_contact_attempt?: FirstContactAttemptEmbed | null;
+  reactivated_at?: string | null;
 };
 
 export interface LeadDetailRelations {
@@ -139,6 +141,8 @@ function mapEventType(eventType: string): LeadEventType {
     visit_completed: 'visit_completed',
     comment: 'comment',
     thinking: 'thinking',
+    activated: 'activated',
+    reopened: 'reopened',
     closed: 'closed',
     bad_lead: 'closed',
     successful: 'successful',
@@ -193,9 +197,13 @@ function buildContract(
     return {
       contractNumber: structured.contractNumber,
       amount: structured.amount,
-      prepayment: structured.prepayment,
+      currency: structured.currency,
       comment: successEvent?.comment?.trim() || structured.comment,
-      signedAt: signed?.signed_at ?? successEvent?.created_at ?? new Date().toISOString(),
+      signedAt:
+        structured.signedAt ??
+        signed?.signed_at ??
+        successEvent?.created_at ??
+        new Date().toISOString(),
     };
   }
 
@@ -205,7 +213,7 @@ function buildContract(
   return {
     contractNumber: parsed.contractNumber,
     amount: parsed.amount,
-    prepayment: parsed.prepayment,
+    currency: parsed.currency,
     comment: parsed.comment,
     signedAt: signed.signed_at ?? signed.created_at,
   };
@@ -214,37 +222,40 @@ function buildContract(
 function parseContractFromNewValue(value: unknown): {
   contractNumber: string;
   amount: number;
-  prepayment: number | null;
+  currency: ContractCurrency;
   comment: string;
+  signedAt?: string;
 } | null {
   if (!isRecord(value)) return null;
   const contractNumber = value['contract_number'];
   const amount = value['amount'];
   if (typeof contractNumber !== 'string' || typeof amount !== 'number') return null;
-  const prepayment = value['prepayment'];
+  const signedAt = value['signed_at'];
   return {
     contractNumber,
     amount,
-    prepayment: typeof prepayment === 'number' ? prepayment : null,
+    currency: isContractCurrency(value['currency']) ? value['currency'] : 'EUR',
     comment: '',
+    signedAt: typeof signedAt === 'string' ? signedAt : undefined,
   };
 }
 
 function parseContractComment(comment: string | null): {
   contractNumber: string;
   amount: number;
-  prepayment: number | null;
+  currency: ContractCurrency;
   comment: string;
 } {
   if (!comment) {
-    return { contractNumber: '—', amount: 0, prepayment: null, comment: '' };
+    return { contractNumber: '—', amount: 0, currency: 'EUR', comment: '' };
   }
   const numberMatch = comment.match(/№\s*([^\s,]+)/i);
-  const amountMatch = comment.match(/(\d[\d\s.,]*)\s*(EUR|PLN|USD)?/i);
+  const amountMatch = comment.match(/(\d[\d\s.,]*)\s*(EUR|PLN|USD|UAH)?/i);
+  const currencyRaw = amountMatch?.[2]?.toUpperCase();
   return {
     contractNumber: numberMatch?.[1] ?? '—',
     amount: amountMatch ? Number(amountMatch[1].replace(/\s/g, '').replace(',', '.')) : 0,
-    prepayment: null,
+    currency: isContractCurrency(currencyRaw) ? currencyRaw : 'EUR',
     comment,
   };
 }
@@ -346,6 +357,13 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     relations.events.find((event) => event.event_type === 'taken')?.actor_id ??
     row.assigned_to;
 
+  const reactivatedAt =
+    row.reactivated_at ??
+    [...relations.events]
+      .filter((event) => event.event_type === 'activated' || event.event_type === 'reopened')
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.created_at ??
+    null;
+
   return {
     id: row.id,
     version: row.version ?? 1,
@@ -358,6 +376,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     officeCode,
     source: mapSource(row.source_channel, row.source_system),
     sourceCreatedAt: row.source_created_at ?? row.created_at,
+    reactivatedAt,
     initialMessage: row.order_comment ?? row.source_note ?? '',
     cityRegion: row.city_region ?? '',
     productInterest: row.product_interest ?? '',

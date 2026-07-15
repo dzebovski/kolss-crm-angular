@@ -62,8 +62,8 @@ export class I18nService {
     return formatDateTimeForLocale(value, this.locale());
   }
 
-  formatMoney(value: number | null | undefined): string {
-    return formatMoneyForLocale(value, this.locale());
+  formatMoney(value: number | null | undefined, currency = 'EUR'): string {
+    return formatMoneyForLocale(value, this.locale(), currency);
   }
 
   formatMonthYear(year: number, month: number): string {

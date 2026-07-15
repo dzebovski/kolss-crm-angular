@@ -208,6 +208,12 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
                       <td class="date-cell" [attr.data-label]="'common.date' | translate">
                         <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
                         <small>{{ officeName(lead.officeCode) }}</small>
+                        @if (lead.reactivatedAt) {
+                          <small>{{
+                            'leads.activatedAt'
+                              | translate: { date: formatDateTime(lead.reactivatedAt) }
+                          }}</small>
+                        }
                       </td>
                       <td class="client-cell" [attr.data-label]="'leads.colClient' | translate">
                         <strong>{{ lead.name }}</strong>
@@ -226,6 +232,22 @@ const VISIT_STATUSES = new Set(['visit_scheduled', 'visit_rescheduled', 'visit_c
                           } @else {
                             <span>{{ closeReasonLabel(lead) }}</span>
                             <small>{{ formatDateTime(close.closedAt) }}</small>
+                          }
+                        } @else if (lead.workflowStatus === 'callback_required') {
+                          @if (lead.firstCall; as call) {
+                            @if (call.comment.trim()) {
+                              <span class="call-cell__comment" [attr.title]="call.comment">{{
+                                call.comment
+                              }}</span>
+                              <small
+                                >{{ workflowLabel(lead) }} · {{ formatDateTime(call.date) }}</small
+                              >
+                            } @else {
+                              <span>{{ workflowLabel(lead) }}</span>
+                              <small>{{ formatDateTime(call.date) }}</small>
+                            }
+                          } @else {
+                            <span>{{ workflowLabel(lead) }}</span>
                           }
                         } @else if (lead.firstCall; as call) {
                           @if (call.comment.trim()) {
@@ -729,6 +751,7 @@ export class LeadsPage {
     const options: { key: WorkflowFilterKey | null; label: string }[] = [
       { key: null, label: this.i18n.t('leads.filter.all') },
       { key: 'new', label: this.i18n.t('leads.filter.new') },
+      { key: 'callback_required', label: this.i18n.t('leads.filter.needsCallback') },
       { key: 'first_call_done', label: this.i18n.t('leads.filter.firstCall') },
       { key: 'visit', label: this.i18n.t('leads.filter.visit') },
       { key: 'closed', label: this.i18n.t('leads.filter.closed') },
@@ -821,6 +844,8 @@ export class LeadsPage {
     switch (filter) {
       case 'new':
         return lead.workflowStatus === 'new';
+      case 'callback_required':
+        return lead.workflowStatus === 'callback_required';
       case 'first_call_done':
         return lead.workflowStatus === 'first_call_done';
       case 'visit':

@@ -115,6 +115,11 @@ export const messages = {
 
   'workflow.new': { uk: 'Нова заявка', pl: 'Nowe zgłoszenie', en: 'New lead' },
   'workflow.taken': { uk: 'В роботі', pl: 'W toku', en: 'In progress' },
+  'workflow.callback_required': {
+    uk: 'Потрібно передзвонити',
+    pl: 'Trzeba oddzwonić',
+    en: 'Callback required',
+  },
   'workflow.first_call_done': { uk: 'Перший дзвінок', pl: 'Pierwszy telefon', en: 'First call' },
   'workflow.visit_scheduled': { uk: 'Очікуємо в салоні', pl: 'Oczekujemy w salonie', en: 'Awaiting showroom' },
   'workflow.visit_rescheduled': { uk: 'Візит перенесено', pl: 'Wizyta przełożona', en: 'Visit rescheduled' },
@@ -170,6 +175,16 @@ export const messages = {
     uk: 'Клієнт пішов думати',
     pl: 'Klient poszedł pomyśleć',
     en: 'Client went to think',
+  },
+  'event.activated': {
+    uk: 'Лід активовано',
+    pl: 'Lead aktywowany',
+    en: 'Lead activated',
+  },
+  'event.reopened': {
+    uk: 'Лід відкрито знову',
+    pl: 'Lead otwarty ponownie',
+    en: 'Lead reopened',
   },
   'event.attachment': { uk: 'Вкладення', pl: 'Załącznik', en: 'Attachment' },
   'event.lead_assigned': { uk: 'Лід призначено', pl: 'Lead przypisany', en: 'Lead assigned' },
@@ -253,6 +268,18 @@ export const messages = {
     pl: 'Klient poszedł pomyśleć',
     en: 'Client went to think',
   },
+  'lead.activate': { uk: 'Активувати', pl: 'Aktywuj', en: 'Activate' },
+  'lead.reopen': { uk: 'Відкрити', pl: 'Otwórz', en: 'Open' },
+  'lead.thinkingBanner': {
+    uk: 'Клієнт на паузі. Можна активувати лід знову в загальну чергу.',
+    pl: 'Klient na pauzie. Możesz ponownie aktywować lead do kolejki.',
+    en: 'Client is on pause. You can activate the lead back into the queue.',
+  },
+  'leads.activatedAt': {
+    uk: 'Активовано: {date}',
+    pl: 'Aktywowano: {date}',
+    en: 'Activated: {date}',
+  },
   'lead.deletePermanently': {
     uk: 'Видалити остаточно',
     pl: 'Usuń trwale',
@@ -286,6 +313,11 @@ export const messages = {
     en: 'Schedule, reschedule, or record a completed visit.',
   },
   'lead.saveCall': { uk: 'Зберегти дзвінок', pl: 'Zapisz telefon', en: 'Save call' },
+  'lead.needsCallback': {
+    uk: 'Потрібно передзвонити',
+    pl: 'Trzeba oddzwonić',
+    en: 'Needs callback',
+  },
   'lead.schedule': { uk: 'Запланувати', pl: 'Zaplanuj', en: 'Schedule' },
   'lead.reschedule': { uk: 'Перенести', pl: 'Przełóż', en: 'Reschedule' },
   'lead.callCommentPlaceholder': {
@@ -358,14 +390,19 @@ export const messages = {
   },
   'lead.contractNumber': { uk: 'Номер договору', pl: 'Numer umowy', en: 'Contract number' },
   'lead.contractAmount': {
-    uk: 'Сума договору, EUR',
-    pl: 'Kwota umowy, EUR',
-    en: 'Contract amount, EUR',
+    uk: 'Сума договору',
+    pl: 'Kwota umowy',
+    en: 'Contract amount',
+  },
+  'lead.contractCurrency': {
+    uk: 'Валюта',
+    pl: 'Waluta',
+    en: 'Currency',
   },
   'lead.contractPrepayment': {
-    uk: 'Передоплата, EUR',
-    pl: 'Zaliczka, EUR',
-    en: 'Prepayment, EUR',
+    uk: 'Передоплата',
+    pl: 'Zaliczka',
+    en: 'Prepayment',
   },
   'lead.saveContract': { uk: 'Зберегти договір', pl: 'Zapisz umowę', en: 'Save contract' },
   'lead.editForbidden': {
@@ -459,6 +496,11 @@ export const messages = {
   },
   'leads.filter.all': { uk: 'Всі', pl: 'Wszystkie', en: 'All' },
   'leads.filter.new': { uk: 'Нова заявка', pl: 'Nowe zgłoszenie', en: 'New lead' },
+  'leads.filter.needsCallback': {
+    uk: 'Потрібно передзвонити',
+    pl: 'Trzeba oddzwonić',
+    en: 'Needs callback',
+  },
   'leads.filter.firstCall': { uk: 'Перший дзвінок', pl: 'Pierwszy telefon', en: 'First call' },
   'leads.filter.visit': { uk: 'Візит у салон', pl: 'Wizyta w salonie', en: 'Showroom visit' },
   'leads.filter.closed': { uk: 'Закриті', pl: 'Zamknięte', en: 'Closed' },
@@ -654,6 +696,11 @@ export const messages = {
     uk: 'Сума договору має бути числом більше нуля.',
     pl: 'Kwota umowy musi być liczbą większą od zera.',
     en: 'Contract amount must be a number greater than zero.',
+  },
+  'validation.contractCurrency': {
+    uk: 'Оберіть валюту договору.',
+    pl: 'Wybierz walutę umowy.',
+    en: 'Select contract currency.',
   },
   'validation.prepaymentNegative': {
     uk: 'Передоплата не може бути відʼємною.',

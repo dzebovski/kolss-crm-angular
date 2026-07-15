@@ -10,6 +10,7 @@ export type LeadStatus = 'new' | 'in_progress' | 'converted' | 'failed';
 export type LeadWorkflowStatus =
   | 'new'
   | 'taken'
+  | 'callback_required'
   | 'first_call_done'
   | 'visit_scheduled'
   | 'visit_rescheduled'
@@ -29,6 +30,8 @@ export type LeadEventType =
   | 'visit_completed'
   | 'comment'
   | 'thinking'
+  | 'activated'
+  | 'reopened'
   | 'closed'
   | 'successful'
   | 'attachment'
@@ -97,10 +100,12 @@ export interface ShowroomVisit {
   readonly comment?: string;
 }
 
+export type ContractCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
+
 export interface LeadContract {
   readonly contractNumber: string;
   readonly amount: number;
-  readonly prepayment: number | null;
+  readonly currency: ContractCurrency;
   readonly comment: string;
   readonly signedAt: string;
 }
@@ -124,6 +129,7 @@ export interface MockLead {
   readonly officeCode: OfficeId;
   readonly source: LeadSource;
   readonly sourceCreatedAt: string;
+  readonly reactivatedAt?: string | null;
   readonly initialMessage: string;
   readonly cityRegion: string;
   readonly productInterest: string;
@@ -183,6 +189,6 @@ export interface CloseLeadPayload {
 export interface SuccessfulLeadPayload {
   readonly contractNumber: string;
   readonly amount: number;
-  readonly prepayment: number | null;
+  readonly currency: ContractCurrency;
   readonly comment: string;
 }

@@ -30,6 +30,8 @@ export interface ContractMeta {
   readonly workflow_status?: string;
   readonly contract_number?: string;
   readonly amount?: number;
+  readonly currency?: string;
+  readonly signed_at?: string;
   readonly prepayment?: number | null;
 }
 

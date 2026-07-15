@@ -52,6 +52,8 @@ describe('LeadDetailPage', () => {
     recordFirstCall?: ReturnType<typeof vi.fn>;
     takeLead?: ReturnType<typeof vi.fn>;
     markThinking?: ReturnType<typeof vi.fn>;
+    activateLead?: ReturnType<typeof vi.fn>;
+    reopenLead?: ReturnType<typeof vi.fn>;
     deleteLeadPermanently?: ReturnType<typeof vi.fn>;
     restoreLead?: ReturnType<typeof vi.fn>;
     dialogConfirm?: boolean;
@@ -72,6 +74,8 @@ describe('LeadDetailPage', () => {
     const recordFirstCall = options?.recordFirstCall ?? vi.fn(async () => null);
     const takeLead = options?.takeLead ?? vi.fn(async () => undefined);
     const markThinking = options?.markThinking ?? vi.fn(async () => undefined);
+    const activateLead = options?.activateLead ?? vi.fn(async () => undefined);
+    const reopenLead = options?.reopenLead ?? vi.fn(async () => undefined);
     const dialogConfirm = options?.dialogConfirm ?? false;
 
     TestBed.resetTestingModule();
@@ -126,7 +130,7 @@ describe('LeadDetailPage', () => {
         },
         {
           provide: LeadWorkflowService,
-          useValue: { recordFirstCall, takeLead, markThinking },
+          useValue: { recordFirstCall, takeLead, markThinking, activateLead, reopenLead },
         },
         {
           provide: LossReasonsService,
@@ -555,29 +559,62 @@ describe('LeadDetailPage', () => {
     expect(element.textContent).not.toContain('Взяти в роботу');
   });
 
-  it('disables client thinking when lead is already thinking', async () => {
+  it('replaces thinking button with activate when lead is thinking', async () => {
     const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1003')!;
     const thinkingLead: MockLead = {
       ...lead,
       workflowStatus: 'thinking',
       archivedAt: null,
     };
+    const activateLead = vi.fn(async () => undefined);
     const fixture = await createLeadDetail({
       leadId: thinkingLead.id,
       role: 'office_member',
       getById: async () => thinkingLead,
+      activateLead,
     });
     await fixture.whenStable();
     fixture.detectChanges();
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
-    const buttons = Array.from(element.querySelectorAll('app-ui-button button'));
-    const thinkingButton = buttons.find((button) =>
-      button.textContent?.includes('Кліент пішов думати'),
-    ) as HTMLButtonElement | undefined;
-    expect(thinkingButton).toBeTruthy();
-    expect(thinkingButton!.disabled).toBe(true);
+    expect(element.textContent).toContain('Думає');
+    expect(element.textContent).toContain('Активувати');
+    expect(element.textContent).not.toContain('Кліент пішов думати');
+
+    await fixture.componentInstance['activateLead'](thinkingLead);
+    expect(activateLead).toHaveBeenCalledWith(thinkingLead.id);
+  });
+
+  it('shows reopen button for closed lead', async () => {
+    const lead = CRM_MOCK_LEADS.find((item) => item.id === 'lead-1008')!;
+    const closedLead: MockLead = {
+      ...lead,
+      workflowStatus: 'closed',
+      archivedAt: null,
+      close: {
+        reason: 'no_contact',
+        comment: '',
+        closedAt: '2026-07-01T00:00:00.000Z',
+        actorId: 'emp-kyiv-1',
+      },
+    };
+    const reopenLead = vi.fn(async () => undefined);
+    const fixture = await createLeadDetail({
+      leadId: closedLead.id,
+      role: 'office_member',
+      getById: async () => closedLead,
+      reopenLead,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Відкрити');
+
+    await fixture.componentInstance['reopenLead'](closedLead);
+    expect(reopenLead).toHaveBeenCalledWith(closedLead.id);
   });
 
   it('shows permanent delete for super admin on archived lead', async () => {

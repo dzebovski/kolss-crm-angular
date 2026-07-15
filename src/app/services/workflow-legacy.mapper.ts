@@ -4,7 +4,7 @@ import type { LeadWorkflowStatus } from './crm-mock.types';
 const LEGACY_TO_SIMPLIFIED: Record<string, LeadWorkflowStatus> = {
   new: 'new',
   in_work: 'taken',
-  callback_required: 'taken',
+  callback_required: 'callback_required',
   contacted: 'first_call_done',
   showroom_scheduled: 'visit_scheduled',
   showroom_no_show: 'visit_rescheduled',

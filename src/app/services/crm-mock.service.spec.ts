@@ -8,6 +8,7 @@ import {
   validateSuccessfulLead,
 } from './crm-mock.helpers';
 import { toSimplifiedWorkflowStatus } from './workflow-legacy.mapper';
+import type { ContractCurrency } from './crm-mock.types';
 
 describe('crm helpers', () => {
   it('searches and groups leads by year and month', () => {
@@ -23,8 +24,24 @@ describe('crm helpers', () => {
     expect(validateCloseLead({ reason: 'lost_client', comment: '' })).toBe('validation.lostClientComment');
     expect(validateCloseLead({ reason: 'expensive', comment: '' })).toBeNull();
     expect(
-      validateSuccessfulLead({ contractNumber: '', amount: 1000, prepayment: null, comment: '' }),
+      validateSuccessfulLead({ contractNumber: '', amount: 1000, currency: 'UAH', comment: '' }),
     ).toBe('validation.contractNumber');
+    expect(
+      validateSuccessfulLead({
+        contractNumber: 'K-1',
+        amount: 1000,
+        currency: 'UAH',
+        comment: '',
+      }),
+    ).toBeNull();
+    expect(
+      validateSuccessfulLead({
+        contractNumber: 'K-1',
+        amount: 1000,
+        currency: 'GBP' as ContractCurrency,
+        comment: '',
+      }),
+    ).toBe('validation.contractCurrency');
   });
 
   it('calculates funnel metrics from leads', () => {
