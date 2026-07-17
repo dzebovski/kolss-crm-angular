@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v1.0.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.1.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type {
   LeadDetailResponse,
+  LeadMarkerResponse,
   LeadListResponse,
   MeResponse,
   UsersResponse,
@@ -28,7 +29,9 @@ export class KolssApiClient {
     return this.get('/v1/loss-reasons');
   }
 
-  listLeads(query: Readonly<Record<string, string | number | null | undefined>>): Promise<LeadListResponse> {
+  listLeads(
+    query: Readonly<Record<string, string | number | null | undefined>>,
+  ): Promise<LeadListResponse> {
     return this.get('/v1/leads', query);
   }
 
@@ -44,19 +47,45 @@ export class KolssApiClient {
     return this.patch(`/v1/leads/${encodeURIComponent(id)}`, body, { 'If-Match': String(version) });
   }
 
-  updateEvent(id: string, eventId: string, body: unknown): Promise<{ readonly changedFields: readonly string[] }> {
-    return this.patch(`/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`, body);
+  setLeadMarker(id: string, kind: 'reviewed' | 'manager_aware'): Promise<LeadMarkerResponse> {
+    return this.put(`/v1/leads/${encodeURIComponent(id)}/markers/${encodeURIComponent(kind)}`, {});
+  }
+
+  deleteLeadMarker(id: string, kind: 'reviewed' | 'manager_aware'): Promise<void> {
+    return this.delete(
+      `/v1/leads/${encodeURIComponent(id)}/markers/${encodeURIComponent(kind)}`,
+    ).then(() => undefined);
+  }
+
+  updateEvent(
+    id: string,
+    eventId: string,
+    body: unknown,
+  ): Promise<{ readonly changedFields: readonly string[] }> {
+    return this.patch(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`,
+      body,
+    );
   }
 
   deleteEvent(id: string, eventId: string): Promise<void> {
-    return this.delete(`/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`).then(() => undefined);
+    return this.delete(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`,
+    ).then(() => undefined);
   }
 
-  leadAction<T = { readonly ok: boolean; readonly version: number }>(id: string, action: string, body: unknown = {}): Promise<T> {
+  leadAction<T = { readonly ok: boolean; readonly version: number }>(
+    id: string,
+    action: string,
+    body: unknown = {},
+  ): Promise<T> {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/actions/${action}`, body);
   }
 
-  leadActivity<T = { readonly ok: boolean; readonly version: number }>(id: string, body: unknown): Promise<T> {
+  leadActivity<T = { readonly ok: boolean; readonly version: number }>(
+    id: string,
+    body: unknown,
+  ): Promise<T> {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/activities`, body);
   }
 
@@ -92,7 +121,11 @@ export class KolssApiClient {
     return this.patch(`/v1/users/${encodeURIComponent(id)}`, body).then(() => undefined);
   }
 
-  userAction(id: string, action: 'deactivate' | 'reactivate' | 'delete', body: unknown = {}): Promise<void> {
+  userAction(
+    id: string,
+    action: 'deactivate' | 'reactivate' | 'delete',
+    body: unknown = {},
+  ): Promise<void> {
     return this.post(`/v1/users/${encodeURIComponent(id)}/${action}`, body).then(() => undefined);
   }
 
@@ -105,7 +138,7 @@ export class KolssApiClient {
     return this.get('/v1/dashboard/overview', query);
   }
 
-  report(query: Readonly<Record<string, string | number | null | undefined>>): Promise<unknown> {
+  report<T>(query: Readonly<Record<string, string | number | null | undefined>>): Promise<T> {
     return this.get('/v1/reports/leads', query);
   }
 
@@ -113,7 +146,10 @@ export class KolssApiClient {
     return this.get(`/v1/files/${encodeURIComponent(fileId)}/download-url`);
   }
 
-  private async get<T>(path: string, query: Readonly<Record<string, string | number | null | undefined>> = {}): Promise<T> {
+  private async get<T>(
+    path: string,
+    query: Readonly<Record<string, string | number | null | undefined>> = {},
+  ): Promise<T> {
     let params = new HttpParams();
     for (const [key, value] of Object.entries(query)) {
       if (value != null && value !== '') params = params.set(key, String(value));
@@ -126,8 +162,20 @@ export class KolssApiClient {
     return this.unwrap(firstValueFrom(this.http.post<T>(this.baseUrl + path, body, { headers })));
   }
 
-  private async patch<T>(path: string, body: unknown, extraHeaders: Readonly<Record<string, string>> = {}): Promise<T> {
-    return this.unwrap(firstValueFrom(this.http.patch<T>(this.baseUrl + path, body, { headers: new HttpHeaders(extraHeaders) })));
+  private async patch<T>(
+    path: string,
+    body: unknown,
+    extraHeaders: Readonly<Record<string, string>> = {},
+  ): Promise<T> {
+    return this.unwrap(
+      firstValueFrom(
+        this.http.patch<T>(this.baseUrl + path, body, { headers: new HttpHeaders(extraHeaders) }),
+      ),
+    );
+  }
+
+  private async put<T>(path: string, body: unknown): Promise<T> {
+    return this.unwrap(firstValueFrom(this.http.put<T>(this.baseUrl + path, body)));
   }
 
   private async delete<T>(path: string): Promise<T> {
@@ -139,7 +187,11 @@ export class KolssApiClient {
       return await promise;
     } catch (error) {
       if (error instanceof HttpErrorResponse) {
-        const body = error.error as { message?: unknown; code?: unknown; requestId?: unknown } | null;
+        const body = error.error as {
+          message?: unknown;
+          code?: unknown;
+          requestId?: unknown;
+        } | null;
         const message = typeof body?.message === 'string' ? body.message : error.message;
         const requestId = typeof body?.requestId === 'string' ? ` (${body.requestId})` : '';
         throw new Error(message + requestId, { cause: error });

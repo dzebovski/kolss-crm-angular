@@ -1,0 +1,31 @@
+.lead-detail-drawer-panel {
+  max-width: 100vw !important;
+}
+
+.lead-detail-drawer-panel .mat-mdc-dialog-container {
+  --mat-dialog-container-shape: 0;
+  padding: 0;
+}
+
+.lead-detail-drawer-panel .mat-mdc-dialog-surface {
+  border-radius: var(--ui-radius-xl) 0 0 var(--ui-radius-xl);
+  background: var(--ui-surface-canvas);
+  box-shadow: -1.5rem 0 4rem rgb(23 16 32 / 24%);
+  overflow: hidden;
+}
+
+@media (max-width: 48rem) {
+  .lead-detail-drawer-panel {
+    width: 100vw !important;
+  }
+
+  .lead-detail-drawer-panel .mat-mdc-dialog-surface {
+    border-radius: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lead-detail-drawer-panel {
+    transition: none !important;
+  }
+}

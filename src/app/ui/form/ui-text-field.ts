@@ -46,7 +46,9 @@ export class UiTextField implements FormValueControl<string> {
   readonly placeholder = input('');
   readonly hint = input('');
   readonly error = input('');
-  readonly type = input<'text' | 'email' | 'search' | 'password' | 'date' | 'tel'>('text');
+  readonly type = input<'text' | 'email' | 'search' | 'password' | 'date' | 'month' | 'tel'>(
+    'text',
+  );
   readonly disabled = input(false);
   readonly readOnly = input(false);
   readonly required = input(false);

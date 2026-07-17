@@ -3,6 +3,7 @@
 @use './styles/radial-menu-overlay';
 @use './styles/radial-menu-page';
 @use './styles/lead-detail-page';
+@use './styles/lead-detail-drawer';
 
 html {
   @include mat.theme(
@@ -174,5 +175,47 @@ a {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    min-width: 0;
+    background: white;
+    color: #111;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body {
+    font-size: 9pt;
+  }
+
+  app-crm-shell .crm-shell,
+  app-crm-shell .crm-shell:not(:has(.crm-shell__impersonation)) {
+    min-height: auto;
+    display: block;
+    background: white;
+  }
+
+  app-crm-shell .crm-shell__impersonation,
+  app-crm-shell .crm-shell__header {
+    display: none !important;
+  }
+
+  app-crm-shell .crm-shell__main {
+    width: auto;
+    margin: 0;
+    padding: 0;
   }
 }

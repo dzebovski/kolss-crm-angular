@@ -59,8 +59,15 @@ describe('LeadsService', () => {
     const createLead = vi.fn().mockResolvedValue(row);
     const service = setup({ createLead } as Partial<KolssApiClient>);
     const result = await service.createLead({
-      officeId: 'office-1', source: 'office', name: 'Test', phone: '+380501112233',
-      email: null, cityRegion: '', productInterest: '', estimatedBudget: null, initialMessage: '',
+      officeId: 'office-1',
+      source: 'office',
+      name: 'Test',
+      phone: '+380501112233',
+      email: null,
+      cityRegion: '',
+      productInterest: '',
+      estimatedBudget: null,
+      initialMessage: '',
     });
     expect(result.id).toBe('lead-1');
     expect(createLead).toHaveBeenCalledOnce();
@@ -71,5 +78,27 @@ describe('LeadsService', () => {
     const service = setup({ archiveLead } as Partial<KolssApiClient>);
     await service.archiveLead('lead-1');
     expect(archiveLead).toHaveBeenCalledWith('lead-1');
+  });
+
+  it('sets and removes a shared lead marker through the API', async () => {
+    const setLeadMarker = vi.fn().mockResolvedValue({
+      kind: 'manager_aware',
+      actor_id: 'user-1',
+      actor_name: 'Олена',
+      marked_at: '2026-07-17T12:00:00.000Z',
+    });
+    const deleteLeadMarker = vi.fn().mockResolvedValue(undefined);
+    const service = setup({ setLeadMarker, deleteLeadMarker } as Partial<KolssApiClient>);
+
+    await expect(service.setMarker('lead-1', 'manager_aware')).resolves.toEqual({
+      kind: 'manager_aware',
+      actorId: 'user-1',
+      actorName: 'Олена',
+      markedAt: '2026-07-17T12:00:00.000Z',
+    });
+    await service.deleteMarker('lead-1', 'manager_aware');
+
+    expect(setLeadMarker).toHaveBeenCalledWith('lead-1', 'manager_aware');
+    expect(deleteLeadMarker).toHaveBeenCalledWith('lead-1', 'manager_aware');
   });
 });

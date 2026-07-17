@@ -1,6 +1,28 @@
-app-lead-detail-page {
+:is(app-lead-detail-page, app-lead-detail-view) {
   .lead-page {
     display: grid;
+  }
+
+  .lead-control-bar {
+    min-height: 2.25rem;
+    margin-bottom: var(--ui-space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ui-space-3);
+  }
+
+  .lead-control-bar--drawer {
+    justify-content: flex-end;
+  }
+
+  .lead-control-bar__label {
+    margin-right: auto;
+    color: var(--ui-text-subtle);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .back-link {

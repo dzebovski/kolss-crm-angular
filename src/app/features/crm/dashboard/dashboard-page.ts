@@ -1,24 +1,33 @@
-import { Component, computed, inject, resource } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, computed, inject, resource, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
-import { SessionService } from '../../../core/session/session.service';
 import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
+import { SessionService } from '../../../core/session/session.service';
 import {
   CALL_STATUS_LABELS,
   callStatusTone,
   groupLeadsForDashboard,
 } from '../../../services/crm-mock.helpers';
-import type { MockLead } from '../../../services/crm-mock.types';
+import type { LeadMarkerKind, MockLead } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
-import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
+import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
+import {
+  LeadDetailDrawer,
+  type LeadDetailDrawerData,
+  type LeadDetailDrawerResult,
+  type LeadDetailDrawerState,
+} from '../leads/lead-detail-drawer';
+import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, UiBadge, UiButton, UiIcon, UiUser],
+  imports: [RouterLink, LeadMarkerToggles, UiBadge, UiButton, UiIcon, UiUser],
   template: `
     <section class="dashboard-page" aria-labelledby="dashboard-title">
       <header class="page-header">
@@ -71,6 +80,9 @@ import { UiUser } from '../../../ui/user/ui-user';
         } @else if (loadError()) {
           <p class="load-error" role="alert">{{ loadError() }}</p>
         } @else {
+          @if (markerError()) {
+            <p class="load-error" role="alert">{{ markerError() }}</p>
+          }
           <div class="groups">
             @for (group of groups(); track group.key; let isFirst = $first) {
               <details [class]="'group group-' + group.key" [open]="isFirst">
@@ -86,38 +98,44 @@ import { UiUser } from '../../../ui/user/ui-user';
                 @if (group.rows.length) {
                   <ul class="lead-list">
                     @for (lead of group.rows; track lead.id) {
-                      <li
-                        class="lead-row"
-                        tabindex="0"
-                        role="link"
-                        [attr.aria-label]="'Відкрити лід ' + lead.name"
-                        (click)="openLead(lead)"
-                        (keydown.enter)="openLead(lead)"
-                      >
-                        <span class="lead-main">
-                          <strong>{{ lead.name }}</strong>
-                          <small>{{ lead.phone }}</small>
-                          @if (lead.latestTimelineComment?.comment; as comment) {
-                            <small class="lead-comment" [title]="comment">{{ comment }}</small>
-                          }
-                        </span>
-                        <span class="lead-meta">
-                          @if (hasActiveManager(lead.assignedToId)) {
-                            <app-ui-user
-                              [userId]="lead.assignedToId!"
-                              [name]="employeeName(lead.assignedToId)"
-                              size="sm"
-                            />
-                          } @else {
-                            <span class="muted">Не призначено</span>
-                          }
-                          @if (lead.callStatus; as status) {
-                            <app-ui-badge [tone]="callStatusTone(status)">
-                              {{ callStatusLabel(status) }}
-                            </app-ui-badge>
-                          }
-                          <time>{{ formatDayMonth(lead.sourceCreatedAt) }}</time>
-                        </span>
+                      <li class="lead-row">
+                        <button
+                          type="button"
+                          class="lead-open"
+                          [attr.data-lead-id]="lead.id"
+                          [attr.aria-label]="'Відкрити лід ' + lead.name"
+                          (click)="openLead(lead)"
+                        >
+                          <span class="lead-main">
+                            <strong>{{ lead.name }}</strong>
+                            <small>{{ lead.phone }}</small>
+                            @if (lead.latestTimelineComment?.comment; as comment) {
+                              <small class="lead-comment" [title]="comment">{{ comment }}</small>
+                            }
+                          </span>
+                          <span class="lead-meta">
+                            @if (hasActiveManager(lead.assignedToId)) {
+                              <app-ui-user
+                                [userId]="lead.assignedToId!"
+                                [name]="employeeName(lead.assignedToId)"
+                                size="sm"
+                              />
+                            } @else {
+                              <span class="muted">Не призначено</span>
+                            }
+                            @if (lead.callStatus; as status) {
+                              <app-ui-badge [tone]="callStatusTone(status)">
+                                {{ callStatusLabel(status) }}
+                              </app-ui-badge>
+                            }
+                            <time>{{ formatDayMonth(lead.sourceCreatedAt) }}</time>
+                          </span>
+                        </button>
+                        <app-lead-marker-toggles
+                          [markers]="lead.markers"
+                          [pending]="pendingMarker(lead.id)"
+                          (toggled)="toggleMarker(lead, $event)"
+                        />
                       </li>
                     }
                   </ul>
@@ -258,6 +276,10 @@ import { UiUser } from '../../../ui/user/ui-user';
       background: oklch(95% 0.055 260);
     }
 
+    .group-paused summary {
+      background: oklch(96% 0.03 300);
+    }
+
     .group-title {
       display: inline-flex;
       align-items: center;
@@ -287,13 +309,12 @@ import { UiUser } from '../../../ui/user/ui-user';
     }
 
     .lead-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
-      gap: var(--ui-space-3);
-      padding: var(--ui-space-3) var(--ui-space-4);
+      gap: var(--ui-space-2);
+      padding: 0 var(--ui-space-4) 0 0;
       border-bottom: 1px solid var(--ui-border);
-      cursor: pointer;
       transition: background var(--ui-duration-fast) var(--ui-ease);
     }
 
@@ -302,9 +323,28 @@ import { UiUser } from '../../../ui/user/ui-user';
     }
 
     .lead-row:hover,
-    .lead-row:focus-visible {
+    .lead-row:focus-within {
       background: var(--ui-surface-subtle);
+    }
+
+    .lead-open {
+      min-width: 0;
+      padding: var(--ui-space-3) 0 var(--ui-space-3) var(--ui-space-4);
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ui-space-3);
+      cursor: pointer;
+    }
+
+    .lead-open:focus-visible {
       outline: none;
+      box-shadow: inset 3px 0 var(--ui-action);
     }
 
     .lead-main {
@@ -392,6 +432,15 @@ import { UiUser } from '../../../ui/user/ui-user';
       .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .lead-open {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .lead-meta {
+        flex-wrap: wrap;
+      }
     }
   `,
 })
@@ -400,10 +449,12 @@ export class DashboardPage {
   private readonly api = inject(KolssApiClient);
   private readonly leadsService = inject(LeadsService);
   private readonly usersService = inject(UsersService);
-  private readonly router = inject(Router);
+  private readonly dialog = inject(UiDialogService);
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
   protected readonly callStatusTone = callStatusTone;
+  protected readonly markerError = signal('');
+  private readonly markerPendingKey = signal('');
 
   protected readonly overviewResource = resource({
     params: () => ({ officeId: this.session.selectedOfficeId() }),
@@ -454,7 +505,79 @@ export class DashboardPage {
     );
   }
 
+  protected pendingMarker(leadId: string): LeadMarkerKind | null {
+    const prefix = `${leadId}:`;
+    const key = this.markerPendingKey();
+    return key.startsWith(prefix) ? (key.slice(prefix.length) as LeadMarkerKind) : null;
+  }
+
+  protected async toggleMarker(lead: MockLead, kind: LeadMarkerKind): Promise<void> {
+    if (this.markerPendingKey()) return;
+    this.markerError.set('');
+    this.markerPendingKey.set(`${lead.id}:${kind}`);
+    const active = lead.markers.some((marker) => marker.kind === kind);
+    try {
+      const markers = active
+        ? lead.markers.filter((marker) => marker.kind !== kind)
+        : [...lead.markers, await this.leadsService.setMarker(lead.id, kind)];
+      if (active) await this.leadsService.deleteMarker(lead.id, kind);
+      this.leadsResource.value.update((leads) =>
+        leads?.map((item) => (item.id === lead.id ? { ...item, markers } : item)),
+      );
+    } catch (error) {
+      this.markerError.set(
+        error instanceof Error ? error.message : 'Не вдалося зберегти позначку.',
+      );
+    } finally {
+      this.markerPendingKey.set('');
+    }
+  }
+
   protected async openLead(lead: MockLead): Promise<void> {
-    await this.router.navigate(['/crm/leads', lead.id]);
+    const leadIds = this.groups().flatMap((group) => group.rows.map((row) => row.id));
+    if (!leadIds.length) return;
+    const scrollY = window.scrollY;
+    const state: LeadDetailDrawerState = { dirty: false };
+    const result = await firstValueFrom(
+      this.dialog
+        .open<LeadDetailDrawer, LeadDetailDrawerData, LeadDetailDrawerResult>(LeadDetailDrawer, {
+          data: { leadIds, initialLeadId: lead.id, state },
+          panelClass: 'lead-detail-drawer-panel',
+          backdropClass: 'lead-detail-drawer-backdrop',
+          position: { top: '0', right: '0' },
+          width: 'min(74rem, calc(100vw - 3rem))',
+          height: '100dvh',
+          maxWidth: '100vw',
+          ariaLabelledBy: 'lead-drawer-title',
+          autoFocus: 'dialog',
+          enterAnimationDuration: 180,
+          exitAnimationDuration: 140,
+        })
+        .afterClosed(),
+    );
+    if (result?.dirty || state.dirty) await this.refreshDashboard(scrollY, lead.id);
+  }
+
+  private async refreshDashboard(scrollY: number, focusLeadId: string): Promise<void> {
+    const officeId = this.session.selectedOfficeId();
+    try {
+      const [overview, leads] = await Promise.all([
+        this.api.dashboard({ officeId }),
+        this.leadsService.list({ officeId, archived: 'active' }),
+      ]);
+      this.overviewResource.value.set(overview);
+      this.leadsResource.value.set(leads);
+    } catch (error) {
+      this.markerError.set(
+        error instanceof Error ? error.message : 'Не вдалося оновити dashboard.',
+      );
+    } finally {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: scrollY, behavior: 'instant' });
+        document
+          .querySelector<HTMLButtonElement>(`.lead-open[data-lead-id="${focusLeadId}"]`)
+          ?.focus({ preventScroll: true });
+      });
+    }
   }
 }

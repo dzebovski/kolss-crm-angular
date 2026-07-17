@@ -14,9 +14,9 @@ import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiUser } from '../../../ui/user/ui-user';
-import { LeadDetailPage } from './lead-detail-page';
+import { LeadDetailView } from './lead-detail-page';
 
-describe('LeadDetailPage', () => {
+describe('LeadDetailView', () => {
   async function render(
     lead: MockLead,
     options: {
@@ -37,7 +37,7 @@ describe('LeadDetailPage', () => {
     };
     const dialogOpen = vi.fn();
     await TestBed.configureTestingModule({
-      imports: [LeadDetailPage],
+      imports: [LeadDetailView],
       providers: [
         provideRouter([]),
         {
@@ -64,7 +64,8 @@ describe('LeadDetailPage', () => {
         },
       ],
     }).compileComponents();
-    const fixture = TestBed.createComponent(LeadDetailPage);
+    const fixture = TestBed.createComponent(LeadDetailView);
+    fixture.componentRef.setInput('leadId', lead.id);
     await fixture.whenStable();
     return { activities, dialogOpen, fixture, updateLeadDetails };
   }

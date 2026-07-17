@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '../../../services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '1.0.0' as const;
+export const API_CONTRACT_VERSION = '2.1.0' as const;
 
 export interface ApiErrorResponse {
   readonly code: string;
@@ -32,6 +32,13 @@ export interface MeResponse {
 export interface LeadListResponse {
   readonly items: readonly LeadListRow[];
   readonly nextCursor: string;
+}
+
+export interface LeadMarkerResponse {
+  readonly kind: 'reviewed' | 'manager_aware';
+  readonly actor_id: string;
+  readonly actor_name: string;
+  readonly marked_at: string;
 }
 
 export interface LeadDetailResponse {

@@ -12,6 +12,8 @@ import type {
   LeadEventCategory,
   LeadEventEditAudit,
   LeadEventType,
+  LeadMarker,
+  LeadMarkerKind,
   LatestTimelineComment,
   LeadSource,
   LeadWorkflowStatus,
@@ -50,12 +52,23 @@ export interface ContractEmbed {
 
 export type LeadListRow = Lead & {
   offices?: Office | Office[] | null;
-  profiles?: { id: string; display_name: string | null } | { id: string; display_name: string | null }[] | null;
+  profiles?:
+    | { id: string; display_name: string | null }
+    | { id: string; display_name: string | null }[]
+    | null;
   first_contact_attempt?: FirstContactAttemptEmbed | null;
   contract?: ContractEmbed | null;
   reactivated_at?: string | null;
   latest_timeline_comment?: LatestTimelineCommentEmbed | null;
+  markers?: readonly LeadMarkerEmbed[] | null;
 };
+
+export interface LeadMarkerEmbed {
+  readonly kind: string;
+  readonly actor_id: string;
+  readonly actor_name: string;
+  readonly marked_at: string;
+}
 
 export interface LatestTimelineCommentEmbed {
   readonly comment: string;
@@ -131,7 +144,10 @@ function officeCodeFromRow(row: LeadListRow): OfficeId {
   return code === 'warsaw' ? 'warsaw' : 'kyiv';
 }
 
-function mapSource(channel: string | null | undefined, sourceSystem: string | null | undefined): LeadSource {
+function mapSource(
+  channel: string | null | undefined,
+  sourceSystem: string | null | undefined,
+): LeadSource {
   if (channel === 'facebook') return 'facebook';
   if (channel === 'office') return 'office';
   if (channel === 'other') return 'other';
@@ -379,7 +395,12 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
 }
 
 function mapEventCategory(value: string | null | undefined): LeadEventCategory | null {
-  if (value === 'call_status' || value === 'client_status' || value === 'comment' || value === 'system') {
+  if (
+    value === 'call_status' ||
+    value === 'client_status' ||
+    value === 'comment' ||
+    value === 'system'
+  ) {
     return value;
   }
   return null;
@@ -496,11 +517,36 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     lastActivityAt: row.updated_at,
     attachments: [],
     events: mapEvents(relations.events),
+    markers: mapLeadMarkers(row.markers),
   };
 }
 
+export function mapLeadMarker(value: LeadMarkerEmbed): LeadMarker | null {
+  if (!isLeadMarkerKind(value.kind)) return null;
+  return {
+    kind: value.kind,
+    actorId: value.actor_id,
+    actorName: value.actor_name.trim() || 'Невідомий',
+    markedAt: value.marked_at,
+  };
+}
+
+function mapLeadMarkers(
+  values: readonly LeadMarkerEmbed[] | null | undefined,
+): readonly LeadMarker[] {
+  return (values ?? []).flatMap((value) => {
+    const marker = mapLeadMarker(value);
+    return marker ? [marker] : [];
+  });
+}
+
+function isLeadMarkerKind(value: string): value is LeadMarkerKind {
+  return value === 'reviewed' || value === 'manager_aware';
+}
+
 function mapCallStatus(status: string | null | undefined): CallStatus | null {
-  if (status === 'reached' || status === 'no_answer' || status === 'callback_requested') return status;
+  if (status === 'reached' || status === 'no_answer' || status === 'callback_requested')
+    return status;
   return null;
 }
 

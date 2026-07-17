@@ -37,24 +37,28 @@ const generatedTypes = readFileSync(
   resolve(appRoot, 'core/api/generated/kolss-api.types.ts'),
   'utf8',
 );
-if (!generatedTypes.includes("API_CONTRACT_VERSION = '1.0.0'")) {
-  violations.push('Generated API contract is not pinned to 1.0.0');
+if (!generatedTypes.includes("API_CONTRACT_VERSION = '2.1.0'")) {
+  violations.push('Generated API contract is not pinned to 2.1.0');
 }
 
 const manifest = JSON.parse(
   readFileSync(resolve(appRoot, 'core/api/generated/kolss-api.contract.json'), 'utf8'),
 );
-if (manifest.version !== '1.0.0') violations.push('Generated API manifest is not v1.0.0');
+if (manifest.version !== '2.1.0') violations.push('Generated API manifest is not v2.1.0');
 const backendContract = resolve(root, '../kolss-platform-api/api/openapi.yaml');
 if (existsSync(backendContract)) {
   const hash = createHash('sha256').update(readFileSync(backendContract)).digest('hex');
   if (hash !== manifest.sha256) {
-    violations.push('Generated API client is stale relative to kolss-platform-api/api/openapi.yaml');
+    violations.push(
+      'Generated API client is stale relative to kolss-platform-api/api/openapi.yaml',
+    );
   }
 }
 
 if (violations.length) {
-  console.error('Direct Supabase business API access or contract drift detected:\n' + violations.join('\n'));
+  console.error(
+    'Direct Supabase business API access or contract drift detected:\n' + violations.join('\n'),
+  );
   process.exit(1);
 }
-console.log('API boundary verified: Supabase browser access is auth-only; contract v1.0.0.');
+console.log('API boundary verified: Supabase browser access is auth-only; contract v2.1.0.');

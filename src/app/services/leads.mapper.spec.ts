@@ -84,6 +84,41 @@ describe('mapLeadListRow first_contact_attempt', () => {
   });
 });
 
+describe('mapLeadListRow markers', () => {
+  it('maps supported markers and ignores unknown future values', () => {
+    const lead = mapLeadListRow({
+      ...baseRow,
+      markers: [
+        {
+          kind: 'reviewed',
+          actor_id: 'user-1',
+          actor_name: 'Олена',
+          marked_at: '2026-07-17T12:00:00.000Z',
+        },
+        {
+          kind: 'future_marker',
+          actor_id: 'user-2',
+          actor_name: 'Future',
+          marked_at: '2026-07-17T12:05:00.000Z',
+        },
+      ],
+    });
+
+    expect(lead.markers).toEqual([
+      {
+        kind: 'reviewed',
+        actorId: 'user-1',
+        actorName: 'Олена',
+        markedAt: '2026-07-17T12:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('defaults a missing marker collection to empty', () => {
+    expect(mapLeadListRow(baseRow).markers).toEqual([]);
+  });
+});
+
 describe('mapLeadListRow contract embed', () => {
   it('maps embedded contract to lead.contract', () => {
     const lead = mapLeadListRow({

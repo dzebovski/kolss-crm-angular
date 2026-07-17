@@ -46,7 +46,7 @@ export const routes: Routes = [
       {
         path: 'leads/:leadId',
         loadComponent: () =>
-          import('./features/crm/leads/lead-detail-page').then((page) => page.LeadDetailPage),
+          import('./features/crm/leads/lead-detail-route').then((page) => page.LeadDetailPage),
       },
       {
         path: 'reports',

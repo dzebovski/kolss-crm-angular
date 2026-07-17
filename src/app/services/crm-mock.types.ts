@@ -32,6 +32,14 @@ export type LeadWorkflowStatus =
   | 'successful';
 
 export type LeadSource = 'website' | 'facebook' | 'office' | 'other';
+export type LeadMarkerKind = 'reviewed' | 'manager_aware';
+
+export interface LeadMarker {
+  readonly kind: LeadMarkerKind;
+  readonly actorId: string;
+  readonly actorName: string;
+  readonly markedAt: string;
+}
 export type VisitStatus = 'scheduled' | 'rescheduled' | 'completed';
 export type LeadEventType =
   | 'created'
@@ -168,6 +176,7 @@ export interface MockLead {
   readonly lastActivityAt: string;
   readonly attachments: readonly LeadAttachment[];
   readonly events: readonly LeadEvent[];
+  readonly markers: readonly LeadMarker[];
 }
 
 export interface LatestTimelineComment {

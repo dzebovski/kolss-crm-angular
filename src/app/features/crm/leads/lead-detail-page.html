@@ -13,12 +13,29 @@
   </section>
 } @else if (lead(); as lead) {
   <section class="lead-page" [attr.aria-labelledby]="'lead-title-' + lead.id">
-    <a class="back-link" routerLink="/crm/leads">
-      <app-ui-icon name="arrow_back" [size]="17" />
-      {{ i18n.t('leadDetail.allLeads') }}
-    </a>
+    <div class="lead-control-bar" [class.lead-control-bar--drawer]="displayMode() === 'drawer'">
+      @if (displayMode() === 'page') {
+        <a class="back-link" routerLink="/crm/leads">
+          <app-ui-icon name="arrow_back" [size]="17" />
+          {{ i18n.t('leadDetail.allLeads') }}
+        </a>
+      } @else {
+        <span class="lead-control-bar__label">Контроль ліда</span>
+      }
+      <app-lead-marker-toggles
+        [markers]="lead.markers"
+        [pending]="markerPending()"
+        [disabled]="!!lead.archivedAt"
+        [showLabels]="true"
+        (toggled)="toggleMarker(lead, $event)"
+      />
+    </div>
 
-    <section class="lead-summary" aria-labelledby="client-data-title">
+    @if (markerError()) {
+      <div class="action-error" role="alert">{{ markerError() }}</div>
+    }
+
+    <section class="lead-summary" [attr.aria-label]="'Заявка ' + lead.name">
       <div class="lead-summary__grid" aria-hidden="true"></div>
       <div class="lead-summary__orb" aria-hidden="true"></div>
 
@@ -35,7 +52,9 @@
           <div>
             <dt>{{ i18n.t('leads.colSource') }}</dt>
             <dd>{{ sourceLabel(lead) }}</dd>
-            <small>{{ officeName(lead.officeCode) }}</small>
+            <dd class="lead-facts__secondary">
+              <small>{{ officeName(lead.officeCode) }}</small>
+            </dd>
           </div>
           <div>
             <dt>{{ i18n.t('leadDetail.city') }}</dt>

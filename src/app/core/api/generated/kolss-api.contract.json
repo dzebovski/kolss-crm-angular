@@ -1,7 +1,9 @@
 {
-  "version": "1.0.0",
-  "sha256": "c6194ba9f8582c6a19e3af5770816d5381670f78ae90c5085d8c04a1967400ab",
+  "version": "2.1.0",
+  "sha256": "b3e16f0f85e210d6283f0b12b241c81d29a34189206ba504b77b18eb2226a234",
   "operationIds": [
+    "healthLive",
+    "healthReady",
     "getMe",
     "listOffices",
     "listLossReasons",
@@ -9,11 +11,15 @@
     "createLead",
     "getLead",
     "updateLead",
+    "setLeadMarker",
+    "deleteLeadMarker",
     "updateLeadEvent",
+    "deleteLeadEvent",
     "createLeadActivity",
     "performLeadAction",
     "archiveLead",
     "restoreLead",
+    "deleteLead",
     "listUsers",
     "listManagers",
     "createUser",
@@ -22,6 +28,8 @@
     "changeUserStatus",
     "getDashboardOverview",
     "getLeadReport",
-    "createFileDownloadURL"
+    "createFileDownloadURL",
+    "importGoogleSheetLeads",
+    "createLeadSubmission"
   ]
 }

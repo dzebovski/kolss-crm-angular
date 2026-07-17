@@ -1,5 +1,5 @@
-import { Component, computed, inject, resource, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, computed, inject, input, output, resource, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -22,6 +22,7 @@ import type {
   CallStatus,
   ClientStatus,
   LeadEvent,
+  LeadMarkerKind,
   MockLead,
 } from '../../../services/crm-mock.types';
 import { LeadActivitiesService } from '../../../services/lead-activities.service';
@@ -34,6 +35,7 @@ import { UiBadge, type UiBadgeTone } from '../../../ui/feedback/ui-badge';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
+import { LeadMarkerToggles } from './lead-marker-toggles';
 import { RadialActionDialog } from '../../../pages/design/radial-menu/radial-action-dialog';
 import type { RadialActionDialogData } from '../../../pages/design/radial-menu/radial-action-dialog';
 import {
@@ -84,23 +86,26 @@ const CLIENT_STATUS_RADIAL_LAYOUT: RadialLayoutConfig<SelectableClientStatus> = 
 const NO_MANAGER_VALUE = '__unassigned__';
 
 @Component({
-  selector: 'app-lead-detail-page',
-  imports: [RouterLink, UiBadge, UiButton, UiIcon, UiModal, UiSelect, UiUser],
+  selector: 'app-lead-detail-view',
+  imports: [RouterLink, LeadMarkerToggles, UiBadge, UiButton, UiIcon, UiModal, UiSelect, UiUser],
   templateUrl: './lead-detail-page.html',
   styleUrl: './lead-detail-page.scss',
 })
-export class LeadDetailPage {
-  private readonly route = inject(ActivatedRoute);
+export class LeadDetailView {
   private readonly auth = inject(AuthService);
   private readonly leadsService = inject(LeadsService);
   private readonly activities = inject(LeadActivitiesService);
   private readonly usersService = inject(UsersService);
   private readonly dialog = inject(UiDialogService);
   protected readonly i18n = inject(I18nService);
-  private readonly leadId = signal(this.route.snapshot.paramMap.get('leadId') ?? '');
+  readonly leadId = input.required<string>();
+  readonly displayMode = input<'page' | 'drawer'>('page');
+  readonly changed = output<void>();
 
   protected readonly actionPending = signal(false);
   protected readonly actionError = signal('');
+  protected readonly markerPending = signal<LeadMarkerKind | null>(null);
+  protected readonly markerError = signal('');
   protected readonly assignManagerDialogOpen = signal(false);
   protected readonly assignManagerId = signal(NO_MANAGER_VALUE);
   protected readonly managerPending = signal(false);
@@ -296,6 +301,27 @@ export class LeadDetailPage {
     await this.runActivity(() => this.activities.reopen(lead.id));
   }
 
+  protected async toggleMarker(lead: MockLead, kind: LeadMarkerKind): Promise<void> {
+    if (lead.archivedAt || this.markerPending()) return;
+    this.markerError.set('');
+    this.markerPending.set(kind);
+    const active = lead.markers.some((marker) => marker.kind === kind);
+    try {
+      const markers = active
+        ? lead.markers.filter((marker) => marker.kind !== kind)
+        : [...lead.markers, await this.leadsService.setMarker(lead.id, kind)];
+      if (active) await this.leadsService.deleteMarker(lead.id, kind);
+      this.leadResource.value.update((value) => (value ? { ...value, markers } : value));
+      this.changed.emit();
+    } catch (error) {
+      this.markerError.set(
+        error instanceof Error ? error.message : 'Не вдалося зберегти позначку.',
+      );
+    } finally {
+      this.markerPending.set(null);
+    }
+  }
+
   protected canAssignManager(lead: MockLead): boolean {
     return !lead.archivedAt && isSuperAdminRole(this.auth.profile()?.role);
   }
@@ -368,6 +394,7 @@ export class LeadDetailPage {
       this.assignManagerDialogOpen.set(false);
       await this.leadResource.reload();
       await this.employeesResource.reload();
+      this.changed.emit();
     } catch (error) {
       this.managerError.set(
         error instanceof Error ? error.message : this.i18n.t('lead.saveChangesFailed'),
@@ -397,6 +424,7 @@ export class LeadDetailPage {
       await action();
       await this.leadResource.reload();
       await this.employeesResource.reload();
+      this.changed.emit();
     } catch (error) {
       this.actionError.set(error instanceof Error ? error.message : 'Не вдалося зберегти дію.');
     } finally {

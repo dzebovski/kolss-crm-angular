@@ -92,23 +92,19 @@ describe('CrmShell', () => {
     expect(left?.querySelector('.crm-shell__brand')).toBeTruthy();
     expect(left?.querySelector('.crm-shell__nav')).toBeTruthy();
     expect(left?.querySelector('.crm-shell__segmented--office')).toBeTruthy();
-    expect(left?.querySelector('.crm-shell__segmented--language')).toBeTruthy();
     expect(user?.querySelector('.crm-shell__user-meta')).toBeTruthy();
     expect(user?.querySelector('app-ui-menu')).toBeTruthy();
   });
 
-  it('lists language options as EN, PL, UA', async () => {
+  it('lists language options in the user menu', async () => {
     const fixture = TestBed.createComponent(CrmShell);
     await fixture.whenStable();
-    fixture.detectChanges();
 
-    const labels = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll(
-        '.crm-shell__segmented--language button',
-      ),
-    ).map((button) => button.textContent?.trim());
+    const labels = fixture.componentInstance['userMenuItems']()
+      .filter((item) => item.value.startsWith('locale:'))
+      .map((item) => item.label);
 
-    expect(labels).toEqual(['EN', 'PL', 'UA']);
+    expect(labels).toEqual(['English', 'Polski', 'Українська']);
   });
 
   it('offers login-as for super admin when not impersonating', async () => {

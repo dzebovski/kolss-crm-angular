@@ -2,8 +2,8 @@ import { inject, Injectable } from '@angular/core';
 
 import { KolssApiClient } from '../core/api/generated/kolss-api.client';
 import { AuthService } from '../core/auth/auth.service';
-import type { LeadSource, MockLead } from './crm-mock.types';
-import { mapLeadDetail, mapLeadListRow, type LeadListRow } from './leads.mapper';
+import type { LeadMarker, LeadMarkerKind, LeadSource, MockLead } from './crm-mock.types';
+import { mapLeadDetail, mapLeadListRow, mapLeadMarker, type LeadListRow } from './leads.mapper';
 
 export interface LeadsListFilters {
   officeId?: string | null;
@@ -126,6 +126,16 @@ export class LeadsService {
 
   async deleteHistoryEvent(leadId: string, eventId: string): Promise<void> {
     await this.api.deleteEvent(leadId, eventId);
+  }
+
+  async setMarker(leadId: string, kind: LeadMarkerKind): Promise<LeadMarker> {
+    const marker = mapLeadMarker(await this.api.setLeadMarker(leadId, kind));
+    if (!marker) throw new Error('Не вдалося прочитати збережену позначку.');
+    return marker;
+  }
+
+  async deleteMarker(leadId: string, kind: LeadMarkerKind): Promise<void> {
+    await this.api.deleteLeadMarker(leadId, kind);
   }
 
   currentUserId(): string {

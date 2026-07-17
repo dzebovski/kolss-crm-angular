@@ -284,13 +284,16 @@ export function groupLeadsForDashboard(leads: readonly MockLead[]): readonly Das
   const callback: MockLead[] = [];
   const showroom: MockLead[] = [];
   const calculation: MockLead[] = [];
+  const paused: MockLead[] = [];
   const inWork: MockLead[] = [];
 
   for (const lead of leads) {
     if (lead.archivedAt) continue;
     if (leadIsTerminal(lead)) continue;
 
-    if (
+    if (lead.clientStatus === 'thinking' || lead.workflowStatus === 'thinking') {
+      paused.push(lead);
+    } else if (
       lead.clientStatus === 'showroom_invited' ||
       lead.workflowStatus === 'visit_scheduled' ||
       lead.workflowStatus === 'visit_rescheduled'
@@ -325,6 +328,13 @@ export function groupLeadsForDashboard(leads: readonly MockLead[]): readonly Das
       rows: calculation,
     },
     { key: 'in_work', title: 'В роботі', tone: 'info', icon: 'automation', rows: inWork },
+    {
+      key: 'paused',
+      title: 'Клієнти що взяли паузу',
+      tone: 'info',
+      icon: 'history',
+      rows: paused,
+    },
   ];
 }
 
