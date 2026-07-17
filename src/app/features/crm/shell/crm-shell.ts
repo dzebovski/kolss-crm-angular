@@ -98,16 +98,20 @@ import { ImpersonationDialog } from './impersonation-dialog';
                 </g>
               </svg>
             </span>
-            <span>
-              <span class="crm-shell__eyebrow">KOLSS</span>
-              <strong>CRM</strong>
-            </span>
           </a>
 
           <nav class="crm-shell__nav" [attr.aria-label]="'nav.main' | translate">
+            <a routerLink="/crm/dashboard" routerLinkActive="is-active">
+              <app-ui-icon name="dashboard" [size]="17" />
+              {{ 'nav.dashboard' | translate }}
+            </a>
             <a routerLink="/crm/leads" routerLinkActive="is-active">
               <app-ui-icon name="view_kanban" [size]="17" />
               {{ 'nav.leads' | translate }}
+            </a>
+            <a routerLink="/crm/reports" routerLinkActive="is-active">
+              <app-ui-icon name="bar_chart" [size]="17" />
+              {{ 'nav.reports' | translate }}
             </a>
             @if (canManageAccounts()) {
               <a routerLink="/crm/accounts" routerLinkActive="is-active">
@@ -134,18 +138,6 @@ import { ImpersonationDialog } from './impersonation-dialog';
                 }
               </div>
             }
-
-            <div class="crm-shell__segmented crm-shell__segmented--language" [attr.aria-label]="'nav.language' | translate">
-              @for (item of locales; track item.value) {
-                <button
-                  type="button"
-                  [class.is-active]="locale() === item.value"
-                  (click)="setLocale(item.value)"
-                >
-                  {{ item.label }}
-                </button>
-              }
-            </div>
           </div>
         </div>
 
@@ -245,6 +237,7 @@ import { ImpersonationDialog } from './impersonation-dialog';
     .crm-shell__user {
       justify-self: end;
       white-space: nowrap;
+      gap: var(--ui-space-2);
     }
 
     .crm-shell__brand {
@@ -269,17 +262,9 @@ import { ImpersonationDialog } from './impersonation-dialog';
 
     .crm-shell__brand-logo-svg {
       display: block;
-      height: 1.9rem;
+      height: 2.1rem;
       width: auto;
-      max-width: 7rem;
-    }
-
-    .crm-shell__eyebrow {
-      display: block;
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--ui-text-subtle);
+      max-width: 8rem;
     }
 
     .crm-shell__nav {
@@ -336,16 +321,10 @@ import { ImpersonationDialog } from './impersonation-dialog';
       box-shadow: var(--ui-shadow-1);
     }
 
-    .crm-shell__segmented--language button {
-      min-width: 2.25rem;
-      text-transform: uppercase;
-    }
-
     .crm-shell__user-meta {
       display: grid;
       text-align: right;
       line-height: 1.2;
-      min-width: 8rem;
     }
 
     .crm-shell__user-avatar {
@@ -373,9 +352,9 @@ export class CrmShell {
   protected readonly showImpersonationDialog = signal(false);
 
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
-    { value: 'en', label: 'EN' },
-    { value: 'pl', label: 'PL' },
-    { value: 'uk', label: 'UA' },
+    { value: 'en', label: 'English' },
+    { value: 'pl', label: 'Polski' },
+    { value: 'uk', label: 'Українська' },
   ];
 
   protected readonly impersonationActive = this.impersonation.isActive;
@@ -385,9 +364,14 @@ export class CrmShell {
   );
 
   protected readonly userMenuItems = computed<readonly UiMenuItem[]>(() => {
-    const items: UiMenuItem[] = [
-      { value: 'design', label: this.i18n.t('nav.designSystem'), icon: 'view_kanban' },
-    ];
+    const activeLocale = this.locale();
+    const items: UiMenuItem[] = this.locales.map((item) => ({
+      value: `locale:${item.value}`,
+      label: item.label,
+      icon: activeLocale === item.value ? 'check' : undefined,
+    }));
+
+    items.push({ value: 'design', label: this.i18n.t('nav.designSystem'), icon: 'view_kanban' });
 
     if (this.impersonation.isActive()) {
       items.push({
@@ -436,11 +420,11 @@ export class CrmShell {
     this.session.setOfficeFilter(filter);
   }
 
-  protected setLocale(locale: LocaleCode): void {
-    this.session.setLocale(locale);
-  }
-
   protected async handleUserMenu(value: string): Promise<void> {
+    if (value.startsWith('locale:')) {
+      this.session.setLocale(value.slice('locale:'.length) as LocaleCode);
+      return;
+    }
     if (value === 'design') {
       await this.router.navigateByUrl('/design');
       return;

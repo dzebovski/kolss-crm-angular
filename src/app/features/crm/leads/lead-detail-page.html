@@ -1,0 +1,330 @@
+@if (leadResource.isLoading()) {
+  <section class="lead-state" aria-busy="true" aria-label="Завантаження заявки">
+    <span class="lead-state__pulse"></span>
+    <span class="lead-state__pulse"></span>
+    <span class="lead-state__pulse"></span>
+  </section>
+} @else if (loadError()) {
+  <section class="lead-state" role="alert">
+    <app-ui-icon name="warning" [size]="30" />
+    <h1>Не вдалося завантажити заявку</h1>
+    <p>{{ loadError() }}</p>
+    <a routerLink="/crm/leads">Повернутися до списку</a>
+  </section>
+} @else if (lead(); as lead) {
+  <section class="lead-page" [attr.aria-labelledby]="'lead-title-' + lead.id">
+    <a class="back-link" routerLink="/crm/leads">
+      <app-ui-icon name="arrow_back" [size]="17" />
+      {{ i18n.t('leadDetail.allLeads') }}
+    </a>
+
+    <section class="lead-summary" aria-labelledby="client-data-title">
+      <div class="lead-summary__grid" aria-hidden="true"></div>
+      <div class="lead-summary__orb" aria-hidden="true"></div>
+
+      <header class="lead-summary__rail">
+        <dl class="lead-facts">
+          <div>
+            <dt>{{ i18n.t('common.date') }}</dt>
+            <dd>
+              <time [attr.datetime]="lead.sourceCreatedAt">
+                {{ formatDateTime(lead.sourceCreatedAt) }}
+              </time>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('leads.colSource') }}</dt>
+            <dd>{{ sourceLabel(lead) }}</dd>
+            <small>{{ officeName(lead.officeCode) }}</small>
+          </div>
+          <div>
+            <dt>{{ i18n.t('leadDetail.city') }}</dt>
+            <dd>{{ lead.cityRegion || '—' }}</dd>
+          </div>
+          <div class="manager-card">
+            <dt>{{ i18n.t('common.manager') }}</dt>
+            <dd>
+              <div class="manager-card__person">
+                @if (lead.assignedToId) {
+                  <app-ui-user
+                    [userId]="lead.assignedToId"
+                    [name]="employeeName(lead.assignedToId)"
+                    size="md"
+                  />
+                } @else {
+                  <p>
+                    <app-ui-icon name="person" [size]="17" />
+                    {{ i18n.t('leadDetail.autoAssign') }}
+                  </p>
+                }
+              </div>
+              <div class="manager-card__actions">
+                @if (canAssignManager(lead)) {
+                  <app-ui-button
+                    class="manager-card__edit"
+                    variant="ghost"
+                    size="small"
+                    [attr.title]="managerActionLabel(lead)"
+                    [disabled]="actionPending() || managerPending()"
+                    (pressed)="openAssignManagerDialog(lead)"
+                  >
+                    <app-ui-icon name="edit" [size]="16" />
+                    <span class="manager-card__edit-label">{{ managerActionLabel(lead) }}</span>
+                  </app-ui-button>
+                }
+                @if (isTerminal(lead) && !lead.archivedAt) {
+                  <app-ui-button
+                    variant="secondary"
+                    size="small"
+                    [loading]="actionPending()"
+                    (pressed)="reopenLead(lead)"
+                  >
+                    <app-ui-icon name="inbox" [size]="16" />
+                    {{ i18n.t('leadDetail.reopen') }}
+                  </app-ui-button>
+                }
+              </div>
+            </dd>
+          </div>
+        </dl>
+      </header>
+
+      <div class="lead-summary__body">
+        <div class="lead-identity">
+          <span class="lead-identity__eyebrow">
+            <i aria-hidden="true"></i>{{ i18n.t('leadDetail.client') }}
+          </span>
+          <h1 [id]="'lead-title-' + lead.id">{{ lead.name }}</h1>
+          <a class="lead-identity__phone" [href]="'tel:' + lead.phone">
+            <app-ui-icon name="phone_in_talk" [size]="19" [filled]="true" />
+            {{ lead.phone }}
+          </a>
+        </div>
+
+        <section class="lead-details" aria-labelledby="client-data-title">
+          <header>
+            <span>02</span>
+            <h2 id="client-data-title">{{ i18n.t('leadDetail.contactRequest') }}</h2>
+          </header>
+          <dl class="client-data">
+            <div>
+              <dt>{{ i18n.t('leadDetail.email') }}</dt>
+              <dd>{{ lead.email || '—' }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('leadDetail.product') }}</dt>
+              <dd>{{ lead.productInterest || '—' }}</dd>
+            </div>
+            <div>
+              <dt>{{ i18n.t('leadDetail.budget') }}</dt>
+              <dd>
+                {{
+                  lead.estimatedBudget === null
+                    ? '—'
+                    : formatMoney(lead.estimatedBudget, defaultCurrency(lead))
+                }}
+              </dd>
+            </div>
+            <div class="client-data__message">
+              <dt>{{ i18n.t('leadDetail.clientMessage') }}</dt>
+              <dd>{{ lead.initialMessage || '—' }}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
+    </section>
+
+    @if (actionError()) {
+      <div class="action-error" role="alert">{{ actionError() }}</div>
+    }
+
+    <section class="status-strip" aria-labelledby="current-status-title">
+      <header class="status-strip__intro">
+        <span aria-hidden="true">01</span>
+        <h2 id="current-status-title">{{ i18n.t('leadDetail.currentState') }}</h2>
+      </header>
+
+      <article class="status-item status-item--call">
+        <div class="status-item__icon" aria-hidden="true">
+          <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
+        </div>
+        <div class="status-item__copy">
+          <span>{{ i18n.t('leads.filter.callStatus') }}</span>
+          @if (lead.callStatus; as callStatus) {
+            <app-ui-badge [tone]="callTone(callStatus)">
+              {{ callStatusLabel(callStatus) }}
+            </app-ui-badge>
+            @if (lead.callStatusChangedAt) {
+              <small>{{ formatDateTime(lead.callStatusChangedAt) }}</small>
+            }
+          } @else {
+            <strong>{{ i18n.t('leadDetail.notRecorded') }}</strong>
+            <small>—</small>
+          }
+        </div>
+      </article>
+
+      <article class="status-item status-item--client" [attr.data-status]="lead.clientStatus">
+        <div class="status-item__icon" aria-hidden="true">
+          <app-ui-icon name="automation" [size]="20" [filled]="true" />
+        </div>
+        <div class="status-item__copy">
+          <span>{{ i18n.t('leads.filter.clientStatus') }}</span>
+          <app-ui-badge [tone]="clientTone(lead.clientStatus)">
+            {{ clientStatusLabel(lead.clientStatus) }}
+          </app-ui-badge>
+          <small>
+            {{
+              i18n.t('leadDetail.updated', {
+                date: formatDateTime(lead.clientStatusChangedAt),
+              })
+            }}
+          </small>
+        </div>
+      </article>
+    </section>
+
+    @if (!isTerminal(lead) && !lead.archivedAt) {
+      <section class="lead-actions" aria-label="Дії з клієнтом">
+        <app-ui-button
+          class="lead-action lead-action--comment"
+          variant="secondary"
+          size="large"
+          [block]="true"
+          [disabled]="actionPending()"
+          (pressed)="openComment(lead)"
+        >
+          <app-ui-icon name="campaign" [size]="19" />
+          {{ i18n.t('leadDetail.addComment') }}
+        </app-ui-button>
+        <app-ui-button
+          class="lead-action lead-action--call"
+          variant="secondary"
+          size="large"
+          [block]="true"
+          [loading]="actionPending()"
+          (pressed)="openCallMenu(lead)"
+        >
+          <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
+          {{ i18n.t('leadDetail.call') }}
+          <span class="lead-action__arrow" aria-hidden="true">↗</span>
+        </app-ui-button>
+        <app-ui-button
+          class="lead-action lead-action--status"
+          variant="secondary"
+          size="large"
+          [block]="true"
+          [disabled]="actionPending()"
+          (pressed)="openClientStatusMenu(lead)"
+        >
+          <app-ui-icon name="view_kanban" [size]="19" />
+          {{ i18n.t('leadDetail.clientStatus') }}
+        </app-ui-button>
+      </section>
+    } @else if (lead.archivedAt) {
+      <p class="terminal-note">
+        <app-ui-icon name="archive" [size]="18" />
+        {{ i18n.t('leadDetail.archivedReadonly') }}
+      </p>
+    } @else {
+      <p class="terminal-note">
+        <app-ui-icon name="info" [size]="18" />
+        {{ i18n.t('leadDetail.terminalReadonly') }}
+      </p>
+    }
+
+    @if (lead.contract) {
+      <aside class="terminal-summary terminal-summary--success">
+        <span>Договір №{{ lead.contract.contractNumber }}</span>
+        <strong>{{ formatMoney(lead.contract.amount, lead.contract.currency) }}</strong>
+      </aside>
+    } @else if (lead.close) {
+      <aside class="terminal-summary">
+        <span>{{ closeReasonLabel(lead.close.reason) }}</span>
+        <p>{{ lead.close.comment }}</p>
+      </aside>
+    }
+
+    <section class="timeline-panel" aria-labelledby="timeline-title">
+      <header class="panel-heading">
+        <div>
+          <span>{{ i18n.t('leadDetail.history') }}</span>
+          <h2 id="timeline-title">{{ i18n.t('leadDetail.timeline') }}</h2>
+        </div>
+        <b>{{ timelineEvents().length }}</b>
+      </header>
+      @if (timelineEvents().length) {
+        <ol class="timeline-list">
+          @for (event of timelineEvents(); track event.id) {
+            <li>
+              <span
+                class="timeline-dot"
+                [attr.data-category]="event.category ?? 'legacy'"
+                aria-hidden="true"
+              ></span>
+              <article class="timeline-card">
+                <header class="timeline-card__header">
+                  <strong>{{ eventTitle(event) }}</strong>
+                </header>
+                @if (eventStatusLabel(event); as statusLabel) {
+                  <app-ui-badge class="timeline-card__status" [tone]="eventStatusTone(event)">
+                    {{ statusLabel }}
+                  </app-ui-badge>
+                }
+                @if (eventBody(event); as body) {
+                  <p>{{ body }}</p>
+                }
+                <footer class="timeline-card__meta">
+                  <time [attr.datetime]="event.occurredAt">
+                    {{ formatDateTime(event.occurredAt) }}
+                  </time>
+                  <span class="timeline-card__meta-divider" aria-hidden="true"></span>
+                  <app-ui-user
+                    [userId]="event.actorId || null"
+                    [name]="eventActorName(event)"
+                    size="xs"
+                  />
+                </footer>
+              </article>
+            </li>
+          }
+        </ol>
+      } @else {
+        <p class="timeline-empty">{{ i18n.t('leadDetail.timelineEmpty') }}</p>
+      }
+    </section>
+
+    @if (assignManagerDialogOpen()) {
+      <app-ui-modal
+        labelledBy="assign-manager-dialog-title"
+        (dismissed)="closeAssignManagerDialog()"
+      >
+        <div class="manager-dialog-copy">
+          <h2 id="assign-manager-dialog-title">{{ i18n.t('lead.assignManagerTitle') }}</h2>
+          <p>{{ i18n.t('lead.assignManagerHint') }}</p>
+        </div>
+        @if (managerError()) {
+          <div class="manager-dialog-error" role="alert">{{ managerError() }}</div>
+        }
+        <app-ui-select
+          [label]="i18n.t('common.manager')"
+          [options]="managerOptions(lead)"
+          [disabled]="managerPending()"
+          [(value)]="assignManagerId"
+        />
+        <div class="manager-dialog-actions">
+          <app-ui-button
+            variant="ghost"
+            [disabled]="managerPending()"
+            (pressed)="closeAssignManagerDialog()"
+          >
+            {{ i18n.t('common.cancel') }}
+          </app-ui-button>
+          <app-ui-button [loading]="managerPending()" (pressed)="submitAssignManager(lead)">
+            {{ i18n.t('common.save') }}
+          </app-ui-button>
+        </div>
+      </app-ui-modal>
+    }
+  </section>
+}

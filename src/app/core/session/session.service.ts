@@ -5,7 +5,7 @@ import { hasOfficeLeadFilter, isSuperAdminRole } from '../roles/roles';
 import { AuthService } from '../auth/auth.service';
 import { readViewAsMode, writeViewAsMode, type ViewAsMode } from './view-as';
 import type { LocaleCode, OfficeFilter } from '../../services/crm-mock.types';
-import { readStoredLocale, setActiveLocale } from '../i18n/locale-storage';
+import { applyActiveLocale, readStoredLocale, setActiveLocale } from '../i18n/locale-storage';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -17,6 +17,7 @@ export class SessionService {
   private readonly viewAsSignal = signal<ViewAsMode>(readViewAsMode());
   private readonly officeFilterSignal = signal<OfficeFilter>('all');
   private readonly localeSignal = signal<LocaleCode>(readStoredLocale() ?? 'en');
+  private hasExplicitLocale = readStoredLocale() !== null;
   private lastUserId: string | null = null;
 
   readonly offices = this.officesSignal.asReadonly();
@@ -60,7 +61,7 @@ export class SessionService {
   });
 
   constructor() {
-    setActiveLocale(this.localeSignal());
+    applyActiveLocale(this.localeSignal());
     effect(() => {
       const userId = this.auth.sessionContext()?.user.id ?? null;
       if (userId === this.lastUserId) return;
@@ -87,6 +88,20 @@ export class SessionService {
     this.userOfficesSignal.set(userOffices);
     this.loadedSignal.set(true);
     this.applyViewAsFilter();
+
+    if (!this.hasExplicitLocale) {
+      const defaultLocale = this.computeDefaultLocale();
+      this.localeSignal.set(defaultLocale);
+      applyActiveLocale(defaultLocale);
+    }
+  }
+
+  private computeDefaultLocale(): LocaleCode {
+    if (isSuperAdminRole(this.auth.profile()?.role)) return 'en';
+    const codes = this.userOfficesSignal().map((office) => office.code);
+    if (codes.includes('warsaw')) return 'pl';
+    if (codes.includes('kyiv')) return 'uk';
+    return 'en';
   }
 
   setOfficeFilter(filter: OfficeFilter): void {
@@ -99,6 +114,7 @@ export class SessionService {
   }
 
   setLocale(locale: LocaleCode): void {
+    this.hasExplicitLocale = true;
     this.localeSignal.set(locale);
     setActiveLocale(locale);
   }

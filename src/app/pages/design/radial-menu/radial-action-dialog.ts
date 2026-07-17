@@ -42,6 +42,7 @@ export interface RadialActionDialogData<TId extends string = string> {
             [style.--radial-delay]="action.animationDelayMs + 'ms'"
             [attr.data-tone]="action.tone"
             [attr.data-testid]="'radial-action-' + action.id"
+            [disabled]="action.disabled"
             (click)="select(action.id)"
           >
             <span class="radial-action__icon" aria-hidden="true">
@@ -74,6 +75,7 @@ export class RadialActionDialog {
   private readonly dialogRef = inject(MatDialogRef<RadialActionDialog, string>);
 
   protected select(actionId: string): void {
+    if (this.data.actions.find((action) => action.id === actionId)?.disabled) return;
     this.dialogRef.close(actionId);
   }
 

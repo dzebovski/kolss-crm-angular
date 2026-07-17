@@ -15,8 +15,8 @@ export type UiBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' 
       padding: 0 var(--ui-space-2);
       border: 1px solid transparent;
       border-radius: var(--ui-radius-pill);
-      background: var(--ui-surface-muted);
-      color: var(--ui-text-muted);
+      background: var(--ui-neutral-soft);
+      color: var(--ui-neutral);
       display: inline-flex;
       align-items: center;
       font-size: 0.75rem;
@@ -46,8 +46,8 @@ export type UiBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' 
     }
 
     .ui-badge--brand {
-      background: color-mix(in srgb, var(--ui-violet) 10%, white);
-      color: var(--ui-violet-strong);
+      background: var(--ui-brand-soft);
+      color: var(--ui-brand);
     }
   `,
 })

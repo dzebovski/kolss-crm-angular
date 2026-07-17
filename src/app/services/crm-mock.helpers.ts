@@ -48,11 +48,13 @@ export const LEAD_SOURCE_ICONS: Record<LeadSource, UiIconName> = {
   other: 'more_horiz',
 };
 
-export const CREATE_LEAD_SOURCE_OPTIONS: readonly { readonly value: LeadSource; readonly label: string }[] =
-  (['office', 'website', 'facebook', 'other'] as const).map((value) => ({
-    value,
-    label: LEAD_SOURCE_LABELS[value],
-  }));
+export const CREATE_LEAD_SOURCE_OPTIONS: readonly {
+  readonly value: LeadSource;
+  readonly label: string;
+}[] = (['office', 'website', 'facebook', 'other'] as const).map((value) => ({
+  value,
+  label: LEAD_SOURCE_LABELS[value],
+}));
 
 export const WORKFLOW_LABELS: Record<LeadWorkflowStatus, string> = {
   new: 'Нова заявка',
@@ -171,7 +173,7 @@ export function workflowTone(status: LeadWorkflowStatus): UiBadgeTone {
 export function callStatusTone(status: CallStatus | null): UiBadgeTone {
   if (status === 'reached') return 'success';
   if (status === 'no_answer') return 'danger';
-  if (status === 'callback_requested') return 'warning';
+  if (status === 'callback_requested') return 'brand';
   return 'neutral';
 }
 
@@ -180,7 +182,7 @@ export function clientStatusTone(status: ClientStatus): UiBadgeTone {
     new_lead: 'brand',
     showroom_invited: 'info',
     calculation_in_progress: 'warning',
-    thinking: 'warning',
+    thinking: 'brand',
     closed_lost: 'danger',
     contract_signed: 'success',
   };
@@ -254,7 +256,74 @@ export function groupLeadsByYearMonth(leads: readonly MockLead[]): readonly Lead
   });
 }
 
-export const CONTRACT_CURRENCIES = ['UAH', 'USD', 'EUR', 'PLN'] as const satisfies readonly ContractCurrency[];
+export interface DashboardLeadGroup {
+  readonly key: string;
+  readonly title: string;
+  readonly tone: UiBadgeTone;
+  readonly icon: UiIconName;
+  readonly rows: readonly MockLead[];
+}
+
+/**
+ * Splits active leads into the manager reminder buckets shown on the dashboard.
+ * Each lead lands in exactly one group (first match wins); closed/won and
+ * archived leads are dropped.
+ */
+export function groupLeadsForDashboard(leads: readonly MockLead[]): readonly DashboardLeadGroup[] {
+  const newLeads: MockLead[] = [];
+  const callback: MockLead[] = [];
+  const showroom: MockLead[] = [];
+  const calculation: MockLead[] = [];
+  const inWork: MockLead[] = [];
+
+  for (const lead of leads) {
+    if (lead.archivedAt) continue;
+    if (leadIsTerminal(lead)) continue;
+
+    if (
+      lead.clientStatus === 'showroom_invited' ||
+      lead.workflowStatus === 'visit_scheduled' ||
+      lead.workflowStatus === 'visit_rescheduled'
+    ) {
+      showroom.push(lead);
+    } else if (lead.clientStatus === 'calculation_in_progress') {
+      calculation.push(lead);
+    } else if (lead.callStatus === 'no_answer' || lead.callStatus === 'callback_requested') {
+      callback.push(lead);
+    } else if (lead.clientStatus === 'new_lead' && lead.callStatus === null) {
+      newLeads.push(lead);
+    } else {
+      inWork.push(lead);
+    }
+  }
+
+  return [
+    { key: 'new', title: 'Нові ліди', tone: 'brand', icon: 'campaign', rows: newLeads },
+    {
+      key: 'callback',
+      title: 'Недозвон / Передзвонити',
+      tone: 'warning',
+      icon: 'phone_missed',
+      rows: callback,
+    },
+    { key: 'showroom', title: 'Очікуємо в салоні', tone: 'info', icon: 'schedule', rows: showroom },
+    {
+      key: 'calculation',
+      title: 'Прорахунок',
+      tone: 'warning',
+      icon: 'bar_chart',
+      rows: calculation,
+    },
+    { key: 'in_work', title: 'В роботі', tone: 'info', icon: 'automation', rows: inWork },
+  ];
+}
+
+export const CONTRACT_CURRENCIES = [
+  'UAH',
+  'USD',
+  'EUR',
+  'PLN',
+] as const satisfies readonly ContractCurrency[];
 
 export function sumContractsByCurrency(
   rows: readonly MockLead[],
@@ -437,9 +506,7 @@ export function calculateManagerTakenReport(
   periodDays = 40,
 ): ManagerOfficeReport {
   const cohort = filterLeadsByPeriod(leads, periodDays);
-  const takenLeads = cohort.filter(
-    (lead) => lead.officeCode === officeCode && isLeadTaken(lead),
-  );
+  const takenLeads = cohort.filter((lead) => lead.officeCode === officeCode && isLeadTaken(lead));
 
   const counts = new Map<string, number>();
   let unassignedCount = 0;
@@ -462,7 +529,11 @@ export function calculateManagerTakenReport(
       managerName: employee.displayName,
       takenCount: counts.get(employee.id) ?? 0,
     }))
-    .sort((left, right) => right.takenCount - left.takenCount || left.managerName.localeCompare(right.managerName, getActiveLocale()));
+    .sort(
+      (left, right) =>
+        right.takenCount - left.takenCount ||
+        left.managerName.localeCompare(right.managerName, getActiveLocale()),
+    );
 
   return {
     officeCode,

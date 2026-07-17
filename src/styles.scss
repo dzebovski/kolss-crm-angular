@@ -2,6 +2,7 @@
 @use './styles/design-catalog';
 @use './styles/radial-menu-overlay';
 @use './styles/radial-menu-page';
+@use './styles/lead-detail-page';
 
 html {
   @include mat.theme(
@@ -53,14 +54,30 @@ html {
   --ui-action: var(--ui-violet-strong);
   --ui-action-hover: oklch(38% 0.22 296);
   --ui-focus: oklch(58% 0.24 296);
+  --ui-neutral: var(--ui-ink-650);
+  --ui-neutral-soft: var(--ui-ink-100);
+  --ui-neutral-solid: linear-gradient(135deg, oklch(44% 0.035 293), oklch(30% 0.025 293));
+  --ui-neutral-on-solid: #ffffff;
+  --ui-brand: var(--ui-violet-strong);
+  --ui-brand-soft: oklch(96% 0.035 296);
+  --ui-brand-solid: linear-gradient(135deg, oklch(49% 0.22 296), oklch(37% 0.2 296));
+  --ui-brand-on-solid: #ffffff;
   --ui-danger: oklch(51% 0.2 25);
   --ui-danger-soft: oklch(96% 0.035 25);
+  --ui-danger-solid: linear-gradient(135deg, oklch(50% 0.2 24), oklch(39% 0.17 22));
+  --ui-danger-on-solid: #ffffff;
   --ui-success: oklch(44% 0.13 153);
   --ui-success-soft: oklch(96% 0.035 153);
+  --ui-success-solid: linear-gradient(135deg, oklch(49% 0.15 151), oklch(37% 0.12 153));
+  --ui-success-on-solid: #ffffff;
   --ui-warning: oklch(49% 0.13 74);
   --ui-warning-soft: oklch(96% 0.045 84);
+  --ui-warning-solid: linear-gradient(135deg, oklch(79% 0.16 84), oklch(67% 0.16 70));
+  --ui-warning-on-solid: var(--ui-ink-950);
   --ui-info: oklch(47% 0.15 250);
   --ui-info-soft: oklch(96% 0.035 250);
+  --ui-info-solid: linear-gradient(135deg, oklch(49% 0.14 229), oklch(37% 0.15 247));
+  --ui-info-on-solid: #ffffff;
 
   --ui-space-1: 0.25rem;
   --ui-space-2: 0.5rem;

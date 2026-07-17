@@ -256,14 +256,14 @@ blockquote span {
   color: var(--ui-success);
 }
 
-.lead-card__status strong[data-tone='missed'] {
+.lead-card__status strong[data-tone='danger'] {
   background: var(--ui-danger-soft);
   color: var(--ui-danger);
 }
 
-.lead-card__status strong[data-tone='callback'] {
-  background: color-mix(in srgb, var(--ui-violet) 9%, white);
-  color: var(--ui-violet-strong);
+.lead-card__status strong[data-tone='brand'] {
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
 }
 
 .lead-card__pulse {

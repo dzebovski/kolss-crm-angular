@@ -1,7 +1,8 @@
 import { UiIconName } from '../../../ui/icon/ui-icon';
+import type { UiBadgeTone } from '../../../ui/feedback/ui-badge';
 
 export type CallOutcome = 'success' | 'no_answer' | 'call_back';
-export type RadialActionTone = 'success' | 'missed' | 'callback' | 'info' | 'warning' | 'neutral';
+export type RadialActionTone = UiBadgeTone;
 export type RadialButtonAppearance = 'plain' | 'tone';
 export type RadialDirection = 'clockwise' | 'counterclockwise';
 export type RadialDemoVariantId = 'plain-actions' | 'five-actions' | 'seven-actions';
@@ -12,6 +13,7 @@ export interface RadialAction<TId extends string = string> {
   readonly label: string;
   readonly icon: UiIconName;
   readonly tone: RadialActionTone;
+  readonly disabled?: boolean;
 }
 
 export interface RadialLayoutConfig {
@@ -68,7 +70,7 @@ export const CALL_ACTIONS: readonly CallAction[] = [
     label: 'Не дозвонилися',
     resultLabel: 'Не дозвонилися',
     icon: 'phone_missed',
-    tone: 'missed',
+    tone: 'danger',
     requiresComment: false,
   },
   {
@@ -76,7 +78,7 @@ export const CALL_ACTIONS: readonly CallAction[] = [
     label: 'Передзвонити',
     resultLabel: 'Передзвонити',
     icon: 'schedule',
-    tone: 'callback',
+    tone: 'brand',
     requiresComment: false,
   },
 ] as const;

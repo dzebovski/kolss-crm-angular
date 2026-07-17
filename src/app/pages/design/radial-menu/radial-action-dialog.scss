@@ -91,6 +91,19 @@
   transform: translate(-50%, -50%) scale(0.985);
 }
 
+.radial-action:disabled {
+  cursor: default;
+  filter: grayscale(0.35);
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+.radial-action:disabled:hover,
+.radial-action:disabled:active {
+  transform: translate(-50%, -50%);
+  filter: grayscale(0.35);
+}
+
 .radial-action:focus-visible,
 .radial-close:focus-visible {
   outline: 3px solid rgb(255 255 255 / 94%);
@@ -153,7 +166,7 @@
   position: absolute;
   bottom: 0.6rem;
   margin: 0;
-  color: rgb(255 255 255 / 56%);
+  color: rgb(255 255 255 / 82%);
   font-size: 0.6875rem;
   font-weight: 650;
   letter-spacing: 0.12em;

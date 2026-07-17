@@ -28,27 +28,39 @@
 }
 
 .radial-selector[data-button-appearance='tone'] .radial-action[data-tone='success'] {
-  background: linear-gradient(135deg, oklch(58% 0.17 151), oklch(39% 0.12 153));
+  background: var(--ui-success-solid);
+  color: var(--ui-success-on-solid);
 }
 
-.radial-selector[data-button-appearance='tone'] .radial-action[data-tone='missed'] {
-  background: linear-gradient(135deg, oklch(62% 0.2 24), oklch(43% 0.17 22));
+.radial-selector[data-button-appearance='tone'] .radial-action[data-tone='danger'] {
+  background: var(--ui-danger-solid);
+  color: var(--ui-danger-on-solid);
 }
 
-.radial-selector[data-button-appearance='tone'] .radial-action[data-tone='callback'] {
-  background: linear-gradient(135deg, oklch(62% 0.2 294), oklch(40% 0.2 296));
+.radial-selector[data-button-appearance='tone'] .radial-action[data-tone='brand'] {
+  background: var(--ui-brand-solid);
+  color: var(--ui-brand-on-solid);
 }
 
 .radial-selector[data-button-appearance='tone'] .radial-action[data-tone='info'] {
-  background: linear-gradient(135deg, oklch(64% 0.14 229), oklch(43% 0.15 247));
+  background: var(--ui-info-solid);
+  color: var(--ui-info-on-solid);
 }
 
 .radial-selector[data-button-appearance='tone'] .radial-action[data-tone='warning'] {
-  background: linear-gradient(135deg, oklch(72% 0.17 69), oklch(49% 0.16 48));
+  background: var(--ui-warning-solid);
+  color: var(--ui-warning-on-solid);
 }
 
 .radial-selector[data-button-appearance='tone'] .radial-action[data-tone='neutral'] {
-  background: linear-gradient(135deg, oklch(49% 0.035 293), oklch(30% 0.025 293));
+  background: var(--ui-neutral-solid);
+  color: var(--ui-neutral-on-solid);
+}
+
+.radial-selector[data-button-appearance='tone']
+  .radial-action[data-tone='warning']
+  .radial-action__icon {
+  background: rgb(23 16 32 / 12%);
 }
 
 @media (max-width: 40rem) and (min-width: 35.001rem) {
@@ -150,6 +162,15 @@
 
   .cdk-overlay-pane.radial-menu-dialog-panel .radial-selector--mobile-list .radial-action:active {
     transform: scale(0.985);
+  }
+
+  .cdk-overlay-pane.radial-menu-dialog-panel
+    .radial-selector--mobile-list
+    .radial-action:disabled:hover,
+  .cdk-overlay-pane.radial-menu-dialog-panel
+    .radial-selector--mobile-list
+    .radial-action:disabled:active {
+    transform: none;
   }
 
   .cdk-overlay-pane.radial-menu-dialog-panel .radial-selector--mobile-list .radial-action__icon {

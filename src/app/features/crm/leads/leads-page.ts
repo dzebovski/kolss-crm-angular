@@ -225,8 +225,8 @@ import {
                       }
                     </td>
                     <td>
-                      <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
-                        {{ clientStatusLabel(lead.clientStatus) }}
+                      <app-ui-badge [tone]="clientStatusToneForLead(lead)">
+                        {{ clientStatusLabelForLead(lead) }}
                       </app-ui-badge>
                     </td>
                     <td class="comment-cell">
@@ -309,7 +309,6 @@ export class LeadsPage {
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
   protected readonly callStatusTone = callStatusTone;
-  protected readonly clientStatusTone = clientStatusTone;
 
   constructor() {
     effect(() => {
@@ -409,6 +408,18 @@ export class LeadsPage {
 
   protected clientStatusLabel(status: ClientStatus): string {
     return this.i18n.clientStatusLabel(status);
+  }
+
+  protected clientStatusLabelForLead(lead: MockLead): string {
+    if (lead.clientStatus === 'new_lead' && lead.callStatus) {
+      return this.i18n.t('workflow.taken');
+    }
+    return this.clientStatusLabel(lead.clientStatus);
+  }
+
+  protected clientStatusToneForLead(lead: MockLead) {
+    if (lead.clientStatus === 'new_lead' && lead.callStatus) return 'info' as const;
+    return clientStatusTone(lead.clientStatus);
   }
 
   protected commentContext(category: LeadEventCategory | null, statusCode: string | null): string {

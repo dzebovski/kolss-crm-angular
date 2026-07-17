@@ -48,6 +48,7 @@ export const messages = {
   },
 
   'nav.main': { uk: 'Основна навігація', pl: 'Główna nawigacja', en: 'Main navigation' },
+  'nav.dashboard': { uk: 'Дешборд', pl: 'Pulpit', en: 'Dashboard' },
   'nav.leads': { uk: 'Ліди', pl: 'Leady', en: 'Leads' },
   'nav.reports': { uk: 'Звітність', pl: 'Raporty', en: 'Reports' },
   'nav.accounts': { uk: 'Акаунти', pl: 'Konta', en: 'Accounts' },
@@ -263,6 +264,8 @@ export const messages = {
   'leadDetail.autoAssign': { uk: 'Менеджер призначиться після першої дії', pl: 'Menedżer zostanie przypisany po pierwszym działaniu', en: 'A manager will be assigned after the first activity' },
   'leadDetail.callChoose': { uk: 'Оберіть результат дзвінка', pl: 'Wybierz wynik połączenia', en: 'Choose the call result' },
   'leadDetail.callHint': { uk: 'Результат буде додано в таймлайн', pl: 'Wynik zostanie dodany do osi czasu', en: 'The result will be added to the timeline' },
+  'leadDetail.statusChoose': { uk: 'Оберіть статус клієнта', pl: 'Wybierz status klienta', en: 'Choose the client status' },
+  'leadDetail.statusHint': { uk: 'Статус буде додано в таймлайн', pl: 'Status zostanie dodany do osi czasu', en: 'The status will be added to the timeline' },
   'leadDetail.reachedEyebrow': { uk: 'Успішний дзвінок', pl: 'Udana rozmowa', en: 'Successful call' },
   'leadDetail.reachedTitle': { uk: 'Що важливо запамʼятати?', pl: 'Co warto zapamiętać?', en: 'What should be remembered?' },
   'leadDetail.reachedDescription': { uk: 'Короткий підсумок буде прив’язано до результату дзвінка.', pl: 'Krótkie podsumowanie zostanie powiązane z wynikiem rozmowy.', en: 'A short summary will be attached to the call result.' },

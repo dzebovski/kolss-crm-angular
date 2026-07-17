@@ -21,17 +21,21 @@ export function getActiveLocale(): LocaleCode {
   return activeLocale;
 }
 
-export function setActiveLocale(locale: LocaleCode): void {
+export function applyActiveLocale(locale: LocaleCode): void {
   activeLocale = locale;
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = locale;
+  }
+}
+
+export function setActiveLocale(locale: LocaleCode): void {
+  applyActiveLocale(locale);
   try {
     if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
       localStorage.setItem(STORAGE_KEY, locale);
     }
   } catch {
     // ignore storage failures in tests or private mode
-  }
-  if (typeof document !== 'undefined') {
-    document.documentElement.lang = locale;
   }
 }
 

@@ -79,6 +79,42 @@ describe('LeadsPage', () => {
     expect(element.textContent).not.toContain('Візит у салон');
   });
 
+  it('shows a new lead as in progress after any call result is recorded', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        clientStatus: 'new_lead',
+        callStatus: 'no_answer',
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const statusCell = (fixture.nativeElement as HTMLElement).querySelector(
+      '.lead-row td:nth-child(5)',
+    );
+
+    expect(statusCell?.textContent).toContain('В роботі');
+    expect(statusCell?.textContent).not.toContain('Нова заявка');
+  });
+
+  it('keeps the new lead status before the first call action', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        clientStatus: 'new_lead',
+        callStatus: null,
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const statusCell = (fixture.nativeElement as HTMLElement).querySelector(
+      '.lead-row td:nth-child(5)',
+    );
+
+    expect(statusCell?.textContent).toContain('Нова заявка');
+    expect(statusCell?.textContent).not.toContain('В роботі');
+  });
+
   it('opens a lead from a table row', async () => {
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
