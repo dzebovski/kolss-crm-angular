@@ -1,1598 +1,491 @@
-import { Component, computed, effect, inject, resource, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, computed, inject, resource, signal } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { AuthService } from '../../../core/auth/auth.service';
 import {
   presentEventBodyFromLeadEvent,
   presentEventTitleFromLeadEvent,
-  presentHistoryAuditText,
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { normalizePhoneForOffice } from '../../../core/phone/phone';
-import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
-import { SessionService } from '../../../core/session/session.service';
 import {
-  CLOSE_REASON_LABELS,
-  currenciesForOffice,
+  callStatusTone,
+  clientStatusTone,
   defaultCurrencyForOffice,
-  employeeInitials,
-  FIRST_CALL_RESULT_CODES,
-  LEAD_SOURCE_ICONS,
   leadIsTerminal,
-  workflowTone,
+  LEAD_SOURCE_ICONS,
 } from '../../../services/crm-mock.helpers';
-import { LeadWorkflowService } from '../../../services/lead-workflow.service';
+import type {
+  CallStatus,
+  ClientStatus,
+  LeadEvent,
+  MockLead,
+} from '../../../services/crm-mock.types';
+import { LeadActivitiesService } from '../../../services/lead-activities.service';
 import { LeadsService } from '../../../services/leads.service';
-import { LossReasonsService } from '../../../services/loss-reasons.service';
 import { UsersService } from '../../../services/users.service';
-import type { CloseReason, ContractCurrency, LeadEvent, MockLead } from '../../../services/crm-mock.types';
-import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiModal } from '../../../ui/dialog/ui-modal';
+import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiMenu, type UiMenuItem } from '../../../ui/menu/ui-menu';
 import { UiUser } from '../../../ui/user/ui-user';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiTextField } from '../../../ui/form/ui-text-field';
-import { UiTextarea } from '../../../ui/form/ui-textarea';
+import { RadialActionDialog } from '../../../pages/design/radial-menu/radial-action-dialog';
+import type { RadialActionDialogData } from '../../../pages/design/radial-menu/radial-action-dialog';
+import {
+  CALL_RADIAL_LAYOUT,
+  type RadialAction,
+} from '../../../pages/design/radial-menu/radial-menu.types';
+import {
+  CloseStatusDialog,
+  type CloseStatusResult,
+  ContractStatusDialog,
+  type ContractStatusDialogData,
+  type ContractStatusResult,
+  TextActivityDialog,
+  type TextActivityDialogData,
+} from './lead-activity-dialogs';
 
-const NO_MANAGER_VALUE = '__none__';
+const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label'>[] = [
+  { id: 'reached', icon: 'check_circle', tone: 'success' },
+  { id: 'no_answer', icon: 'phone_missed', tone: 'missed' },
+  { id: 'callback_requested', icon: 'schedule', tone: 'callback' },
+];
 
 @Component({
   selector: 'app-lead-detail-page',
-  imports: [
-    RouterLink,
-    UiBadge,
-    UiButton,
-    UiIcon,
-    UiModal,
-    UiSelect,
-    UiTextField,
-    UiTextarea,
-    UiUser,
-    TranslatePipe,
-  ],
+  imports: [RouterLink, UiBadge, UiButton, UiIcon, UiMenu, UiUser],
   template: `
     @if (leadResource.isLoading()) {
-      <section
-        class="lead-page lead-page--loading"
-        aria-busy="true"
-        [attr.aria-label]="'lead.loading' | translate"
-      >
-        <span class="skeleton" style="--skeleton-w: 9rem; --skeleton-h: 1.25rem"></span>
-
-        <header class="lead-header">
-          <div class="skeleton-stack">
-            <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
-            <span
-              class="skeleton"
-              style="
-                --skeleton-w: min(100%, 22rem);
-                --skeleton-h: 2.5rem;
-                --skeleton-radius: var(--ui-radius-md);
-              "
-            ></span>
-            <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
-          </div>
-          <div class="lead-actions">
-            <span
-              class="skeleton"
-              style="
-                --skeleton-w: 8.5rem;
-                --skeleton-h: var(--ui-control-height);
-                --skeleton-radius: var(--ui-radius-md);
-              "
-            ></span>
-            <span
-              class="skeleton"
-              style="
-                --skeleton-w: 8.5rem;
-                --skeleton-h: var(--ui-control-height);
-                --skeleton-radius: var(--ui-radius-md);
-              "
-            ></span>
-            <span
-              class="skeleton"
-              style="
-                --skeleton-w: 8.5rem;
-                --skeleton-h: var(--ui-control-height);
-                --skeleton-radius: var(--ui-radius-md);
-              "
-            ></span>
-          </div>
-        </header>
-
-        <div class="lead-layout">
-          <main class="lead-main">
-            @for (panel of skeletonPanels; track panel) {
-              <section class="workflow-panel skeleton-panel">
-                <span
-                  class="skeleton"
-                  style="
-                    --skeleton-w: 45%;
-                    --skeleton-h: 1.25rem;
-                    --skeleton-radius: var(--ui-radius-md);
-                  "
-                ></span>
-                <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
-                <span
-                  class="skeleton"
-                  style="
-                    --skeleton-h: 5.75rem;
-                    --skeleton-radius: var(--ui-radius-md);
-                  "
-                ></span>
-              </section>
-            }
-          </main>
-
-          <aside class="lead-side" aria-hidden="true">
-            <section class="summary-panel skeleton-panel">
-              <span
-                class="skeleton"
-                style="
-                  --skeleton-w: 2.75rem;
-                  --skeleton-h: 2.75rem;
-                  --skeleton-radius: var(--ui-radius-lg);
-                "
-              ></span>
-              <span
-                class="skeleton"
-                style="
-                  --skeleton-w: 45%;
-                  --skeleton-h: 1.25rem;
-                  --skeleton-radius: var(--ui-radius-md);
-                "
-              ></span>
-              <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
-              <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
-              <span class="skeleton" style="--skeleton-w: min(100%, 16rem)"></span>
-            </section>
-          </aside>
-        </div>
+      <section class="lead-state" aria-busy="true" aria-label="Завантаження заявки">
+        <span class="lead-state__pulse"></span>
+        <span class="lead-state__pulse"></span>
+        <span class="lead-state__pulse"></span>
       </section>
     } @else if (loadError()) {
-      <section class="missing-state" role="alert">
-        <app-ui-icon name="inbox" [size]="30" />
-        <h1>{{ 'lead.loadFailedTitle' | translate }}</h1>
+      <section class="lead-state" role="alert">
+        <app-ui-icon name="warning" [size]="30" />
+        <h1>Не вдалося завантажити заявку</h1>
         <p>{{ loadError() }}</p>
-        <a routerLink="/crm/leads">{{ 'lead.backToList' | translate }}</a>
+        <a routerLink="/crm/leads">Повернутися до списку</a>
       </section>
     } @else if (lead(); as lead) {
-      <section class="lead-page" [attr.aria-labelledby]="'lead-' + lead.id">
+      <section class="lead-page" [attr.aria-labelledby]="'lead-title-' + lead.id">
         <a class="back-link" routerLink="/crm/leads">
           <app-ui-icon name="arrow_back" [size]="17" />
-          {{ 'lead.backToLeads' | translate }}
+          {{ i18n.t('leadDetail.allLeads') }}
         </a>
 
-        <header class="lead-header">
+        <header class="lead-hero">
           <div>
-            <p class="page-kicker">
-              {{ officeName(lead.officeCode) }} ·
-              <span class="source-pill">
-                <app-ui-icon [name]="sourceIcon(lead)" [size]="14" />
-                {{ sourceLabel(lead) }}
-              </span>
+            <p class="lead-hero__kicker">
+              {{ officeName(lead.officeCode) }} · {{ sourceLabel(lead) }}
             </p>
-            <h1 [id]="'lead-' + lead.id">{{ lead.name }}</h1>
-            <div class="lead-header__meta">
-              <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
-                {{ workflowLabel(lead) }}
-              </app-ui-badge>
-              <span>{{ formatDateTime(lead.sourceCreatedAt) }}</span>
-            </div>
-          </div>
-
-          <div class="lead-actions">
-            @if (lead.archivedAt && auth.profile()?.role === 'super_admin') {
-              <app-ui-button [loading]="actionPending()" (pressed)="restoreLead(lead)">
-                <app-ui-icon name="arrow_upward" [size]="16" />
-                {{ 'lead.restore' | translate }}
-              </app-ui-button>
-              <app-ui-button
-                variant="danger"
-                [loading]="deletingLead()"
-                (pressed)="confirmDeleteLead(lead)"
-              >
-                <app-ui-icon name="delete" [size]="16" />
-                {{ 'lead.deletePermanently' | translate }}
-              </app-ui-button>
-            } @else if (!lead.archivedAt) {
-              @if (lead.workflowStatus === 'thinking') {
-                <app-ui-button
-                  variant="secondary"
-                  (pressed)="activateLead(lead)"
-                >
-                  <app-ui-icon name="automation" [size]="16" />
-                  {{ 'lead.activate' | translate }}
-                </app-ui-button>
-              } @else if (!isTerminal(lead)) {
-                <app-ui-button
-                  variant="secondary"
-                  (pressed)="markThinking(lead)"
-                >
-                  <app-ui-icon name="warning" [size]="16" />
-                  {{ 'lead.clientThinking' | translate }}
-                </app-ui-button>
+            <h1 [id]="'lead-title-' + lead.id">{{ lead.name }}</h1>
+            <p class="lead-hero__meta">
+              {{ i18n.t('leadDetail.created') }} {{ formatDateTime(lead.sourceCreatedAt) }}
+              @if (lead.assignedToId) {
+                · {{ i18n.t('common.manager').toLocaleLowerCase() }} {{ employeeName(lead.assignedToId) }}
               }
-              <app-ui-button
-                variant="secondary"
-                [disabled]="isTerminal(lead)"
-                (pressed)="openCloseDialog()"
-              >
-                <app-ui-icon name="close" [size]="16" />
-                {{ 'lead.closeLead' | translate }}
-              </app-ui-button>
-              <app-ui-button [disabled]="isTerminal(lead)" (pressed)="openSuccessDialog()">
-                <app-ui-icon name="check_circle" [size]="16" />
-                {{ 'lead.markSuccessful' | translate }}
-              </app-ui-button>
-            }
+            </p>
           </div>
+          @if (isTerminal(lead)) {
+            <app-ui-button
+              variant="secondary"
+              [loading]="actionPending()"
+              (pressed)="reopenLead(lead)"
+            >
+              <app-ui-icon name="inbox" [size]="17" />
+              {{ i18n.t('leadDetail.reopen') }}
+            </app-ui-button>
+          }
         </header>
 
         @if (actionError()) {
-          <div class="inline-error" role="alert">{{ actionError() }}</div>
+          <div class="action-error" role="alert">{{ actionError() }}</div>
         }
 
-        @if (lead.workflowStatus === 'thinking' && !lead.archivedAt) {
-          <article class="status-banner status-banner--thinking">
-            <app-ui-icon name="warning" [size]="24" />
-            <div>
-              <h2>{{ 'workflow.thinking' | translate }}</h2>
-              <p>{{ 'lead.thinkingBanner' | translate }}</p>
-            </div>
-          </article>
-        }
-
-        @if (isTerminal(lead)) {
-          <article
-            class="terminal-panel"
-            [class.terminal-panel--success]="lead.workflowStatus === 'successful'"
-          >
-            <app-ui-icon
-              [name]="lead.workflowStatus === 'successful' ? 'check_circle' : 'archive'"
-              [size]="24"
-              [filled]="lead.workflowStatus === 'successful'"
-            />
-            <div>
-              <h2>{{ terminalTitle(lead) }}</h2>
-              <p>{{ terminalDescription(lead) }}</p>
-            </div>
-            @if (lead.workflowStatus === 'closed' && lead.close) {
-              <div class="terminal-panel__actions">
-                <app-ui-button
-                  variant="secondary"
-                  size="small"
-                  (pressed)="openEditCloseDialog(lead)"
-                >
-                  <app-ui-icon name="edit" [size]="16" />
-                  {{ 'common.edit' | translate }}
-                </app-ui-button>
-                <app-ui-button
-                  variant="secondary"
-                  size="small"
-                  (pressed)="reopenLead(lead)"
-                >
-                  <app-ui-icon name="inbox" [size]="16" />
-                  {{ 'lead.reopen' | translate }}
-                </app-ui-button>
-                @if (canArchiveLead(lead)) {
-                  <app-ui-button
-                    variant="secondary"
-                    size="small"
-                    [loading]="deletingLead()"
-                    (pressed)="confirmArchiveLead(lead)"
-                  >
-                    <app-ui-icon name="archive" [size]="16" />
-                    {{ 'lead.archiveShort' | translate }}
-                  </app-ui-button>
-                }
-              </div>
-            }
-          </article>
-        }
-
-        <div class="lead-layout">
+        <div class="lead-grid">
           <main class="lead-main">
-            @if ((!lead.firstCall || lead.workflowStatus === 'callback_required') && !isTerminal(lead)) {
-              <section class="workflow-panel" aria-labelledby="first-call-title">
-                <header>
-                  <span>01</span>
-                  <div>
-                    <h2 id="first-call-title">{{ 'workflow.first_call_done' | translate }}</h2>
-                    <p>{{ 'lead.afterSaveHistory' | translate }}</p>
-                  </div>
-                </header>
-                <div class="workflow-grid">
-                  <app-ui-select
-                    [label]="'common.result' | translate"
-                    [options]="firstCallOptions()"
-                    [(value)]="firstCallResult"
-                  />
-                  <app-ui-textarea
-                    [label]="'lead.comment' | translate"
-                    [rows]="3"
-                    [placeholder]="'lead.callCommentPlaceholder' | translate"
-                    [(value)]="firstCallComment"
-                  />
+            <section class="client-panel" aria-labelledby="client-data-title">
+              <header class="panel-heading">
+                <div>
+                  <span>{{ i18n.t('leadDetail.client') }}</span>
+                  <h2 id="client-data-title">{{ i18n.t('leadDetail.contactRequest') }}</h2>
                 </div>
-                <app-ui-button (pressed)="saveFirstCall(lead)">
-                  {{
-                    (firstCallResult() === 'no_answer' ? 'lead.needsCallback' : 'lead.saveCall')
-                      | translate
-                  }}
-                </app-ui-button>
-              </section>
-            }
-
-            @if (!isTerminal(lead)) {
-              <section class="workflow-panel" aria-labelledby="visit-title">
-                <header>
-                  <span>02</span>
-                  <div>
-                    <h2 id="visit-title">{{ 'lead.visitSalon' | translate }}</h2>
-                    <p>{{ 'lead.visitHint' | translate }}</p>
-                  </div>
-                </header>
-                <div class="workflow-grid">
-                  <app-ui-text-field
-                    [label]="'common.date' | translate"
-                    type="date"
-                    [(value)]="visitDate"
-                  />
-                  <app-ui-textarea
-                    [label]="'lead.comment' | translate"
-                    [rows]="3"
-                    [placeholder]="'lead.visitCommentPlaceholder' | translate"
-                    [(value)]="visitComment"
-                  />
-                </div>
-                <div class="workflow-actions">
-                  <app-ui-button variant="secondary" (pressed)="scheduleVisit(lead)">
-                    {{ 'lead.schedule' | translate }}
-                  </app-ui-button>
-                  <app-ui-button
-                    variant="secondary"
-                    [disabled]="!lead.visit"
-                    (pressed)="rescheduleVisit(lead)"
-                  >
-                    {{ 'lead.reschedule' | translate }}
-                  </app-ui-button>
-                  <app-ui-button [disabled]="!lead.visit" (pressed)="completeVisit(lead)">
-                    {{ 'workflow.visit_completed' | translate }}
-                  </app-ui-button>
-                </div>
-              </section>
-
-              <section class="workflow-panel" aria-labelledby="comment-title">
-                <header>
-                  <span>03</span>
-                  <div>
-                    <h2 id="comment-title">{{ 'lead.comment' | translate }}</h2>
-                    <p>{{ 'lead.commentHint' | translate }}</p>
-                  </div>
-                </header>
-                <app-ui-textarea
-                  [label]="'lead.newComment' | translate"
-                  [rows]="3"
-                  [placeholder]="'lead.commentPlaceholder' | translate"
-                  [(value)]="commentDraft"
-                />
-                <app-ui-button variant="secondary" (pressed)="addComment(lead)">
-                  {{ 'lead.addComment' | translate }}
-                </app-ui-button>
-              </section>
-            }
-
-            <section class="timeline-panel" aria-labelledby="timeline-title">
-              <header>
-                <h2 id="timeline-title">{{ 'lead.activityHistory' | translate }}</h2>
-                <span>{{ 'lead.eventsCount' | translate: { count: timelineEvents().length } }}</span>
+                <span class="source-mark">
+                  <app-ui-icon [name]="sourceIcon(lead)" [size]="16" />
+                  {{ sourceLabel(lead) }}
+                </span>
               </header>
-              <ol class="timeline-list">
-                @for (event of timelineEvents(); track event.id) {
-                  <li class="timeline-item">
-                    <span class="timeline-dot" aria-hidden="true"></span>
-                    <div class="timeline-content">
-                      <div class="timeline-item__header">
-                        <strong>{{ eventTitle(event) }}</strong>
-                        @if (canEditLead(lead)) {
-                          <app-ui-button
-                            variant="ghost"
-                            size="small"
-                            (pressed)="openHistoryEditDialog(event)"
-                          >
-                            <app-ui-icon name="edit" [size]="16" />
-                            {{ 'common.edit' | translate }}
-                          </app-ui-button>
-                        }
-                      </div>
-                      @if (eventBody(event); as body) {
-                        <p>{{ body }}</p>
-                      }
-                      @if (historyAuditText(event); as auditText) {
-                        <p class="timeline-audit">{{ auditText }}</p>
-                      }
-                      <small>
-                        <app-ui-user
-                          [userId]="event.actorId || null"
-                          [name]="eventActorName(event)"
-                          size="xs"
-                        />
-                        · {{ formatDateTime(event.occurredAt) }}
-                      </small>
-                    </div>
-                  </li>
-                }
-              </ol>
-            </section>
-          </main>
-
-          <aside class="lead-side" [attr.aria-label]="'lead.clientData' | translate">
-            <section class="summary-panel">
-              <header class="summary-panel__header">
-                <div class="summary-panel__title">
-                  <div class="avatar" aria-hidden="true">{{ initials(lead.name) }}</div>
-                  <div>
-                    <h2>{{ 'lead.contacts' | translate }}</h2>
-                    <p>{{ lead.cityRegion }}</p>
-                  </div>
-                </div>
-                @if (canEditLead(lead)) {
-                  <app-ui-button
-                    variant="secondary"
-                    size="small"
-                    (pressed)="openLeadEditDialog(lead)"
-                  >
-                    <app-ui-icon name="edit" [size]="16" />
-                    {{ 'common.edit' | translate }}
-                  </app-ui-button>
-                }
-              </header>
-              <dl>
-                <div>
-                  <dt>{{ 'common.phone' | translate }}</dt>
-                  <dd>{{ lead.phone }}</dd>
-                </div>
-                <div>
-                  <dt>{{ 'common.email' | translate }}</dt>
-                  <dd>{{ lead.email ?? '—' }}</dd>
-                </div>
-                <div>
-                  <dt>{{ 'common.manager' | translate }}</dt>
-                  <dd class="manager-row">
-                    @if (effectiveAssignedToId(lead); as managerId) {
-                      <app-ui-user
-                        [userId]="managerId"
-                        [name]="employeeName(managerId)"
-                        size="sm"
-                      />
-                      @if (isSuperAdmin()) {
-                        <button
-                          type="button"
-                          class="manager-replace-link"
-                          (click)="openAssignManagerDialog(lead)"
-                        >
-                          {{ 'lead.replaceManager' | translate }}
-                        </button>
-                      }
-                    } @else {
-                      <span class="muted">{{ 'common.unassigned' | translate }}</span>
-                      @if (isSuperAdmin()) {
-                        <app-ui-button
-                          variant="secondary"
-                          size="small"
-                          (pressed)="openAssignManagerDialog(lead)"
-                        >
-                          {{ 'lead.assignManager' | translate }}
-                        </app-ui-button>
-                      }
-                    }
-                  </dd>
-                </div>
-                <div>
-                  <dt>{{ 'common.product' | translate }}</dt>
-                  <dd>{{ lead.productInterest }}</dd>
-                </div>
-                <div>
-                  <dt>{{ 'common.budget' | translate }}</dt>
-                  <dd>{{ formatMoney(lead.estimatedBudget) }}</dd>
-                </div>
-                <div>
-                  <dt>{{ 'accounts.lastActivity' | translate }}</dt>
-                  <dd>{{ formatDateTime(lead.lastActivityAt) }}</dd>
-                </div>
+              <dl class="client-data">
+                <div><dt>{{ i18n.t('leadDetail.phone') }}</dt><dd><a [href]="'tel:' + lead.phone">{{ lead.phone }}</a></dd></div>
+                <div><dt>{{ i18n.t('leadDetail.email') }}</dt><dd>{{ lead.email || '—' }}</dd></div>
+                <div><dt>{{ i18n.t('leadDetail.city') }}</dt><dd>{{ lead.cityRegion || '—' }}</dd></div>
+                <div><dt>{{ i18n.t('leadDetail.product') }}</dt><dd>{{ lead.productInterest || '—' }}</dd></div>
+                <div><dt>{{ i18n.t('leadDetail.budget') }}</dt><dd>{{ lead.estimatedBudget === null ? '—' : formatMoney(lead.estimatedBudget, defaultCurrency(lead)) }}</dd></div>
+                <div class="client-data__message"><dt>{{ i18n.t('leadDetail.clientMessage') }}</dt><dd>{{ lead.initialMessage || '—' }}</dd></div>
               </dl>
             </section>
 
-            <section class="summary-panel">
-              <h2>{{ 'lead.initialMessage' | translate }}</h2>
-              <p>{{ lead.initialMessage }}</p>
-            </section>
-
-            <section class="summary-panel">
-              <h2>{{ 'event.attachment' | translate }}</h2>
-              @if (lead.attachments.length) {
-                <ul class="attachments">
-                  @for (attachment of lead.attachments; track attachment.id) {
+            <section class="timeline-panel" aria-labelledby="timeline-title">
+              <header class="panel-heading">
+                <div>
+                  <span>{{ i18n.t('leadDetail.history') }}</span>
+                  <h2 id="timeline-title">{{ i18n.t('leadDetail.timeline') }}</h2>
+                </div>
+                <b>{{ timelineEvents().length }}</b>
+              </header>
+              @if (timelineEvents().length) {
+                <ol class="timeline-list">
+                  @for (event of timelineEvents(); track event.id) {
                     <li>
-                      <app-ui-icon name="archive" [size]="18" />
-                      <span>{{ attachment.name }}</span>
-                      <small>{{ attachment.sizeLabel }}</small>
+                      <span class="timeline-dot" [attr.data-category]="event.category ?? 'legacy'" aria-hidden="true"></span>
+                      <article>
+                        <header>
+                          <strong>{{ eventTitle(event) }}</strong>
+                          <time [attr.datetime]="event.occurredAt">{{ formatDateTime(event.occurredAt) }}</time>
+                        </header>
+                        @if (eventStatusLabel(event); as statusLabel) {
+                          <small class="timeline-context">{{ statusLabel }}</small>
+                        }
+                        @if (eventBody(event); as body) {
+                          <p>{{ body }}</p>
+                        }
+                        <small>{{ eventActorName(event) }}</small>
+                      </article>
                     </li>
                   }
-                </ul>
+                </ol>
               } @else {
-                <p class="muted">{{ 'lead.noFiles' | translate }}</p>
+                <p class="timeline-empty">{{ i18n.t('leadDetail.timelineEmpty') }}</p>
               }
-              <app-ui-button variant="secondary" [disabled]="true">
-                <app-ui-icon name="add" [size]="17" />
-                {{ 'lead.addFile' | translate }}
-              </app-ui-button>
             </section>
+          </main>
+
+          <aside class="status-panel" aria-labelledby="current-status-title">
+            <div class="status-panel__glow" aria-hidden="true"></div>
+            <header>
+              <span>{{ i18n.t('leadDetail.currentState') }}</span>
+              <h2 id="current-status-title">{{ i18n.t('leadDetail.clientStatus') }}</h2>
+            </header>
+            <div class="primary-status" [attr.data-status]="lead.clientStatus">
+              <app-ui-badge [tone]="clientTone(lead.clientStatus)">
+                {{ clientStatusLabel(lead.clientStatus) }}
+              </app-ui-badge>
+              <small>{{ i18n.t('leadDetail.updated', { date: formatDateTime(lead.clientStatusChangedAt) }) }}</small>
+            </div>
+            <div class="call-status">
+              <span>{{ i18n.t('leadDetail.lastCall') }}</span>
+              @if (lead.callStatus; as callStatus) {
+                <app-ui-badge [tone]="callTone(callStatus)">{{ callStatusLabel(callStatus) }}</app-ui-badge>
+                @if (lead.callStatusChangedAt) {
+                  <small>{{ formatDateTime(lead.callStatusChangedAt) }}</small>
+                }
+              } @else {
+                <strong>{{ i18n.t('leadDetail.notRecorded') }}</strong>
+              }
+            </div>
+
+            @if (!isTerminal(lead) && !lead.archivedAt) {
+              <div class="status-actions" aria-label="Дії зі статусом">
+                <app-ui-button [loading]="actionPending()" (pressed)="openCallMenu(lead)">
+                  <app-ui-icon name="phone_in_talk" [size]="18" />
+                  {{ i18n.t('leadDetail.call') }}
+                </app-ui-button>
+                <app-ui-button variant="secondary" [disabled]="actionPending()" (pressed)="openComment(lead)">
+                  <app-ui-icon name="campaign" [size]="18" />
+                  {{ i18n.t('leadDetail.comment') }}
+                </app-ui-button>
+                <app-ui-menu
+                  [label]="i18n.t('leadDetail.clientStatus')"
+                  [items]="clientStatusItems(lead)"
+                  (selected)="selectClientStatus(lead, $event)"
+                />
+              </div>
+            } @else if (lead.archivedAt) {
+              <p class="terminal-note">{{ i18n.t('leadDetail.archivedReadonly') }}</p>
+            } @else {
+              <p class="terminal-note">{{ i18n.t('leadDetail.terminalReadonly') }}</p>
+            }
+
+            @if (lead.contract) {
+              <div class="terminal-summary terminal-summary--success">
+                <span>Договір №{{ lead.contract.contractNumber }}</span>
+                <strong>{{ formatMoney(lead.contract.amount, lead.contract.currency) }}</strong>
+              </div>
+            } @else if (lead.close) {
+              <div class="terminal-summary">
+                <span>{{ closeReasonLabel(lead.close.reason) }}</span>
+                <p>{{ lead.close.comment }}</p>
+              </div>
+            }
+
+            <footer class="status-panel__manager">
+              @if (lead.assignedToId) {
+                <app-ui-user [userId]="lead.assignedToId" [name]="employeeName(lead.assignedToId)" size="sm" />
+              } @else {
+                <span>{{ i18n.t('leadDetail.autoAssign') }}</span>
+              }
+            </footer>
           </aside>
         </div>
-
-        @if (editLeadDialogOpen()) {
-          <app-ui-modal
-            [wide]="true"
-            labelledBy="edit-lead-dialog-title"
-            (dismissed)="closeLeadEditDialog()"
-          >
-              <h2 id="edit-lead-dialog-title">{{ 'lead.editLeadTitle' | translate }}</h2>
-              <p>{{ 'lead.editLeadHint' | translate }}</p>
-              @if (dialogError()) {
-                <div class="inline-error" role="alert">{{ dialogError() }}</div>
-              }
-
-              <div class="modal-section">
-                <h3>{{ 'lead.contacts' | translate }}</h3>
-                <div class="modal-grid">
-                  <app-ui-text-field [label]="'common.name' | translate" [(value)]="editLeadName" />
-                  <app-ui-text-field
-                    [label]="'common.phone' | translate"
-                    type="tel"
-                    [(value)]="editLeadPhone"
-                  />
-                  <app-ui-text-field
-                    [label]="'common.email' | translate"
-                    type="email"
-                    [(value)]="editLeadEmail"
-                  />
-                  <app-ui-text-field
-                    [label]="'common.cityRegion' | translate"
-                    [(value)]="editLeadCityRegion"
-                  />
-                </div>
-              </div>
-
-              <div class="modal-section">
-                <h3>{{ 'lead.leadData' | translate }}</h3>
-                <div class="modal-grid">
-                  <app-ui-text-field
-                    [label]="'common.product' | translate"
-                    [(value)]="editLeadProductInterest"
-                  />
-                  <app-ui-text-field
-                    [label]="'common.budgetEur' | translate"
-                    [(value)]="editLeadBudget"
-                  />
-                  <app-ui-select
-                    [label]="'common.manager' | translate"
-                    [options]="managerOptions(lead)"
-                    [(value)]="editLeadAssignedToId"
-                  />
-                </div>
-                <app-ui-textarea
-                  [label]="'lead.initialMessage' | translate"
-                  [rows]="4"
-                  [(value)]="editLeadInitialMessage"
-                />
-              </div>
-
-              <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="closeLeadEditDialog()">
-                  {{ 'common.cancel' | translate }}
-                </app-ui-button>
-                <app-ui-button (pressed)="submitLeadEdit(lead)">
-                  {{ 'common.save' | translate }}
-                </app-ui-button>
-              </div>
-          </app-ui-modal>
-        }
-
-        @if (assignManagerDialogOpen()) {
-          <app-ui-modal
-            labelledBy="assign-manager-dialog-title"
-            (dismissed)="closeAssignManagerDialog()"
-          >
-            <h2 id="assign-manager-dialog-title">{{ 'lead.assignManagerTitle' | translate }}</h2>
-            <p>{{ 'lead.assignManagerHint' | translate }}</p>
-            @if (dialogError()) {
-              <div class="inline-error" role="alert">{{ dialogError() }}</div>
-            }
-            <app-ui-select
-              [label]="'common.manager' | translate"
-              [options]="managerOptions(lead)"
-              [(value)]="assignManagerId"
-            />
-            <div class="modal-actions">
-              <app-ui-button variant="ghost" (pressed)="closeAssignManagerDialog()">
-                {{ 'common.cancel' | translate }}
-              </app-ui-button>
-              <app-ui-button (pressed)="submitAssignManager(lead)">
-                {{ 'common.save' | translate }}
-              </app-ui-button>
-            </div>
-          </app-ui-modal>
-        }
-
-        @if (editHistoryDialogOpen()) {
-          <app-ui-modal
-            labelledBy="edit-history-dialog-title"
-            (dismissed)="closeHistoryEditDialog()"
-          >
-              <h2 id="edit-history-dialog-title">{{ 'lead.editHistory' | translate }}</h2>
-              <p>{{ 'lead.editHistoryHint' | translate }}</p>
-              @if (dialogError()) {
-                <div class="inline-error" role="alert">{{ dialogError() }}</div>
-              }
-              <app-ui-select
-                [label]="'common.type' | translate"
-                [options]="historyEventTypeOptions()"
-                [(value)]="editHistoryType"
-              />
-              <app-ui-textarea
-                [label]="'common.message' | translate"
-                [rows]="4"
-                [(value)]="editHistoryComment"
-              />
-              <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="closeHistoryEditDialog()">
-                  {{ 'common.cancel' | translate }}
-                </app-ui-button>
-                <app-ui-button (pressed)="submitHistoryEdit(lead)">
-                  {{ 'common.save' | translate }}
-                </app-ui-button>
-              </div>
-          </app-ui-modal>
-        }
-
-        @if (closeDialogOpen()) {
-          <app-ui-modal labelledBy="close-dialog-title" (dismissed)="closeCloseDialog()">
-              <h2 id="close-dialog-title">
-                {{
-                  closeDialogMode() === 'edit'
-                    ? ('lead.editCloseTitle' | translate)
-                    : ('lead.closeLead' | translate)
-                }}
-              </h2>
-              <p>
-                {{
-                  closeDialogMode() === 'edit'
-                    ? ('lead.editCloseHint' | translate)
-                    : ('lead.closeHint' | translate)
-                }}
-              </p>
-              @if (dialogError()) {
-                <div class="inline-error" role="alert">{{ dialogError() }}</div>
-              }
-              <app-ui-select
-                [label]="'common.reason' | translate"
-                [options]="closeReasonOptions()"
-                [(value)]="closeReason"
-              />
-              <app-ui-textarea
-                [label]="'lead.comment' | translate"
-                [rows]="4"
-                [(value)]="closeComment"
-              />
-              <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="closeCloseDialog()">
-                  {{ 'common.cancel' | translate }}
-                </app-ui-button>
-                <app-ui-button
-                  [variant]="closeDialogMode() === 'edit' ? 'primary' : 'danger'"
-                  (pressed)="submitClose(lead)"
-                >
-                  {{
-                    closeDialogMode() === 'edit'
-                      ? ('common.save' | translate)
-                      : ('common.close' | translate)
-                  }}
-                </app-ui-button>
-              </div>
-          </app-ui-modal>
-        }
-
-        @if (successDialogOpen()) {
-          <app-ui-modal labelledBy="success-dialog-title" (dismissed)="closeSuccessDialog()">
-              <h2 id="success-dialog-title">{{ 'workflow.successful' | translate }}</h2>
-              <p>{{ 'lead.successHint' | translate }}</p>
-              @if (dialogError()) {
-                <div class="inline-error" role="alert">{{ dialogError() }}</div>
-              }
-              <app-ui-text-field
-                [label]="'lead.contractNumber' | translate"
-                [(value)]="contractNumber"
-              />
-              <div class="contract-amount-field">
-                <app-ui-text-field
-                  [label]="'lead.contractAmount' | translate"
-                  [(value)]="contractAmount"
-                />
-                <div
-                  class="currency-switcher"
-                  role="radiogroup"
-                  [attr.aria-label]="'lead.contractCurrency' | translate"
-                >
-                  @for (option of contractCurrencyOptions(); track option.code) {
-                    <button
-                      type="button"
-                      class="currency-switcher__option"
-                      role="radio"
-                      [class.currency-switcher__option--active]="contractCurrency() === option.code"
-                      [attr.aria-checked]="contractCurrency() === option.code"
-                      (click)="contractCurrency.set(option.code)"
-                    >
-                      {{ option.symbol }}
-                    </button>
-                  }
-                </div>
-              </div>
-              <app-ui-textarea
-                [label]="'lead.comment' | translate"
-                [rows]="3"
-                [(value)]="contractComment"
-              />
-              <div class="modal-actions">
-                <app-ui-button variant="ghost" (pressed)="closeSuccessDialog()">
-                  {{ 'common.cancel' | translate }}
-                </app-ui-button>
-                <app-ui-button (pressed)="submitSuccess(lead)">
-                  {{ 'lead.saveContract' | translate }}
-                </app-ui-button>
-              </div>
-          </app-ui-modal>
-        }
-      </section>
-    } @else {
-      <section class="missing-state">
-        <app-ui-icon name="inbox" [size]="30" />
-        <h1>{{ 'lead.notFound' | translate }}</h1>
-        <a routerLink="/crm/leads">{{ 'lead.backToList' | translate }}</a>
       </section>
     }
   `,
   styles: `
-    .lead-page {
-      display: grid;
-      gap: var(--ui-space-5);
-    }
-
-    .back-link {
-      width: fit-content;
-      color: var(--ui-text-muted);
-      display: inline-flex;
-      align-items: center;
-      gap: var(--ui-space-2);
-      font-size: 0.875rem;
-      text-decoration: none;
-    }
-
-    .back-link:hover {
-      color: var(--ui-action);
-    }
-
-    .lead-header {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: var(--ui-space-6);
-    }
-
-    .page-kicker {
-      margin: 0 0 var(--ui-space-2);
-      color: var(--ui-text-subtle);
-      font-size: 0.75rem;
-      font-weight: 750;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .source-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      white-space: nowrap;
-    }
-
-    .source-pill app-ui-icon {
-      color: currentColor;
-      transform: translateY(1px);
-    }
-
-    h1 {
-      margin: 0;
-      font-family: var(--ui-font-display), sans-serif;
-      font-size: 2.25rem;
-      letter-spacing: 0;
-    }
-
-    .lead-header__meta,
-    .lead-actions,
-    .workflow-actions,
-    .modal-actions {
-      display: flex;
-      align-items: center;
-      gap: var(--ui-space-2);
-      flex-wrap: wrap;
-    }
-
-    .lead-header__meta {
-      margin-top: var(--ui-space-3);
-      color: var(--ui-text-muted);
-      font-size: 0.875rem;
-    }
-
-    .lead-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 23rem;
-      gap: var(--ui-space-5);
-      align-items: start;
-    }
-
-    .lead-main,
-    .lead-side {
-      display: grid;
-      gap: var(--ui-space-4);
-    }
-
-    .workflow-panel,
-    .timeline-panel,
-    .summary-panel,
-    .terminal-panel,
-    .status-banner {
-      border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-lg);
-      background: var(--ui-surface-raised);
-      box-shadow: var(--ui-shadow-1);
-    }
-
-    .workflow-panel,
-    .summary-panel,
-    .terminal-panel,
-    .status-banner {
-      padding: var(--ui-space-5);
-      display: grid;
-      gap: var(--ui-space-4);
-    }
-
-    .workflow-panel > header {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: var(--ui-space-3);
-      align-items: start;
-    }
-
-    .workflow-panel header span {
-      width: 2rem;
-      height: 2rem;
-      border-radius: var(--ui-radius-md);
-      background: color-mix(in srgb, var(--ui-action) 10%, white);
-      color: var(--ui-action);
-      display: grid;
-      place-items: center;
-      font-size: 0.75rem;
-      font-weight: 800;
-    }
-
-    h2,
-    .workflow-panel p,
-    .summary-panel p,
-    .terminal-panel p,
-    .modal p {
-      margin: 0;
-    }
-
-    h2 {
-      font-size: 1rem;
-    }
-
-    .workflow-panel p,
-    .summary-panel p,
-    .terminal-panel p,
-    .modal p,
-    .muted {
-      color: var(--ui-text-muted);
-      font-size: 0.875rem;
-    }
-
-    .workflow-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--ui-space-4);
-      align-items: start;
-    }
-
-    .terminal-panel {
-      grid-template-columns: auto 1fr auto;
-      align-items: start;
-      background: var(--ui-danger-soft);
-      color: var(--ui-danger);
-    }
-
-    .terminal-panel--success {
-      background: var(--ui-success-soft);
-      color: var(--ui-success);
-    }
-
-    .status-banner {
-      grid-template-columns: auto 1fr;
-      align-items: start;
-      margin-bottom: var(--ui-space-4);
-    }
-
-    .status-banner--thinking {
-      background: color-mix(in srgb, var(--ui-warning, #c17a2d) 12%, white);
-      color: var(--ui-warning, #8a5a16);
-    }
-
-    .status-banner h2 {
-      margin: 0;
-      font-size: 1.05rem;
-    }
-
-    .status-banner p {
-      margin: 0.25rem 0 0;
-      color: color-mix(in srgb, currentColor 75%, black);
-    }
-
-    .terminal-panel p {
-      color: color-mix(in srgb, currentColor 82%, black);
-    }
-
-    .terminal-panel__actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--ui-space-2);
-      justify-content: flex-end;
-    }
-
-    .summary-panel header,
-    .summary-panel__title {
-      display: flex;
-      gap: var(--ui-space-3);
-      align-items: center;
-    }
-
-    .summary-panel__header {
-      justify-content: space-between;
-      align-items: start;
-    }
-
-    .summary-panel__title {
-      min-width: 0;
-    }
-
-    .avatar {
-      width: 2.75rem;
-      height: 2.75rem;
-      border-radius: var(--ui-radius-lg);
-      background: var(--ui-brand-gradient);
-      color: white;
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-    }
-
-    dl {
-      margin: 0;
-      display: grid;
-      gap: var(--ui-space-3);
-    }
-
-    dl div {
-      display: grid;
-      gap: 0.125rem;
-    }
-
-    dt {
-      color: var(--ui-text-subtle);
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    dd {
-      margin: 0;
-      color: var(--ui-text);
-      font-size: 0.875rem;
-    }
-
-    .manager-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--ui-space-2);
-    }
-
-    .manager-replace-link {
-      padding: 0;
-      border: 0;
-      background: transparent;
-      color: var(--ui-action);
-      cursor: pointer;
-      font: inherit;
-      font-size: 0.75rem;
-      font-weight: 650;
-      text-decoration: underline;
-      text-underline-offset: 0.125rem;
-    }
-
-    .manager-replace-link:focus-visible {
-      outline: 2px solid var(--ui-focus-ring, var(--ui-action));
-      outline-offset: 2px;
-      border-radius: 2px;
-    }
-
-    .attachments {
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: var(--ui-space-2);
-      list-style: none;
-    }
-
-    .attachments li {
-      min-height: 2.5rem;
-      padding: 0 var(--ui-space-3);
-      border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-md);
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: var(--ui-space-2);
-      font-size: 0.8125rem;
-    }
-
-    .attachments small {
-      color: var(--ui-text-subtle);
-    }
-
-    .timeline-panel {
-      overflow: hidden;
-    }
-
-    .timeline-panel > header {
-      min-height: 3.25rem;
-      padding: 0 var(--ui-space-5);
-      border-bottom: 1px solid var(--ui-border);
-      background: var(--ui-surface-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .timeline-panel header span {
-      color: var(--ui-text-muted);
-      font-size: 0.8125rem;
-      font-weight: 650;
-    }
-
-    .timeline-list {
-      margin: 0;
-      padding: var(--ui-space-5);
-      display: grid;
-      list-style: none;
-    }
-
-    .timeline-item {
-      position: relative;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: var(--ui-space-3);
-      padding-bottom: var(--ui-space-4);
-    }
-
-    .timeline-item:last-child {
-      padding-bottom: 0;
-    }
-
-    .timeline-item:not(:last-child)::after {
-      content: '';
-      position: absolute;
-      top: 1.15rem;
-      bottom: 0;
-      left: 0.3125rem;
-      width: 2px;
-      border-radius: var(--ui-radius-pill);
-      background: color-mix(in srgb, var(--ui-action) 22%, var(--ui-border));
-    }
-
-    .timeline-dot {
-      position: relative;
-      z-index: 1;
-      width: 0.75rem;
-      height: 0.75rem;
-      margin-top: 0.35rem;
-      border: 2px solid var(--ui-action);
-      border-radius: 50%;
-      background: var(--ui-surface-raised);
-    }
-
-    .timeline-content {
-      min-width: 0;
-    }
-
-    .timeline-item__header {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--ui-space-3);
-      align-items: start;
-    }
-
-    .timeline-content strong,
-    .timeline-content p,
-    .timeline-content small {
-      display: block;
-    }
-
-    .timeline-content p {
-      margin: var(--ui-space-1) 0;
-      color: var(--ui-text-muted);
-    }
-
-    .timeline-audit {
-      color: var(--ui-action);
-      font-size: 0.8125rem;
-      font-weight: 650;
-    }
-
-    .timeline-content small {
-      color: var(--ui-text-subtle);
-      font-size: 0.75rem;
-    }
-
-    .timeline-content small app-ui-user {
-      display: inline-flex;
-      vertical-align: middle;
-      max-width: 16rem;
-    }
-
-    .inline-error {
-      padding: var(--ui-space-3) var(--ui-space-4);
-      border: 1px solid color-mix(in srgb, var(--ui-danger) 24%, white);
-      border-radius: var(--ui-radius-md);
-      background: var(--ui-danger-soft);
-      color: var(--ui-danger);
-      font-size: 0.875rem;
-      font-weight: 650;
-    }
-
-    .modal-section {
-      display: grid;
-      gap: var(--ui-space-3);
-    }
-
-    .modal-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--ui-space-4);
-      align-items: start;
-    }
-
-    .modal-actions {
-      justify-content: flex-end;
-    }
-
-    .contract-amount-field {
-      display: grid;
-      gap: var(--ui-space-2);
-    }
-
-    .currency-switcher {
-      display: inline-flex;
-      width: fit-content;
-      border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-md);
-      overflow: hidden;
-      background: var(--ui-surface);
-    }
-
-    .currency-switcher__option {
-      min-width: 2.5rem;
-      min-height: 2rem;
-      padding: 0 var(--ui-space-3);
-      border: 0;
-      border-right: 1px solid var(--ui-border);
-      background: transparent;
-      color: var(--ui-text-muted);
-      font: inherit;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .currency-switcher__option:last-child {
-      border-right: 0;
-    }
-
-    .currency-switcher__option--active {
-      background: var(--ui-action);
-      color: #fff;
-    }
-
-    .currency-switcher__option:focus-visible {
-      outline: 2px solid var(--ui-focus);
-      outline-offset: -2px;
-      z-index: 1;
-    }
-
-    @media (max-width: 48rem) {
-      .lead-header,
-      .lead-layout,
-      .modal-grid {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      .lead-header {
-        display: grid;
-        align-items: start;
-      }
-
-      .summary-panel__header,
-      .timeline-item__header {
-        display: grid;
-      }
-    }
-
-    .lead-page--loading .lead-header {
-      align-items: start;
-    }
-
-    .skeleton-stack,
-    .skeleton-panel {
-      display: grid;
-      gap: var(--ui-space-3);
-    }
-
-    .skeleton {
-      display: block;
-      width: var(--skeleton-w, 100%);
-      height: var(--skeleton-h, 0.875rem);
-      border-radius: var(--skeleton-radius, var(--ui-radius-pill));
-      background: linear-gradient(
-        90deg,
-        var(--ui-surface-subtle),
-        var(--ui-surface-muted),
-        var(--ui-surface-subtle)
-      );
-      animation: lead-skeleton 1.15s ease-in-out infinite;
-    }
-
-    .missing-state {
-      min-height: 28rem;
-      display: grid;
-      place-items: center;
-      align-content: center;
-      gap: var(--ui-space-3);
-      color: var(--ui-text-muted);
-    }
-
-    .missing-state h1 {
-      font-size: 1.75rem;
-    }
-
-    .missing-state p {
-      margin: 0;
-      font-size: 0.875rem;
-    }
-
-    @keyframes lead-skeleton {
-      50% {
-        opacity: 0.58;
-      }
-    }
+    .lead-page { display: grid; gap: 1.25rem; }
+    .back-link { width: fit-content; color: var(--ui-text-muted); display: inline-flex; align-items: center; gap: .4rem; font-size: .82rem; font-weight: 700; text-decoration: none; }
+    .back-link:hover { color: var(--ui-action); }
+    .lead-hero { min-height: 8.5rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--ui-border); border-radius: 1.25rem; background: linear-gradient(135deg, var(--ui-surface-raised) 65%, color-mix(in srgb, var(--ui-action) 8%, white)); display: flex; align-items: end; justify-content: space-between; gap: 1rem; box-shadow: var(--ui-shadow-1); }
+    .lead-hero__kicker { margin: 0 0 .55rem; color: var(--ui-action); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .lead-hero h1 { margin: 0; font-family: var(--ui-font-display), sans-serif; font-size: clamp(2rem, 4vw, 3.5rem); line-height: .98; letter-spacing: -.045em; }
+    .lead-hero__meta { margin: .75rem 0 0; color: var(--ui-text-muted); font-size: .82rem; }
+    .lead-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem); gap: 1.25rem; align-items: start; }
+    .lead-main { display: grid; gap: 1.25rem; }
+    .client-panel, .timeline-panel, .status-panel { border: 1px solid var(--ui-border); border-radius: 1.15rem; background: var(--ui-surface-raised); box-shadow: var(--ui-shadow-1); }
+    .client-panel, .timeline-panel { overflow: hidden; }
+    .panel-heading { min-height: 4.8rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid var(--ui-border); background: var(--ui-surface-subtle); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .panel-heading span, .status-panel > header span { color: var(--ui-text-subtle); font-size: .68rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .panel-heading h2, .status-panel h2 { margin: .2rem 0 0; font-family: var(--ui-font-display), sans-serif; font-size: 1.2rem; }
+    .source-mark { padding: .45rem .65rem; border: 1px solid var(--ui-border); border-radius: 999px; background: white; display: inline-flex; align-items: center; gap: .4rem; }
+    .client-data { margin: 0; padding: 1.25rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .client-data div { min-width: 0; padding: .85rem; border-radius: .8rem; background: var(--ui-surface-subtle); }
+    .client-data__message { grid-column: 1 / -1; }
+    .client-data dt { color: var(--ui-text-subtle); font-size: .7rem; font-weight: 750; text-transform: uppercase; }
+    .client-data dd { margin: .35rem 0 0; color: var(--ui-text); font-size: .9rem; font-weight: 650; overflow-wrap: anywhere; }
+    .client-data a { color: inherit; }
+    .status-panel { position: sticky; top: 5.5rem; padding: 1.4rem; display: grid; gap: 1.2rem; overflow: hidden; }
+    .status-panel__glow { position: absolute; inset: -5rem -6rem auto auto; width: 13rem; height: 13rem; border-radius: 50%; background: color-mix(in srgb, var(--ui-action) 12%, transparent); filter: blur(1rem); pointer-events: none; }
+    .status-panel > *:not(.status-panel__glow) { position: relative; }
+    .primary-status, .call-status { padding: 1rem; border: 1px solid var(--ui-border); border-radius: .9rem; background: var(--ui-surface-subtle); display: grid; justify-items: start; gap: .45rem; }
+    .primary-status small, .call-status small, .call-status span { color: var(--ui-text-subtle); font-size: .72rem; }
+    .call-status strong { font-size: .86rem; }
+    .status-actions { display: grid; gap: .65rem; }
+    .status-actions app-ui-button, .status-actions app-ui-menu { width: 100%; }
+    .terminal-note { margin: 0; padding: .85rem; border-radius: .75rem; background: var(--ui-surface-muted); color: var(--ui-text-muted); font-size: .8rem; }
+    .terminal-summary { padding: 1rem; border-left: .25rem solid var(--ui-danger); border-radius: .6rem; background: color-mix(in srgb, var(--ui-danger) 7%, white); }
+    .terminal-summary--success { border-color: var(--ui-success); background: color-mix(in srgb, var(--ui-success) 7%, white); display: grid; gap: .3rem; }
+    .terminal-summary p { margin: .4rem 0 0; color: var(--ui-text-muted); font-size: .8rem; }
+    .status-panel__manager { padding-top: 1rem; border-top: 1px solid var(--ui-border); color: var(--ui-text-muted); font-size: .78rem; }
+    .timeline-list { margin: 0; padding: 1.25rem; list-style: none; display: grid; }
+    .timeline-list li { position: relative; min-height: 5.5rem; padding: 0 0 1.25rem 2rem; }
+    .timeline-list li:not(:last-child)::before { content: ''; position: absolute; top: .85rem; bottom: -.1rem; left: .42rem; width: 1px; background: var(--ui-border); }
+    .timeline-dot { position: absolute; top: .35rem; left: 0; width: .85rem; height: .85rem; border: 3px solid white; border-radius: 50%; background: var(--ui-text-subtle); box-shadow: 0 0 0 1px var(--ui-border); }
+    .timeline-dot[data-category='call_status'] { background: var(--ui-info); }
+    .timeline-dot[data-category='client_status'] { background: var(--ui-action); }
+    .timeline-dot[data-category='comment'] { background: var(--ui-warning); }
+    .timeline-list article { display: grid; gap: .35rem; }
+    .timeline-list article header { display: flex; justify-content: space-between; gap: 1rem; }
+    .timeline-list strong { font-size: .88rem; }
+    .timeline-list time, .timeline-list small { color: var(--ui-text-subtle); font-size: .72rem; }
+    .timeline-list p { margin: .15rem 0; color: var(--ui-text-muted); font-size: .86rem; white-space: pre-wrap; }
+    .timeline-context { width: fit-content; padding: .2rem .45rem; border-radius: 999px; background: var(--ui-surface-muted); color: var(--ui-text-muted) !important; font-weight: 700; }
+    .timeline-empty { margin: 0; padding: 2rem; color: var(--ui-text-muted); text-align: center; }
+    .action-error { padding: .85rem 1rem; border: 1px solid color-mix(in srgb, var(--ui-danger) 30%, transparent); border-radius: .75rem; background: color-mix(in srgb, var(--ui-danger) 8%, white); color: var(--ui-danger); }
+    .lead-state { min-height: 22rem; display: grid; place-content: center; justify-items: center; gap: 1rem; text-align: center; }
+    .lead-state__pulse { width: min(32rem, 80vw); height: 4rem; border-radius: 1rem; background: linear-gradient(90deg, var(--ui-surface-muted), var(--ui-surface-subtle), var(--ui-surface-muted)); background-size: 200% 100%; animation: pulse 1.2s infinite; }
+    @keyframes pulse { to { background-position: -200% 0; } }
+    @media (max-width: 62rem) { .lead-grid { grid-template-columns: 1fr; } .status-panel { position: static; grid-row: 1; } }
+    @media (max-width: 40rem) { .lead-hero { align-items: start; flex-direction: column; } .client-data { grid-template-columns: 1fr; } .client-data__message { grid-column: auto; } .timeline-list article header { display: grid; gap: .25rem; } }
+    @media (prefers-reduced-motion: reduce) { .lead-state__pulse { animation: none; } }
   `,
 })
 export class LeadDetailPage {
-  protected readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly dialog = inject(UiDialogService);
-  private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
-  private readonly workflowService = inject(LeadWorkflowService);
+  private readonly activities = inject(LeadActivitiesService);
   private readonly usersService = inject(UsersService);
-  private readonly lossReasonsService = inject(LossReasonsService);
+  private readonly dialog = inject(UiDialogService);
   protected readonly i18n = inject(I18nService);
+  private readonly leadId = signal(this.route.snapshot.paramMap.get('leadId') ?? '');
 
-  protected readonly leadId = this.route.snapshot.paramMap.get('leadId') ?? '';
+  protected readonly actionPending = signal(false);
+  protected readonly actionError = signal('');
   protected readonly leadResource = resource({
-    params: () => ({ leadId: this.leadId }),
-    loader: ({ params }) => this.leadsService.getById(params.leadId),
+    params: () => this.leadId(),
+    loader: ({ params }) => this.leadsService.getById(params),
   });
-  protected readonly employeesResource = resource({
-    loader: () => this.usersService.listManagers(),
-  });
-  protected readonly lossReasonsResource = resource({
-    loader: () => this.lossReasonsService.list(),
-  });
-
+  protected readonly employeesResource = resource({ loader: () => this.usersService.listManagers() });
   protected readonly lead = computed(() => this.leadResource.value() ?? null);
-  protected readonly timelineEvents = computed(() => {
-    const events = this.lead()?.events ?? [];
-    return events.filter(
-      (event) => event.rawType !== 'lead_edited' && event.type !== 'lead_updated',
-    );
-  });
   protected readonly loadError = computed(() => {
     const error = this.leadResource.error();
-    return error ? this.i18n.t('error.leadLoadFailed') : '';
+    return error instanceof Error ? error.message : error ? String(error) : '';
   });
-  private readonly attemptedOrphanClearIds = new Set<string>();
+  protected readonly timelineEvents = computed(() => this.lead()?.events ?? []);
 
-  constructor() {
-    effect(() => {
-      const lead = this.lead();
-      const employees = this.employeesResource.value();
-      if (!lead?.assignedToId || employees == null) return;
-      if (employees.some((employee) => employee.id === lead.assignedToId)) return;
-      if (this.attemptedOrphanClearIds.has(lead.id)) return;
-      this.attemptedOrphanClearIds.add(lead.id);
-      void this.clearOrphanAssignee(lead);
-    });
-  }
-  protected readonly actionError = signal('');
-  protected readonly dialogError = signal('');
-  protected readonly actionPending = signal(false);
-  protected readonly deletingLead = signal(false);
-  protected readonly closeDialogOpen = signal(false);
-  protected readonly closeDialogMode = signal<'close' | 'edit'>('close');
-  protected readonly successDialogOpen = signal(false);
-  protected readonly editLeadDialogOpen = signal(false);
-  protected readonly assignManagerDialogOpen = signal(false);
-  protected readonly assignManagerId = signal(NO_MANAGER_VALUE);
-  protected readonly editHistoryDialogOpen = signal(false);
-  protected readonly editingHistoryEvent = signal<LeadEvent | null>(null);
+  protected readonly callTone = callStatusTone;
+  protected readonly clientTone = clientStatusTone;
+  protected readonly isTerminal = leadIsTerminal;
 
-  protected readonly firstCallResult = signal<string>(FIRST_CALL_RESULT_CODES[0]);
-  protected readonly firstCallComment = signal('');
-  protected readonly visitDate = signal('2026-07-10');
-  protected readonly visitComment = signal('');
-  protected readonly commentDraft = signal('');
-  protected readonly editLeadName = signal('');
-  protected readonly editLeadPhone = signal('');
-  protected readonly editLeadEmail = signal('');
-  protected readonly editLeadCityRegion = signal('');
-  protected readonly editLeadProductInterest = signal('');
-  protected readonly editLeadBudget = signal('');
-  protected readonly editLeadInitialMessage = signal('');
-  protected readonly editLeadAssignedToId = signal(NO_MANAGER_VALUE);
-  protected readonly editHistoryType = signal('comment');
-  protected readonly editHistoryComment = signal('');
-  protected readonly closeReason = signal('no_contact');
-  protected readonly closeComment = signal('');
-  protected readonly contractNumber = signal('');
-  protected readonly contractAmount = signal('');
-  protected readonly contractCurrency = signal<ContractCurrency>('UAH');
-  protected readonly contractComment = signal('');
-  protected readonly skeletonPanels = [1, 2, 3];
-
-  protected readonly contractCurrencyOptions = computed(() => {
-    const office = this.leadResource.value()?.officeCode ?? 'kyiv';
-    return currenciesForOffice(office);
-  });
-  protected readonly firstCallOptions = computed((): readonly UiSelectOption[] =>
-    FIRST_CALL_RESULT_CODES.map((code) => ({
-      value: code,
-      label: this.i18n.firstCallResultLabel(code),
-    })),
-  );
-  protected readonly closeReasonOptions = computed((): readonly UiSelectOption[] => {
-    const reasons = this.lossReasonsResource.value();
-    if (reasons?.length) {
-      return reasons.map((reason) => ({
-        value: reason.code,
-        label: this.i18n.closeReasonLabel(reason.code, reasons),
-      }));
-    }
-    return Object.keys(CLOSE_REASON_LABELS).map((value) => ({
-      value,
-      label: this.i18n.closeReasonLabel(value),
-    }));
-  });
-  protected readonly defaultCloseReason = computed(
-    () => this.closeReasonOptions()[0]?.value ?? 'not_target',
-  );
-  protected readonly historyEventTypeOptions = computed((): readonly UiSelectOption[] => {
-    const types = [
-      'created',
-      'lead_assigned',
-      'taken',
-      'contact_attempt',
-      'first_call',
-      'showroom_visit_scheduled',
-      'visit_scheduled',
-      'visit_rescheduled',
-      'showroom_visit_completed',
-      'visit_completed',
-      'thinking',
-      'activated',
-      'reopened',
-      'comment',
-      'closed',
-      'bad_lead',
-      'contract_signed',
-      'successful',
-      'attachment',
-    ] as const;
-    return types.map((value) => ({ value, label: this.i18n.eventTitle(value) }));
-  });
-
-  protected formatDateTime = (value: string | null | undefined) => this.i18n.formatDateTime(value);
-  protected formatMoney = (value: number | null | undefined, currency?: string) =>
-    this.i18n.formatMoney(value, currency);
-  protected officeName = (code: string) => this.i18n.officeFilterLabel(code);
-  protected readonly workflowTone = workflowTone;
-
-  protected effectiveAssignedToId(lead: MockLead): string | null {
-    if (!lead.assignedToId) return null;
-    const employees = this.employeesResource.value();
-    if (!employees) return lead.assignedToId;
-    return employees.some((employee) => employee.id === lead.assignedToId) ? lead.assignedToId : null;
+  protected clientStatusItems(lead: MockLead): readonly UiMenuItem[] {
+    const items: readonly { value: Exclude<ClientStatus, 'new_lead'>; label: string; icon: UiMenuItem['icon'] }[] = [
+      { value: 'showroom_invited', label: this.clientStatusLabel('showroom_invited'), icon: 'calendar_month' },
+      { value: 'calculation_in_progress', label: this.clientStatusLabel('calculation_in_progress'), icon: 'automation' },
+      { value: 'thinking', label: this.clientStatusLabel('thinking'), icon: 'warning' },
+      { value: 'closed_lost', label: this.clientStatusLabel('closed_lost'), icon: 'close' },
+      { value: 'contract_signed', label: this.clientStatusLabel('contract_signed'), icon: 'check_circle' },
+    ];
+    return items.map((item) => ({ ...item, disabled: item.value === lead.clientStatus }));
   }
 
-  private async clearOrphanAssignee(lead: MockLead): Promise<void> {
-    try {
-      await this.leadsService.updateLeadDetails(
-        lead.id,
-        {
-          name: lead.name,
-          phone: lead.phone,
-          email: lead.email,
-          cityRegion: lead.cityRegion,
-          productInterest: lead.productInterest,
-          estimatedBudget: lead.estimatedBudget,
-          initialMessage: lead.initialMessage,
-          assignedToId: null,
-        },
-        ['manager'],
-      );
-      await this.leadResource.reload();
-    } catch {
-      // Keep UI treating assignee as unassigned via effectiveAssignedToId.
-    }
-  }
-
-  protected canEditLead(lead: MockLead): boolean {
-    if (lead.archivedAt) return false;
-    const role = this.auth.profile()?.role;
-    if (!canEditLeads(role)) return false;
-    if (role === 'super_admin') return true;
-    return (
-      role === 'office_admin' &&
-      (this.session.officeContext()?.userOffices ?? []).some(
-        (office) => office.code === lead.officeCode,
-      )
-    );
-  }
-
-  protected canArchiveLead(lead: MockLead): boolean {
-    if (lead.workflowStatus !== 'closed') return false;
-    return this.canEditLead(lead);
-  }
-
-  protected async confirmArchiveLead(lead: MockLead): Promise<void> {
-    if (!this.canArchiveLead(lead) || this.deletingLead()) return;
-
-    const confirmed = await firstValueFrom(
+  protected async openCallMenu(lead: MockLead): Promise<void> {
+    const status = await firstValueFrom(
       this.dialog
-        .confirm({
-          title: this.i18n.t('lead.archive'),
-          description: this.i18n.t('lead.archiveDesc', { name: lead.name }),
-          confirmLabel: this.i18n.t('lead.archiveShort'),
-          cancelLabel: this.i18n.t('common.cancel'),
-          danger: true,
+        .open<RadialActionDialog, RadialActionDialogData<CallStatus>, CallStatus>(RadialActionDialog, {
+          data: {
+            title: this.i18n.t('leadDetail.callChoose'),
+            hint: this.i18n.t('leadDetail.callHint'),
+            actions: CALL_ACTIONS.map((action) => ({
+              ...action,
+              label: this.i18n.callStatusLabel(action.id),
+            })),
+            layout: CALL_RADIAL_LAYOUT,
+          },
+          panelClass: 'radial-menu-dialog-panel',
+          backdropClass: 'radial-menu-backdrop',
+          ariaLabel: this.i18n.t('leadDetail.callChoose'),
+          maxWidth: '100vw',
+          enterAnimationDuration: 0,
+          exitAnimationDuration: 0,
         })
         .afterClosed(),
     );
-    if (!confirmed) return;
-
-    this.actionError.set('');
-    this.deletingLead.set(true);
-    try {
-      await this.leadsService.archiveLead(lead.id);
-      await this.router.navigate(['/crm/leads']);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'error.leadArchiveFailed';
-      this.actionError.set(this.i18n.localizeError(message));
-    } finally {
-      this.deletingLead.set(false);
+    if (!status) return;
+    let comment = '';
+    if (status === 'reached') {
+      const result = await this.openTextDialog({
+        eyebrow: this.i18n.t('leadDetail.reachedEyebrow'),
+        title: this.i18n.t('leadDetail.reachedTitle'),
+        description: this.i18n.t('leadDetail.reachedDescription'),
+        placeholder: this.i18n.t('leadDetail.reachedPlaceholder'),
+        submitLabel: this.i18n.t('leadDetail.saveCall'),
+      });
+      if (!result) return;
+      comment = result;
     }
+    await this.runActivity(() => this.activities.recordCall(lead.id, status, comment));
   }
 
-  protected async restoreLead(lead: MockLead): Promise<void> {
-    if (this.auth.profile()?.role !== 'super_admin' || this.actionPending()) return;
-    this.actionPending.set(true);
+  protected async openComment(lead: MockLead): Promise<void> {
+    const comment = await this.openTextDialog({
+      eyebrow: this.i18n.t('leadDetail.noteEyebrow'),
+      title: this.i18n.t('leadDetail.addComment'),
+      description: this.i18n.t('leadDetail.commentDescription'),
+      placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
+      submitLabel: this.i18n.t('leadDetail.addTimeline'),
+    });
+    if (!comment) return;
+    await this.runActivity(() => this.activities.addComment(lead.id, comment));
+  }
+
+  protected async selectClientStatus(lead: MockLead, value: string): Promise<void> {
+    const status = value as Exclude<ClientStatus, 'new_lead'>;
+    if (status === lead.clientStatus) return;
+    if (status === 'closed_lost') {
+      const result = await firstValueFrom(
+        this.dialog
+          .open<CloseStatusDialog, never, CloseStatusResult>(CloseStatusDialog, {
+            ariaLabelledBy: 'close-status-title',
+            maxWidth: 'calc(100vw - 1rem)',
+          })
+          .afterClosed(),
+      );
+      if (!result) return;
+      await this.runActivity(() =>
+        this.activities.closeLead(lead.id, result.reason, result.comment),
+      );
+      return;
+    }
+    if (status === 'contract_signed') {
+      const result = await firstValueFrom(
+        this.dialog
+          .open<ContractStatusDialog, ContractStatusDialogData, ContractStatusResult>(
+            ContractStatusDialog,
+            {
+              data: { defaultCurrency: defaultCurrencyForOffice(lead.officeCode) },
+              ariaLabelledBy: 'contract-status-title',
+              maxWidth: 'calc(100vw - 1rem)',
+            },
+          )
+          .afterClosed(),
+      );
+      if (!result) return;
+      await this.runActivity(() =>
+        this.activities.signContract(
+          lead.id,
+          result.contractNumber,
+          result.amount,
+          result.currency,
+        ),
+      );
+      return;
+    }
+    await this.runActivity(() => this.activities.setClientStatus(lead.id, status));
+  }
+
+  protected async reopenLead(lead: MockLead): Promise<void> {
+    await this.runActivity(() => this.activities.reopen(lead.id));
+  }
+
+  private async openTextDialog(data: TextActivityDialogData): Promise<string | undefined> {
+    return firstValueFrom(
+      this.dialog
+        .open<TextActivityDialog, TextActivityDialogData, string>(TextActivityDialog, {
+          data,
+          ariaLabelledBy: 'text-activity-title',
+          maxWidth: 'calc(100vw - 1rem)',
+        })
+        .afterClosed(),
+    );
+  }
+
+  private async runActivity(action: () => Promise<void>): Promise<void> {
+    if (this.actionPending()) return;
     this.actionError.set('');
+    this.actionPending.set(true);
     try {
-      await this.leadsService.restoreLead(lead.id);
+      await action();
       await this.leadResource.reload();
+      await this.employeesResource.reload();
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'error.actionFailed');
+      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося зберегти дію.');
     } finally {
       this.actionPending.set(false);
     }
   }
 
-  protected async confirmDeleteLead(lead: MockLead): Promise<void> {
-    if (this.auth.profile()?.role !== 'super_admin' || !lead.archivedAt || this.deletingLead()) {
-      return;
-    }
-
-    const confirmed = await firstValueFrom(
-      this.dialog
-        .confirm({
-          title: this.i18n.t('lead.deletePermanentlyTitle'),
-          description: this.i18n.t('lead.deletePermanentlyDesc', { name: lead.name }),
-          confirmLabel: this.i18n.t('lead.deletePermanently'),
-          cancelLabel: this.i18n.t('common.cancel'),
-          danger: true,
-        })
-        .afterClosed(),
-    );
-    if (!confirmed) return;
-
-    this.actionError.set('');
-    this.deletingLead.set(true);
-    try {
-      await this.leadsService.deleteLeadPermanently(lead.id);
-      await this.router.navigate(['/crm/leads']);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'error.actionFailed';
-      this.actionError.set(this.i18n.localizeError(message));
-    } finally {
-      this.deletingLead.set(false);
-    }
-  }
-
-  protected managerOptions(lead: MockLead): readonly UiSelectOption[] {
-    const employees = this.employeesResource.value() ?? [];
-    const options = employees
-      .filter(
-        (employee) =>
-          employee.status === 'active' &&
-          employee.role !== 'super_admin' &&
-          employee.officeIds.includes(lead.officeCode),
-      )
-      .map((employee) => ({
-        value: employee.id,
-        label: employee.displayName,
-        userId: employee.id,
-      }));
-    return [{ value: NO_MANAGER_VALUE, label: this.i18n.t('common.unassigned') }, ...options];
-  }
-
   protected eventTitle(event: LeadEvent): string {
-    this.i18n.locale();
     return presentEventTitleFromLeadEvent(event, this.i18n.locale());
   }
 
   protected eventBody(event: LeadEvent): string {
-    this.i18n.locale();
     return presentEventBodyFromLeadEvent(event, this.i18n.locale());
   }
 
-  protected historyAuditText(event: LeadEvent): string {
-    this.i18n.locale();
-    return presentHistoryAuditText(event, this.i18n.locale(), (value) =>
-      this.i18n.formatDateTime(value),
-    );
+  protected eventStatusLabel(event: LeadEvent): string {
+    if (!event.statusCode) return '';
+    if (event.category === 'call_status') return this.callStatusLabel(event.statusCode as CallStatus);
+    if (event.category === 'client_status' || event.category === 'system') {
+      return this.clientStatusLabel(event.statusCode as ClientStatus);
+    }
+    return '';
+  }
+
+  protected eventActorName(event: LeadEvent): string {
+    return event.actorName?.trim() || this.employeeName(event.actorId || null);
+  }
+
+  protected employeeName(id: string | null): string {
+    if (!id) return this.i18n.t('common.unassigned');
+    return this.employeesResource.value()?.find((employee) => employee.id === id)?.displayName ?? this.i18n.t('common.unknown');
+  }
+
+  protected callStatusLabel(status: CallStatus): string {
+    return this.i18n.callStatusLabel(status);
+  }
+
+  protected clientStatusLabel(status: ClientStatus): string {
+    return this.i18n.clientStatusLabel(status);
   }
 
   protected sourceLabel(lead: MockLead): string {
@@ -1603,450 +496,23 @@ export class LeadDetailPage {
     return LEAD_SOURCE_ICONS[lead.source];
   }
 
-  protected workflowLabel(lead: MockLead): string {
-    return this.i18n.workflowLabel(lead.workflowStatus);
+  protected officeName(code: string): string {
+    return this.i18n.officeFilterLabel(code);
   }
 
-  protected employeeName(employeeId: string | null): string {
-    const employees = this.employeesResource.value() ?? [];
-    if (!employeeId) return this.i18n.t('common.unassigned');
-    return (
-      employees.find((employee) => employee.id === employeeId)?.displayName ??
-      this.i18n.t('common.unassigned')
-    );
+  protected closeReasonLabel(code: string): string {
+    return this.i18n.closeReasonLabel(code);
   }
 
-  protected eventActorName(event: LeadEvent): string {
-    const fromProfile = event.actorName?.trim();
-    if (fromProfile) return fromProfile;
-    return this.employeeName(event.actorId || null);
+  protected defaultCurrency(lead: MockLead): string {
+    return defaultCurrencyForOffice(lead.officeCode);
   }
 
-  protected initials(name: string): string {
-    return employeeInitials(name);
+  protected formatDateTime(value: string | null | undefined): string {
+    return this.i18n.formatDateTime(value);
   }
 
-  protected isTerminal(lead: MockLead): boolean {
-    return leadIsTerminal(lead);
-  }
-
-  protected terminalTitle(lead: MockLead): string {
-    return lead.workflowStatus === 'successful'
-      ? this.i18n.t('lead.terminalSuccess')
-      : this.i18n.t('lead.terminalClosed');
-  }
-
-  protected terminalDescription(lead: MockLead): string {
-    if (lead.contract) {
-      return this.i18n.t('lead.contractSummary', {
-        number: lead.contract.contractNumber,
-        amount: this.i18n.formatMoney(lead.contract.amount, lead.contract.currency),
-      });
-    }
-    if (lead.close) {
-      const reasonLabel = this.i18n.closeReasonLabel(
-        lead.close.reason,
-        this.lossReasonsResource.value(),
-      );
-      return `${reasonLabel}. ${lead.close.comment || this.i18n.t('common.noAdditionalComment')}`;
-    }
-    return this.i18n.t('lead.terminalUnavailable');
-  }
-
-  protected async markThinking(lead: MockLead): Promise<void> {
-    await this.runAction(() => this.workflowService.markThinking(lead.id));
-  }
-
-  protected async activateLead(lead: MockLead): Promise<void> {
-    await this.runAction(() => this.workflowService.activateLead(lead.id));
-  }
-
-  protected async reopenLead(lead: MockLead): Promise<void> {
-    await this.runAction(() => this.workflowService.reopenLead(lead.id));
-  }
-
-  protected async saveFirstCall(lead: MockLead): Promise<void> {
-    await this.runAction(async () => {
-      const error = await this.workflowService.recordFirstCall(
-        lead.id,
-        this.firstCallResult() as (typeof FIRST_CALL_RESULT_CODES)[number],
-        this.firstCallComment(),
-      );
-      if (error) return error;
-      this.firstCallComment.set('');
-      if (!this.effectiveAssignedToId(lead)) {
-        await this.workflowService.takeLead(lead.id);
-      }
-      return;
-    });
-  }
-
-  protected openAssignManagerDialog(lead: MockLead): void {
-    if (!this.isSuperAdmin()) return;
-    this.dialogError.set('');
-    this.assignManagerId.set(this.effectiveAssignedToId(lead) ?? NO_MANAGER_VALUE);
-    this.assignManagerDialogOpen.set(true);
-  }
-
-  protected closeAssignManagerDialog(): void {
-    this.dialogError.set('');
-    this.assignManagerDialogOpen.set(false);
-  }
-
-  protected async submitAssignManager(lead: MockLead): Promise<void> {
-    this.dialogError.set('');
-    if (!this.isSuperAdmin()) {
-      this.dialogError.set(this.i18n.t('lead.editForbidden'));
-      return;
-    }
-
-    const assignedToId =
-      this.assignManagerId() === NO_MANAGER_VALUE ? null : this.assignManagerId();
-    if ((lead.assignedToId ?? null) === assignedToId) {
-      this.assignManagerDialogOpen.set(false);
-      return;
-    }
-
-    try {
-      await this.leadsService.updateLeadDetails(
-        lead.id,
-        {
-          name: lead.name,
-          phone: lead.phone,
-          email: lead.email,
-          cityRegion: lead.cityRegion,
-          productInterest: lead.productInterest,
-          estimatedBudget: lead.estimatedBudget,
-          initialMessage: lead.initialMessage,
-          assignedToId,
-        },
-        ['manager'],
-      );
-      this.assignManagerDialogOpen.set(false);
-      await this.leadResource.reload();
-    } catch (error) {
-      this.dialogError.set(
-        error instanceof Error ? error.message : this.i18n.t('lead.saveChangesFailed'),
-      );
-    }
-  }
-
-  protected isSuperAdmin(): boolean {
-    return isSuperAdminRole(this.auth.profile()?.role);
-  }
-
-  protected async scheduleVisit(lead: MockLead): Promise<void> {
-    await this.runAction(async () => {
-      const error = await this.workflowService.scheduleVisit(
-        lead.id,
-        this.normalizedVisitDate(),
-        this.visitComment(),
-      );
-      if (error) return error;
-      this.visitComment.set('');
-      return;
-    });
-  }
-
-  protected async rescheduleVisit(lead: MockLead): Promise<void> {
-    await this.runAction(async () => {
-      const error = await this.workflowService.rescheduleVisit(
-        lead.id,
-        this.normalizedVisitDate(),
-        this.visitComment(),
-      );
-      if (error) return error;
-      this.visitComment.set('');
-      return;
-    });
-  }
-
-  protected async completeVisit(lead: MockLead): Promise<void> {
-    await this.runAction(async () => {
-      const error = await this.workflowService.completeVisit(lead.id, this.visitComment());
-      if (error) return error;
-      this.visitComment.set('');
-      return;
-    });
-  }
-
-  protected async addComment(lead: MockLead): Promise<void> {
-    await this.runAction(async () => {
-      const error = await this.workflowService.addComment(lead.id, this.commentDraft());
-      if (error) return error;
-      this.commentDraft.set('');
-      return;
-    });
-  }
-
-  protected openLeadEditDialog(lead: MockLead): void {
-    this.dialogError.set('');
-    this.editLeadName.set(lead.name === this.i18n.t('lead.noName') ? '' : lead.name);
-    this.editLeadPhone.set(lead.phone === '—' ? '' : lead.phone);
-    this.editLeadEmail.set(lead.email ?? '');
-    this.editLeadCityRegion.set(lead.cityRegion);
-    this.editLeadProductInterest.set(lead.productInterest);
-    this.editLeadBudget.set(lead.estimatedBudget == null ? '' : String(lead.estimatedBudget));
-    this.editLeadInitialMessage.set(lead.initialMessage);
-    this.editLeadAssignedToId.set(this.effectiveAssignedToId(lead) ?? NO_MANAGER_VALUE);
-    this.editLeadDialogOpen.set(true);
-  }
-
-  protected closeLeadEditDialog(): void {
-    this.dialogError.set('');
-    this.editLeadDialogOpen.set(false);
-  }
-
-  protected async submitLeadEdit(lead: MockLead): Promise<void> {
-    this.dialogError.set('');
-    if (!this.canEditLead(lead)) {
-      this.dialogError.set(this.i18n.t('lead.editForbidden'));
-      return;
-    }
-
-    const name = this.editLeadName().trim();
-    const phoneRaw = this.editLeadPhone().trim();
-    const phone = normalizePhoneForOffice(phoneRaw, lead.officeCode);
-    const email = this.nullableText(this.editLeadEmail());
-    const estimatedBudget = this.parseOptionalMoney(this.editLeadBudget());
-    if (!name) {
-      this.dialogError.set(this.i18n.t('lead.nameRequired'));
-      return;
-    }
-    if (!phoneRaw) {
-      this.dialogError.set(this.i18n.t('lead.phoneRequired'));
-      return;
-    }
-    if (!phone) {
-      this.dialogError.set(this.i18n.t('lead.phoneInvalid'));
-      return;
-    }
-    if (email && !this.isValidEmail(email)) {
-      this.dialogError.set(this.i18n.t('lead.emailInvalid'));
-      return;
-    }
-    if (Number.isNaN(estimatedBudget) || (estimatedBudget != null && estimatedBudget < 0)) {
-      this.dialogError.set(this.i18n.t('lead.budgetInvalid'));
-      return;
-    }
-
-    const payload = {
-      name,
-      phone,
-      email,
-      cityRegion: this.editLeadCityRegion().trim(),
-      productInterest: this.editLeadProductInterest().trim(),
-      estimatedBudget,
-      initialMessage: this.editLeadInitialMessage().trim(),
-      assignedToId:
-        this.editLeadAssignedToId() === NO_MANAGER_VALUE ? null : this.editLeadAssignedToId(),
-    };
-    const changedFields = this.changedLeadFields(lead, payload);
-    if (!changedFields.length) {
-      this.editLeadDialogOpen.set(false);
-      return;
-    }
-
-    try {
-      await this.leadsService.updateLeadDetails(lead.id, payload, changedFields);
-      this.editLeadDialogOpen.set(false);
-      await this.leadResource.reload();
-    } catch (error) {
-      this.dialogError.set(
-        error instanceof Error ? error.message : this.i18n.t('lead.saveChangesFailed'),
-      );
-    }
-  }
-
-  protected openHistoryEditDialog(event: LeadEvent): void {
-    this.dialogError.set('');
-    this.editingHistoryEvent.set(event);
-    this.editHistoryType.set(event.rawType ?? event.type);
-    this.editHistoryComment.set(event.comment ?? '');
-    this.editHistoryDialogOpen.set(true);
-  }
-
-  protected closeHistoryEditDialog(): void {
-    this.dialogError.set('');
-    this.editHistoryDialogOpen.set(false);
-    this.editingHistoryEvent.set(null);
-  }
-
-  protected async submitHistoryEdit(lead: MockLead): Promise<void> {
-    this.dialogError.set('');
-    if (!this.canEditLead(lead)) {
-      this.dialogError.set(this.i18n.t('error.historyEditForbidden'));
-      return;
-    }
-    const event = this.editingHistoryEvent();
-    if (!event) {
-      this.dialogError.set(this.i18n.t('error.historyNotFound'));
-      return;
-    }
-    const comment = this.editHistoryComment().trim();
-    if (!comment) {
-      this.dialogError.set(this.i18n.t('lead.messageRequired'));
-      return;
-    }
-
-    try {
-      await this.leadsService.updateHistoryEvent(lead.id, event.id, {
-        eventType: this.editHistoryType(),
-        comment,
-      });
-      this.closeHistoryEditDialog();
-      await this.leadResource.reload();
-    } catch (error) {
-      this.dialogError.set(
-        error instanceof Error ? error.message : this.i18n.t('lead.saveHistoryFailed'),
-      );
-    }
-  }
-
-  protected openCloseDialog(): void {
-    this.dialogError.set('');
-    this.closeDialogMode.set('close');
-    this.closeReason.set(this.defaultCloseReason());
-    this.closeComment.set('');
-    this.closeDialogOpen.set(true);
-  }
-
-  protected openEditCloseDialog(lead: MockLead): void {
-    if (!lead.close) return;
-    this.dialogError.set('');
-    this.closeDialogMode.set('edit');
-    this.closeReason.set(lead.close.reason);
-    this.closeComment.set(lead.close.comment);
-    this.closeDialogOpen.set(true);
-  }
-
-  protected closeCloseDialog(): void {
-    this.dialogError.set('');
-    this.closeDialogMode.set('close');
-    this.closeDialogOpen.set(false);
-  }
-
-  protected closeSuccessDialog(): void {
-    this.dialogError.set('');
-    this.successDialogOpen.set(false);
-  }
-
-  protected openSuccessDialog(): void {
-    this.dialogError.set('');
-    const office = this.leadResource.value()?.officeCode ?? 'kyiv';
-    this.contractCurrency.set(defaultCurrencyForOffice(office));
-    this.successDialogOpen.set(true);
-  }
-
-  protected async submitClose(lead: MockLead): Promise<void> {
-    this.dialogError.set('');
-    const payload = {
-      reason: this.closeReason() as CloseReason,
-      comment: this.closeComment(),
-    };
-
-    const validationError =
-      this.closeDialogMode() === 'edit'
-        ? await this.leadsService.updateCloseDetails(lead.id, payload)
-        : await this.workflowService.closeLead(lead.id, payload);
-    if (validationError) {
-      this.dialogError.set(validationError);
-      return;
-    }
-
-    this.closeCloseDialog();
-    this.closeComment.set('');
-    await this.leadResource.reload();
-  }
-
-  protected async submitSuccess(lead: MockLead): Promise<void> {
-    const amount = this.parseMoney(this.contractAmount());
-    const validationError = await this.workflowService.markSuccessful(lead.id, {
-      contractNumber: this.contractNumber(),
-      amount,
-      currency: this.contractCurrency(),
-      comment: this.contractComment(),
-    });
-    if (validationError) {
-      this.dialogError.set(validationError);
-      return;
-    }
-    this.successDialogOpen.set(false);
-    this.contractNumber.set('');
-    this.contractAmount.set('');
-    this.contractCurrency.set(defaultCurrencyForOffice(lead.officeCode));
-    this.contractComment.set('');
-    await this.leadResource.reload();
-  }
-
-  private async runAction(action: () => Promise<string | null | void>): Promise<void> {
-    this.clearErrors();
-    this.actionPending.set(true);
-    try {
-      const error = await action();
-      if (error) {
-        this.actionError.set(this.i18n.localizeError(error));
-        return;
-      }
-      await this.leadResource.reload();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'error.actionFailed';
-      this.actionError.set(this.i18n.localizeError(message));
-    } finally {
-      this.actionPending.set(false);
-    }
-  }
-
-  private clearErrors(): void {
-    this.actionError.set('');
-    this.dialogError.set('');
-  }
-
-  private normalizedVisitDate(): string {
-    const date = this.visitDate().trim();
-    return date ? `${date}T12:00:00` : '';
-  }
-
-  private changedLeadFields(
-    lead: MockLead,
-    payload: {
-      readonly name: string;
-      readonly phone: string;
-      readonly email: string | null;
-      readonly cityRegion: string;
-      readonly productInterest: string;
-      readonly estimatedBudget: number | null;
-      readonly initialMessage: string;
-      readonly assignedToId: string | null;
-    },
-  ): readonly string[] {
-    const fields: string[] = [];
-    if ((lead.name === this.i18n.t('lead.noName') ? '' : lead.name) !== payload.name) fields.push('name');
-    if ((lead.phone === '—' ? '' : lead.phone) !== payload.phone) fields.push('phone');
-    if ((lead.email ?? null) !== payload.email) fields.push('email');
-    if (lead.cityRegion !== payload.cityRegion) fields.push('cityRegion');
-    if (lead.productInterest !== payload.productInterest) fields.push('product');
-    if ((lead.estimatedBudget ?? null) !== payload.estimatedBudget) fields.push('budget');
-    if (lead.initialMessage !== payload.initialMessage) fields.push('initialMessage');
-    if ((lead.assignedToId ?? null) !== payload.assignedToId) fields.push('manager');
-    return fields;
-  }
-
-  private nullableText(value: string): string | null {
-    const text = value.trim();
-    return text || null;
-  }
-
-  private parseOptionalMoney(value: string): number | null {
-    const normalized = value.trim();
-    return normalized ? this.parseMoney(normalized) : null;
-  }
-
-  private parseMoney(value: string): number {
-    return Number(value.replace(/\s/g, '').replace(',', '.'));
-  }
-
-  private isValidEmail(value: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  protected formatMoney(value: number | null | undefined, currency: string): string {
+    return this.i18n.formatMoney(value, currency);
   }
 }

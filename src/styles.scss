@@ -1,5 +1,7 @@
 @use '@angular/material' as mat;
 @use './styles/design-catalog';
+@use './styles/radial-menu-overlay';
+@use './styles/radial-menu-page';
 
 html {
   @include mat.theme(

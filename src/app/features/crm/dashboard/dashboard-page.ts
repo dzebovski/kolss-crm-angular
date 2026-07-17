@@ -33,7 +33,7 @@ import { UiIcon } from '../../../ui/icon/ui-icon';
         <article>
           <span>Активні</span>
           <strong>{{ overview()?.activeLeads ?? 0 }}</strong>
-          <app-ui-badge tone="info">workflow</app-ui-badge>
+          <app-ui-badge tone="info">statuses</app-ui-badge>
         </article>
         <article>
           <span>Успішні</span>

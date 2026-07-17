@@ -3,7 +3,10 @@ import type { UiIconName } from '../ui/icon/ui-icon';
 import { CRM_MOCK_NOW } from './crm-mock.data';
 import type {
   CloseLeadPayload,
+  CallStatus,
+  ClientStatus,
   ContractCurrency,
+  ContractCurrencyTotal,
   FunnelStage,
   LeadMonthGroup,
   ManagerOfficeReport,
@@ -64,6 +67,21 @@ export const WORKFLOW_LABELS: Record<LeadWorkflowStatus, string> = {
   successful: 'Договір заключений',
 };
 
+export const CALL_STATUS_LABELS: Record<CallStatus, string> = {
+  reached: 'Успішний дзвінок',
+  no_answer: 'Не дозвонилися',
+  callback_requested: 'Передзвонити',
+};
+
+export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
+  new_lead: 'Нова заявка',
+  showroom_invited: 'Запрошено в салон',
+  calculation_in_progress: 'Прорахунок',
+  thinking: 'Думає',
+  closed_lost: 'Закрито',
+  contract_signed: 'Договір підписано',
+};
+
 export const CLOSE_REASON_LABELS: Record<string, string> = {
   no_contact: 'Немає контакту',
   not_target: 'Нецільовий клієнт',
@@ -72,6 +90,8 @@ export const CLOSE_REASON_LABELS: Record<string, string> = {
   lost_client: 'Втрачений клієнт',
   price: 'Не підійшла ціна',
   spam: 'Сміття / Спам',
+  invalid: 'Невалідна заявка',
+  other: 'Інше',
 };
 
 export function lossReasonLabel(
@@ -148,8 +168,27 @@ export function workflowTone(status: LeadWorkflowStatus): UiBadgeTone {
   return tones[status];
 }
 
+export function callStatusTone(status: CallStatus | null): UiBadgeTone {
+  if (status === 'reached') return 'success';
+  if (status === 'no_answer') return 'danger';
+  if (status === 'callback_requested') return 'warning';
+  return 'neutral';
+}
+
+export function clientStatusTone(status: ClientStatus): UiBadgeTone {
+  const tones: Record<ClientStatus, UiBadgeTone> = {
+    new_lead: 'brand',
+    showroom_invited: 'info',
+    calculation_in_progress: 'warning',
+    thinking: 'warning',
+    closed_lost: 'danger',
+    contract_signed: 'success',
+  };
+  return tones[status];
+}
+
 export function leadIsTerminal(lead: MockLead): boolean {
-  return lead.workflowStatus === 'closed' || lead.workflowStatus === 'successful';
+  return lead.clientStatus === 'closed_lost' || lead.clientStatus === 'contract_signed';
 }
 
 export function formatDate(value: string | null | undefined): string {
@@ -210,11 +249,31 @@ export function groupLeadsByYearMonth(leads: readonly MockLead[]): readonly Lead
       key,
       label: formatMonthYearForLocale(year, month, getActiveLocale()),
       rows,
+      contractTotals: sumContractsByCurrency(rows),
     };
   });
 }
 
 export const CONTRACT_CURRENCIES = ['UAH', 'USD', 'EUR', 'PLN'] as const satisfies readonly ContractCurrency[];
+
+export function sumContractsByCurrency(
+  rows: readonly MockLead[],
+): readonly ContractCurrencyTotal[] {
+  const totals = new Map<ContractCurrency, number>();
+
+  for (const lead of rows) {
+    const contract = lead.contract;
+    if (!contract) continue;
+    totals.set(contract.currency, (totals.get(contract.currency) ?? 0) + contract.amount);
+  }
+
+  if (totals.size === 0) return [];
+
+  return CONTRACT_CURRENCIES.filter((currency) => totals.has(currency)).map((currency) => ({
+    currency,
+    total: totals.get(currency)!,
+  }));
+}
 
 export interface ContractCurrencyOption {
   readonly code: ContractCurrency;

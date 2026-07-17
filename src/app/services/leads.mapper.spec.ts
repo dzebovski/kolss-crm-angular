@@ -15,6 +15,10 @@ const baseRow: LeadListRow = {
   lead_status_changed_at: null,
   workflow_status: 'new',
   workflow_status_changed_at: null,
+  call_status: null,
+  call_status_changed_at: null,
+  client_status: 'new_lead',
+  client_status_changed_at: '2026-07-10T00:00:00Z',
   assigned_to: null,
   loss_reason: null,
   converted_project_id: null,
@@ -78,7 +82,53 @@ describe('mapLeadListRow first_contact_attempt', () => {
     expect(mapLeadListRow(baseRow).firstCall).toBeNull();
     expect(mapLeadListRow({ ...baseRow, first_contact_attempt: null }).firstCall).toBeNull();
   });
+});
 
+describe('mapLeadListRow contract embed', () => {
+  it('maps embedded contract to lead.contract', () => {
+    const lead = mapLeadListRow({
+      ...baseRow,
+      workflow_status: 'successful',
+      contract: {
+        contract_number: 'K-KY-2026-0618',
+        amount: 29800,
+        currency: 'EUR',
+        signed_at: '2026-06-18T13:20:00.000Z',
+      },
+    });
+
+    expect(lead.contract).toEqual({
+      contractNumber: 'K-KY-2026-0618',
+      amount: 29800,
+      currency: 'EUR',
+      comment: '',
+      signedAt: '2026-06-18T13:20:00.000Z',
+    });
+  });
+
+  it('coerces string contract amount from API numeric json', () => {
+    const lead = mapLeadListRow({
+      ...baseRow,
+      workflow_status: 'successful',
+      contract: {
+        contract_number: 'K-1',
+        amount: '500000',
+        currency: 'UAH',
+        signed_at: '2026-07-15T10:00:00.000Z',
+      },
+    });
+
+    expect(lead.contract?.amount).toBe(500000);
+    expect(lead.contract?.currency).toBe('UAH');
+  });
+
+  it('sets contract to null when embed is missing', () => {
+    expect(mapLeadListRow(baseRow).contract).toBeNull();
+    expect(mapLeadListRow({ ...baseRow, contract: null }).contract).toBeNull();
+  });
+});
+
+describe('mapLeadListRow phone formatting', () => {
   it('formats Ukrainian phone to +38 XXX XXXXXXX', () => {
     expect(mapLeadListRow(baseRow).phone).toBe('+38 050 1112233');
     expect(

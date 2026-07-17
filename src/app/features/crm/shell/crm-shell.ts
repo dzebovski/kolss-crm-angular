@@ -109,10 +109,6 @@ import { ImpersonationDialog } from './impersonation-dialog';
               <app-ui-icon name="view_kanban" [size]="17" />
               {{ 'nav.leads' | translate }}
             </a>
-            <a routerLink="/crm/reports" routerLinkActive="is-active">
-              <app-ui-icon name="automation" [size]="17" />
-              {{ 'nav.reports' | translate }}
-            </a>
             @if (canManageAccounts()) {
               <a routerLink="/crm/accounts" routerLinkActive="is-active">
                 <app-ui-icon name="history" [size]="17" />

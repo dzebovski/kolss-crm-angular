@@ -52,6 +52,10 @@ export class KolssApiClient {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/actions/${action}`, body);
   }
 
+  leadActivity<T = { readonly ok: boolean; readonly version: number }>(id: string, body: unknown): Promise<T> {
+    return this.post(`/v1/leads/${encodeURIComponent(id)}/activities`, body);
+  }
+
   archiveLead(id: string): Promise<void> {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/archive`, {}).then(() => undefined);
   }

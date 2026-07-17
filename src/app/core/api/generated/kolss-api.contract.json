@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "sha256": "73cc7c5d74e2e7c57348936b3934381059cf69341d0ac931470af3645536a3a9",
+  "sha256": "c6194ba9f8582c6a19e3af5770816d5381670f78ae90c5085d8c04a1967400ab",
   "operationIds": [
     "getMe",
     "listOffices",
@@ -10,6 +10,7 @@
     "getLead",
     "updateLead",
     "updateLeadEvent",
+    "createLeadActivity",
     "performLeadAction",
     "archiveLead",
     "restoreLead",

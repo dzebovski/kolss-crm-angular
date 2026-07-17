@@ -1,35 +1,53 @@
-export type WorkflowFilterKey =
-  | 'new'
-  | 'callback_required'
-  | 'first_call_done'
-  | 'visit'
-  | 'closed'
-  | 'successful';
+import type { CallStatus, ClientStatus } from '../../../services/crm-mock.types';
 
-export type LeadsPagePreferences = {
+export type CallStatusFilterKey = CallStatus;
+export type ClientStatusFilterKey = ClientStatus;
+
+export interface LeadsPagePreferences {
   periodDays: number | null;
-  workflowFilter: WorkflowFilterKey | null;
-};
+  callStatusFilter: CallStatusFilterKey | null;
+  clientStatusFilter: ClientStatusFilterKey | null;
+  /** Empty string = no manager filter. */
+  managerFilter: string;
+}
 
 export const LEADS_PAGE_PREFERENCES_STORAGE_KEY = 'kolss.leads-list-preferences';
 
 const ALLOWED_PERIOD_DAYS = new Set([7, 30, 40, 180]);
-const ALLOWED_WORKFLOW_FILTERS = new Set<WorkflowFilterKey>([
-  'new',
-  'callback_required',
-  'first_call_done',
-  'visit',
-  'closed',
-  'successful',
+const ALLOWED_CALL_STATUS_FILTERS = new Set<CallStatusFilterKey>([
+  'reached',
+  'no_answer',
+  'callback_requested',
+]);
+const ALLOWED_CLIENT_STATUS_FILTERS = new Set<ClientStatusFilterKey>([
+  'new_lead',
+  'showroom_invited',
+  'calculation_in_progress',
+  'thinking',
+  'closed_lost',
+  'contract_signed',
 ]);
 
 export const DEFAULT_LEADS_PAGE_PREFERENCES: LeadsPagePreferences = {
   periodDays: 7,
-  workflowFilter: null,
+  callStatusFilter: null,
+  clientStatusFilter: null,
+  managerFilter: '',
 };
 
-function isWorkflowFilterKey(value: unknown): value is WorkflowFilterKey {
-  return typeof value === 'string' && ALLOWED_WORKFLOW_FILTERS.has(value as WorkflowFilterKey);
+function isManagerFilter(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function isCallStatusFilterKey(value: unknown): value is CallStatusFilterKey {
+  return typeof value === 'string' && ALLOWED_CALL_STATUS_FILTERS.has(value as CallStatusFilterKey);
+}
+
+function isClientStatusFilterKey(value: unknown): value is ClientStatusFilterKey {
+  return (
+    typeof value === 'string' &&
+    ALLOWED_CLIENT_STATUS_FILTERS.has(value as ClientStatusFilterKey)
+  );
 }
 
 function isPeriodDays(value: unknown): value is number | null {
@@ -54,11 +72,15 @@ export function readLeadsPagePreferences(): LeadsPagePreferences {
       periodDays: isPeriodDays(record['periodDays'])
         ? record['periodDays']
         : DEFAULT_LEADS_PAGE_PREFERENCES.periodDays,
-      workflowFilter: isWorkflowFilterKey(record['workflowFilter'])
-        ? record['workflowFilter']
-        : record['workflowFilter'] === null
-          ? null
-          : DEFAULT_LEADS_PAGE_PREFERENCES.workflowFilter,
+      callStatusFilter: isCallStatusFilterKey(record['callStatusFilter'])
+        ? record['callStatusFilter']
+        : DEFAULT_LEADS_PAGE_PREFERENCES.callStatusFilter,
+      clientStatusFilter: isClientStatusFilterKey(record['clientStatusFilter'])
+        ? record['clientStatusFilter']
+        : DEFAULT_LEADS_PAGE_PREFERENCES.clientStatusFilter,
+      managerFilter: isManagerFilter(record['managerFilter'])
+        ? record['managerFilter']
+        : DEFAULT_LEADS_PAGE_PREFERENCES.managerFilter,
     };
   } catch {
     return { ...DEFAULT_LEADS_PAGE_PREFERENCES };

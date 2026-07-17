@@ -1,0 +1,115 @@
+<div class="design-page radial-lab-page">
+  <app-design-header>
+    <span class="design-version">POC 01</span>
+  </app-design-header>
+
+  <main class="radial-lab">
+    <section class="radial-lab__intro" aria-labelledby="radial-menu-title">
+      <div>
+        <span class="radial-lab__eyebrow"><i aria-hidden="true"></i> Workflow experiment</span>
+        <h1 id="radial-menu-title">Одна дія.<br /><em>Три чіткі наслідки.</em></h1>
+      </div>
+      <p>
+        Радіальне меню працює як launcher команд: воно не зберігає значення, а запускає наступний
+        крок CRM-сценарію.
+      </p>
+    </section>
+
+    <section class="radial-stage" aria-label="Radial menu proof of concept">
+      <div class="radial-stage__halo" aria-hidden="true"></div>
+      <span class="radial-stage__note radial-stage__note--top" aria-hidden="true">
+        <b>01</b> typed action
+      </span>
+      <span class="radial-stage__note radial-stage__note--bottom" aria-hidden="true">
+        local signal state <b>02</b>
+      </span>
+
+      <article class="lead-card">
+        <div class="lead-card__topline">
+          <span>Тестовий лід</span>
+          <app-ui-button variant="ghost" size="small" (pressed)="resetLead()">
+            Reset
+          </app-ui-button>
+        </div>
+
+        <div class="lead-card__identity">
+          <span class="lead-card__avatar" aria-hidden="true">ОМ</span>
+          <div>
+            <span class="lead-card__id">Lead · KLS-1042</span>
+            <h2>Олена Мельник</h2>
+            <a href="tel:+380670000000">+380 67 000 00 00</a>
+          </div>
+        </div>
+
+        <div class="lead-card__status">
+          <div>
+            <span>Поточний статус</span>
+            <strong [attr.data-tone]="selectedAction()?.tone ?? 'new'" data-testid="lead-status">
+              @if (selectedAction(); as action) {
+                <app-ui-icon [name]="action.icon" [size]="17" [filled]="true" />
+              }
+              {{ statusLabel() }}
+            </strong>
+          </div>
+          <span class="lead-card__pulse" aria-hidden="true"></span>
+        </div>
+
+        @if (leadState().comment) {
+          <blockquote data-testid="lead-comment">
+            <span>Коментар до дзвінка</span>
+            {{ leadState().comment }}
+          </blockquote>
+        }
+
+        <button
+          type="button"
+          class="call-launcher"
+          data-testid="open-radial-menu"
+          (click)="openCallActions()"
+        >
+          <span aria-hidden="true">
+            <app-ui-icon name="phone_in_talk" [size]="25" [filled]="true" />
+          </span>
+          <span><small>Нова дія</small>Дзвінок</span>
+          <i aria-hidden="true">↗</i>
+        </button>
+      </article>
+    </section>
+
+    <section class="radial-scale-lab" aria-labelledby="radial-scale-title">
+      <div class="radial-scale-lab__intro">
+        <div>
+          <span class="radial-lab__eyebrow"><i aria-hidden="true"></i> Geometry matrix</span>
+          <h2 id="radial-scale-title">Один контракт.<br /><em>Будь-яка кількість дій.</em></h2>
+        </div>
+        <p>
+          Радіус і координати залежать від конфігурації. Кожна кнопка стоїть центром на одній
+          орбіті, без окремих CSS-правил для конкретного outcome.
+        </p>
+      </div>
+
+      <div class="radial-scale-lab__grid">
+        @for (variant of demoVariants; track variant.id) {
+          <app-radial-demo-launcher
+            [variant]="variant"
+            [selectedLabel]="demoSelectionLabel(variant.id)"
+            (launchRequested)="openDemoActions($event)"
+          />
+        }
+      </div>
+    </section>
+
+    <section class="workflow-map" aria-labelledby="workflow-map-title">
+      <div>
+        <span class="radial-lab__eyebrow">Action contract</span>
+        <h2 id="workflow-map-title">UI не вирішує бізнес-логіку.</h2>
+      </div>
+      <ol>
+        <li><span>01</span><strong>Config</strong><small>label · icon · result</small></li>
+        <li><span>02</span><strong>Dialog</strong><small>повертає outcome</small></li>
+        <li><span>03</span><strong>Container</strong><small>оркеструє workflow</small></li>
+        <li><span>04</span><strong>State</strong><small>реактивно оновлює UI</small></li>
+      </ol>
+    </section>
+  </main>
+</div>

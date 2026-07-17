@@ -7,9 +7,9 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
 import type { UserRole } from '../../../models/database';
 import {
+  callStatusTone,
+  clientStatusTone,
   formatDateTime,
-  WORKFLOW_LABELS,
-  workflowTone,
 } from '../../../services/crm-mock.helpers';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService, type CrmEmployee } from '../../../services/users.service';
@@ -194,9 +194,16 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
                       <small>{{ lead.phone }}</small>
                     </td>
                     <td>
-                      <app-ui-badge [tone]="workflowTone(lead.workflowStatus)">
-                        {{ WORKFLOW_LABELS[lead.workflowStatus] }}
+                      <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
+                        {{ i18n.clientStatusLabel(lead.clientStatus) }}
                       </app-ui-badge>
+                      @if (lead.callStatus; as callStatus) {
+                        <small class="lead-call-status">
+                          <app-ui-badge [tone]="callStatusTone(callStatus)">
+                            {{ i18n.callStatusLabel(callStatus) }}
+                          </app-ui-badge>
+                        </small>
+                      }
                     </td>
                     <td>{{ officeLabel(lead.officeCode) }}</td>
                     <td>{{ formatDateTime(lead.lastActivityAt) }}</td>
@@ -460,7 +467,7 @@ export class EmployeeDetailPage {
   private readonly leadsService = inject(LeadsService);
   private readonly session = inject(SessionService);
   private readonly dialog = inject(UiDialogService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly employeeId = this.route.snapshot.paramMap.get('employeeId') ?? '';
   protected readonly editing = signal(false);
@@ -495,8 +502,8 @@ export class EmployeeDetailPage {
 
   protected readonly roleLabel = roleLabel;
   protected readonly formatDateTime = formatDateTime;
-  protected readonly workflowTone = workflowTone;
-  protected readonly WORKFLOW_LABELS = WORKFLOW_LABELS;
+  protected readonly callStatusTone = callStatusTone;
+  protected readonly clientStatusTone = clientStatusTone;
 
   protected officeLabel(code: string): string {
     return this.i18n.officeFilterLabel(code);
@@ -516,7 +523,7 @@ export class EmployeeDetailPage {
     if (employee.role === 'office_admin') {
       return ['Ліди свого офісу', 'Команда офісу', 'Базове адміністрування доступу'];
     }
-    return ['Ліди свого офісу', 'Взяття ліда в роботу', 'Коментарі та workflow-дії'];
+    return ['Ліди свого офісу', 'Оновлення статусів', 'Коментарі та дзвінки'];
   }
 
   protected isOfficeSelected(officeId: string): boolean {

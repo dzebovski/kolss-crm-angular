@@ -7,6 +7,9 @@ import { messages, type MessageKey, translateMessage } from './messages';
 
 const USER_COMMENT_EVENT_TYPES = new Set([
   'comment',
+  'comment_added',
+  'call_status_changed',
+  'client_status_changed',
   'contact_attempt',
   'first_call',
   'showroom_visit_scheduled',
@@ -87,6 +90,23 @@ export function presentEventTitle(eventType: string, locale: LocaleCode): string
 export function presentEventBody(row: RawLeadEventRow, locale: LocaleCode): string {
   const comment = row.comment?.trim() ?? '';
   const eventType = row.event_type;
+
+  if (eventType === 'call_status_changed' || eventType === 'client_status_changed') {
+    if (comment) return comment;
+    if (isRecord(row.new_value)) {
+      const statusKey = eventType === 'call_status_changed' ? 'call_status' : 'client_status';
+      const status = row.new_value[statusKey];
+      if (typeof status === 'string') {
+        const key = `${eventType === 'call_status_changed' ? 'callStatus' : 'clientStatus'}.${status}` as MessageKey;
+        if (key in messages) return translateMessage(key, locale);
+      }
+    }
+    return '';
+  }
+
+  if (eventType === 'lead_reopened') {
+    return translateMessage('clientStatus.new_lead', locale);
+  }
 
   if (eventType === 'created') {
     if (comment && !isLegacySystemComment(comment)) return comment;

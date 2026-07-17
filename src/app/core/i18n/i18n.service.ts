@@ -78,6 +78,14 @@ export class I18nService {
     return this.t(`workflow.${status}` as MessageKey);
   }
 
+  callStatusLabel(status: string): string {
+    return this.t(`callStatus.${status}` as MessageKey);
+  }
+
+  clientStatusLabel(status: string): string {
+    return this.t(`clientStatus.${status}` as MessageKey);
+  }
+
   sourceLabel(source: string): string {
     return this.t(`source.${source}` as MessageKey);
   }

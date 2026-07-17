@@ -1,22 +1,11 @@
 <div class="design-page" [attr.data-density]="density()">
-  <header class="design-header">
-    <a class="design-brand" routerLink="/" aria-label="KOLSS home">
-      <span class="design-brand__mark" aria-hidden="true"></span>
-      <span>KOLSS</span>
-      <small>Design system</small>
-    </a>
-    <div class="design-header__actions">
-      <span class="design-version">v1.0</span>
-      <app-ui-button variant="secondary" size="small" (pressed)="toggleDensity()">
-        <app-ui-icon name="density_medium" [size]="17" />
-        {{ density() === 'comfortable' ? 'Comfortable' : 'Compact' }}
-      </app-ui-button>
-      <a class="design-home-link" routerLink="/">
-        <app-ui-icon name="arrow_back" [size]="17" />
-        Starter
-      </a>
-    </div>
-  </header>
+  <app-design-header>
+    <span class="design-version">v1.0</span>
+    <app-ui-button variant="secondary" size="small" (pressed)="toggleDensity()">
+      <app-ui-icon name="density_medium" [size]="17" />
+      {{ density() === 'comfortable' ? 'Comfortable' : 'Compact' }}
+    </app-ui-button>
+  </app-design-header>
 
   <main>
     <section class="design-hero" aria-labelledby="design-title">

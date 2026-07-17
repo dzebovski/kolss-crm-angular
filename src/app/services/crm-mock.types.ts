@@ -7,6 +7,18 @@ export type EmployeeStatus = 'active' | 'inactive';
 
 export type LeadStatus = 'new' | 'in_progress' | 'converted' | 'failed';
 
+export type CallStatus = 'reached' | 'no_answer' | 'callback_requested';
+
+export type ClientStatus =
+  | 'new_lead'
+  | 'showroom_invited'
+  | 'calculation_in_progress'
+  | 'thinking'
+  | 'closed_lost'
+  | 'contract_signed';
+
+export type LeadEventCategory = 'call_status' | 'client_status' | 'comment' | 'system';
+
 export type LeadWorkflowStatus =
   | 'new'
   | 'taken'
@@ -34,6 +46,10 @@ export type LeadEventType =
   | 'reopened'
   | 'closed'
   | 'successful'
+  | 'call_status_changed'
+  | 'client_status_changed'
+  | 'comment_added'
+  | 'lead_reopened'
   | 'attachment'
   | 'lead_updated';
 
@@ -77,6 +93,8 @@ export interface LeadEvent {
   /** Display name from API `profiles.display_name` join; empty when missing. */
   readonly actorName?: string;
   readonly occurredAt: string;
+  readonly category?: LeadEventCategory | null;
+  readonly statusCode?: string | null;
   readonly editAudit?: LeadEventEditAudit | null;
 }
 
@@ -126,6 +144,10 @@ export interface MockLead {
   readonly email: string | null;
   readonly leadStatus: LeadStatus;
   readonly workflowStatus: LeadWorkflowStatus;
+  readonly callStatus: CallStatus | null;
+  readonly callStatusChangedAt: string | null;
+  readonly clientStatus: ClientStatus;
+  readonly clientStatusChangedAt: string;
   readonly officeCode: OfficeId;
   readonly source: LeadSource;
   readonly sourceCreatedAt: string;
@@ -142,15 +164,31 @@ export interface MockLead {
   readonly contract: LeadContract | null;
   readonly callbackDueAt: string | null;
   readonly lastComment: string | null;
+  readonly latestTimelineComment: LatestTimelineComment | null;
   readonly lastActivityAt: string;
   readonly attachments: readonly LeadAttachment[];
   readonly events: readonly LeadEvent[];
+}
+
+export interface LatestTimelineComment {
+  readonly comment: string;
+  readonly occurredAt: string;
+  readonly eventType: string;
+  readonly category: LeadEventCategory | null;
+  readonly statusCode: string | null;
+  readonly newValue: unknown;
+}
+
+export interface ContractCurrencyTotal {
+  readonly currency: ContractCurrency;
+  readonly total: number;
 }
 
 export interface LeadMonthGroup {
   readonly key: string;
   readonly label: string;
   readonly rows: readonly MockLead[];
+  readonly contractTotals: readonly ContractCurrencyTotal[];
 }
 
 export interface LeadYearGroup {
@@ -192,3 +230,21 @@ export interface SuccessfulLeadPayload {
   readonly currency: ContractCurrency;
   readonly comment: string;
 }
+
+export type LeadActivityPayload =
+  | {
+      readonly type: 'call_status';
+      readonly status: CallStatus;
+      readonly comment?: string;
+    }
+  | {
+      readonly type: 'client_status';
+      readonly status: Exclude<ClientStatus, 'new_lead'>;
+      readonly reason?: 'expensive' | 'invalid' | 'other';
+      readonly comment?: string;
+      readonly contractNumber?: string;
+      readonly amount?: number;
+      readonly currency?: ContractCurrency;
+    }
+  | { readonly type: 'comment'; readonly comment: string }
+  | { readonly type: 'reopen' };

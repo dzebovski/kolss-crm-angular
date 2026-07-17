@@ -17,7 +17,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login-page').then((page) => page.LoginPage),
   },
   {
+    path: 'design/radial-menu',
+    title: 'Radial Menu | KOLSS',
+    loadComponent: () =>
+      import('./pages/design/radial-menu/radial-menu-page').then((page) => page.RadialMenuPage),
+  },
+  {
     path: 'design',
+    title: 'Design system | KOLSS',
     loadComponent: () => import('./pages/design/design-page').then((page) => page.DesignPage),
   },
   {

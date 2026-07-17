@@ -15,7 +15,7 @@ export function roleGuard(requiredCheck: (role: string | null | undefined) => bo
 
     const role = auth.profile()?.role;
     if (!requiredCheck(role)) {
-      return router.createUrlTree(['/crm/dashboard']);
+      return router.createUrlTree(['/crm/leads']);
     }
 
     return true;

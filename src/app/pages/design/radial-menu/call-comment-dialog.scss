@@ -1,0 +1,90 @@
+.comment-dialog {
+  width: min(31rem, calc(100vw - 2rem));
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border-radius: var(--ui-radius-xl);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 96%), rgb(255 255 255 / 99%)),
+    var(--ui-surface-raised);
+  display: grid;
+  gap: var(--ui-space-6);
+}
+
+.comment-dialog__result {
+  width: fit-content;
+  padding: 0.45rem 0.8rem 0.45rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ui-success) 22%, transparent);
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-success-soft);
+  color: var(--ui-success);
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
+.comment-dialog__result > span {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ui-success) 12%, white);
+  display: grid;
+  place-items: center;
+}
+
+.comment-dialog__result div {
+  display: grid;
+}
+
+.comment-dialog__result small,
+.comment-dialog__kicker {
+  font-size: 0.625rem;
+  font-weight: 760;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.comment-dialog__result strong {
+  color: var(--ui-text);
+  font-size: 0.8125rem;
+}
+
+.comment-dialog__heading {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+.comment-dialog__kicker {
+  color: var(--ui-action);
+}
+
+h2 {
+  margin: 0;
+  font-family: var(--ui-font-display), sans-serif;
+  font-size: clamp(1.65rem, 5vw, 2.25rem);
+  font-weight: 610;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+p {
+  max-width: 27rem;
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.8125rem;
+}
+
+.comment-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
+}
+
+@media (max-width: 30rem) {
+  .comment-dialog__actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .comment-dialog__actions app-ui-button {
+    display: flex;
+  }
+}

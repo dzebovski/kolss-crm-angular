@@ -2,8 +2,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { KolssApiClient } from '../core/api/generated/kolss-api.client';
 import { AuthService } from '../core/auth/auth.service';
-import { validateCloseLead } from './crm-mock.helpers';
-import type { CloseLeadPayload, LeadSource, MockLead } from './crm-mock.types';
+import type { LeadSource, MockLead } from './crm-mock.types';
 import { mapLeadDetail, mapLeadListRow, type LeadListRow } from './leads.mapper';
 
 export interface LeadsListFilters {
@@ -11,7 +10,8 @@ export interface LeadsListFilters {
   assignedTo?: string | null;
   search?: string | null;
   source?: string | null;
-  workflow?: string | null;
+  callStatus?: string | null;
+  clientStatus?: string | null;
   archived?: 'active' | 'only' | 'all';
   days?: number | null;
   limit?: number;
@@ -60,7 +60,8 @@ export class LeadsService {
         assignedTo: filters.assignedTo,
         search: filters.search,
         source: filters.source,
-        workflow: filters.workflow,
+        callStatus: filters.callStatus,
+        clientStatus: filters.clientStatus,
         archived: filters.archived === 'active' ? undefined : filters.archived,
         days: filters.days ?? undefined,
         cursor,
@@ -122,15 +123,6 @@ export class LeadsService {
   ): Promise<readonly string[]> {
     const result = await this.api.updateEvent(leadId, eventId, payload);
     return result.changedFields;
-  }
-
-  async updateCloseDetails(leadId: string, payload: CloseLeadPayload): Promise<string | null> {
-    const validationError = validateCloseLead(payload);
-    if (validationError) return validationError;
-    const reasonError = await this.ensureLossReasonExists(payload.reason);
-    if (reasonError) return reasonError;
-    await this.api.leadAction(leadId, 'close', payload);
-    return null;
   }
 
   currentUserId(): string {

@@ -6,52 +6,49 @@ import {
 } from './leads-page-preferences.storage';
 
 describe('leads-page-preferences.storage', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
+  const values = new Map<string, string>();
 
-  afterEach(() => {
-    localStorage.clear();
+  beforeAll(() => {
+    vi.stubGlobal('localStorage', {
+      clear: () => values.clear(),
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+      key: () => null,
+      get length() { return values.size; },
+    });
   });
+  afterAll(() => vi.unstubAllGlobals());
+  beforeEach(() => localStorage.clear());
+  afterEach(() => localStorage.clear());
 
-  it('returns defaults when nothing is stored', () => {
+  it('returns defaults for missing or invalid data', () => {
+    expect(readLeadsPagePreferences()).toEqual(DEFAULT_LEADS_PAGE_PREFERENCES);
+    localStorage.setItem(LEADS_PAGE_PREFERENCES_STORAGE_KEY, '{invalid');
     expect(readLeadsPagePreferences()).toEqual(DEFAULT_LEADS_PAGE_PREFERENCES);
   });
 
-  it('returns defaults for invalid JSON', () => {
-    localStorage.setItem(LEADS_PAGE_PREFERENCES_STORAGE_KEY, '{not-json');
-    expect(readLeadsPagePreferences()).toEqual(DEFAULT_LEADS_PAGE_PREFERENCES);
+  it('persists independent call and client status filters', () => {
+    const preferences = {
+      periodDays: 30,
+      callStatusFilter: 'no_answer' as const,
+      clientStatusFilter: 'thinking' as const,
+      managerFilter: 'manager-2',
+    };
+    writeLeadsPagePreferences(preferences);
+    expect(readLeadsPagePreferences()).toEqual(preferences);
   });
 
-  it('returns defaults for invalid preference values', () => {
+  it('does not restore the retired workflow filter', () => {
     localStorage.setItem(
       LEADS_PAGE_PREFERENCES_STORAGE_KEY,
-      JSON.stringify({ periodDays: 99, workflowFilter: 'unknown' }),
-    );
-    expect(readLeadsPagePreferences()).toEqual(DEFAULT_LEADS_PAGE_PREFERENCES);
-  });
-
-  it('reads valid preferences including null period and null filter', () => {
-    const prefs = { periodDays: null, workflowFilter: 'visit' as const };
-    localStorage.setItem(LEADS_PAGE_PREFERENCES_STORAGE_KEY, JSON.stringify(prefs));
-    expect(readLeadsPagePreferences()).toEqual(prefs);
-  });
-
-  it('writes and reads preferences round-trip', () => {
-    const prefs = { periodDays: 30, workflowFilter: 'closed' as const };
-    writeLeadsPagePreferences(prefs);
-    expect(readLeadsPagePreferences()).toEqual(prefs);
-    expect(localStorage.getItem(LEADS_PAGE_PREFERENCES_STORAGE_KEY)).toBe(JSON.stringify(prefs));
-  });
-
-  it('uses partial defaults when only one field is valid', () => {
-    localStorage.setItem(
-      LEADS_PAGE_PREFERENCES_STORAGE_KEY,
-      JSON.stringify({ periodDays: 180, workflowFilter: 'nope' }),
+      JSON.stringify({ periodDays: 180, workflowFilter: 'closed', managerFilter: '' }),
     );
     expect(readLeadsPagePreferences()).toEqual({
       periodDays: 180,
-      workflowFilter: null,
+      callStatusFilter: null,
+      clientStatusFilter: null,
+      managerFilter: '',
     });
   });
 });

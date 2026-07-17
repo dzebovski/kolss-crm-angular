@@ -66,6 +66,10 @@ export interface Lead {
   lead_status_changed_at: string | null;
   workflow_status: string;
   workflow_status_changed_at: string | null;
+  call_status: string | null;
+  call_status_changed_at: string | null;
+  client_status: string;
+  client_status_changed_at: string;
   assigned_to: string | null;
   loss_reason: string | null;
   converted_project_id: string | null;

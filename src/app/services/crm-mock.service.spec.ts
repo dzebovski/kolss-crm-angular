@@ -4,11 +4,12 @@ import {
   calculateManagerTakenReport,
   groupLeadsByYearMonth,
   matchesLeadSearch,
+  sumContractsByCurrency,
   validateCloseLead,
   validateSuccessfulLead,
 } from './crm-mock.helpers';
 import { toSimplifiedWorkflowStatus } from './workflow-legacy.mapper';
-import type { ContractCurrency } from './crm-mock.types';
+import type { ContractCurrency, MockLead } from './crm-mock.types';
 
 describe('crm helpers', () => {
   it('searches and groups leads by year and month', () => {
@@ -18,6 +19,40 @@ describe('crm helpers', () => {
     const groups = groupLeadsByYearMonth(CRM_MOCK_LEADS);
     expect(groups[0].key).toBe('2026-07');
     expect(groups.some((group) => group.key === '2025-12')).toBe(true);
+  });
+
+  it('sums contract amounts by currency for a month group', () => {
+    const base = CRM_MOCK_LEADS[0]!;
+    const withContract = (amount: number, currency: ContractCurrency): MockLead => ({
+      ...base,
+      contract: {
+        contractNumber: 'K-1',
+        amount,
+        currency,
+        comment: '',
+        signedAt: '2026-07-01T12:00:00.000Z',
+      },
+    });
+
+    expect(sumContractsByCurrency([base, { ...base, contract: null }])).toEqual([]);
+    expect(sumContractsByCurrency([withContract(1000, 'UAH'), withContract(500, 'UAH')])).toEqual([
+      { currency: 'UAH', total: 1500 },
+    ]);
+    expect(
+      sumContractsByCurrency([
+        withContract(1000, 'UAH'),
+        withContract(200, 'USD'),
+        withContract(50, 'EUR'),
+        withContract(300, 'UAH'),
+      ]),
+    ).toEqual([
+      { currency: 'UAH', total: 1300 },
+      { currency: 'USD', total: 200 },
+      { currency: 'EUR', total: 50 },
+    ]);
+
+    const juneGroup = groupLeadsByYearMonth(CRM_MOCK_LEADS).find((group) => group.key === '2026-06');
+    expect(juneGroup?.contractTotals).toEqual([{ currency: 'EUR', total: 29800 }]);
   });
 
   it('validates close and successful lead payloads', () => {

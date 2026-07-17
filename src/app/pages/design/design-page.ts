@@ -1,7 +1,6 @@
 import { Tab, TabContent, TabList, TabPanel, Tabs } from '@angular/aria/tabs';
 import { Component, computed, inject, signal } from '@angular/core';
 import { email, form, FormField, required } from '@angular/forms/signals';
-import { RouterLink } from '@angular/router';
 import { UiButton } from '../../ui/button/ui-button';
 import { UiIconButton } from '../../ui/button/ui-icon-button';
 import { UiDialogService } from '../../ui/dialog/ui-dialog';
@@ -19,6 +18,7 @@ import { UiMenu, UiMenuItem } from '../../ui/menu/ui-menu';
 import { UiDataTable, UiTableColumn } from '../../ui/table/ui-data-table';
 import { UiTabItem, UiTabs } from '../../ui/tabs/ui-tabs';
 import { UiTooltip } from '../../ui/tooltip/ui-tooltip';
+import { DesignHeader } from './design-header';
 
 type CatalogTab = 'foundation' | 'components' | 'sections';
 type TableState = 'ready' | 'loading' | 'empty' | 'error';
@@ -35,7 +35,7 @@ interface AccountRow {
 @Component({
   selector: 'app-design-page',
   imports: [
-    RouterLink,
+    DesignHeader,
     FormField,
     Tabs,
     TabList,

@@ -2,13 +2,17 @@ import type { Lead, Office } from '../models/database';
 import { formatPhoneDisplay } from '../core/phone/phone';
 import type {
   CloseReason,
+  CallStatus,
+  ClientStatus,
   ContractCurrency,
   FirstCall,
   LeadClose,
   LeadContract,
   LeadEvent,
+  LeadEventCategory,
   LeadEventEditAudit,
   LeadEventType,
+  LatestTimelineComment,
   LeadSource,
   LeadWorkflowStatus,
   MockLead,
@@ -35,12 +39,32 @@ export interface FirstContactAttemptEmbed {
   readonly manager_id: string;
 }
 
+/** Embedded contract summary from GET /v1/leads (optional). */
+export interface ContractEmbed {
+  readonly contract_number: string;
+  /** API may send jsonb numeric as number or string. */
+  readonly amount: number | string;
+  readonly currency: string;
+  readonly signed_at: string;
+}
+
 export type LeadListRow = Lead & {
   offices?: Office | Office[] | null;
   profiles?: { id: string; display_name: string | null } | { id: string; display_name: string | null }[] | null;
   first_contact_attempt?: FirstContactAttemptEmbed | null;
+  contract?: ContractEmbed | null;
   reactivated_at?: string | null;
+  latest_timeline_comment?: LatestTimelineCommentEmbed | null;
 };
+
+export interface LatestTimelineCommentEmbed {
+  readonly comment: string;
+  readonly created_at: string;
+  readonly event_type: string;
+  readonly event_category: string | null;
+  readonly status_code: string | null;
+  readonly new_value: unknown;
+}
 
 export interface LeadDetailRelations {
   contactAttempts: readonly ContactAttemptRow[];
@@ -76,6 +100,9 @@ export interface ContractRow {
   signed_at: string | null;
   status: string;
   comment: string | null;
+  contract_number?: string | null;
+  amount?: number | string | null;
+  currency?: string | null;
   created_at: string;
 }
 
@@ -84,6 +111,8 @@ export interface LeadEventRow {
   lead_id: string;
   actor_id: string | null;
   event_type: string;
+  event_category?: string | null;
+  status_code?: string | null;
   comment?: string | null;
   old_value: unknown;
   new_value: unknown;
@@ -147,6 +176,10 @@ function mapEventType(eventType: string): LeadEventType {
     bad_lead: 'closed',
     successful: 'successful',
     contract_signed: 'successful',
+    call_status_changed: 'call_status_changed',
+    client_status_changed: 'client_status_changed',
+    comment_added: 'comment_added',
+    lead_reopened: 'lead_reopened',
     attachment: 'attachment',
     lead_updated: 'lead_updated',
     lead_edited: 'lead_updated',
@@ -184,13 +217,35 @@ function buildVisit(visits: readonly ShowroomVisitRow[]): ShowroomVisit | null {
   };
 }
 
+function mapContractEmbed(embed: ContractEmbed | null | undefined): LeadContract | null {
+  if (!embed) return null;
+  if (typeof embed.contract_number !== 'string') return null;
+  const amount =
+    typeof embed.amount === 'number'
+      ? embed.amount
+      : typeof embed.amount === 'string'
+        ? Number(embed.amount)
+        : NaN;
+  if (!Number.isFinite(amount)) return null;
+  return {
+    contractNumber: embed.contract_number,
+    amount,
+    currency: isContractCurrency(embed.currency) ? embed.currency : 'EUR',
+    comment: '',
+    signedAt: typeof embed.signed_at === 'string' ? embed.signed_at : new Date().toISOString(),
+  };
+}
+
 function buildContract(
   contracts: readonly ContractRow[],
   events: readonly LeadEventRow[],
 ): LeadContract | null {
   const signed = contracts.find((contract) => contract.status === 'signed') ?? contracts[0];
   const successEvent = events.find(
-    (event) => event.event_type === 'successful' || event.event_type === 'contract_signed',
+    (event) =>
+      event.event_type === 'successful' ||
+      event.event_type === 'contract_signed' ||
+      (event.event_type === 'client_status_changed' && event.status_code === 'contract_signed'),
   );
   const structured = parseContractFromNewValue(successEvent?.new_value);
   if (structured) {
@@ -208,6 +263,26 @@ function buildContract(
   }
 
   if (!signed) return null;
+
+  const signedAmount =
+    typeof signed.amount === 'number'
+      ? signed.amount
+      : typeof signed.amount === 'string'
+        ? Number(signed.amount)
+        : NaN;
+  if (
+    signed.contract_number?.trim() &&
+    Number.isFinite(signedAmount) &&
+    isContractCurrency(signed.currency)
+  ) {
+    return {
+      contractNumber: signed.contract_number,
+      amount: signedAmount,
+      currency: signed.currency,
+      comment: signed.comment?.trim() ?? '',
+      signedAt: signed.signed_at ?? signed.created_at,
+    };
+  }
 
   const parsed = parseContractComment(signed.comment);
   return {
@@ -262,14 +337,21 @@ function parseContractComment(comment: string | null): {
 
 function buildClose(
   workflowStatus: LeadWorkflowStatus,
+  clientStatus: ClientStatus,
   lossReason: string | null,
   events: readonly LeadEventRow[],
   lastComment: string | null,
   closedAtFallback: string,
 ): LeadClose | null {
-  if (workflowStatus !== 'closed') return null;
-  const closeEvent = events.find((event) => event.event_type === 'closed' || event.event_type === 'bad_lead');
-  const reason = mapCloseReason(lossReason);
+  if (workflowStatus !== 'closed' && clientStatus !== 'closed_lost') return null;
+  const closeEvent = events.find(
+    (event) =>
+      event.event_type === 'closed' ||
+      event.event_type === 'bad_lead' ||
+      (event.event_type === 'client_status_changed' && event.status_code === 'closed_lost'),
+  );
+  const eventReason = isRecord(closeEvent?.new_value) ? closeEvent.new_value['reason'] : null;
+  const reason = mapCloseReason(typeof eventReason === 'string' ? eventReason : lossReason);
   const eventComment = resolveCloseUserComment(closeEvent?.comment, reason);
   const leadComment = resolveCloseUserComment(lastComment, reason);
   return {
@@ -290,8 +372,17 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
     actorId: event.actor_id ?? '',
     actorName: event.profiles?.display_name?.trim() || '',
     occurredAt: event.created_at,
+    category: mapEventCategory(event.event_category),
+    statusCode: event.status_code ?? null,
     editAudit: eventEditAudit(event.new_value),
   }));
+}
+
+function mapEventCategory(value: string | null | undefined): LeadEventCategory | null {
+  if (value === 'call_status' || value === 'client_status' || value === 'comment' || value === 'system') {
+    return value;
+  }
+  return null;
 }
 
 function eventEditAudit(value: unknown): LeadEventEditAudit | null {
@@ -340,12 +431,15 @@ export function mapLeadListRow(row: LeadListRow): MockLead {
 
 export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations): MockLead {
   const workflowStatus = toSimplifiedWorkflowStatus(row.workflow_status);
+  const clientStatus = mapClientStatus(row.client_status);
   const officeCode = officeCodeFromRow(row);
   const firstCall = buildFirstCall(relations.contactAttempts);
   const visit = buildVisit(relations.showroomVisits);
-  const contract = buildContract(relations.contracts, relations.events);
+  const contract =
+    buildContract(relations.contracts, relations.events) ?? mapContractEmbed(row.contract);
   const close = buildClose(
     workflowStatus,
+    clientStatus,
     row.loss_reason,
     relations.events,
     row.last_comment,
@@ -360,7 +454,12 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
   const reactivatedAt =
     row.reactivated_at ??
     [...relations.events]
-      .filter((event) => event.event_type === 'activated' || event.event_type === 'reopened')
+      .filter(
+        (event) =>
+          event.event_type === 'activated' ||
+          event.event_type === 'reopened' ||
+          event.event_type === 'lead_reopened',
+      )
       .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.created_at ??
     null;
 
@@ -373,6 +472,10 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     email: row.email,
     leadStatus: mapLeadStatus(row.lead_status),
     workflowStatus,
+    callStatus: mapCallStatus(row.call_status),
+    callStatusChangedAt: row.call_status_changed_at,
+    clientStatus,
+    clientStatusChangedAt: row.client_status_changed_at ?? row.updated_at,
     officeCode,
     source: mapSource(row.source_channel, row.source_system),
     sourceCreatedAt: row.source_created_at ?? row.created_at,
@@ -389,9 +492,42 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     contract,
     callbackDueAt: row.callback_due_at,
     lastComment: row.last_comment,
+    latestTimelineComment: mapLatestTimelineComment(row.latest_timeline_comment),
     lastActivityAt: row.updated_at,
     attachments: [],
     events: mapEvents(relations.events),
+  };
+}
+
+function mapCallStatus(status: string | null | undefined): CallStatus | null {
+  if (status === 'reached' || status === 'no_answer' || status === 'callback_requested') return status;
+  return null;
+}
+
+function mapClientStatus(status: string | null | undefined): ClientStatus {
+  switch (status) {
+    case 'showroom_invited':
+    case 'calculation_in_progress':
+    case 'thinking':
+    case 'closed_lost':
+    case 'contract_signed':
+      return status;
+    default:
+      return 'new_lead';
+  }
+}
+
+function mapLatestTimelineComment(
+  value: LatestTimelineCommentEmbed | null | undefined,
+): LatestTimelineComment | null {
+  if (!value?.comment?.trim()) return null;
+  return {
+    comment: value.comment,
+    occurredAt: value.created_at,
+    eventType: value.event_type,
+    category: mapEventCategory(value.event_category),
+    statusCode: value.status_code,
+    newValue: value.new_value,
   };
 }
 
