@@ -40,7 +40,7 @@ function automaticRadius(actionCount: number): number {
 
 export function computeRadialLayout<TId extends string>(
   actions: readonly RadialAction<TId>[],
-  config: RadialLayoutConfig = {},
+  config: RadialLayoutConfig<TId> = {},
 ): ResolvedRadialLayout<TId> {
   const radiusRem = config.radiusRem ?? automaticRadius(actions.length);
   const startAngleDeg = config.startAngleDeg ?? DEFAULT_START_ANGLE_DEG;
@@ -56,7 +56,8 @@ export function computeRadialLayout<TId extends string>(
       config.gridHeightRem ?? radiusRem * 2 + ACTION_HEIGHT_REM + ACTION_GAP_REM * 2,
     ),
     actions: actions.map((action, index) => {
-      const angleDeg = startAngleDeg + direction * angleStepDeg * index;
+      const angleDeg =
+        config.anglesByActionId?.[action.id] ?? startAngleDeg + direction * angleStepDeg * index;
       const angleRad = (angleDeg * Math.PI) / 180;
 
       return {

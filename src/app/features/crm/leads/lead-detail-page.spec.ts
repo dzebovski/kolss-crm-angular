@@ -339,6 +339,23 @@ describe('LeadDetailPage', () => {
     const config = dialogOpen.mock.calls[0]?.[1];
     expect(config?.panelClass).toBe('radial-menu-dialog-panel');
     expect(config?.data.actions).toHaveLength(5);
+    expect(config?.data.actions.map((action: { id: string }) => action.id)).toEqual([
+      'showroom_invited',
+      'calculation_in_progress',
+      'thinking',
+      'closed_lost',
+      'contract_signed',
+    ]);
+    expect(config?.data.layout).toEqual({
+      buttonAppearance: 'tone',
+      anglesByActionId: {
+        calculation_in_progress: -126,
+        showroom_invited: -54,
+        contract_signed: 18,
+        thinking: 90,
+        closed_lost: 162,
+      },
+    });
     expect(
       config?.data.actions.find((action: { id: string }) => action.id === 'calculation_in_progress')
         ?.disabled,

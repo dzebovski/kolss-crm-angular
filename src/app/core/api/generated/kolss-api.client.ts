@@ -48,6 +48,10 @@ export class KolssApiClient {
     return this.patch(`/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`, body);
   }
 
+  deleteEvent(id: string, eventId: string): Promise<void> {
+    return this.delete(`/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`).then(() => undefined);
+  }
+
   leadAction<T = { readonly ok: boolean; readonly version: number }>(id: string, action: string, body: unknown = {}): Promise<T> {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/actions/${action}`, body);
   }
@@ -124,6 +128,10 @@ export class KolssApiClient {
 
   private async patch<T>(path: string, body: unknown, extraHeaders: Readonly<Record<string, string>> = {}): Promise<T> {
     return this.unwrap(firstValueFrom(this.http.patch<T>(this.baseUrl + path, body, { headers: new HttpHeaders(extraHeaders) })));
+  }
+
+  private async delete<T>(path: string): Promise<T> {
+    return this.unwrap(firstValueFrom(this.http.delete<T>(this.baseUrl + path)));
   }
 
   private async unwrap<T>(promise: Promise<T>): Promise<T> {

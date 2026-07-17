@@ -32,6 +32,7 @@ export interface TextActivityDialogData {
   readonly placeholder: string;
   readonly submitLabel: string;
   readonly commentOptional?: boolean;
+  readonly initialValue?: string;
 }
 
 @Component({
@@ -65,7 +66,7 @@ export class TextActivityDialog {
   protected readonly i18n = inject(I18nService);
   protected readonly data = inject<TextActivityDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<TextActivityDialog, string>);
-  protected readonly model = signal({ comment: '' });
+  protected readonly model = signal({ comment: this.data.initialValue ?? '' });
   protected readonly commentForm = form(this.model, (path) => {
     if (this.data.commentOptional) return;
     required(path.comment, { message: this.i18n.t('activity.commentRequired') });

@@ -104,7 +104,24 @@ app-lead-detail-page {
   }
 
   .timeline-card__header {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .timeline-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  .timeline-card__audit {
+    margin: 0.35rem 0 0;
+    color: var(--ui-text-subtle);
+    font-size: 0.7rem;
+    font-style: italic;
   }
 
   .timeline-card__status {

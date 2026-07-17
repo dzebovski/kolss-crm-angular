@@ -7,8 +7,9 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
-  clientStatusTone,
+  clientStatusToneForLead,
   groupLeadsByYearMonth,
+  leadIsInWork,
 } from '../../../services/crm-mock.helpers';
 import type {
   CallStatus,
@@ -411,15 +412,14 @@ export class LeadsPage {
   }
 
   protected clientStatusLabelForLead(lead: MockLead): string {
-    if (lead.clientStatus === 'new_lead' && lead.callStatus) {
+    if (leadIsInWork(lead)) {
       return this.i18n.t('workflow.taken');
     }
     return this.clientStatusLabel(lead.clientStatus);
   }
 
   protected clientStatusToneForLead(lead: MockLead) {
-    if (lead.clientStatus === 'new_lead' && lead.callStatus) return 'info' as const;
-    return clientStatusTone(lead.clientStatus);
+    return clientStatusToneForLead(lead);
   }
 
   protected commentContext(category: LeadEventCategory | null, statusCode: string | null): string {

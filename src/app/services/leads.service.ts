@@ -29,7 +29,6 @@ export interface LeadDetailsUpdate {
 }
 
 export interface HistoryEventUpdate {
-  readonly eventType: string;
   readonly comment: string;
 }
 
@@ -123,6 +122,10 @@ export class LeadsService {
   ): Promise<readonly string[]> {
     const result = await this.api.updateEvent(leadId, eventId, payload);
     return result.changedFields;
+  }
+
+  async deleteHistoryEvent(leadId: string, eventId: string): Promise<void> {
+    await this.api.deleteEvent(leadId, eventId);
   }
 
   currentUserId(): string {

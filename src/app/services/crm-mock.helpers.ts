@@ -189,6 +189,16 @@ export function clientStatusTone(status: ClientStatus): UiBadgeTone {
   return tones[status];
 }
 
+/** A still-new lead that already has a recorded call is treated as "in work". */
+export function leadIsInWork(lead: MockLead): boolean {
+  return lead.clientStatus === 'new_lead' && !!lead.callStatus;
+}
+
+export function clientStatusToneForLead(lead: MockLead): UiBadgeTone {
+  if (leadIsInWork(lead)) return 'info';
+  return clientStatusTone(lead.clientStatus);
+}
+
 export function leadIsTerminal(lead: MockLead): boolean {
   return lead.clientStatus === 'closed_lost' || lead.clientStatus === 'contract_signed';
 }

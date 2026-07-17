@@ -43,4 +43,20 @@ describe('computeRadialLayout', () => {
     expect(layout.gridHeightRem).toBe(20);
     expect(layout.actions.map((action) => action.angleDeg)).toEqual([45, 165, 285]);
   });
+
+  it('uses per-action angles without changing the configured orbit radius', () => {
+    const layout = computeRadialLayout(CALL_ACTIONS, {
+      radiusRem: 12,
+      anglesByActionId: {
+        success: -126,
+        no_answer: 18,
+        call_back: 90,
+      },
+    });
+
+    expect(layout.actions.map((action) => action.angleDeg)).toEqual([-126, 18, 90]);
+    for (const action of layout.actions) {
+      expect(Math.hypot(action.xRem, action.yRem)).toBeCloseTo(12, 3);
+    }
+  });
 });

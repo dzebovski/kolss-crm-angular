@@ -170,8 +170,8 @@
         </div>
         <div class="status-item__copy">
           <span>{{ i18n.t('leads.filter.clientStatus') }}</span>
-          <app-ui-badge [tone]="clientTone(lead.clientStatus)">
-            {{ clientStatusLabel(lead.clientStatus) }}
+          <app-ui-badge [tone]="clientToneForLead(lead)">
+            {{ clientStatusLabelForLead(lead) }}
           </app-ui-badge>
           <small>
             {{
@@ -265,6 +265,30 @@
               <article class="timeline-card">
                 <header class="timeline-card__header">
                   <strong>{{ eventTitle(event) }}</strong>
+                  @if (canEditTimeline()) {
+                    <div class="timeline-card__actions">
+                      <app-ui-button
+                        variant="ghost"
+                        size="small"
+                        [attr.title]="i18n.t('common.edit')"
+                        [attr.aria-label]="i18n.t('common.edit')"
+                        [disabled]="actionPending()"
+                        (pressed)="editEvent(lead, event)"
+                      >
+                        <app-ui-icon name="edit" [size]="15" />
+                      </app-ui-button>
+                      <app-ui-button
+                        variant="ghost"
+                        size="small"
+                        [attr.title]="i18n.t('common.delete')"
+                        [attr.aria-label]="i18n.t('common.delete')"
+                        [disabled]="actionPending()"
+                        (pressed)="askDeleteEvent(event)"
+                      >
+                        <app-ui-icon name="delete" [size]="15" />
+                      </app-ui-button>
+                    </div>
+                  }
                 </header>
                 @if (eventStatusLabel(event); as statusLabel) {
                   <app-ui-badge class="timeline-card__status" [tone]="eventStatusTone(event)">
@@ -285,6 +309,9 @@
                     size="xs"
                   />
                 </footer>
+                @if (eventAuditText(event); as auditText) {
+                  <p class="timeline-card__audit">{{ auditText }}</p>
+                }
               </article>
             </li>
           }
@@ -322,6 +349,34 @@
           </app-ui-button>
           <app-ui-button [loading]="managerPending()" (pressed)="submitAssignManager(lead)">
             {{ i18n.t('common.save') }}
+          </app-ui-button>
+        </div>
+      </app-ui-modal>
+    }
+
+    @if (deleteEventTarget(); as target) {
+      <app-ui-modal labelledBy="delete-event-dialog-title" (dismissed)="cancelDeleteEvent()">
+        <div class="manager-dialog-copy">
+          <h2 id="delete-event-dialog-title">{{ i18n.t('leadDetail.deleteEventTitle') }}</h2>
+          <p>{{ i18n.t('leadDetail.deleteEventConfirm') }}</p>
+        </div>
+        @if (actionError()) {
+          <div class="manager-dialog-error" role="alert">{{ actionError() }}</div>
+        }
+        <div class="manager-dialog-actions">
+          <app-ui-button
+            variant="ghost"
+            [disabled]="actionPending()"
+            (pressed)="cancelDeleteEvent()"
+          >
+            {{ i18n.t('common.cancel') }}
+          </app-ui-button>
+          <app-ui-button
+            variant="danger"
+            [loading]="actionPending()"
+            (pressed)="confirmDeleteEvent(lead)"
+          >
+            {{ i18n.t('leadDetail.deleteEventConfirmButton') }}
           </app-ui-button>
         </div>
       </app-ui-modal>

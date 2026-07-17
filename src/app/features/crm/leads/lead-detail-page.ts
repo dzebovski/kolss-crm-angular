@@ -6,13 +6,16 @@ import { AuthService } from '../../../core/auth/auth.service';
 import {
   presentEventBodyFromLeadEvent,
   presentEventTitleFromLeadEvent,
+  presentHistoryAuditText,
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { isSuperAdminRole } from '../../../core/roles/roles';
 import {
   callStatusTone,
   clientStatusTone,
+  clientStatusToneForLead,
   defaultCurrencyForOffice,
+  leadIsInWork,
   leadIsTerminal,
 } from '../../../services/crm-mock.helpers';
 import type {
@@ -36,6 +39,7 @@ import type { RadialActionDialogData } from '../../../pages/design/radial-menu/r
 import {
   CALL_RADIAL_LAYOUT,
   type RadialAction,
+  type RadialLayoutConfig,
 } from '../../../pages/design/radial-menu/radial-menu.types';
 import {
   CloseStatusDialog,
@@ -66,6 +70,17 @@ const CLIENT_STATUS_ACTIONS: readonly Omit<
   { id: 'contract_signed', icon: 'check_circle' },
 ];
 
+const CLIENT_STATUS_RADIAL_LAYOUT: RadialLayoutConfig<SelectableClientStatus> = {
+  buttonAppearance: 'tone',
+  anglesByActionId: {
+    calculation_in_progress: -126,
+    showroom_invited: -54,
+    contract_signed: 18,
+    thinking: 90,
+    closed_lost: 162,
+  },
+};
+
 const NO_MANAGER_VALUE = '__unassigned__';
 
 @Component({
@@ -90,6 +105,7 @@ export class LeadDetailPage {
   protected readonly assignManagerId = signal(NO_MANAGER_VALUE);
   protected readonly managerPending = signal(false);
   protected readonly managerError = signal('');
+  protected readonly deleteEventTarget = signal<LeadEvent | null>(null);
   protected readonly leadResource = resource({
     params: () => this.leadId(),
     loader: ({ params }) => this.leadsService.getById(params),
@@ -103,9 +119,11 @@ export class LeadDetailPage {
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
   protected readonly timelineEvents = computed(() => this.lead()?.events ?? []);
+  protected readonly canEditTimeline = computed(() => isSuperAdminRole(this.auth.profile()?.role));
 
   protected readonly callTone = callStatusTone;
   protected readonly clientTone = clientStatusTone;
+  protected readonly clientToneForLead = clientStatusToneForLead;
   protected readonly isTerminal = leadIsTerminal;
 
   protected async openCallMenu(lead: MockLead): Promise<void> {
@@ -168,7 +186,7 @@ export class LeadDetailPage {
               tone: clientStatusTone(action.id),
               disabled: action.id === lead.clientStatus,
             })),
-            layout: { buttonAppearance: 'tone' },
+            layout: CLIENT_STATUS_RADIAL_LAYOUT,
           },
           panelClass: 'radial-menu-dialog-panel',
           backdropClass: 'radial-menu-backdrop',
@@ -193,6 +211,41 @@ export class LeadDetailPage {
     });
     if (!comment) return;
     await this.runActivity(() => this.activities.addComment(lead.id, comment));
+  }
+
+  protected async editEvent(lead: MockLead, event: LeadEvent): Promise<void> {
+    if (!this.canEditTimeline()) return;
+    const result = await this.openTextDialog({
+      eyebrow: this.i18n.t('leadDetail.history'),
+      title: this.i18n.t('lead.editHistory'),
+      description: this.i18n.t('lead.editHistoryHint'),
+      placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
+      submitLabel: this.i18n.t('common.save'),
+      commentOptional: true,
+      initialValue: event.comment ?? '',
+    });
+    if (result === undefined) return;
+    if (result === (event.comment ?? '').trim()) return;
+    await this.runActivity(async () => {
+      await this.leadsService.updateHistoryEvent(lead.id, event.id, { comment: result });
+    });
+  }
+
+  protected askDeleteEvent(event: LeadEvent): void {
+    if (!this.canEditTimeline()) return;
+    this.deleteEventTarget.set(event);
+  }
+
+  protected cancelDeleteEvent(): void {
+    if (this.actionPending()) return;
+    this.deleteEventTarget.set(null);
+  }
+
+  protected async confirmDeleteEvent(lead: MockLead): Promise<void> {
+    const target = this.deleteEventTarget();
+    if (!target || !this.canEditTimeline()) return;
+    await this.runActivity(() => this.leadsService.deleteHistoryEvent(lead.id, target.id));
+    this.deleteEventTarget.set(null);
   }
 
   private async selectClientStatus(lead: MockLead, status: SelectableClientStatus): Promise<void> {
@@ -392,6 +445,12 @@ export class LeadDetailPage {
     return event.actorName?.trim() || this.employeeName(event.actorId || null);
   }
 
+  protected eventAuditText(event: LeadEvent): string {
+    return presentHistoryAuditText(event, this.i18n.locale(), (value) =>
+      this.formatDateTime(value),
+    );
+  }
+
   private isCallStatus(value: string | null | undefined): value is CallStatus {
     return value === 'reached' || value === 'no_answer' || value === 'callback_requested';
   }
@@ -421,6 +480,13 @@ export class LeadDetailPage {
 
   protected clientStatusLabel(status: ClientStatus): string {
     return this.i18n.clientStatusLabel(status);
+  }
+
+  protected clientStatusLabelForLead(lead: MockLead): string {
+    if (leadIsInWork(lead)) {
+      return this.i18n.t('workflow.taken');
+    }
+    return this.clientStatusLabel(lead.clientStatus);
   }
 
   protected sourceLabel(lead: MockLead): string {

@@ -9,7 +9,7 @@ export interface RadialActionDialogData<TId extends string = string> {
   readonly title: string;
   readonly hint?: string;
   readonly actions: readonly RadialAction<TId>[];
-  readonly layout?: RadialLayoutConfig;
+  readonly layout?: RadialLayoutConfig<TId>;
 }
 
 @Component({

@@ -16,11 +16,12 @@ export interface RadialAction<TId extends string = string> {
   readonly disabled?: boolean;
 }
 
-export interface RadialLayoutConfig {
+export interface RadialLayoutConfig<TId extends string = string> {
   readonly buttonAppearance?: RadialButtonAppearance;
   readonly radiusRem?: number;
   readonly startAngleDeg?: number;
   readonly direction?: RadialDirection;
+  readonly anglesByActionId?: Readonly<Partial<Record<TId, number>>>;
   readonly gridWidthRem?: number;
   readonly gridHeightRem?: number;
 }
