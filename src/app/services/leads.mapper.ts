@@ -372,7 +372,7 @@ function buildClose(
   const leadComment = resolveCloseUserComment(lastComment, reason);
   return {
     reason,
-    comment: leadComment || eventComment,
+    comment: eventComment || leadComment,
     closedAt: closeEvent?.created_at ?? closedAtFallback,
     actorId: closeEvent?.actor_id ?? '',
   };

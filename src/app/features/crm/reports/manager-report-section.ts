@@ -2,7 +2,6 @@ import { Component, computed, inject, input } from '@angular/core';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { ClientStatus } from '../../../services/crm-mock.types';
-import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { ReportLeadBlock } from './report-lead-block';
 import type { ManagerLeadReport, ReportStatusGroup } from './reports.types';
 
@@ -17,18 +16,19 @@ const STATUS_ORDER: readonly ClientStatus[] = [
 
 @Component({
   selector: 'app-manager-report-section',
-  imports: [ReportLeadBlock, UiBadge],
+  imports: [ReportLeadBlock],
   host: { class: 'manager-report-host' },
   template: `
     <section class="manager-sheet" [attr.aria-labelledby]="managerHeadingId()">
       <header class="manager-sheet__header">
-        <div>
-          <p class="manager-sheet__kicker">
+        <div class="manager-sheet__identity">
+          <p>
             {{ i18n.t('reports.managerSection') }} ·
             {{ i18n.officeFilterLabel(manager().officeCode) }}
           </p>
           <h2 [id]="managerHeadingId()">{{ managerName() }}</h2>
         </div>
+
         <dl class="manager-sheet__totals">
           <div>
             <dt>{{ i18n.t('reports.metric.total') }}</dt>
@@ -38,260 +38,324 @@ const STATUS_ORDER: readonly ClientStatus[] = [
             <dt>{{ i18n.t('reports.metric.active') }}</dt>
             <dd>{{ manager().totals.active }}</dd>
           </div>
-          <div>
+          <div class="is-sold">
             <dt>{{ i18n.t('reports.metric.sold') }}</dt>
-            <dd>{{ manager().totals.contractSigned }}</dd>
+            <dd class="sold-metric">
+              <strong>{{ manager().totals.contractSigned }}</strong>
+              <span class="sold-amounts">
+                @for (total of manager().totals.contractTotals; track total.currency) {
+                  <span>{{ i18n.formatMoney(total.total, total.currency) }}</span>
+                } @empty {
+                  <span>—</span>
+                }
+              </span>
+            </dd>
           </div>
           <div>
             <dt>{{ i18n.t('reports.metric.lost') }}</dt>
             <dd>{{ manager().totals.closedLost }}</dd>
           </div>
-          <div class="is-alert">
+          <div [class.is-alert]="manager().totals.inactive7d > 0">
             <dt>{{ i18n.t('reports.metric.inactive') }}</dt>
             <dd>{{ manager().totals.inactive7d }}</dd>
           </div>
         </dl>
       </header>
 
-      <div class="manager-sheet__groups">
-        @for (group of statusGroups(); track group.status) {
-          <section class="status-section" [attr.aria-labelledby]="statusHeadingId(group.status)">
-            <header class="status-section__header">
-              <h3 [id]="statusHeadingId(group.status)">{{ statusLabel(group.status) }}</h3>
-              <app-ui-badge tone="neutral">
-                {{ i18n.t('reports.leadCount', { count: group.leads.length }) }}
-              </app-ui-badge>
-            </header>
+      <div class="manager-sheet__table-wrap">
+        <table class="lead-report-table">
+          <colgroup>
+            <col class="column-date" />
+            <col class="column-contact" />
+            <col class="column-call" />
+            <col class="column-status" />
+            <col class="column-comment" />
+            <col class="column-comment" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th scope="col">{{ i18n.t('reports.column.createdDate') }}</th>
+              <th scope="col">{{ i18n.t('reports.column.contact') }}</th>
+              <th scope="col">{{ i18n.t('reports.column.callResult') }}</th>
+              <th scope="col">{{ i18n.t('reports.column.clientStatus') }}</th>
+              <th scope="col">{{ i18n.t('reports.column.latestComment') }}</th>
+              <th scope="col">{{ i18n.t('reports.column.previousComment') }}</th>
+            </tr>
+          </thead>
 
-            <div class="status-table-wrap">
-              <table class="lead-report-table">
-                <thead>
-                  <tr>
-                    <th scope="col">{{ i18n.t('reports.column.lead') }}</th>
-                    <th scope="col">{{ i18n.t('reports.column.clientStatus') }}</th>
-                    <th scope="col">{{ i18n.t('reports.column.callStatus') }}</th>
-                    <th scope="col">{{ i18n.t('reports.column.activity') }}</th>
-                    <th scope="col">{{ i18n.t('reports.column.lossReason') }}</th>
-                  </tr>
-                </thead>
-                @for (lead of group.leads; track lead.id) {
-                  <tbody appReportLeadBlock [lead]="lead"></tbody>
-                }
-              </table>
-            </div>
-          </section>
-        }
+          @for (group of statusGroups(); track group.status) {
+            <tbody class="status-group" [attr.aria-labelledby]="statusHeadingId(group.status)">
+              <tr class="status-group__heading">
+                <th colspan="6" scope="rowgroup" [id]="statusHeadingId(group.status)">
+                  <span>{{ statusLabel(group.status) }}</span>
+                  <small>{{ i18n.t('reports.leadCount', { count: group.leads.length }) }}</small>
+                </th>
+              </tr>
+              @for (lead of group.leads; track lead.id) {
+                <tr appReportLeadBlock [lead]="lead"></tr>
+              }
+            </tbody>
+          }
+        </table>
       </div>
     </section>
   `,
   styles: `
     :host {
       display: block;
+      min-width: 0;
     }
 
     .manager-sheet {
       min-width: 0;
-      padding: clamp(1.1rem, 2.5vw, 2rem);
-      border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-lg);
+      border: 1px solid var(--ui-border-strong);
+      border-radius: var(--ui-radius-md);
       background: var(--ui-surface-raised);
       box-shadow: var(--ui-shadow-1);
+      overflow: hidden;
     }
 
     .manager-sheet__header {
-      display: grid;
-      grid-template-columns: minmax(15rem, 1fr) auto;
-      gap: var(--ui-space-6);
-      align-items: end;
-      padding-bottom: var(--ui-space-5);
+      padding: 0.65rem 0.8rem;
       border-bottom: 2px solid var(--ui-text);
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--ui-space-4);
+      break-after: avoid-page;
     }
 
-    .manager-sheet__kicker {
-      margin: 0 0 0.25rem;
+    .manager-sheet__identity {
+      min-width: 10rem;
+    }
+
+    .manager-sheet__identity p {
+      margin: 0 0 0.15rem;
       color: var(--ui-action);
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
+      font-size: 0.58rem;
+      font-weight: 850;
+      letter-spacing: 0.075em;
       text-transform: uppercase;
     }
 
-    h2,
-    h3 {
+    h2 {
       margin: 0;
       font-family: var(--ui-font-display), sans-serif;
-    }
-
-    h2 {
-      font-size: clamp(1.55rem, 3vw, 2.25rem);
+      font-size: clamp(1.15rem, 2.2vw, 1.55rem);
       line-height: 1;
     }
 
     .manager-sheet__totals {
       margin: 0;
-      display: flex;
-      gap: 0;
       border: 1px solid var(--ui-border);
-      border-radius: var(--ui-radius-md);
-      overflow: hidden;
+      display: flex;
+      flex: 0 0 auto;
     }
 
-    .manager-sheet__totals div {
-      min-width: 5.3rem;
-      padding: 0.55rem 0.75rem;
+    .manager-sheet__totals > div {
+      min-width: 4.2rem;
+      padding: 0.35rem 0.55rem;
       border-left: 1px solid var(--ui-border);
       background: var(--ui-surface-subtle);
     }
 
-    .manager-sheet__totals div:first-child {
+    .manager-sheet__totals > div:first-child {
       border-left: 0;
+    }
+
+    .manager-sheet__totals > .is-sold {
+      min-width: 7.6rem;
     }
 
     .manager-sheet__totals dt {
       color: var(--ui-text-subtle);
-      font-size: 0.62rem;
-      font-weight: 750;
-      letter-spacing: 0.06em;
+      font-size: 0.52rem;
+      font-weight: 800;
+      letter-spacing: 0.045em;
+      line-height: 1.1;
       text-transform: uppercase;
       white-space: nowrap;
     }
 
     .manager-sheet__totals dd {
-      margin: 0.15rem 0 0;
+      margin: 0.1rem 0 0;
       font-family: var(--ui-font-display), sans-serif;
-      font-size: 1.25rem;
+      font-size: 0.9rem;
       font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
 
     .manager-sheet__totals .is-alert dd {
       color: var(--ui-danger);
     }
 
-    .manager-sheet__groups {
-      margin-top: var(--ui-space-6);
-      display: grid;
-      gap: var(--ui-space-6);
-    }
-
-    .status-section {
-      min-width: 0;
-      break-inside: auto;
-    }
-
-    .status-section__header {
-      min-height: 2.5rem;
-      padding: 0 var(--ui-space-3);
-      border-left: 0.3rem solid var(--ui-action);
+    .manager-sheet__totals .sold-metric {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--ui-space-3);
-      background: var(--ui-surface-subtle);
+      align-items: baseline;
+      gap: 0.35rem;
     }
 
-    .status-section__header h3 {
-      font-size: 1rem;
+    .sold-metric > strong {
+      font-family: var(--ui-font-display), sans-serif;
+      font-size: 0.9rem;
+      line-height: 1;
     }
 
-    .status-table-wrap {
+    .sold-amounts {
+      display: grid;
+      gap: 0.08rem;
+      color: var(--ui-text-muted);
+      font-family: inherit;
+      font-size: 0.52rem;
+      font-weight: 750;
+      line-height: 1.1;
+      white-space: nowrap;
+    }
+
+    .manager-sheet__table-wrap {
+      min-width: 0;
       overflow-x: auto;
-      border: 1px solid var(--ui-border);
-      border-top: 0;
     }
 
     .lead-report-table {
       width: 100%;
-      min-width: 56rem;
+      min-width: 68rem;
       border-collapse: collapse;
       table-layout: fixed;
     }
 
-    .lead-report-table th {
-      padding: 0.55rem 0.9rem;
+    .lead-report-table .column-date {
+      width: 8%;
+    }
+
+    .lead-report-table .column-contact {
+      width: 14%;
+    }
+
+    .lead-report-table .column-call {
+      width: 12%;
+    }
+
+    .lead-report-table .column-status {
+      width: 13%;
+    }
+
+    .lead-report-table .column-comment {
+      width: 26.5%;
+    }
+
+    .lead-report-table thead {
+      display: table-header-group;
+    }
+
+    .lead-report-table thead th {
+      padding: 0.4rem 0.5rem;
+      border-right: 1px solid var(--ui-border);
       background: var(--ui-surface-muted);
       color: var(--ui-text-subtle);
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
+      font-size: 0.58rem;
+      font-weight: 850;
+      letter-spacing: 0.045em;
+      line-height: 1.15;
       text-align: left;
       text-transform: uppercase;
+      vertical-align: bottom;
     }
 
-    .lead-report-table th:nth-child(1) {
-      width: 24%;
+    .lead-report-table thead th:last-child {
+      border-right: 0;
     }
 
-    .lead-report-table th:nth-child(2),
-    .lead-report-table th:nth-child(3) {
-      width: 16%;
+    .status-group__heading {
+      break-after: avoid-page;
     }
 
-    .lead-report-table th:nth-child(4) {
-      width: 25%;
+    .status-group__heading th {
+      padding: 0.32rem 0.5rem;
+      border-top: 1px solid var(--ui-border-strong);
+      border-bottom: 1px solid var(--ui-border);
+      border-left: 0.22rem solid var(--ui-action);
+      background: color-mix(in srgb, var(--ui-action) 7%, var(--ui-surface-subtle));
+      text-align: left;
     }
 
-    .lead-report-table th:nth-child(5) {
-      width: 19%;
+    .status-group__heading span {
+      font-family: var(--ui-font-display), sans-serif;
+      font-size: 0.76rem;
+      font-weight: 850;
+    }
+
+    .status-group__heading small {
+      margin-left: 0.5rem;
+      color: var(--ui-text-subtle);
+      font-size: 0.6rem;
+      font-weight: 700;
     }
 
     @media (max-width: 62rem) {
       .manager-sheet__header {
-        grid-template-columns: 1fr;
+        align-items: start;
+        flex-direction: column;
       }
 
       .manager-sheet__totals {
-        width: 100%;
+        max-width: 100%;
         overflow-x: auto;
-      }
-
-      .manager-sheet__totals div {
-        flex: 1 0 auto;
       }
     }
 
     @media print {
-      :host {
+      :host:not(:first-child) {
         break-before: page;
       }
 
       .manager-sheet {
-        padding: 0;
-        border: 0;
+        border-color: #666;
         border-radius: 0;
         box-shadow: none;
+        overflow: visible;
       }
 
       .manager-sheet__header {
-        padding-bottom: 3mm;
+        padding: 1.8mm 2mm;
         border-bottom-color: #111;
       }
 
-      .manager-sheet__totals div,
-      .status-section__header,
-      .lead-report-table th {
-        background: #f1f1f1;
+      .manager-sheet__totals > div {
+        min-width: 14mm;
+        padding: 1mm 1.5mm;
+        border-color: #aaa;
+        background: #f4f4f4;
       }
 
-      .manager-sheet__groups {
-        margin-top: 5mm;
-        gap: 5mm;
+      .manager-sheet__totals > .is-sold {
+        min-width: 24mm;
       }
 
-      .status-section__header {
-        border-left-color: #222;
+      .manager-sheet__totals .is-alert dd {
+        color: #111;
       }
 
-      .status-table-wrap {
+      .manager-sheet__table-wrap {
         overflow: visible;
-        border-color: #999;
       }
 
       .lead-report-table {
         min-width: 0;
       }
 
-      .lead-report-table thead {
-        display: table-header-group;
+      .lead-report-table thead th {
+        padding: 1.2mm 1.4mm;
+        border-color: #aaa;
+        background: #ececec;
+      }
+
+      .status-group__heading th {
+        padding: 1mm 1.4mm;
+        border-color: #888;
+        border-left-color: #222;
+        background: #f3f3f3;
       }
     }
   `,

@@ -864,6 +864,23 @@ export const messages = {
     en: 'Lost / closed',
   },
   'reports.column.lead': { uk: 'Лід', pl: 'Lead', en: 'Lead' },
+  'reports.column.createdDate': { uk: 'Дата', pl: 'Data', en: 'Date' },
+  'reports.column.contact': { uk: 'Контакт', pl: 'Kontakt', en: 'Contact' },
+  'reports.column.callResult': {
+    uk: 'Результат дзвінка',
+    pl: 'Wynik połączenia',
+    en: 'Call result',
+  },
+  'reports.column.latestComment': {
+    uk: 'Останній коментар',
+    pl: 'Ostatni komentarz',
+    en: 'Latest comment',
+  },
+  'reports.column.previousComment': {
+    uk: 'Попередній коментар',
+    pl: 'Poprzedni komentarz',
+    en: 'Previous comment',
+  },
   'reports.column.clientStatus': {
     uk: 'Статус клієнта',
     pl: 'Status klienta',

@@ -23,10 +23,14 @@ describe('LeadDetailView', () => {
       role?: UserRole;
       managers?: typeof CRM_MOCK_EMPLOYEES;
       updateLeadDetails?: ReturnType<typeof vi.fn>;
+      userOffices?: { code: string }[];
     } = {},
   ) {
     TestBed.resetTestingModule();
     const updateLeadDetails = options.updateLeadDetails ?? vi.fn(async () => undefined);
+    const archiveLead = vi.fn(async () => undefined);
+    const restoreLead = vi.fn(async () => undefined);
+    const deleteLeadPermanently = vi.fn(async () => undefined);
     const activities = {
       recordCall: vi.fn(),
       addComment: vi.fn(),
@@ -36,6 +40,7 @@ describe('LeadDetailView', () => {
       reopen: vi.fn(),
     };
     const dialogOpen = vi.fn();
+    const dialogConfirm = vi.fn();
     await TestBed.configureTestingModule({
       imports: [LeadDetailView],
       providers: [
@@ -50,24 +55,50 @@ describe('LeadDetailView', () => {
         },
         {
           provide: LeadsService,
-          useValue: { getById: async () => lead, updateLeadDetails },
+          useValue: {
+            getById: async () => lead,
+            updateLeadDetails,
+            archiveLead,
+            restoreLead,
+            deleteLeadPermanently,
+          },
         },
         { provide: LeadActivitiesService, useValue: activities },
         {
           provide: UsersService,
           useValue: { listManagers: async () => options.managers ?? CRM_MOCK_EMPLOYEES },
         },
-        { provide: UiDialogService, useValue: { open: dialogOpen } },
+        { provide: UiDialogService, useValue: { open: dialogOpen, confirm: dialogConfirm } },
         {
           provide: SessionService,
-          useValue: { locale: () => 'uk' },
+          useValue: {
+            locale: () => 'uk',
+            officeContext: () => ({
+              userOffices: options.userOffices ?? [{ code: lead.officeCode }],
+            }),
+          },
         },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(LeadDetailView);
     fixture.componentRef.setInput('leadId', lead.id);
     await fixture.whenStable();
-    return { activities, dialogOpen, fixture, updateLeadDetails };
+    return {
+      activities,
+      archiveLead,
+      deleteLeadPermanently,
+      dialogConfirm,
+      dialogOpen,
+      fixture,
+      restoreLead,
+      updateLeadDetails,
+    };
+  }
+
+  function findButton(element: HTMLElement, label: string): HTMLButtonElement | undefined {
+    return Array.from(element.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+      button.textContent?.includes(label),
+    );
   }
 
   function findActionButton(element: HTMLElement, label: string): HTMLButtonElement | undefined {
@@ -222,20 +253,44 @@ describe('LeadDetailView', () => {
     expect((await axe.run(timeline)).violations).toEqual([]);
   });
 
-  it('blocks ordinary actions for a terminal lead and offers reopen', async () => {
+  it('blocks ordinary actions for a terminal lead and offers reopen and archive', async () => {
     const lead: MockLead = {
       ...CRM_MOCK_LEADS[7]!,
       clientStatus: 'closed_lost',
     };
     const { fixture } = await render(lead, { role: 'super_admin' });
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.textContent).toContain('Перевідкрити');
+    const summary = element.querySelector('.terminal-summary') as HTMLElement | null;
+    const managerCard = element.querySelector('.manager-card') as HTMLElement | null;
+
+    expect(summary).not.toBeNull();
+    expect(summary?.textContent).toContain('Закрито - Дорого - Після пояснення бюджету клієнт відмовився.');
+    expect(findButton(summary!, 'Відкрити')).toBeTruthy();
+    expect(findButton(summary!, 'Архівувати')).toBeTruthy();
+    expect(managerCard?.textContent).not.toContain('Відкрити');
+    expect(managerCard?.textContent).not.toContain('Архівувати');
     expect(element.querySelector('.lead-actions')).toBeNull();
     expect(element.querySelector('.terminal-note')).not.toBeNull();
     expect(element.querySelector('.manager-card__edit')).not.toBeNull();
   });
 
-  it('keeps an archived lead read-only without offering reopen', async () => {
+  it('hides archive for a successful contract lead', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[6]!,
+      clientStatus: 'contract_signed',
+      archivedAt: null,
+    };
+    const { fixture } = await render(lead, { role: 'super_admin' });
+    const element = fixture.nativeElement as HTMLElement;
+    const summary = element.querySelector('.terminal-summary--success') as HTMLElement | null;
+
+    expect(summary).not.toBeNull();
+    expect(findButton(summary!, 'Відкрити')).toBeTruthy();
+    expect(findButton(summary!, 'Архівувати')).toBeUndefined();
+    expect(element.querySelector('.manager-card')?.textContent).not.toContain('Відкрити');
+  });
+
+  it('offers restore and permanent delete for an archived lead to super admins', async () => {
     const lead: MockLead = {
       ...CRM_MOCK_LEADS[7]!,
       archivedAt: '2026-07-17T12:30:00.000Z',
@@ -245,7 +300,76 @@ describe('LeadDetailView', () => {
     expect(element.querySelector('.lead-actions')).toBeNull();
     expect(element.querySelector('.manager-card__edit')).toBeNull();
     expect(element.textContent).toContain('Архівна заявка доступна лише для перегляду');
-    expect(element.textContent).not.toContain('Перевідкрити');
+    expect(element.textContent).toContain('Відновити з архіву');
+    expect(element.textContent).toContain('Видалити остаточно');
+    expect(element.textContent).not.toContain('Відкрити');
+  });
+
+  it('keeps archived lead actions hidden for non-super-admins', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[7]!,
+      archivedAt: '2026-07-17T12:30:00.000Z',
+    };
+    const { fixture } = await render(lead, { role: 'office_member' });
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Архівна заявка доступна лише для перегляду');
+    expect(element.textContent).not.toContain('Відновити з архіву');
+    expect(element.textContent).not.toContain('Видалити остаточно');
+  });
+
+  it('archives a closed lead after confirmation', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[7]!,
+      clientStatus: 'closed_lost',
+    };
+    const { archiveLead, dialogConfirm, fixture } = await render(lead, { role: 'super_admin' });
+    dialogConfirm.mockReturnValue({ afterClosed: () => of(true) });
+
+    await fixture.componentInstance['confirmArchiveLead'](lead);
+
+    expect(archiveLead).toHaveBeenCalledWith(lead.id);
+  });
+
+  it('restores an archived lead for a super admin', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[7]!,
+      archivedAt: '2026-07-17T12:30:00.000Z',
+    };
+    const { fixture, restoreLead } = await render(lead, { role: 'super_admin' });
+
+    await fixture.componentInstance['restoreLead'](lead);
+
+    expect(restoreLead).toHaveBeenCalledWith(lead.id);
+  });
+
+  it('deletes an archived lead permanently after confirmation', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[7]!,
+      archivedAt: '2026-07-17T12:30:00.000Z',
+    };
+    const { deleteLeadPermanently, dialogConfirm, fixture } = await render(lead, {
+      role: 'super_admin',
+    });
+    dialogConfirm.mockReturnValue({ afterClosed: () => of(true) });
+
+    await fixture.componentInstance['confirmDeleteLead'](lead);
+
+    expect(deleteLeadPermanently).toHaveBeenCalledWith(lead.id);
+  });
+
+  it('shows archive to office admins of the lead office', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[7]!,
+      clientStatus: 'closed_lost',
+    };
+    const { fixture } = await render(lead, {
+      role: 'office_admin',
+      userOffices: [{ code: 'warsaw' }],
+    });
+    const element = fixture.nativeElement as HTMLElement;
+    const summary = element.querySelector('.terminal-summary') as HTMLElement | null;
+    expect(summary).not.toBeNull();
+    expect(findButton(summary!, 'Архівувати')).toBeTruthy();
   });
 
   it('shows manager editing only to a super admin and filters options by office', async () => {

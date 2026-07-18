@@ -14,6 +14,7 @@ const report: LeadReportResponse = {
     total: 3,
     active: 1,
     contractSigned: 1,
+    contractTotals: [{ currency: 'PLN', total: 29800 }],
     closedLost: 1,
     callback: 1,
     inactive7d: 1,
@@ -46,6 +47,7 @@ const report: LeadReportResponse = {
         total: 2,
         active: 1,
         contractSigned: 0,
+        contractTotals: [],
         closedLost: 1,
         callback: 1,
         inactive7d: 1,
@@ -115,6 +117,7 @@ const report: LeadReportResponse = {
         total: 1,
         active: 0,
         contractSigned: 1,
+        contractTotals: [{ currency: 'PLN', total: 29800 }],
         closedLost: 0,
         callback: 0,
         inactive7d: 0,
@@ -172,32 +175,83 @@ describe('ReportsPage', () => {
     }).compileComponents();
   });
 
-  it('renders the current-status summary and manager sections with full comments', async () => {
+  it('renders the compact summary and six-column manager tables', async () => {
     const fixture = TestBed.createComponent(ReportsPage);
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Підсумок роботи з лідами');
-    expect(element.textContent).toContain('Поточна воронка');
-    expect(element.textContent).toContain('Причини втрат');
     expect(element.textContent).toContain('Олена Коваль');
     expect(element.textContent).toContain('Без менеджера');
-    expect(element.textContent).toContain(
-      'Клієнт чекає фінальну версію прорахунку без скорочення тексту.',
-    );
-    expect(element.textContent).toContain('Немає змістовних коментарів');
     expect(element.querySelectorAll('app-manager-report-section')).toHaveLength(2);
 
-    const calculationSection = [...element.querySelectorAll<HTMLElement>('.status-section')].find(
-      (section) => section.querySelector('h3')?.textContent?.includes('Прорахунок'),
+    const firstManagerTable = element.querySelector<HTMLTableElement>(
+      'app-manager-report-section .lead-report-table',
     );
-    expect(calculationSection?.textContent).toContain('ТОВ Приклад');
-    expect(calculationSection?.textContent).toContain('Передзвонити');
+    expect(firstManagerTable).not.toBeNull();
+    expect(firstManagerTable!.querySelectorAll('thead th')).toHaveLength(6);
     expect(
-      [...element.querySelectorAll('h3')].some(
-        (heading) => heading.textContent?.trim() === 'Передзвонити',
+      [...firstManagerTable!.querySelectorAll('thead th')].map((header) =>
+        header.textContent?.trim(),
       ),
-    ).toBe(false);
+    ).toEqual([
+      'Дата',
+      'Контакт',
+      'Результат дзвінка',
+      'Статус клієнта',
+      'Останній коментар',
+      'Попередній коментар',
+    ]);
+
+    const statusHeadings = [...firstManagerTable!.querySelectorAll('.status-group__heading')].map(
+      (row) => row.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+    expect(statusHeadings[0]).toContain('Прорахунок');
+    expect(statusHeadings[1]).toContain('Втрачено / закрито');
+
+    const summarySold = element.querySelector('.summary-ledger .is-sold');
+    expect(summarySold?.querySelector('.sold-metric > strong')?.textContent?.trim()).toBe('1');
+    expect(
+      summarySold?.querySelector('.sold-amounts')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('29 800 PLN');
+
+    const soldManager = [
+      ...element.querySelectorAll<HTMLElement>('app-manager-report-section'),
+    ].find((section) => section.textContent?.includes('Anna Nowak'));
+    const managerSoldMetric = soldManager?.querySelector('.is-sold');
+    expect(managerSoldMetric?.querySelector('.sold-metric > strong')?.textContent?.trim()).toBe(
+      '1',
+    );
+    expect(
+      managerSoldMetric?.querySelector('.sold-amounts')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('29 800 PLN');
+  });
+
+  it('places full comments newest-first and shows status details and empty placeholders', async () => {
+    const fixture = TestBed.createComponent(ReportsPage);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const calculationRow = [...element.querySelectorAll<HTMLElement>('tr.report-lead-block')].find(
+      (row) => row.textContent?.includes('ТОВ Приклад'),
+    );
+    expect(calculationRow).toBeDefined();
+
+    const comments = calculationRow!.querySelectorAll<HTMLElement>('.lead-comment');
+    expect(comments).toHaveLength(2);
+    expect(comments[0]!.textContent).toContain(
+      'Клієнт чекає фінальну версію прорахунку без скорочення тексту.',
+    );
+    expect(comments[1]!.textContent).toContain('Погодили матеріали та остаточні розміри.');
+    expect(calculationRow!.querySelector('.lead-client-status')?.textContent).toContain(
+      '9 днів без активності',
+    );
+
+    const lostRow = [...element.querySelectorAll<HTMLElement>('tr.report-lead-block')].find((row) =>
+      row.textContent?.includes('Іван Петренко'),
+    );
+    expect(lostRow?.querySelector('.lead-client-status')?.textContent).toContain('Дорого');
+    expect(lostRow?.querySelectorAll('.lead-comment .empty-value')).toHaveLength(2);
   });
 
   it('loads all time by default and applies month and custom periods', async () => {

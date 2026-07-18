@@ -268,6 +268,39 @@ describe('mapLeadListRow close', () => {
 
     expect(lead.close?.closedAt).toBe('2026-05-30T08:00:00.000Z');
     expect(lead.close?.actorId).toBe('emp-1');
+    expect(lead.close?.comment).toBe('Event comment');
+  });
+
+  it('prefers close event comment over last_comment', () => {
+    const lead = mapLeadDetail(
+      {
+        ...baseRow,
+        workflow_status: 'closed',
+        loss_reason: 'other',
+        last_comment: 'callback',
+        workflow_status_changed_at: '2026-05-30T09:05:00.000Z',
+      },
+      {
+        contactAttempts: [],
+        showroomVisits: [],
+        contracts: [],
+        events: [
+          {
+            id: 'evt-closed',
+            lead_id: 'lead-1',
+            actor_id: 'emp-1',
+            event_type: 'closed',
+            comment: 'Замовила в іншому місці',
+            old_value: null,
+            new_value: { reason: 'other' },
+            created_at: '2026-05-30T08:00:00.000Z',
+            profiles: null,
+          },
+        ],
+      },
+    );
+
+    expect(lead.close?.comment).toBe('Замовила в іншому місці');
   });
 });
 

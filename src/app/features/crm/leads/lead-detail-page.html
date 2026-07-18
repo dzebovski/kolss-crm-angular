@@ -90,17 +90,6 @@
                     <span class="manager-card__edit-label">{{ managerActionLabel(lead) }}</span>
                   </app-ui-button>
                 }
-                @if (isTerminal(lead) && !lead.archivedAt) {
-                  <app-ui-button
-                    variant="secondary"
-                    size="small"
-                    [loading]="actionPending()"
-                    (pressed)="reopenLead(lead)"
-                  >
-                    <app-ui-icon name="inbox" [size]="16" />
-                    {{ i18n.t('leadDetail.reopen') }}
-                  </app-ui-button>
-                }
               </div>
             </dd>
           </div>
@@ -240,10 +229,34 @@
         </app-ui-button>
       </section>
     } @else if (lead.archivedAt) {
-      <p class="terminal-note">
-        <app-ui-icon name="archive" [size]="18" />
-        {{ i18n.t('leadDetail.archivedReadonly') }}
-      </p>
+      <div class="terminal-archived">
+        <p class="terminal-note">
+          <app-ui-icon name="archive" [size]="18" />
+          {{ i18n.t('leadDetail.archivedReadonly') }}
+        </p>
+        @if (canManageArchivedLead(lead)) {
+          <div class="terminal-archived__actions">
+            <app-ui-button
+              variant="secondary"
+              size="small"
+              [loading]="actionPending()"
+              (pressed)="restoreLead(lead)"
+            >
+              <app-ui-icon name="arrow_upward" [size]="16" />
+              {{ i18n.t('lead.restore') }}
+            </app-ui-button>
+            <app-ui-button
+              variant="danger"
+              size="small"
+              [loading]="deletingLead()"
+              (pressed)="confirmDeleteLead(lead)"
+            >
+              <app-ui-icon name="delete" [size]="16" />
+              {{ i18n.t('lead.deletePermanently') }}
+            </app-ui-button>
+          </div>
+        }
+      </div>
     } @else {
       <p class="terminal-note">
         <app-ui-icon name="info" [size]="18" />
@@ -253,13 +266,53 @@
 
     @if (lead.contract) {
       <aside class="terminal-summary terminal-summary--success">
-        <span>Договір №{{ lead.contract.contractNumber }}</span>
-        <strong>{{ formatMoney(lead.contract.amount, lead.contract.currency) }}</strong>
+        <div class="terminal-summary__copy">
+          <span>Договір №{{ lead.contract.contractNumber }}</span>
+          <strong>{{ formatMoney(lead.contract.amount, lead.contract.currency) }}</strong>
+        </div>
+        @if (!lead.archivedAt) {
+          <div class="terminal-summary__actions">
+            <app-ui-button
+              variant="secondary"
+              size="small"
+              [loading]="actionPending()"
+              (pressed)="reopenLead(lead)"
+            >
+              <app-ui-icon name="inbox" [size]="16" />
+              {{ i18n.t('lead.reopen') }}
+            </app-ui-button>
+          </div>
+        }
       </aside>
     } @else if (lead.close) {
       <aside class="terminal-summary">
-        <span>{{ closeReasonLabel(lead.close.reason) }}</span>
-        <p>{{ lead.close.comment }}</p>
+        <div class="terminal-summary__copy">
+          <strong>{{ closeSummaryLine(lead) }}</strong>
+        </div>
+        <div class="terminal-summary__actions">
+          @if (!lead.archivedAt) {
+            <app-ui-button
+              variant="secondary"
+              size="small"
+              [loading]="actionPending()"
+              (pressed)="reopenLead(lead)"
+            >
+              <app-ui-icon name="inbox" [size]="16" />
+              {{ i18n.t('lead.reopen') }}
+            </app-ui-button>
+          }
+          @if (canArchiveLead(lead)) {
+            <app-ui-button
+              variant="secondary"
+              size="small"
+              [loading]="deletingLead()"
+              (pressed)="confirmArchiveLead(lead)"
+            >
+              <app-ui-icon name="archive" [size]="16" />
+              {{ i18n.t('lead.archiveShort') }}
+            </app-ui-button>
+          }
+        </div>
       </aside>
     }
 

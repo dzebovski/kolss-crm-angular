@@ -130,7 +130,7 @@ import type { ReportPeriod, ReportPeriodMode } from './reports.types';
 
     .reports-page {
       display: grid;
-      gap: var(--ui-space-5);
+      gap: var(--ui-space-3);
     }
 
     .page-header {
@@ -156,8 +156,8 @@ import type { ReportPeriod, ReportPeriodMode } from './reports.types';
     }
 
     h1 {
-      font-size: clamp(2rem, 4vw, 3rem);
-      line-height: 0.95;
+      font-size: clamp(1.65rem, 3vw, 2.3rem);
+      line-height: 1;
     }
 
     .page-header p:not(.page-kicker),
@@ -169,13 +169,13 @@ import type { ReportPeriod, ReportPeriodMode } from './reports.types';
     }
 
     .period-console {
-      padding: var(--ui-space-4);
+      padding: 0.75rem;
       border: 1px solid var(--ui-border);
       border-radius: var(--ui-radius-lg);
       background: var(--ui-surface-raised);
       display: grid;
-      grid-template-columns: minmax(14rem, 0.7fr) minmax(24rem, 1.3fr);
-      gap: var(--ui-space-5);
+      grid-template-columns: minmax(12rem, 0.65fr) minmax(24rem, 1.35fr);
+      gap: var(--ui-space-3);
       align-items: center;
       box-shadow: var(--ui-shadow-1);
     }
@@ -187,8 +187,8 @@ import type { ReportPeriod, ReportPeriodMode } from './reports.types';
     }
 
     .period-console__intro > span {
-      width: 2.6rem;
-      height: 2.6rem;
+      width: 2.1rem;
+      height: 2.1rem;
       border-radius: 50%;
       background: var(--ui-text);
       color: white;
@@ -260,7 +260,7 @@ import type { ReportPeriod, ReportPeriodMode } from './reports.types';
 
     .manager-report-stack {
       display: grid;
-      gap: var(--ui-space-6);
+      gap: var(--ui-space-3);
     }
 
     .report-loading,
@@ -359,6 +359,7 @@ import type { ReportPeriod, ReportPeriodMode } from './reports.types';
 
       .manager-report-stack {
         display: block;
+        margin-top: 3mm;
       }
 
       .report-empty {

@@ -109,8 +109,10 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                           <span class="lead-main">
                             <strong>{{ lead.name }}</strong>
                             <small>{{ lead.phone }}</small>
-                            @if (lead.latestTimelineComment?.comment; as comment) {
-                              <small class="lead-comment" [title]="comment">{{ comment }}</small>
+                            @if (lead.latestTimelineComment; as latest) {
+                              <small class="lead-comment" [title]="latest.comment">
+                                {{ formatDayMonth(latest.occurredAt) }} · {{ latest.comment }}
+                              </small>
                             }
                           </span>
                           <span class="lead-meta">

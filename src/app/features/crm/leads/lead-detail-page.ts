@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, output, resource, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -9,7 +9,8 @@ import {
   presentHistoryAuditText,
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { isSuperAdminRole } from '../../../core/roles/roles';
+import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
+import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
   clientStatusTone,
@@ -97,6 +98,8 @@ export class LeadDetailView {
   private readonly activities = inject(LeadActivitiesService);
   private readonly usersService = inject(UsersService);
   private readonly dialog = inject(UiDialogService);
+  private readonly router = inject(Router);
+  private readonly session = inject(SessionService);
   protected readonly i18n = inject(I18nService);
   readonly leadId = input.required<string>();
   readonly displayMode = input<'page' | 'drawer'>('page');
@@ -104,6 +107,7 @@ export class LeadDetailView {
 
   protected readonly actionPending = signal(false);
   protected readonly actionError = signal('');
+  protected readonly deletingLead = signal(false);
   protected readonly markerPending = signal<LeadMarkerKind | null>(null);
   protected readonly markerError = signal('');
   protected readonly assignManagerDialogOpen = signal(false);
@@ -299,6 +303,104 @@ export class LeadDetailView {
 
   protected async reopenLead(lead: MockLead): Promise<void> {
     await this.runActivity(() => this.activities.reopen(lead.id));
+  }
+
+  protected canEditLead(lead: MockLead): boolean {
+    if (lead.archivedAt) return false;
+    const role = this.auth.profile()?.role;
+    if (!canEditLeads(role)) return false;
+    if (role === 'super_admin') return true;
+    return (
+      role === 'office_admin' &&
+      (this.session.officeContext()?.userOffices ?? []).some(
+        (office) => office.code === lead.officeCode,
+      )
+    );
+  }
+
+  protected canArchiveLead(lead: MockLead): boolean {
+    if (lead.clientStatus !== 'closed_lost' || lead.archivedAt) return false;
+    return this.canEditLead(lead);
+  }
+
+  protected canManageArchivedLead(lead: MockLead): boolean {
+    return !!lead.archivedAt && isSuperAdminRole(this.auth.profile()?.role);
+  }
+
+  protected async confirmArchiveLead(lead: MockLead): Promise<void> {
+    if (!this.canArchiveLead(lead) || this.deletingLead()) return;
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .confirm({
+          title: this.i18n.t('lead.archive'),
+          description: this.i18n.t('lead.archiveDesc', { name: lead.name }),
+          confirmLabel: this.i18n.t('lead.archiveShort'),
+          cancelLabel: this.i18n.t('common.cancel'),
+          danger: true,
+        })
+        .afterClosed(),
+    );
+    if (!confirmed) return;
+
+    this.actionError.set('');
+    this.deletingLead.set(true);
+    try {
+      await this.leadsService.archiveLead(lead.id);
+      this.changed.emit();
+      await this.router.navigate(['/crm/leads']);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'error.leadArchiveFailed';
+      this.actionError.set(this.i18n.localizeError(message));
+    } finally {
+      this.deletingLead.set(false);
+    }
+  }
+
+  protected async restoreLead(lead: MockLead): Promise<void> {
+    if (!this.canManageArchivedLead(lead) || this.actionPending()) return;
+    this.actionPending.set(true);
+    this.actionError.set('');
+    try {
+      await this.leadsService.restoreLead(lead.id);
+      await this.leadResource.reload();
+      this.changed.emit();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'error.actionFailed';
+      this.actionError.set(this.i18n.localizeError(message));
+    } finally {
+      this.actionPending.set(false);
+    }
+  }
+
+  protected async confirmDeleteLead(lead: MockLead): Promise<void> {
+    if (!this.canManageArchivedLead(lead) || this.deletingLead()) return;
+
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .confirm({
+          title: this.i18n.t('lead.deletePermanentlyTitle'),
+          description: this.i18n.t('lead.deletePermanentlyDesc', { name: lead.name }),
+          confirmLabel: this.i18n.t('lead.deletePermanently'),
+          cancelLabel: this.i18n.t('common.cancel'),
+          danger: true,
+        })
+        .afterClosed(),
+    );
+    if (!confirmed) return;
+
+    this.actionError.set('');
+    this.deletingLead.set(true);
+    try {
+      await this.leadsService.deleteLeadPermanently(lead.id);
+      this.changed.emit();
+      await this.router.navigate(['/crm/leads']);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'error.actionFailed';
+      this.actionError.set(this.i18n.localizeError(message));
+    } finally {
+      this.deletingLead.set(false);
+    }
   }
 
   protected async toggleMarker(lead: MockLead, kind: LeadMarkerKind): Promise<void> {
@@ -527,6 +629,16 @@ export class LeadDetailView {
 
   protected closeReasonLabel(code: string): string {
     return this.i18n.closeReasonLabel(code);
+  }
+
+  protected closeSummaryLine(lead: MockLead): string {
+    if (!lead.close) return '';
+    const parts = [
+      this.clientStatusLabel('closed_lost'),
+      this.closeReasonLabel(lead.close.reason),
+      lead.close.comment.trim(),
+    ].filter(Boolean);
+    return parts.join(' - ');
   }
 
   protected defaultCurrency(lead: MockLead): string {

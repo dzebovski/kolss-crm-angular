@@ -1,4 +1,4 @@
-import type { CallStatus, ClientStatus } from '../../../services/crm-mock.types';
+import type { CallStatus, ClientStatus, ContractCurrency } from '../../../services/crm-mock.types';
 
 export type ReportPeriodMode = 'all' | 'month' | 'custom';
 
@@ -11,11 +11,17 @@ export interface ReportTotals {
   readonly total: number;
   readonly active: number;
   readonly contractSigned: number;
+  readonly contractTotals: readonly ReportContractTotal[];
   readonly closedLost: number;
   readonly callback: number;
   readonly inactive7d: number;
   readonly conversionPercent: number;
   readonly byClientStatus: Readonly<Record<ClientStatus, number>>;
+}
+
+export interface ReportContractTotal {
+  readonly currency: ContractCurrency;
+  readonly total: number;
 }
 
 export interface ReportComment {
