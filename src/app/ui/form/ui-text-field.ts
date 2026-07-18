@@ -28,15 +28,17 @@ let nextTextFieldId = 0;
         (blur)="touch.emit()"
       />
     </div>
-    <span
-      class="ui-field__message"
-      [class.ui-field__message--error]="!!error()"
-      [id]="descriptionId"
-      [attr.role]="error() ? 'alert' : null"
-      [attr.aria-hidden]="error() || hint() ? null : 'true'"
-    >
-      {{ error() || hint() }}
-    </span>
+    @if (error()) {
+      <span
+        class="ui-field__message"
+        [class.ui-field__message--error]="!!error()"
+        [id]="descriptionId"
+        [attr.role]="error() ? 'alert' : null"
+        [attr.aria-hidden]="error() || hint() ? null : 'true'"
+      >
+        {{ error() || hint() }}
+      </span>
+    }
   `,
   styleUrl: './ui-field.scss',
 })

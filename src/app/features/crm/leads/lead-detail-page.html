@@ -26,7 +26,6 @@
         [markers]="lead.markers"
         [pending]="markerPending()"
         [disabled]="!!lead.archivedAt"
-        [showLabels]="true"
         (toggled)="toggleMarker(lead, $event)"
       />
     </div>

@@ -2,9 +2,15 @@ import { Component, input, output } from '@angular/core';
 
 import type { LeadMarker, LeadMarkerKind } from '../../../services/crm-mock.types';
 
-const MARKER_COPY: Readonly<Record<LeadMarkerKind, { emoji: string; label: string }>> = {
-  reviewed: { emoji: '✓', label: 'Перевірено' },
-  manager_aware: { emoji: '👀', label: 'Менеджер у курсі' },
+const MARKER_COPY: Readonly<
+  Record<LeadMarkerKind, { emoji: string; label: string; activeLabel: string }>
+> = {
+  reviewed: { emoji: '✓', label: 'Перевірено', activeLabel: 'Перевірено' },
+  manager_aware: {
+    emoji: '👀',
+    label: 'Менеджер у курсі',
+    activeLabel: 'На контролі',
+  },
 };
 
 @Component({
@@ -26,8 +32,8 @@ const MARKER_COPY: Readonly<Record<LeadMarkerKind, { emoji: string; label: strin
           (click)="toggled.emit(kind)"
         >
           <span aria-hidden="true">{{ copy(kind).emoji }}</span>
-          @if (showLabels()) {
-            <small>{{ copy(kind).label }}</small>
+          @if (marker) {
+            <small>{{ copy(kind).activeLabel }}</small>
           }
           @if (pending() === kind) {
             <i aria-hidden="true"></i>
@@ -89,6 +95,10 @@ const MARKER_COPY: Readonly<Record<LeadMarkerKind, { emoji: string; label: strin
       color: color-mix(in srgb, var(--ui-info) 78%, black);
     }
 
+    .lead-marker--active {
+      padding-inline: 0.68rem;
+    }
+
     .lead-marker small {
       font-size: 0.72rem;
       font-weight: 750;
@@ -130,7 +140,6 @@ export class LeadMarkerToggles {
   readonly markers = input<readonly LeadMarker[]>([]);
   readonly pending = input<LeadMarkerKind | null>(null);
   readonly disabled = input(false);
-  readonly showLabels = input(false);
   readonly toggled = output<LeadMarkerKind>();
 
   protected readonly kinds: readonly LeadMarkerKind[] = ['reviewed', 'manager_aware'];

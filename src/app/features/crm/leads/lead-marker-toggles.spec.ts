@@ -22,8 +22,29 @@ describe('LeadMarkerToggles', () => {
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
     );
     expect(buttons.map((button) => button.getAttribute('aria-pressed'))).toEqual(['true', 'false']);
+    expect(buttons[0]!.textContent).toContain('Перевірено');
+    expect(buttons[1]!.textContent).not.toContain('На контролі');
     buttons[1]!.click();
     expect(toggled).toHaveBeenCalledWith('manager_aware');
+  });
+
+  it('shows the compact label only next to an active marker', async () => {
+    const fixture = TestBed.createComponent(LeadMarkerToggles);
+    fixture.componentRef.setInput('markers', [
+      {
+        kind: 'manager_aware',
+        actorId: 'user-2',
+        actorName: 'Ірина',
+        markedAt: '2026-07-17T12:00:00.000Z',
+      },
+    ]);
+    await fixture.whenStable();
+
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    );
+    expect(buttons[0]!.textContent).not.toContain('Перевірено');
+    expect(buttons[1]!.textContent).toContain('На контролі');
   });
 
   it('has no automated accessibility violations', async () => {

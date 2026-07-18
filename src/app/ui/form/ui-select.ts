@@ -58,7 +58,12 @@ let nextSelectId = 0;
         (blur)="touch.emit()"
       >
         @if (selectedOption()?.userId; as userId) {
-          <app-ui-user class="ui-select__user" [userId]="userId" [name]="selectedLabel()" size="xs" />
+          <app-ui-user
+            class="ui-select__user"
+            [userId]="userId"
+            [name]="selectedLabel()"
+            size="xs"
+          />
         } @else {
           <span [class.ui-select__placeholder]="!selectedLabel()">
             {{ selectedLabel() || placeholder() }}
@@ -99,7 +104,12 @@ let nextSelectId = 0;
                 [disabled]="option.disabled ?? false"
               >
                 @if (option.userId; as userId) {
-                  <app-ui-user class="ui-select__user" [userId]="userId" [name]="option.label" size="xs" />
+                  <app-ui-user
+                    class="ui-select__user"
+                    [userId]="userId"
+                    [name]="option.label"
+                    size="xs"
+                  />
                 } @else {
                   <span class="ui-select__option-label">{{ option.label }}</span>
                 }
@@ -112,15 +122,17 @@ let nextSelectId = 0;
         </ng-template>
       </ng-template>
     </div>
-    <span
-      class="ui-select__message"
-      [class.ui-select__message--error]="!!error()"
-      [id]="descriptionId"
-      [attr.role]="error() ? 'alert' : null"
-      [attr.aria-hidden]="error() || hint() ? null : 'true'"
-    >
-      {{ error() || hint() }}
-    </span>
+    @if (error()) {
+      <span
+        class="ui-select__message"
+        [class.ui-select__message--error]="!!error()"
+        [id]="descriptionId"
+        [attr.role]="error() ? 'alert' : null"
+        [attr.aria-hidden]="error() || hint() ? null : 'true'"
+      >
+        {{ error() || hint() }}
+      </span>
+    }
   `,
   styles: `
     :host {

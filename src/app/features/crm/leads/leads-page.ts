@@ -7,6 +7,7 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
+  clientStatusTone,
   clientStatusToneForLead,
   groupLeadsByYearMonth,
   leadIsInWork,
@@ -79,36 +80,7 @@ import {
         </div>
       </header>
 
-      <div class="filters" aria-label="{{ 'leads.filterAria' | translate }}">
-        <app-ui-text-field
-          class="filter-search"
-          [label]="'common.search' | translate"
-          type="search"
-          [placeholder]="'leads.searchPlaceholder' | translate"
-          [(value)]="query"
-        />
-
-        <app-ui-select
-          [label]="'leads.filter.callStatus' | translate"
-          [placeholder]="'leads.filter.all' | translate"
-          [options]="callStatusOptions()"
-          [(value)]="callStatusFilter"
-        />
-
-        <app-ui-select
-          [label]="'leads.filter.clientStatus' | translate"
-          [placeholder]="'leads.filter.all' | translate"
-          [options]="clientStatusOptions()"
-          [(value)]="clientStatusFilter"
-        />
-
-        <app-ui-select
-          [label]="'leads.filter.byManager' | translate"
-          [placeholder]="'leads.filter.all' | translate"
-          [options]="managerOptions()"
-          [(value)]="managerFilter"
-        />
-
+      <div class="period-row">
         <div class="period-switcher" role="group" [attr.aria-label]="'reports.period' | translate">
           @for (period of periods(); track period.days ?? 'all') {
             <button
@@ -123,15 +95,79 @@ import {
         </div>
       </div>
 
-      @if (activeFilterLabels().length) {
-        <div class="filter-chips" aria-live="polite">
-          @for (filter of activeFilterLabels(); track filter.kind) {
-            <app-ui-chip [label]="filter.label" [removable]="true" (removed)="clearFilter(filter.kind)">
-              {{ filter.label }}
-            </app-ui-chip>
-          }
+      <div class="filters-stack">
+        <div class="filters" aria-label="{{ 'leads.filterAria' | translate }}">
+          <app-ui-text-field
+            class="filter-search"
+            [label]="'common.search' | translate"
+            type="search"
+            [placeholder]="'leads.searchPlaceholder' | translate"
+            [(value)]="query"
+          />
+
+          <app-ui-select
+            [label]="'leads.filter.callStatus' | translate"
+            [placeholder]="'leads.filter.all' | translate"
+            [options]="callStatusOptions()"
+            [(value)]="callStatusFilter"
+          />
+
+          <app-ui-select
+            [label]="'leads.filter.clientStatus' | translate"
+            [placeholder]="'leads.filter.all' | translate"
+            [options]="clientStatusOptions()"
+            [(value)]="clientStatusFilter"
+          />
+
+          <app-ui-select
+            [label]="'leads.filter.byManager' | translate"
+            [placeholder]="'leads.filter.all' | translate"
+            [options]="managerOptions()"
+            [(value)]="managerFilter"
+          />
         </div>
-      }
+
+        @if (callStatusFilter() || clientStatusFilter() || managerFilter()) {
+          <div class="filter-chips" aria-live="polite">
+            <span></span>
+            <span>
+              @if (callStatusFilter(); as callStatus) {
+                <app-ui-chip
+                  [label]="callStatusLabel(callStatus)"
+                  [tone]="callStatusTone(callStatus)"
+                  [removable]="true"
+                  (removed)="clearFilter('call')"
+                >
+                  {{ callStatusLabel(callStatus) }}
+                </app-ui-chip>
+              }
+            </span>
+            <span>
+              @if (clientStatusFilter(); as clientStatus) {
+                <app-ui-chip
+                  [label]="clientStatusLabel(clientStatus)"
+                  [tone]="clientStatusTone(clientStatus)"
+                  [removable]="true"
+                  (removed)="clearFilter('client')"
+                >
+                  {{ clientStatusLabel(clientStatus) }}
+                </app-ui-chip>
+              }
+            </span>
+            <span>
+              @if (managerFilter(); as managerId) {
+                <app-ui-chip
+                  [label]="employeeName(managerId)"
+                  [removable]="true"
+                  (removed)="clearFilter('manager')"
+                >
+                  {{ employeeName(managerId) }}
+                </app-ui-chip>
+              }
+            </span>
+          </div>
+        }
+      </div>
 
       @if (loadError()) {
         <app-ui-alert tone="danger" [title]="'leads.loadError' | translate">
@@ -258,9 +294,14 @@ import {
     .page-header { display: flex; align-items: end; justify-content: space-between; gap: var(--ui-space-5); }
     .eyebrow { margin: 0 0 var(--ui-space-1); color: var(--ui-action); font-size: .72rem; font-weight: 800; letter-spacing: .14em; }
     h1 { margin: 0; font-family: var(--ui-font-display), sans-serif; font-size: clamp(1.8rem, 4vw, 2.4rem); }
-    .page-actions, .filter-chips { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); }
-    .filters { padding: var(--ui-space-4); border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); background: var(--ui-surface-raised); display: grid; grid-template-columns: minmax(16rem, 1.4fr) repeat(3, minmax(11rem, 1fr)); gap: var(--ui-space-3); align-items: end; box-shadow: var(--ui-shadow-1); }
-    .period-switcher { grid-column: 1 / -1; padding: .1875rem; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-surface-subtle); display: flex; flex-wrap: wrap; gap: .125rem; width: fit-content; }
+    .page-actions { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); }
+    .period-row { display: flex; justify-content: flex-end; }
+    .filters-stack { display: grid; gap: var(--ui-space-2); }
+    .filters, .filter-chips { display: grid; grid-template-columns: minmax(16rem, 1.4fr) repeat(3, minmax(11rem, 1fr)); gap: var(--ui-space-3); }
+    .filters { padding: var(--ui-space-4); border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); background: var(--ui-surface-raised); align-items: end; box-shadow: var(--ui-shadow-1); }
+    .filter-chips { padding-inline: var(--ui-space-4); align-items: start; }
+    .filter-chips > span { min-width: 0; display: flex; }
+    .period-switcher { padding: .1875rem; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-surface-subtle); display: flex; flex-wrap: wrap; gap: .125rem; width: fit-content; }
     .period-switcher button { min-height: 2rem; padding: 0 var(--ui-space-3); border: 0; border-radius: calc(var(--ui-radius-md) - .1875rem); background: transparent; color: var(--ui-text-muted); cursor: pointer; font-size: .8125rem; font-weight: 700; }
     .period-switcher button.is-active { background: var(--ui-surface-raised); color: var(--ui-action); box-shadow: var(--ui-shadow-1); }
     .table-panel { border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); background: var(--ui-surface-raised); box-shadow: var(--ui-shadow-1); overflow-x: auto; }
@@ -284,8 +325,14 @@ import {
     .empty-state { align-content: center; gap: var(--ui-space-2); text-align: center; }
     .empty-state h2, .empty-state p { margin: 0; }
     @keyframes pulse { 50% { opacity: .5; } }
-    @media (max-width: 70rem) { .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 48rem) { .page-header { align-items: start; flex-direction: column; } .filters { grid-template-columns: minmax(0, 1fr); } .period-switcher { grid-column: auto; width: 100%; } .page-actions { width: 100%; } }
+    @media (max-width: 70rem) { .filters, .filter-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 48rem) {
+      .page-header { align-items: start; flex-direction: column; }
+      .filters, .filter-chips { grid-template-columns: minmax(0, 1fr); }
+      .filter-chips > span:first-child:empty { display: none; }
+      .period-switcher { width: 100%; }
+      .page-actions { width: 100%; }
+    }
   `,
 })
 export class LeadsPage {
@@ -310,6 +357,7 @@ export class LeadsPage {
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
   protected readonly callStatusTone = callStatusTone;
+  protected readonly clientStatusTone = clientStatusTone;
 
   constructor() {
     effect(() => {
@@ -387,20 +435,6 @@ export class LeadsPage {
   protected readonly loadError = computed(() => {
     const error = this.leadsResource.error();
     return error instanceof Error ? this.i18n.localizeError(error.message) : error ? String(error) : '';
-  });
-
-  protected readonly activeFilterLabels = computed(() => {
-    const filters: { kind: 'call' | 'client' | 'manager'; label: string }[] = [];
-    if (this.callStatusFilter()) {
-      filters.push({ kind: 'call', label: this.i18n.callStatusLabel(this.callStatusFilter()) });
-    }
-    if (this.clientStatusFilter()) {
-      filters.push({ kind: 'client', label: this.i18n.clientStatusLabel(this.clientStatusFilter()) });
-    }
-    if (this.managerFilter()) {
-      filters.push({ kind: 'manager', label: this.employeeName(this.managerFilter()) });
-    }
-    return filters;
   });
 
   protected callStatusLabel(status: CallStatus): string {
