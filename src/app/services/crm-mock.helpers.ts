@@ -267,8 +267,7 @@ export function groupLeadsByYearMonth(leads: readonly MockLead[]): readonly Lead
 }
 
 export interface DashboardLeadGroup {
-  readonly key: string;
-  readonly title: string;
+  readonly key: 'new' | 'callback' | 'showroom' | 'calculation' | 'in_work' | 'paused';
   readonly tone: UiBadgeTone;
   readonly icon: UiIconName;
   readonly rows: readonly MockLead[];
@@ -311,30 +310,12 @@ export function groupLeadsForDashboard(leads: readonly MockLead[]): readonly Das
   }
 
   return [
-    { key: 'new', title: 'Нові ліди', tone: 'brand', icon: 'campaign', rows: newLeads },
-    {
-      key: 'callback',
-      title: 'Недозвон / Передзвонити',
-      tone: 'warning',
-      icon: 'phone_missed',
-      rows: callback,
-    },
-    { key: 'showroom', title: 'Очікуємо в салоні', tone: 'info', icon: 'schedule', rows: showroom },
-    {
-      key: 'calculation',
-      title: 'Прорахунок',
-      tone: 'warning',
-      icon: 'bar_chart',
-      rows: calculation,
-    },
-    { key: 'in_work', title: 'В роботі', tone: 'info', icon: 'automation', rows: inWork },
-    {
-      key: 'paused',
-      title: 'Клієнти що взяли паузу',
-      tone: 'info',
-      icon: 'history',
-      rows: paused,
-    },
+    { key: 'new', tone: 'brand', icon: 'campaign', rows: newLeads },
+    { key: 'callback', tone: 'warning', icon: 'phone_missed', rows: callback },
+    { key: 'showroom', tone: 'info', icon: 'schedule', rows: showroom },
+    { key: 'calculation', tone: 'warning', icon: 'bar_chart', rows: calculation },
+    { key: 'in_work', tone: 'info', icon: 'automation', rows: inWork },
+    { key: 'paused', tone: 'info', icon: 'history', rows: paused },
   ];
 }
 

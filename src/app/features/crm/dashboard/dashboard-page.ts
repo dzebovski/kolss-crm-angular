@@ -3,12 +3,11 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
+import { I18nService } from '../../../core/i18n/i18n.service';
+import type { MessageKey } from '../../../core/i18n/messages';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
-import {
-  CALL_STATUS_LABELS,
-  callStatusTone,
-  groupLeadsForDashboard,
-} from '../../../services/crm-mock.helpers';
+import { callStatusTone, groupLeadsForDashboard } from '../../../services/crm-mock.helpers';
 import type { LeadMarkerKind, MockLead } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
@@ -27,48 +26,48 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, LeadMarkerToggles, UiBadge, UiButton, UiIcon, UiUser],
+  imports: [RouterLink, LeadMarkerToggles, TranslatePipe, UiBadge, UiButton, UiIcon, UiUser],
   template: `
     <section class="dashboard-page" aria-labelledby="dashboard-title">
       <header class="page-header">
         <div>
-          <p class="page-kicker">CRM overview</p>
-          <h1 id="dashboard-title">Огляд</h1>
-          <p>Короткий стан CRM з реальних даних Supabase.</p>
+          <p class="page-kicker">{{ 'dashboard.kicker' | translate }}</p>
+          <h1 id="dashboard-title">{{ 'dashboard.title' | translate }}</h1>
+          <p>{{ 'dashboard.subtitle' | translate }}</p>
         </div>
         <app-ui-button routerLink="/crm/leads">
           <app-ui-icon name="view_kanban" [size]="17" />
-          Відкрити ліди
+          {{ 'dashboard.openLeads' | translate }}
         </app-ui-button>
       </header>
 
       <div class="dashboard-grid">
         <article>
-          <span>Ліди</span>
+          <span>{{ 'dashboard.metric.leads' | translate }}</span>
           <strong>{{ overview()?.totalLeads ?? 0 }}</strong>
-          <app-ui-badge tone="brand">live</app-ui-badge>
+          <app-ui-badge tone="brand">{{ 'dashboard.badge.live' | translate }}</app-ui-badge>
         </article>
         <article>
-          <span>Активні</span>
+          <span>{{ 'dashboard.metric.active' | translate }}</span>
           <strong>{{ overview()?.activeLeads ?? 0 }}</strong>
-          <app-ui-badge tone="info">statuses</app-ui-badge>
+          <app-ui-badge tone="info">{{ 'dashboard.badge.statuses' | translate }}</app-ui-badge>
         </article>
         <article>
-          <span>Успішні</span>
+          <span>{{ 'dashboard.metric.successful' | translate }}</span>
           <strong>{{ overview()?.successfulLeads ?? 0 }}</strong>
-          <app-ui-badge tone="success">contract</app-ui-badge>
+          <app-ui-badge tone="success">{{ 'dashboard.badge.contract' | translate }}</app-ui-badge>
         </article>
         <article>
-          <span>Співробітники</span>
+          <span>{{ 'dashboard.metric.employees' | translate }}</span>
           <strong>{{ overview()?.employees ?? 0 }}</strong>
-          <app-ui-badge tone="neutral">profiles</app-ui-badge>
+          <app-ui-badge tone="neutral">{{ 'dashboard.badge.profiles' | translate }}</app-ui-badge>
         </article>
       </div>
 
       <div class="reminders">
         <div class="reminders-head">
-          <h2>Нагадування для менеджерів</h2>
-          <p>Ліди в роботі, розділені за статусом.</p>
+          <h2>{{ 'dashboard.remindersTitle' | translate }}</h2>
+          <p>{{ 'dashboard.remindersHint' | translate }}</p>
         </div>
 
         @if (leadsResource.isLoading()) {
@@ -89,7 +88,7 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                 <summary>
                   <span class="group-title">
                     <app-ui-icon [name]="group.icon" [size]="18" />
-                    {{ group.title }}
+                    {{ groupTitle(group.key) }}
                   </span>
                   <app-ui-badge [tone]="group.tone">{{ group.rows.length }}</app-ui-badge>
                   <app-ui-icon class="chevron" name="keyboard_arrow_down" [size]="20" />
@@ -103,7 +102,7 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                           type="button"
                           class="lead-open"
                           [attr.data-lead-id]="lead.id"
-                          [attr.aria-label]="'Відкрити лід ' + lead.name"
+                          [attr.aria-label]="i18n.t('dashboard.openLead', { name: lead.name })"
                           (click)="openLead(lead)"
                         >
                           <span class="lead-main">
@@ -123,7 +122,7 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                                 size="sm"
                               />
                             } @else {
-                              <span class="muted">Не призначено</span>
+                              <span class="muted">{{ 'common.unassigned' | translate }}</span>
                             }
                             @if (lead.callStatus; as status) {
                               <app-ui-badge [tone]="callStatusTone(status)">
@@ -142,7 +141,7 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                     }
                   </ul>
                 } @else {
-                  <p class="group-empty">Немає лідів</p>
+                  <p class="group-empty">{{ 'dashboard.emptyGroup' | translate }}</p>
                 }
               </details>
             }
@@ -452,6 +451,7 @@ export class DashboardPage {
   private readonly leadsService = inject(LeadsService);
   private readonly usersService = inject(UsersService);
   private readonly dialog = inject(UiDialogService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
   protected readonly callStatusTone = callStatusTone;
@@ -482,15 +482,19 @@ export class DashboardPage {
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
 
+  protected groupTitle(key: string): string {
+    return this.i18n.t(`dashboard.group.${key}` as MessageKey);
+  }
+
   protected callStatusLabel(status: MockLead['callStatus']): string {
-    return status ? CALL_STATUS_LABELS[status] : '';
+    return status ? this.i18n.callStatusLabel(status) : '';
   }
 
   protected employeeName(employeeId: string | null): string {
-    if (!employeeId) return 'Не призначено';
+    if (!employeeId) return this.i18n.t('common.unassigned');
     return (
       (this.employeesResource.value() ?? []).find((employee) => employee.id === employeeId)
-        ?.displayName ?? 'Не призначено'
+        ?.displayName ?? this.i18n.t('common.unassigned')
     );
   }
 
@@ -502,7 +506,8 @@ export class DashboardPage {
   }
 
   protected formatDayMonth(value: string): string {
-    return new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: 'short' }).format(
+    const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
+    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(
       new Date(value),
     );
   }
@@ -528,7 +533,7 @@ export class DashboardPage {
       );
     } catch (error) {
       this.markerError.set(
-        error instanceof Error ? error.message : 'Не вдалося зберегти позначку.',
+        error instanceof Error ? error.message : this.i18n.t('dashboard.markerSaveFailed'),
       );
     } finally {
       this.markerPendingKey.set('');
@@ -571,7 +576,7 @@ export class DashboardPage {
       this.leadsResource.value.set(leads);
     } catch (error) {
       this.markerError.set(
-        error instanceof Error ? error.message : 'Не вдалося оновити dashboard.',
+        error instanceof Error ? error.message : this.i18n.t('dashboard.refreshFailed'),
       );
     } finally {
       requestAnimationFrame(() => {
