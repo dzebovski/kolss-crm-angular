@@ -652,7 +652,16 @@
     font-size: 0.8rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 0.6rem;
+  }
+  .terminal-note__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .terminal-note__action {
+    flex: 0 0 auto;
   }
   .terminal-archived {
     display: grid;
@@ -981,6 +990,13 @@
     }
     .terminal-summary {
       grid-template-columns: 1fr;
+    }
+    .terminal-note {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .terminal-note__action {
+      align-self: flex-end;
     }
   }
   @media (prefers-reduced-motion: reduce) {

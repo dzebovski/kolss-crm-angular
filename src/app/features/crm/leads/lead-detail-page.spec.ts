@@ -258,20 +258,28 @@ describe('LeadDetailView', () => {
       ...CRM_MOCK_LEADS[7]!,
       clientStatus: 'closed_lost',
     };
-    const { fixture } = await render(lead, { role: 'super_admin' });
+    const { activities, fixture } = await render(lead, { role: 'super_admin' });
     const element = fixture.nativeElement as HTMLElement;
     const summary = element.querySelector('.terminal-summary') as HTMLElement | null;
+    const terminalNote = element.querySelector('.terminal-note') as HTMLElement | null;
     const managerCard = element.querySelector('.manager-card') as HTMLElement | null;
 
     expect(summary).not.toBeNull();
-    expect(summary?.textContent).toContain('Закрито - Дорого - Після пояснення бюджету клієнт відмовився.');
-    expect(findButton(summary!, 'Відкрити')).toBeTruthy();
+    expect(summary?.textContent).toContain(
+      'Закрито - Дорого - Після пояснення бюджету клієнт відмовився.',
+    );
+    expect(terminalNote).not.toBeNull();
+    expect(findButton(terminalNote!, 'Перевідкрити')).toBeTruthy();
     expect(findButton(summary!, 'Архівувати')).toBeTruthy();
     expect(managerCard?.textContent).not.toContain('Відкрити');
     expect(managerCard?.textContent).not.toContain('Архівувати');
     expect(element.querySelector('.lead-actions')).toBeNull();
     expect(element.querySelector('.terminal-note')).not.toBeNull();
     expect(element.querySelector('.manager-card__edit')).not.toBeNull();
+
+    findButton(terminalNote!, 'Перевідкрити')?.click();
+    await fixture.whenStable();
+    expect(activities.reopen).toHaveBeenCalledWith(lead.id);
   });
 
   it('hides archive for a successful contract lead', async () => {
@@ -283,9 +291,11 @@ describe('LeadDetailView', () => {
     const { fixture } = await render(lead, { role: 'super_admin' });
     const element = fixture.nativeElement as HTMLElement;
     const summary = element.querySelector('.terminal-summary--success') as HTMLElement | null;
+    const terminalNote = element.querySelector('.terminal-note') as HTMLElement | null;
 
     expect(summary).not.toBeNull();
-    expect(findButton(summary!, 'Відкрити')).toBeTruthy();
+    expect(findButton(terminalNote!, 'Перевідкрити')).toBeTruthy();
+    expect(findButton(summary!, 'Перевідкрити')).toBeUndefined();
     expect(findButton(summary!, 'Архівувати')).toBeUndefined();
     expect(element.querySelector('.manager-card')?.textContent).not.toContain('Відкрити');
   });

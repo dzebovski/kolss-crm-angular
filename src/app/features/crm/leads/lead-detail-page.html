@@ -258,10 +258,21 @@
         }
       </div>
     } @else {
-      <p class="terminal-note">
-        <app-ui-icon name="info" [size]="18" />
-        {{ i18n.t('leadDetail.terminalReadonly') }}
-      </p>
+      <div class="terminal-note">
+        <span class="terminal-note__copy">
+          <app-ui-icon name="info" [size]="18" />
+          {{ i18n.t('leadDetail.terminalReadonly') }}
+        </span>
+        <app-ui-button
+          class="terminal-note__action"
+          size="small"
+          [loading]="actionPending()"
+          (pressed)="reopenLead(lead)"
+        >
+          <app-ui-icon name="inbox" [size]="16" />
+          {{ i18n.t('leadDetail.reopen') }}
+        </app-ui-button>
+      </div>
     }
 
     @if (lead.contract) {
@@ -270,38 +281,14 @@
           <span>Договір №{{ lead.contract.contractNumber }}</span>
           <strong>{{ formatMoney(lead.contract.amount, lead.contract.currency) }}</strong>
         </div>
-        @if (!lead.archivedAt) {
-          <div class="terminal-summary__actions">
-            <app-ui-button
-              variant="secondary"
-              size="small"
-              [loading]="actionPending()"
-              (pressed)="reopenLead(lead)"
-            >
-              <app-ui-icon name="inbox" [size]="16" />
-              {{ i18n.t('lead.reopen') }}
-            </app-ui-button>
-          </div>
-        }
       </aside>
     } @else if (lead.close) {
       <aside class="terminal-summary">
         <div class="terminal-summary__copy">
           <strong>{{ closeSummaryLine(lead) }}</strong>
         </div>
-        <div class="terminal-summary__actions">
-          @if (!lead.archivedAt) {
-            <app-ui-button
-              variant="secondary"
-              size="small"
-              [loading]="actionPending()"
-              (pressed)="reopenLead(lead)"
-            >
-              <app-ui-icon name="inbox" [size]="16" />
-              {{ i18n.t('lead.reopen') }}
-            </app-ui-button>
-          }
-          @if (canArchiveLead(lead)) {
+        @if (canArchiveLead(lead)) {
+          <div class="terminal-summary__actions">
             <app-ui-button
               variant="secondary"
               size="small"
@@ -311,8 +298,8 @@
               <app-ui-icon name="archive" [size]="16" />
               {{ i18n.t('lead.archiveShort') }}
             </app-ui-button>
-          }
-        </div>
+          </div>
+        }
       </aside>
     }
 
