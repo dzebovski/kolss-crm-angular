@@ -251,6 +251,26 @@ export const messages = {
   'leadDetail.history': { uk: 'Історія', pl: 'Historia', en: 'History' },
   'leadDetail.timeline': { uk: 'Таймлайн взаємодій', pl: 'Oś interakcji', en: 'Interaction timeline' },
   'leadDetail.timelineEmpty': { uk: 'Дій поки немає. Додайте перший дзвінок або коментар.', pl: 'Nie ma jeszcze działań. Dodaj pierwszą rozmowę lub komentarz.', en: 'No activity yet. Add the first call or comment.' },
+  'leadDetail.translateToEnglish': {
+    uk: 'Перекласти англійською',
+    pl: 'Przetłumacz na angielski',
+    en: 'Translate to English',
+  },
+  'leadDetail.translating': {
+    uk: 'Перекладаємо…',
+    pl: 'Tłumaczenie…',
+    en: 'Translating…',
+  },
+  'leadDetail.englishTranslation': {
+    uk: 'Переклад англійською',
+    pl: 'Tłumaczenie angielskie',
+    en: 'English translation',
+  },
+  'leadDetail.translationFailed': {
+    uk: 'Не вдалося перекласти коментар. Спробуйте ще раз.',
+    pl: 'Nie udało się przetłumaczyć komentarza. Spróbuj ponownie.',
+    en: 'Could not translate the comment. Try again.',
+  },
   'leadDetail.deleteEventTitle': { uk: 'Видалити запис?', pl: 'Usunąć wpis?', en: 'Delete entry?' },
   'leadDetail.deleteEventConfirm': { uk: 'Запис буде видалено з таймлайну назавжди. Цю дію не можна скасувати.', pl: 'Wpis zostanie trwale usunięty z osi czasu. Tej operacji nie można cofnąć.', en: 'The entry will be permanently removed from the timeline. This action cannot be undone.' },
   'leadDetail.deleteEventConfirmButton': { uk: 'Видалити запис', pl: 'Usuń wpis', en: 'Delete entry' },

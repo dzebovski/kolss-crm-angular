@@ -356,6 +356,32 @@
                 @if (eventBody(event); as body) {
                   <p>{{ body }}</p>
                 }
+                @if (event.comment?.trim()) {
+                  @if (event.translationEn; as translation) {
+                    <div class="timeline-card__translation">
+                      <span>{{ i18n.t('leadDetail.englishTranslation') }}</span>
+                      <p>{{ translation }}</p>
+                    </div>
+                  } @else {
+                    <app-ui-button
+                      class="timeline-card__translate"
+                      variant="ghost"
+                      size="small"
+                      [loading]="isEventTranslationPending(event.id)"
+                      [disabled]="isEventTranslationPending(event.id)"
+                      (pressed)="translateEvent(lead, event)"
+                    >
+                      {{
+                        isEventTranslationPending(event.id)
+                          ? i18n.t('leadDetail.translating')
+                          : i18n.t('leadDetail.translateToEnglish')
+                      }}
+                    </app-ui-button>
+                  }
+                  @if (translationError(event.id); as error) {
+                    <p class="timeline-card__translation-error" role="alert">{{ error }}</p>
+                  }
+                }
                 <footer class="timeline-card__meta">
                   <time [attr.datetime]="event.occurredAt">
                     {{ formatDateTime(event.occurredAt) }}

@@ -96,6 +96,9 @@ export interface LeadEvent {
   readonly type: LeadEventType;
   readonly rawType: string;
   readonly comment: string | null;
+  readonly translationEn?: string | null;
+  readonly translationSourceLanguage?: 'UK' | 'PL' | null;
+  readonly translatedAt?: string | null;
   readonly newValue: unknown;
   readonly actorId: string;
   /** Display name from API `profiles.display_name` join; empty when missing. */

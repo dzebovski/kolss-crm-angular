@@ -37,14 +37,14 @@ const generatedTypes = readFileSync(
   resolve(appRoot, 'core/api/generated/kolss-api.types.ts'),
   'utf8',
 );
-if (!generatedTypes.includes("API_CONTRACT_VERSION = '2.1.0'")) {
-  violations.push('Generated API contract is not pinned to 2.1.0');
+if (!generatedTypes.includes("API_CONTRACT_VERSION = '2.2.0'")) {
+  violations.push('Generated API contract is not pinned to 2.2.0');
 }
 
 const manifest = JSON.parse(
   readFileSync(resolve(appRoot, 'core/api/generated/kolss-api.contract.json'), 'utf8'),
 );
-if (manifest.version !== '2.1.0') violations.push('Generated API manifest is not v2.1.0');
+if (manifest.version !== '2.2.0') violations.push('Generated API manifest is not v2.2.0');
 const backendContract = resolve(root, '../kolss-platform-api/api/openapi.yaml');
 if (existsSync(backendContract)) {
   const hash = createHash('sha256').update(readFileSync(backendContract)).digest('hex');
@@ -61,4 +61,4 @@ if (violations.length) {
   );
   process.exit(1);
 }
-console.log('API boundary verified: Supabase browser access is auth-only; contract v2.1.0.');
+console.log('API boundary verified: Supabase browser access is auth-only; contract v2.2.0.');

@@ -339,6 +339,9 @@ describe('mapLeadDetail events', () => {
           actor_id: 'user-x',
           event_type: 'comment',
           comment: 'hi',
+          comment_translation_en: 'Hello',
+          comment_translation_source_lang: 'UK',
+          comment_translated_at: '2026-07-10T02:01:00Z',
           old_value: null,
           new_value: null,
           created_at: '2026-07-10T02:00:00Z',
@@ -363,6 +366,9 @@ describe('mapLeadDetail events', () => {
     });
     expect(lead.events[2]).toMatchObject({
       id: 'evt-blank-name',
+      translationEn: 'Hello',
+      translationSourceLanguage: 'UK',
+      translatedAt: '2026-07-10T02:01:00Z',
       type: 'comment',
       actorName: '',
     });

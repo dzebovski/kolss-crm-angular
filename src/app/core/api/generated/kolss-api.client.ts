@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type {
   LeadDetailResponse,
+  LeadEventTranslationResponse,
   LeadMarkerResponse,
   LeadListResponse,
   MeResponse,
@@ -72,6 +73,13 @@ export class KolssApiClient {
     return this.delete(
       `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`,
     ).then(() => undefined);
+  }
+
+  translateEvent(id: string, eventId: string): Promise<LeadEventTranslationResponse> {
+    return this.post(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}/translate`,
+      {},
+    );
   }
 
   leadAction<T = { readonly ok: boolean; readonly version: number }>(

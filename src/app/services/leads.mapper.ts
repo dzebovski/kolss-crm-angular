@@ -127,6 +127,9 @@ export interface LeadEventRow {
   event_category?: string | null;
   status_code?: string | null;
   comment?: string | null;
+  comment_translation_en?: string | null;
+  comment_translation_source_lang?: string | null;
+  comment_translated_at?: string | null;
   old_value: unknown;
   new_value: unknown;
   created_at: string;
@@ -384,6 +387,13 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
     type: mapEventType(event.event_type),
     rawType: event.event_type,
     comment: event.comment ?? null,
+    translationEn: event.comment_translation_en?.trim() || null,
+    translationSourceLanguage:
+      event.comment_translation_source_lang === 'UK' ||
+      event.comment_translation_source_lang === 'PL'
+        ? event.comment_translation_source_lang
+        : null,
+    translatedAt: event.comment_translated_at ?? null,
     newValue: event.new_value,
     actorId: event.actor_id ?? '',
     actorName: event.profiles?.display_name?.trim() || '',

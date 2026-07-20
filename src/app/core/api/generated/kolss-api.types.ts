@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '../../../services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.1.0' as const;
+export const API_CONTRACT_VERSION = '2.2.0' as const;
 
 export interface ApiErrorResponse {
   readonly code: string;
@@ -49,6 +49,12 @@ export interface LeadDetailResponse {
     readonly contracts: readonly ContractRow[];
     readonly events: readonly LeadEventRow[];
   };
+}
+
+export interface LeadEventTranslationResponse {
+  readonly translation: string;
+  readonly sourceLanguage: 'UK' | 'PL';
+  readonly translatedAt: string;
 }
 
 export interface UsersResponse {

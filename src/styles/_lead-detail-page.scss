@@ -146,6 +146,38 @@
     font-style: italic;
   }
 
+  .timeline-card__translate {
+    width: fit-content;
+    margin-top: 0.15rem;
+    color: var(--ui-action);
+  }
+
+  .timeline-card__translation {
+    margin-top: 0.2rem;
+    padding: 0.65rem 0.75rem;
+    border-left: 3px solid color-mix(in srgb, var(--ui-action) 65%, transparent);
+    border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
+    background: color-mix(in srgb, var(--ui-action) 6%, var(--ui-surface-raised));
+  }
+
+  .timeline-card__translation > span {
+    color: var(--ui-text-subtle);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .timeline-card__translation p {
+    margin-bottom: 0;
+    color: var(--ui-text);
+  }
+
+  .timeline-card__translation-error {
+    color: var(--ui-danger);
+    font-size: 0.75rem;
+  }
+
   .timeline-card__status {
     width: fit-content;
   }

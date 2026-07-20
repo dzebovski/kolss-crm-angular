@@ -23,6 +23,7 @@ describe('LeadDetailView', () => {
       role?: UserRole;
       managers?: typeof CRM_MOCK_EMPLOYEES;
       updateLeadDetails?: ReturnType<typeof vi.fn>;
+      translateHistoryEvent?: ReturnType<typeof vi.fn>;
       userOffices?: { code: string }[];
     } = {},
   ) {
@@ -31,6 +32,13 @@ describe('LeadDetailView', () => {
     const archiveLead = vi.fn(async () => undefined);
     const restoreLead = vi.fn(async () => undefined);
     const deleteLeadPermanently = vi.fn(async () => undefined);
+    const translateHistoryEvent =
+      options.translateHistoryEvent ??
+      vi.fn(async () => ({
+        translation: 'English translation',
+        sourceLanguage: 'UK',
+        translatedAt: '2026-07-20T12:00:00.000Z',
+      }));
     const activities = {
       recordCall: vi.fn(),
       addComment: vi.fn(),
@@ -61,6 +69,7 @@ describe('LeadDetailView', () => {
             archiveLead,
             restoreLead,
             deleteLeadPermanently,
+            translateHistoryEvent,
           },
         },
         { provide: LeadActivitiesService, useValue: activities },
@@ -91,6 +100,7 @@ describe('LeadDetailView', () => {
       dialogOpen,
       fixture,
       restoreLead,
+      translateHistoryEvent,
       updateLeadDetails,
     };
   }
@@ -215,6 +225,7 @@ describe('LeadDetailView', () => {
       'header',
       'app-ui-badge',
       'p',
+      'app-ui-button',
       'footer',
     ]);
     expect(cards[0]!.querySelector('.ui-badge--warning')?.textContent).toContain('Прорахунок');
@@ -242,6 +253,59 @@ describe('LeadDetailView', () => {
     expect(firstTimelineUser.size()).toBe('xs');
     expect(fallbackTimelineUser.userId()).toBeNull();
     expect(fallbackTimelineUser.name()).toBe('Не призначено');
+  });
+
+  it('shows saved English text below the original and hides the translate button', async () => {
+    const event: LeadEvent = {
+      id: 'translated-comment',
+      type: 'comment_added',
+      rawType: 'comment_added',
+      comment: 'Клієнт підтвердив розміри.',
+      translationEn: 'The client confirmed the measurements.',
+      translationSourceLanguage: 'UK',
+      translatedAt: '2026-07-20T12:00:00.000Z',
+      newValue: null,
+      actorId: 'emp-kyiv-1',
+      actorName: 'Данило Мороз',
+      occurredAt: '2026-07-20T11:00:00.000Z',
+      category: 'comment',
+      statusCode: null,
+    };
+    const lead = { ...CRM_MOCK_LEADS[2]!, events: [event] };
+    const { fixture } = await render(lead);
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.timeline-card')!;
+
+    expect(card.querySelector('.timeline-card__translation')?.textContent).toContain(
+      'The client confirmed the measurements.',
+    );
+    expect(findButton(card as HTMLElement, 'Перекласти англійською')).toBeUndefined();
+  });
+
+  it('requests a translation for any event comment and shows a retryable localized error', async () => {
+    const event: LeadEvent = {
+      id: 'status-comment',
+      type: 'client_status_changed',
+      rawType: 'client_status_changed',
+      comment: 'Очікує фінальний кошторис.',
+      newValue: null,
+      actorId: 'emp-kyiv-1',
+      occurredAt: '2026-07-20T11:00:00.000Z',
+      category: 'client_status',
+      statusCode: 'calculation_in_progress',
+    };
+    const translateHistoryEvent = vi.fn().mockRejectedValue(new Error('provider unavailable'));
+    const lead = { ...CRM_MOCK_LEADS[2]!, events: [event] };
+    const { fixture } = await render(lead, { translateHistoryEvent });
+    const element = fixture.nativeElement as HTMLElement;
+
+    findButton(element, 'Перекласти англійською')?.click();
+    await fixture.whenStable();
+
+    expect(translateHistoryEvent).toHaveBeenCalledWith(lead.id, event.id);
+    expect(element.querySelector('[role="alert"]')?.textContent).toContain(
+      'Не вдалося перекласти коментар',
+    );
+    expect(findButton(element, 'Перекласти англійською')).toBeTruthy();
   });
 
   it('has no automated accessibility violations in the timeline', async () => {

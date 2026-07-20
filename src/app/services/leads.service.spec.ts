@@ -101,4 +101,17 @@ describe('LeadsService', () => {
     expect(setLeadMarker).toHaveBeenCalledWith('lead-1', 'manager_aware');
     expect(deleteLeadMarker).toHaveBeenCalledWith('lead-1', 'manager_aware');
   });
+
+  it('requests and returns a timeline event translation through the API', async () => {
+    const response = {
+      translation: 'The client confirmed the measurements.',
+      sourceLanguage: 'UK' as const,
+      translatedAt: '2026-07-20T12:00:00.000Z',
+    };
+    const translateEvent = vi.fn().mockResolvedValue(response);
+    const service = setup({ translateEvent } as Partial<KolssApiClient>);
+
+    await expect(service.translateHistoryEvent('lead-1', 'event-1')).resolves.toEqual(response);
+    expect(translateEvent).toHaveBeenCalledWith('lead-1', 'event-1');
+  });
 });

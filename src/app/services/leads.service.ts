@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 
 import { KolssApiClient } from '../core/api/generated/kolss-api.client';
+import type { LeadEventTranslationResponse } from '../core/api/generated/kolss-api.types';
 import { AuthService } from '../core/auth/auth.service';
 import type { LeadMarker, LeadMarkerKind, LeadSource, MockLead } from './crm-mock.types';
 import { mapLeadDetail, mapLeadListRow, mapLeadMarker, type LeadListRow } from './leads.mapper';
@@ -126,6 +127,10 @@ export class LeadsService {
 
   async deleteHistoryEvent(leadId: string, eventId: string): Promise<void> {
     await this.api.deleteEvent(leadId, eventId);
+  }
+
+  translateHistoryEvent(leadId: string, eventId: string): Promise<LeadEventTranslationResponse> {
+    return this.api.translateEvent(leadId, eventId);
   }
 
   async setMarker(leadId: string, kind: LeadMarkerKind): Promise<LeadMarker> {

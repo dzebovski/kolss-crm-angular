@@ -115,6 +115,8 @@ export class LeadDetailView {
   protected readonly managerPending = signal(false);
   protected readonly managerError = signal('');
   protected readonly deleteEventTarget = signal<LeadEvent | null>(null);
+  protected readonly translationPendingEventIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly translationErrors = signal<Readonly<Record<string, string>>>({});
   protected readonly leadResource = resource({
     params: () => this.leadId(),
     loader: ({ params }) => this.leadsService.getById(params),
@@ -243,6 +245,47 @@ export class LeadDetailView {
   protected askDeleteEvent(event: LeadEvent): void {
     if (!this.canEditTimeline()) return;
     this.deleteEventTarget.set(event);
+  }
+
+  protected isEventTranslationPending(eventId: string): boolean {
+    return this.translationPendingEventIds().has(eventId);
+  }
+
+  protected translationError(eventId: string): string {
+    return this.translationErrors()[eventId] ?? '';
+  }
+
+  protected async translateEvent(lead: MockLead, event: LeadEvent): Promise<void> {
+    if (this.isEventTranslationPending(event.id) || !event.comment?.trim() || event.translationEn) {
+      return;
+    }
+    this.clearTranslationError(event.id);
+    this.translationPendingEventIds.update((ids) => new Set(ids).add(event.id));
+    try {
+      await this.leadsService.translateHistoryEvent(lead.id, event.id);
+      await this.leadResource.reload();
+      this.changed.emit();
+    } catch {
+      this.translationErrors.update((errors) => ({
+        ...errors,
+        [event.id]: this.i18n.t('leadDetail.translationFailed'),
+      }));
+    } finally {
+      this.translationPendingEventIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(event.id);
+        return next;
+      });
+    }
+  }
+
+  private clearTranslationError(eventId: string): void {
+    this.translationErrors.update((errors) => {
+      if (!(eventId in errors)) return errors;
+      const next = { ...errors };
+      delete next[eventId];
+      return next;
+    });
   }
 
   protected cancelDeleteEvent(): void {

@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "sha256": "3e2c44eb37367b1f853923127fac55a4feb8a12cc90ceb548af7dd540e840c38",
+  "version": "2.2.0",
+  "sha256": "2cd4e8ee18b98cdbb99c5f9aaf39c1cd5f2632fc5b4aa95cfb447be2e1b177b3",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -15,6 +15,7 @@
     "deleteLeadMarker",
     "updateLeadEvent",
     "deleteLeadEvent",
+    "translateLeadEvent",
     "createLeadActivity",
     "performLeadAction",
     "archiveLead",
