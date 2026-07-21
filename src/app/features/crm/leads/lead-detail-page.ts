@@ -50,6 +50,8 @@ import {
   ContractStatusDialog,
   type ContractStatusDialogData,
   type ContractStatusResult,
+  DueDateDialog,
+  type DueDateDialogData,
   TextActivityDialog,
   type TextActivityDialogData,
 } from './lead-activity-dialogs';
@@ -176,6 +178,11 @@ export class LeadDetailView {
       });
       if (result === undefined) return;
       comment = result;
+    } else if (status === 'callback_requested') {
+      const dueDate = await this.openDueDateDialog(this.callStatusLabel(status));
+      if (!dueDate) return;
+      await this.runActivity(() => this.activities.recordCall(lead.id, status, comment, dueDate));
+      return;
     }
     await this.runActivity(() => this.activities.recordCall(lead.id, status, comment));
   }
@@ -339,6 +346,12 @@ export class LeadDetailView {
           result.currency,
         ),
       );
+      return;
+    }
+    if (status === 'thinking') {
+      const dueDate = await this.openDueDateDialog(this.clientStatusLabel(status));
+      if (!dueDate) return;
+      await this.runActivity(() => this.activities.setClientStatus(lead.id, status, dueDate));
       return;
     }
     await this.runActivity(() => this.activities.setClientStatus(lead.id, status));
@@ -561,6 +574,18 @@ export class LeadDetailView {
     );
   }
 
+  private async openDueDateDialog(statusLabel: string): Promise<string | undefined> {
+    return firstValueFrom(
+      this.dialog
+        .open<DueDateDialog, DueDateDialogData, string>(DueDateDialog, {
+          data: { statusLabel },
+          ariaLabelledBy: 'due-date-title',
+          maxWidth: 'calc(100vw - 1rem)',
+        })
+        .afterClosed(),
+    );
+  }
+
   private async runActivity(action: () => Promise<void>): Promise<void> {
     if (this.actionPending()) return;
     this.actionError.set('');
@@ -690,6 +715,10 @@ export class LeadDetailView {
 
   protected formatDateTime(value: string | null | undefined): string {
     return this.i18n.formatDateTime(value);
+  }
+
+  protected formatDueDate(value: string): string {
+    return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
   }
 
   protected formatMoney(value: number | null | undefined, currency: string): string {

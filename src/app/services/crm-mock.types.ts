@@ -248,6 +248,7 @@ export type LeadActivityPayload =
       readonly type: 'call_status';
       readonly status: CallStatus;
       readonly comment?: string;
+      readonly dueAt?: string;
     }
   | {
       readonly type: 'client_status';
@@ -257,6 +258,7 @@ export type LeadActivityPayload =
       readonly contractNumber?: string;
       readonly amount?: number;
       readonly currency?: ContractCurrency;
+      readonly dueAt?: string;
     }
   | { readonly type: 'comment'; readonly comment: string }
   | { readonly type: 'reopen' };

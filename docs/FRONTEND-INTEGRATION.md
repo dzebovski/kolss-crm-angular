@@ -372,14 +372,14 @@ const MOCK_OFFICES = [
 
 Ці endpoint-и **не** викликаються з Angular:
 
-| Endpoint | Де буде після міграції |
-|----------|------------------------|
-| `POST /api/webhooks/import-lead` | Supabase Edge Function `import-lead` |
+| Endpoint | Власник |
+|----------|---------|
+| `GET/POST /v1/integrations/meta/webhook` | Go API; Meta verification та Lead Ads delivery |
 | `POST /api/webhooks/site-lead` | Edge Function `site-lead` |
 | `POST /api/webhooks/process-notifications` | Edge Function `process-notifications` |
 | Admin create user | Edge Function `admin-create-user` |
 
-Детальніше: план міграції, розділ «Налаштування Supabase».
+Детальніше: `kolss-platform-api/docs/META-LEAD-ADS-SETUP.md`.
 
 ---
 

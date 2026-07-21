@@ -161,6 +161,9 @@
             <app-ui-badge [tone]="callTone(callStatus)">
               {{ callStatusLabel(callStatus) }}
             </app-ui-badge>
+            @if (callStatus === 'callback_requested' && lead.callbackDueAt) {
+              <small class="status-item__due">{{ formatDueDate(lead.callbackDueAt) }}</small>
+            }
             @if (lead.callStatusChangedAt) {
               <small>{{ formatDateTime(lead.callStatusChangedAt) }}</small>
             }
@@ -180,6 +183,9 @@
           <app-ui-badge [tone]="clientToneForLead(lead)">
             {{ clientStatusLabelForLead(lead) }}
           </app-ui-badge>
+          @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
+            <small class="status-item__due">{{ formatDueDate(lead.callbackDueAt) }}</small>
+          }
           <small>
             {{
               i18n.t('leadDetail.updated', {

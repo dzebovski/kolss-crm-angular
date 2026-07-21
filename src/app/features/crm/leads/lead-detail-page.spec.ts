@@ -521,18 +521,43 @@ describe('LeadDetailView', () => {
     ]);
   });
 
+  it('asks for a date when callback is selected and records it', async () => {
+    const lead = CRM_MOCK_LEADS[2]!;
+    const { activities, dialogOpen, fixture } = await render(lead);
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of('callback_requested') })
+      .mockReturnValueOnce({ afterClosed: () => of('2026-07-25') });
+
+    findActionButton(fixture.nativeElement as HTMLElement, 'Дзвінок')?.click();
+
+    await vi.waitFor(() =>
+      expect(activities.recordCall).toHaveBeenCalledWith(
+        lead.id,
+        'callback_requested',
+        '',
+        '2026-07-25',
+      ),
+    );
+    expect(dialogOpen.mock.calls[1]?.[1]).toMatchObject({
+      data: { statusLabel: 'Передзвонити' },
+      ariaLabelledBy: 'due-date-title',
+    });
+  });
+
   it('opens client statuses in the radial dialog and applies the selection', async () => {
     const lead: MockLead = {
       ...CRM_MOCK_LEADS[2]!,
       clientStatus: 'calculation_in_progress',
     };
     const { activities, dialogOpen, fixture } = await render(lead);
-    dialogOpen.mockReturnValue({ afterClosed: () => of('thinking') });
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of('thinking') })
+      .mockReturnValueOnce({ afterClosed: () => of('2026-07-28') });
     const element = fixture.nativeElement as HTMLElement;
 
     findActionButton(element, 'Статус клієнта')?.click();
     await vi.waitFor(() =>
-      expect(activities.setClientStatus).toHaveBeenCalledWith(lead.id, 'thinking'),
+      expect(activities.setClientStatus).toHaveBeenCalledWith(lead.id, 'thinking', '2026-07-28'),
     );
 
     const config = dialogOpen.mock.calls[0]?.[1];

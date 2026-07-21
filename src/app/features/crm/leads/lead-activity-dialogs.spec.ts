@@ -4,7 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import axe from 'axe-core';
 
 import { SessionService } from '../../../core/session/session.service';
-import { TextActivityDialog } from './lead-activity-dialogs';
+import { DueDateDialog, TextActivityDialog } from './lead-activity-dialogs';
 
 describe('lead activity dialogs', () => {
   let dialog: MatDialog;
@@ -40,6 +40,25 @@ describe('lead activity dialogs', () => {
 
     expect(overlay.querySelector('textarea')).toBeTruthy();
     expect(overlay.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+  });
+
+  it('requires a date for a callback reminder', async () => {
+    dialog.open(DueDateDialog, {
+      data: { statusLabel: 'Передзвонити' },
+      ariaLabelledBy: 'due-date-title',
+      enterAnimationDuration: 0,
+    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const input = overlay.querySelector<HTMLInputElement>('input[type="date"]')!;
+    const submit = overlay.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(submit.disabled).toBe(true);
+
+    input.value = '2026-07-25';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(submit.disabled).toBe(false);
   });
 
   it('has no automated accessibility violations', async () => {

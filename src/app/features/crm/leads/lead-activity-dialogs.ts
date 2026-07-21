@@ -53,7 +53,9 @@ export interface TextActivityDialogData {
         [error]="commentError()"
       />
       <footer class="activity-dialog__actions">
-        <app-ui-button variant="ghost" (pressed)="cancel()">{{ i18n.t('common.cancel') }}</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="cancel()">{{
+          i18n.t('common.cancel')
+        }}</app-ui-button>
         <app-ui-button type="submit" [disabled]="commentForm().invalid()">
           {{ data.submitLabel }}
         </app-ui-button>
@@ -91,6 +93,61 @@ export class TextActivityDialog {
   }
 }
 
+export interface DueDateDialogData {
+  readonly statusLabel: string;
+}
+
+@Component({
+  selector: 'app-due-date-dialog',
+  imports: [FormField, UiButton, UiTextField],
+  template: `
+    <form class="activity-dialog" (submit)="save(); $event.preventDefault()">
+      <header class="activity-dialog__heading">
+        <small>{{ data.statusLabel }}</small>
+        <h2 id="due-date-title">{{ i18n.t('activity.dueDateTitle') }}</h2>
+        <p>{{ i18n.t('activity.dueDateDescription') }}</p>
+      </header>
+      <app-ui-text-field
+        type="date"
+        [label]="i18n.t('activity.dueDateLabel')"
+        [formField]="dueDateForm.date"
+        [error]="dateError()"
+      />
+      <footer class="activity-dialog__actions">
+        <app-ui-button variant="ghost" (pressed)="cancel()">
+          {{ i18n.t('common.cancel') }}
+        </app-ui-button>
+        <app-ui-button type="submit" [disabled]="dueDateForm().invalid()">
+          {{ i18n.t('common.save') }}
+        </app-ui-button>
+      </footer>
+    </form>
+  `,
+  styles: [DIALOG_STYLES],
+})
+export class DueDateDialog {
+  protected readonly i18n = inject(I18nService);
+  protected readonly data = inject<DueDateDialogData>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject(MatDialogRef<DueDateDialog, string>);
+  protected readonly model = signal({ date: '' });
+  protected readonly dueDateForm = form(this.model, (path) => {
+    required(path.date, { message: this.i18n.t('activity.dueDateRequired') });
+  });
+
+  protected dateError(): string {
+    const state = this.dueDateForm.date();
+    return state.touched() ? (state.errors()[0]?.message ?? '') : '';
+  }
+
+  protected save(): void {
+    submit(this.dueDateForm, async () => this.dialogRef.close(this.model().date));
+  }
+
+  protected cancel(): void {
+    this.dialogRef.close();
+  }
+}
+
 export interface CloseStatusResult {
   readonly reason: 'expensive' | 'invalid' | 'other';
   readonly comment: string;
@@ -106,7 +163,11 @@ export interface CloseStatusResult {
         <h2 id="close-status-title">{{ i18n.t('activity.closeTitle') }}</h2>
         <p>{{ i18n.t('activity.closeDescription') }}</p>
       </header>
-      <div class="reason-selector" role="radiogroup" [attr.aria-label]="i18n.t('activity.closeReasonAria')">
+      <div
+        class="reason-selector"
+        role="radiogroup"
+        [attr.aria-label]="i18n.t('activity.closeReasonAria')"
+      >
         @for (reason of reasons; track reason.value) {
           <button
             type="button"
@@ -126,7 +187,9 @@ export interface CloseStatusResult {
         [error]="commentError()"
       />
       <footer class="activity-dialog__actions">
-        <app-ui-button variant="ghost" (pressed)="cancel()">{{ i18n.t('common.cancel') }}</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="cancel()">{{
+          i18n.t('common.cancel')
+        }}</app-ui-button>
         <app-ui-button type="submit" variant="danger" [disabled]="closeForm().invalid()">
           {{ i18n.t('activity.closeSubmit') }}
         </app-ui-button>
@@ -213,7 +276,9 @@ export interface ContractStatusResult {
         />
       </div>
       <footer class="activity-dialog__actions">
-        <app-ui-button variant="ghost" (pressed)="cancel()">{{ i18n.t('common.cancel') }}</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="cancel()">{{
+          i18n.t('common.cancel')
+        }}</app-ui-button>
         <app-ui-button type="submit" [disabled]="contractForm().invalid()">
           {{ i18n.t('activity.successSubmit') }}
         </app-ui-button>
@@ -225,9 +290,7 @@ export interface ContractStatusResult {
 export class ContractStatusDialog {
   protected readonly i18n = inject(I18nService);
   protected readonly data = inject<ContractStatusDialogData>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(
-    MatDialogRef<ContractStatusDialog, ContractStatusResult>,
-  );
+  private readonly dialogRef = inject(MatDialogRef<ContractStatusDialog, ContractStatusResult>);
   protected readonly currencyOptions: readonly UiSelectOption[] = ['UAH', 'USD', 'EUR', 'PLN'].map(
     (value) => ({ value, label: value }),
   );

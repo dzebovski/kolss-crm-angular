@@ -12,11 +12,12 @@ import type {
 export class LeadActivitiesService {
   private readonly api = inject(KolssApiClient);
 
-  recordCall(leadId: string, status: CallStatus, comment = ''): Promise<void> {
+  recordCall(leadId: string, status: CallStatus, comment = '', dueDate = ''): Promise<void> {
     return this.commit(leadId, {
       type: 'call_status',
       status,
       ...(comment.trim() ? { comment: comment.trim() } : {}),
+      ...(dueDate ? { dueAt: dueAtFromDate(dueDate) } : {}),
     });
   }
 
@@ -27,8 +28,13 @@ export class LeadActivitiesService {
   setClientStatus(
     leadId: string,
     status: Exclude<ClientStatus, 'new_lead' | 'closed_lost' | 'contract_signed'>,
+    dueDate = '',
   ): Promise<void> {
-    return this.commit(leadId, { type: 'client_status', status });
+    return this.commit(leadId, {
+      type: 'client_status',
+      status,
+      ...(dueDate ? { dueAt: dueAtFromDate(dueDate) } : {}),
+    });
   }
 
   closeLead(
@@ -66,4 +72,8 @@ export class LeadActivitiesService {
   private async commit(leadId: string, payload: LeadActivityPayload): Promise<void> {
     await this.api.leadActivity(leadId, payload);
   }
+}
+
+export function dueAtFromDate(date: string): string {
+  return `${date}T12:00:00.000Z`;
 }

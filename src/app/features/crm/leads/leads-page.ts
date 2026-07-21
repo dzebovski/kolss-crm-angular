@@ -257,6 +257,9 @@ import {
                         <app-ui-badge [tone]="callStatusTone(status)">
                           {{ callStatusLabel(status) }}
                         </app-ui-badge>
+                        @if (status === 'callback_requested' && lead.callbackDueAt) {
+                          <small class="status-due">{{ formatDueDate(lead.callbackDueAt) }}</small>
+                        }
                       } @else {
                         <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>
                       }
@@ -265,6 +268,9 @@ import {
                       <app-ui-badge [tone]="clientStatusToneForLead(lead)">
                         {{ clientStatusLabelForLead(lead) }}
                       </app-ui-badge>
+                      @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
+                        <small class="status-due">{{ formatDueDate(lead.callbackDueAt) }}</small>
+                      }
                     </td>
                     <td class="comment-cell">
                       @if (lead.latestTimelineComment; as latest) {
@@ -316,6 +322,7 @@ import {
     .lead-row:hover, .lead-row:focus-visible { background: var(--ui-surface-subtle); outline: none; }
     .lead-row strong, .lead-row small, .comment-cell > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .lead-row small, .muted { color: var(--ui-text-subtle); font-size: .75rem; }
+    .lead-row .status-due { margin-top: .3rem; color: var(--ui-action); font-weight: 700; }
     .date-cell strong { text-transform: capitalize; }
     .comment-cell > span:not(.muted) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; line-height: 1.35; }
     .comment-cell small { margin-top: .25rem; }
@@ -471,6 +478,10 @@ export class LeadsPage {
   protected formatTime(value: string): string {
     const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
     return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+  }
+
+  protected formatDueDate(value: string): string {
+    return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
   }
 
   protected formatMoney(value: number, currency: string): string {

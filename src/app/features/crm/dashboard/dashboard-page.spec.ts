@@ -12,8 +12,11 @@ import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { DashboardPage } from './dashboard-page';
 
 describe('DashboardPage lead workflow', () => {
-  async function render(drawerResult?: { dirty: boolean }) {
-    const lead = { ...CRM_MOCK_LEADS[0]!, markers: [] };
+  async function render(
+    drawerResult?: { dirty: boolean },
+    leadOverrides: Partial<(typeof CRM_MOCK_LEADS)[number]> = {},
+  ) {
+    const lead = { ...CRM_MOCK_LEADS[0]!, ...leadOverrides, markers: [] };
     const setMarker = vi.fn().mockResolvedValue({
       kind: 'reviewed',
       actorId: 'user-1',
@@ -118,5 +121,18 @@ describe('DashboardPage lead workflow', () => {
     const { fixture } = await render();
     const reminders = (fixture.nativeElement as HTMLElement).querySelector('.reminders')!;
     expect((await axe.run(reminders)).violations).toEqual([]);
+  });
+
+  it('shows the selected date next to callback and waiting statuses', async () => {
+    const { fixture } = await render(undefined, {
+      callStatus: 'callback_requested',
+      clientStatus: 'thinking',
+      callbackDueAt: '2026-07-25T12:00:00.000Z',
+    });
+    const meta = (fixture.nativeElement as HTMLElement).querySelector('.lead-meta');
+
+    expect(meta?.textContent).toContain('Передзвонити');
+    expect(meta?.textContent).toContain('Думає');
+    expect(meta?.textContent).toContain('25.07.2026');
   });
 });

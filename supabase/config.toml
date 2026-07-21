@@ -10,9 +10,6 @@ major_version = 15
 [edge_runtime]
 policy = "per_worker"
 
-[functions.import-lead]
-verify_jwt = false
-
 [functions.site-lead]
 verify_jwt = false
 

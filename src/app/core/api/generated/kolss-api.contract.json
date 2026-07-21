@@ -1,6 +1,6 @@
 {
-  "version": "2.3.0",
-  "sha256": "b1b8f8ecdce0c1da721481768d410ff0ddf43c8fd11479a4ea40202f3bcd5dfc",
+  "version": "2.4.0",
+  "sha256": "33f22a094f2ae0093eaf60e8e65af97add6ac3e5bd67dfb7be4eb0fdb5f5b1ca",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -30,7 +30,8 @@
     "getDashboardOverview",
     "getLeadReport",
     "createFileDownloadURL",
-    "importGoogleSheetLeads",
+    "verifyMetaWebhook",
+    "receiveMetaWebhook",
     "createLeadSubmission"
   ]
 }

@@ -15,7 +15,7 @@
 | **Готово — не чіпати** | Auth, Supabase client, guards, routing, login, CRM shell, моделі, ролі |
 | **Placeholder — замінити контентом** | `dashboard-page`, `leads-page`, `reports-page`, `accounts-page` |
 | **Ще не існує — створити у UI-фазі** | Мок-дані лідів, картка ліда, складені CRM-патерни, locale switcher |
-| **Не твоя зона** | Edge Functions, webhooks, service role, імпорт Google Sheets |
+| **Не твоя зона** | Edge Functions, Meta webhook, service role, server-side lead ingestion |
 
 ---
 

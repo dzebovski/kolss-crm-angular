@@ -7,7 +7,11 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import type { MessageKey } from '../../../core/i18n/messages';
 import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
-import { callStatusTone, groupLeadsForDashboard } from '../../../services/crm-mock.helpers';
+import {
+  callStatusTone,
+  clientStatusTone,
+  groupLeadsForDashboard,
+} from '../../../services/crm-mock.helpers';
 import type { LeadMarkerKind, MockLead } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
@@ -125,11 +129,32 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                               <span class="muted">{{ 'common.unassigned' | translate }}</span>
                             }
                             @if (lead.callStatus; as status) {
-                              <app-ui-badge [tone]="callStatusTone(status)">
-                                {{ callStatusLabel(status) }}
-                              </app-ui-badge>
+                              <span class="lead-status">
+                                <app-ui-badge [tone]="callStatusTone(status)">
+                                  {{ callStatusLabel(status) }}
+                                </app-ui-badge>
+                                @if (status === 'callback_requested' && lead.callbackDueAt) {
+                                  <time class="due-date" [attr.datetime]="lead.callbackDueAt">
+                                    {{ formatDueDate(lead.callbackDueAt) }}
+                                  </time>
+                                }
+                              </span>
                             }
-                            <time>{{ formatDayMonth(lead.sourceCreatedAt) }}</time>
+                            @if (lead.clientStatus === 'thinking') {
+                              <span class="lead-status">
+                                <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
+                                  {{ i18n.clientStatusLabel(lead.clientStatus) }}
+                                </app-ui-badge>
+                                @if (lead.callbackDueAt) {
+                                  <time class="due-date" [attr.datetime]="lead.callbackDueAt">
+                                    {{ formatDueDate(lead.callbackDueAt) }}
+                                  </time>
+                                }
+                              </span>
+                            }
+                            <time class="created-date">{{
+                              formatDayMonth(lead.sourceCreatedAt)
+                            }}</time>
                           </span>
                         </button>
                         <app-lead-marker-toggles
@@ -387,10 +412,23 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
       font-size: 0.75rem;
     }
 
-    .lead-meta time {
+    .lead-status {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ui-space-1);
+    }
+
+    .lead-meta .created-date {
       color: var(--ui-text-muted);
       font-size: 0.8125rem;
       text-transform: capitalize;
+    }
+
+    .lead-meta .due-date {
+      color: var(--ui-action);
+      font-size: 0.75rem;
+      font-weight: 750;
+      white-space: nowrap;
     }
 
     .group-empty {
@@ -455,6 +493,7 @@ export class DashboardPage {
 
   protected readonly skeletonRows = [1, 2, 3, 4, 5];
   protected readonly callStatusTone = callStatusTone;
+  protected readonly clientStatusTone = clientStatusTone;
   protected readonly markerError = signal('');
   private readonly markerPendingKey = signal('');
 
@@ -510,6 +549,10 @@ export class DashboardPage {
     return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(
       new Date(value),
     );
+  }
+
+  protected formatDueDate(value: string): string {
+    return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
   }
 
   protected pendingMarker(leadId: string): LeadMarkerKind | null {

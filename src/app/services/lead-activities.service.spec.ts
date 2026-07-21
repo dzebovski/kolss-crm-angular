@@ -14,10 +14,7 @@ describe('LeadActivitiesService', () => {
   beforeEach(() => {
     leadActivity.mockClear();
     TestBed.configureTestingModule({
-      providers: [
-        LeadActivitiesService,
-        { provide: KolssApiClient, useValue: { leadActivity } },
-      ],
+      providers: [LeadActivitiesService, { provide: KolssApiClient, useValue: { leadActivity } }],
     });
     service = TestBed.inject(LeadActivitiesService);
   });
@@ -25,12 +22,26 @@ describe('LeadActivitiesService', () => {
   it('sends each call status as a typed activity', async () => {
     await service.recordCall('lead-1', 'reached', '  Погодили зустріч  ');
     await service.recordCall('lead-1', 'no_answer');
-    await service.recordCall('lead-1', 'callback_requested');
+    await service.recordCall('lead-1', 'callback_requested', '', '2026-07-25');
     expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
       { type: 'call_status', status: 'reached', comment: 'Погодили зустріч' },
       { type: 'call_status', status: 'no_answer' },
-      { type: 'call_status', status: 'callback_requested' },
+      {
+        type: 'call_status',
+        status: 'callback_requested',
+        dueAt: '2026-07-25T12:00:00.000Z',
+      },
     ]);
+  });
+
+  it('sends the selected date for a waiting client', async () => {
+    await service.setClientStatus('lead-1', 'thinking', '2026-07-28');
+
+    expect(leadActivity).toHaveBeenCalledWith('lead-1', {
+      type: 'client_status',
+      status: 'thinking',
+      dueAt: '2026-07-28T12:00:00.000Z',
+    });
   });
 
   it('sends comment, close, contract and reopen payloads', async () => {

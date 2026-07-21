@@ -13,19 +13,21 @@ describe('LeadsPage', () => {
   const storedValues = new Map<string, string>();
   const list = vi.fn(async (filters: LeadsListFilters): Promise<readonly MockLead[]> => {
     void filters;
-    return [{
-      ...CRM_MOCK_LEADS[2]!,
-      callStatus: 'reached',
-      clientStatus: 'calculation_in_progress',
-      latestTimelineComment: {
-        comment: 'Погодили матеріали фасадів.',
-        occurredAt: '2026-07-01T16:10:00.000Z',
-        eventType: 'call_status_changed',
-        category: 'call_status',
-        statusCode: 'reached',
-        newValue: null,
+    return [
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callStatus: 'reached',
+        clientStatus: 'calculation_in_progress',
+        latestTimelineComment: {
+          comment: 'Погодили матеріали фасадів.',
+          occurredAt: '2026-07-01T16:10:00.000Z',
+          eventType: 'call_status_changed',
+          category: 'call_status',
+          statusCode: 'reached',
+          newValue: null,
+        },
       },
-    }];
+    ];
   });
 
   beforeEach(async () => {
@@ -35,7 +37,9 @@ describe('LeadsPage', () => {
       setItem: (key: string, value: string) => storedValues.set(key, value),
       removeItem: (key: string) => storedValues.delete(key),
       key: () => null,
-      get length() { return storedValues.size; },
+      get length() {
+        return storedValues.size;
+      },
     });
     localStorage.clear();
     list.mockClear();
@@ -113,6 +117,25 @@ describe('LeadsPage', () => {
 
     expect(statusCell?.textContent).toContain('Нова заявка');
     expect(statusCell?.textContent).not.toContain('В роботі');
+  });
+
+  it('shows the selected date next to callback and waiting statuses', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callStatus: 'callback_requested',
+        clientStatus: 'thinking',
+        callbackDueAt: '2026-07-25T12:00:00.000Z',
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
+
+    expect(cells[3]?.textContent).toContain('Передзвонити');
+    expect(cells[3]?.textContent).toContain('25.07.2026');
+    expect(cells[4]?.textContent).toContain('Думає');
+    expect(cells[4]?.textContent).toContain('25.07.2026');
   });
 
   it('opens a lead from a table row', async () => {
