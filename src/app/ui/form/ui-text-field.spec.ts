@@ -42,12 +42,17 @@ describe('UiTextField', () => {
     expect(element.querySelector('[role="alert"]')?.textContent).toContain('Invalid value');
   });
 
-  it('supports date and telephone input types', async () => {
+  it('supports date, time, and telephone input types', async () => {
     const fixture = TestBed.createComponent(UiTextField);
     fixture.componentRef.setInput('type', 'date');
     await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('input')?.type).toBe('date');
+
+    fixture.componentRef.setInput('type', 'time');
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('input')?.type).toBe('time');
 
     fixture.componentRef.setInput('type', 'tel');
     await fixture.whenStable();

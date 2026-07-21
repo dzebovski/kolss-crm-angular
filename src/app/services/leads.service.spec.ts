@@ -68,6 +68,7 @@ describe('LeadsService', () => {
       productInterest: '',
       estimatedBudget: null,
       initialMessage: '',
+      sourceCreatedAtLocal: '2026-07-10T12:00',
     });
     expect(result.id).toBe('lead-1');
     expect(createLead).toHaveBeenCalledOnce();

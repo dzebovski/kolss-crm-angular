@@ -122,17 +122,15 @@ let nextSelectId = 0;
         </ng-template>
       </ng-template>
     </div>
-    @if (error()) {
-      <span
-        class="ui-select__message"
-        [class.ui-select__message--error]="!!error()"
-        [id]="descriptionId"
-        [attr.role]="error() ? 'alert' : null"
-        [attr.aria-hidden]="error() || hint() ? null : 'true'"
-      >
-        {{ error() || hint() }}
-      </span>
-    }
+    <span
+      class="ui-select__message"
+      [class.ui-select__message--error]="!!error()"
+      [id]="descriptionId"
+      [attr.role]="error() ? 'alert' : null"
+      [attr.aria-hidden]="error() || hint() ? null : 'true'"
+    >
+      {{ error() || hint() }}
+    </span>
   `,
   styles: `
     :host {

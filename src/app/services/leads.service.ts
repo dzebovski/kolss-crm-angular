@@ -43,6 +43,7 @@ export interface CreateLeadPayload {
   readonly productInterest: string;
   readonly estimatedBudget: number | null;
   readonly initialMessage: string;
+  readonly sourceCreatedAtLocal: string;
 }
 
 @Injectable({ providedIn: 'root' })
