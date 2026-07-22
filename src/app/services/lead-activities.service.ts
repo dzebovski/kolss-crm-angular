@@ -21,8 +21,12 @@ export class LeadActivitiesService {
     });
   }
 
-  addComment(leadId: string, comment: string): Promise<void> {
-    return this.commit(leadId, { type: 'comment', comment: comment.trim() });
+  addComment(leadId: string, comment: string, dueDate = ''): Promise<void> {
+    return this.commit(leadId, {
+      type: 'comment',
+      comment: comment.trim(),
+      ...(dueDate ? { dueAt: dueAtFromDate(dueDate) } : {}),
+    });
   }
 
   setClientStatus(

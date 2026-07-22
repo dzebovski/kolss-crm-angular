@@ -309,6 +309,7 @@ export const messages = {
   'activity.dueDateLabel': { uk: 'Дата наступної дії', pl: 'Data następnego działania', en: 'Next action date' },
   'activity.dueDateRequired': { uk: 'Оберіть дату.', pl: 'Wybierz datę.', en: 'Choose a date.' },
   'activity.dueDateShort': { uk: 'До {date}', pl: 'Do {date}', en: 'Due {date}' },
+  'activity.reminderShort': { uk: 'Нагадування · {date}', pl: 'Przypomnienie · {date}', en: 'Reminder · {date}' },
   'activity.finalStatus': { uk: 'Фінальний статус', pl: 'Status końcowy', en: 'Final status' },
   'activity.closeTitle': { uk: 'Чому закриваємо заявку?', pl: 'Dlaczego zamykamy zgłoszenie?', en: 'Why are we closing the lead?' },
   'activity.closeDescription': { uk: 'Причина й коментар залишаться в історії клієнта.', pl: 'Powód i komentarz pozostaną w historii klienta.', en: 'The reason and comment will remain in the client history.' },

@@ -186,6 +186,9 @@
           @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
             <small class="status-item__due">{{ formatDueDate(lead.callbackDueAt) }}</small>
           }
+          @if (showStandaloneReminder(lead)) {
+            <small class="status-item__due">{{ formatReminderDate(lead.callbackDueAt!) }}</small>
+          }
           <small>
             {{
               i18n.t('leadDetail.updated', {

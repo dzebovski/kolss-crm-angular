@@ -54,6 +54,7 @@ import {
   type DueDateDialogData,
   TextActivityDialog,
   type TextActivityDialogData,
+  type TextActivityDialogResult,
 } from './lead-activity-dialogs';
 
 const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label' | 'tone'>[] = [
@@ -177,7 +178,7 @@ export class LeadDetailView {
         commentOptional: isSuperAdminRole(this.auth.profile()?.role),
       });
       if (result === undefined) return;
-      comment = result;
+      comment = result.comment;
     } else if (status === 'callback_requested') {
       const dueDate = await this.openDueDateDialog(this.callStatusLabel(status));
       if (!dueDate) return;
@@ -220,15 +221,18 @@ export class LeadDetailView {
   }
 
   protected async openComment(lead: MockLead): Promise<void> {
-    const comment = await this.openTextDialog({
+    const result = await this.openTextDialog({
       eyebrow: this.i18n.t('leadDetail.noteEyebrow'),
       title: this.i18n.t('leadDetail.addComment'),
       description: this.i18n.t('leadDetail.commentDescription'),
       placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
       submitLabel: this.i18n.t('leadDetail.addTimeline'),
+      allowDueDate: true,
     });
-    if (!comment) return;
-    await this.runActivity(() => this.activities.addComment(lead.id, comment));
+    if (!result) return;
+    await this.runActivity(() =>
+      this.activities.addComment(lead.id, result.comment, result.dueDate ?? ''),
+    );
   }
 
   protected async editEvent(lead: MockLead, event: LeadEvent): Promise<void> {
@@ -243,9 +247,9 @@ export class LeadDetailView {
       initialValue: event.comment ?? '',
     });
     if (result === undefined) return;
-    if (result === (event.comment ?? '').trim()) return;
+    if (result.comment === (event.comment ?? '').trim()) return;
     await this.runActivity(async () => {
-      await this.leadsService.updateHistoryEvent(lead.id, event.id, { comment: result });
+      await this.leadsService.updateHistoryEvent(lead.id, event.id, { comment: result.comment });
     });
   }
 
@@ -562,14 +566,19 @@ export class LeadDetailView {
     }
   }
 
-  private async openTextDialog(data: TextActivityDialogData): Promise<string | undefined> {
+  private async openTextDialog(
+    data: TextActivityDialogData,
+  ): Promise<TextActivityDialogResult | undefined> {
     return firstValueFrom(
       this.dialog
-        .open<TextActivityDialog, TextActivityDialogData, string>(TextActivityDialog, {
-          data,
-          ariaLabelledBy: 'text-activity-title',
-          maxWidth: 'calc(100vw - 1rem)',
-        })
+        .open<TextActivityDialog, TextActivityDialogData, TextActivityDialogResult>(
+          TextActivityDialog,
+          {
+            data,
+            ariaLabelledBy: 'text-activity-title',
+            maxWidth: 'calc(100vw - 1rem)',
+          },
+        )
         .afterClosed(),
     );
   }
@@ -719,6 +728,18 @@ export class LeadDetailView {
 
   protected formatDueDate(value: string): string {
     return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
+  }
+
+  protected formatReminderDate(value: string): string {
+    return this.i18n.t('activity.reminderShort', { date: this.i18n.formatDate(value) });
+  }
+
+  protected showStandaloneReminder(lead: MockLead): boolean {
+    return (
+      !!lead.callbackDueAt &&
+      lead.callStatus !== 'callback_requested' &&
+      lead.clientStatus !== 'thinking'
+    );
   }
 
   protected formatMoney(value: number | null | undefined, currency: string): string {

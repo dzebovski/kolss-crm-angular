@@ -271,6 +271,9 @@ import {
                       @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
                         <small class="status-due">{{ formatDueDate(lead.callbackDueAt) }}</small>
                       }
+                      @if (showStandaloneReminder(lead)) {
+                        <small class="status-due">{{ formatReminderDate(lead.callbackDueAt!) }}</small>
+                      }
                     </td>
                     <td class="comment-cell">
                       @if (lead.latestTimelineComment; as latest) {
@@ -482,6 +485,22 @@ export class LeadsPage {
 
   protected formatDueDate(value: string): string {
     return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
+  }
+
+  protected formatReminderDate(value: string): string {
+    return this.i18n.t('activity.reminderShort', { date: this.i18n.formatDate(value) });
+  }
+
+  protected showStandaloneReminder(lead: {
+    callbackDueAt: string | null;
+    callStatus: string | null;
+    clientStatus: string;
+  }): boolean {
+    return (
+      !!lead.callbackDueAt &&
+      lead.callStatus !== 'callback_requested' &&
+      lead.clientStatus !== 'thinking'
+    );
   }
 
   protected formatMoney(value: number, currency: string): string {

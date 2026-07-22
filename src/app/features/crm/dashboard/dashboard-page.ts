@@ -152,6 +152,11 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                                 }
                               </span>
                             }
+                            @if (showStandaloneReminder(lead)) {
+                              <time class="due-date" [attr.datetime]="lead.callbackDueAt">
+                                {{ formatReminderDate(lead.callbackDueAt!) }}
+                              </time>
+                            }
                             <time class="created-date">{{
                               formatDayMonth(lead.sourceCreatedAt)
                             }}</time>
@@ -553,6 +558,22 @@ export class DashboardPage {
 
   protected formatDueDate(value: string): string {
     return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
+  }
+
+  protected formatReminderDate(value: string): string {
+    return this.i18n.t('activity.reminderShort', { date: this.i18n.formatDate(value) });
+  }
+
+  protected showStandaloneReminder(lead: {
+    callbackDueAt: string | null;
+    callStatus: string | null;
+    clientStatus: string;
+  }): boolean {
+    return (
+      !!lead.callbackDueAt &&
+      lead.callStatus !== 'callback_requested' &&
+      lead.clientStatus !== 'thinking'
+    );
   }
 
   protected pendingMarker(leadId: string): LeadMarkerKind | null {

@@ -490,14 +490,21 @@ describe('LeadDetailView', () => {
     const lead = CRM_MOCK_LEADS[2]!;
     const { activities, dialogOpen, fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
-    dialogOpen.mockReturnValue({ afterClosed: () => of('Узгодили повторний дзвінок.') });
+    dialogOpen.mockReturnValue({
+      afterClosed: () => of({ comment: 'Узгодили повторний дзвінок.', dueDate: '2026-07-25' }),
+    });
 
     findActionButton(element, 'Додати коментар')?.click();
 
     await vi.waitFor(() =>
-      expect(activities.addComment).toHaveBeenCalledWith(lead.id, 'Узгодили повторний дзвінок.'),
+      expect(activities.addComment).toHaveBeenCalledWith(
+        lead.id,
+        'Узгодили повторний дзвінок.',
+        '2026-07-25',
+      ),
     );
     expect(dialogOpen.mock.calls[0]?.[1]?.data.title).toBe('Додати коментар');
+    expect(dialogOpen.mock.calls[0]?.[1]?.data.allowDueDate).toBe(true);
   });
 
   it('opens the call radial dialog and records the selected result', async () => {

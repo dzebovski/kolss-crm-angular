@@ -33,11 +33,17 @@ export interface TextActivityDialogData {
   readonly submitLabel: string;
   readonly commentOptional?: boolean;
   readonly initialValue?: string;
+  readonly allowDueDate?: boolean;
+}
+
+export interface TextActivityDialogResult {
+  readonly comment: string;
+  readonly dueDate?: string;
 }
 
 @Component({
   selector: 'app-text-activity-dialog',
-  imports: [FormField, UiButton, UiTextarea],
+  imports: [FormField, UiButton, UiTextarea, UiTextField],
   template: `
     <form class="activity-dialog" (submit)="save(); $event.preventDefault()">
       <header class="activity-dialog__heading">
@@ -52,6 +58,13 @@ export interface TextActivityDialogData {
         [formField]="commentForm.comment"
         [error]="commentError()"
       />
+      @if (data.allowDueDate) {
+        <app-ui-text-field
+          type="date"
+          [label]="i18n.t('activity.dueDateLabel')"
+          [formField]="commentForm.dueDate"
+        />
+      }
       <footer class="activity-dialog__actions">
         <app-ui-button variant="ghost" (pressed)="cancel()">{{
           i18n.t('common.cancel')
@@ -67,8 +80,11 @@ export interface TextActivityDialogData {
 export class TextActivityDialog {
   protected readonly i18n = inject(I18nService);
   protected readonly data = inject<TextActivityDialogData>(MAT_DIALOG_DATA);
-  private readonly dialogRef = inject(MatDialogRef<TextActivityDialog, string>);
-  protected readonly model = signal({ comment: this.data.initialValue ?? '' });
+  private readonly dialogRef = inject(MatDialogRef<TextActivityDialog, TextActivityDialogResult>);
+  protected readonly model = signal({
+    comment: this.data.initialValue ?? '',
+    dueDate: '',
+  });
   protected readonly commentForm = form(this.model, (path) => {
     if (this.data.commentOptional) return;
     required(path.comment, { message: this.i18n.t('activity.commentRequired') });
@@ -85,7 +101,14 @@ export class TextActivityDialog {
   }
 
   protected save(): void {
-    submit(this.commentForm, async () => this.dialogRef.close(this.model().comment.trim()));
+    submit(this.commentForm, async () => {
+      const comment = this.model().comment.trim();
+      const dueDate = this.data.allowDueDate ? this.model().dueDate.trim() : '';
+      this.dialogRef.close({
+        comment,
+        ...(dueDate ? { dueDate } : {}),
+      });
+    });
   }
 
   protected cancel(): void {

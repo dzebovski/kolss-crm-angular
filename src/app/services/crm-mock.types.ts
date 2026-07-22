@@ -260,5 +260,5 @@ export type LeadActivityPayload =
       readonly currency?: ContractCurrency;
       readonly dueAt?: string;
     }
-  | { readonly type: 'comment'; readonly comment: string }
+  | { readonly type: 'comment'; readonly comment: string; readonly dueAt?: string }
   | { readonly type: 'reopen' };

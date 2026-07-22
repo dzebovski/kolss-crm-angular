@@ -46,11 +46,13 @@ describe('LeadActivitiesService', () => {
 
   it('sends comment, close, contract and reopen payloads', async () => {
     await service.addComment('lead-1', '  Нова нотатка  ');
+    await service.addComment('lead-1', 'Нагадування', '2026-07-25');
     await service.closeLead('lead-1', 'expensive', '  Не вкладається в бюджет  ');
     await service.signContract('lead-1', '  K-42  ', 1200, 'EUR');
     await service.reopen('lead-1');
     expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
       { type: 'comment', comment: 'Нова нотатка' },
+      { type: 'comment', comment: 'Нагадування', dueAt: '2026-07-25T12:00:00.000Z' },
       {
         type: 'client_status',
         status: 'closed_lost',
