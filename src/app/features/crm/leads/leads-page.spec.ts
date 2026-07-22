@@ -144,7 +144,7 @@ describe('LeadsPage', () => {
     expect(cells[4]?.querySelector(':scope > app-ui-badge + app-lead-due-date')).toBeTruthy();
   });
 
-  it('shows comment next-action in the comment column, not under status', async () => {
+  it('shows showroom and comment dates at the same time', async () => {
     list.mockResolvedValueOnce([
       {
         ...CRM_MOCK_LEADS[2]!,
@@ -152,6 +152,7 @@ describe('LeadsPage', () => {
         clientStatus: 'showroom_invited',
         callbackDueAt: '2026-07-22T12:00:00.000Z',
         callbackDueContext: { category: 'comment', statusCode: null },
+        showroomDueAt: '2026-07-25T12:00:00.000Z',
         latestTimelineComment: {
           comment: 'Повторно набрати 22.07',
           occurredAt: '2026-07-18T10:00:00.000Z',
@@ -168,6 +169,7 @@ describe('LeadsPage', () => {
 
     expect(cells[4]?.textContent).toContain('Запрошено в салон');
     expect(cells[4]?.textContent).not.toContain('Нагадування');
+    expect(cells[4]?.textContent).toContain('До 25.07');
     expect(cells[4]?.textContent).not.toContain('22.07');
     expect(cells[5]?.querySelector('.comment-next-action')?.textContent).toContain(
       'Нагадування до',

@@ -7,12 +7,12 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
+  commentDueAtForLead,
   clientStatusTone,
   clientStatusToneForLead,
   groupLeadsByYearMonth,
-  isCommentSourcedDue,
-  isShowroomSourcedDue,
   leadIsInWork,
+  showroomDueAtForLead,
 } from '../../../services/crm-mock.helpers';
 import type {
   CallStatus,
@@ -272,11 +272,10 @@ import {
                       <app-ui-badge [tone]="clientStatusToneForLead(lead)">
                         {{ clientStatusLabelForLead(lead) }}
                       </app-ui-badge>
-                      @if (
-                        lead.callbackDueAt &&
-                        (lead.clientStatus === 'thinking' || isShowroomSourcedDue(lead))
-                      ) {
+                      @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
                         <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
+                      } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
+                        <app-lead-due-date class="status-due" [date]="showroomDueAt" />
                       }
                     </td>
                     <td class="comment-cell">
@@ -288,10 +287,10 @@ import {
                       } @else {
                         <span class="muted">—</span>
                       }
-                      @if (isCommentSourcedDue(lead)) {
+                      @if (commentDueAtForLead(lead); as commentDueAt) {
                         <app-lead-due-date
                           class="comment-next-action"
-                          [date]="lead.callbackDueAt!"
+                          [date]="commentDueAt"
                           kind="comment"
                         />
                       }
@@ -707,8 +706,8 @@ export class LeadsPage {
     );
   }
 
-  protected readonly isCommentSourcedDue = isCommentSourcedDue;
-  protected readonly isShowroomSourcedDue = isShowroomSourcedDue;
+  protected readonly commentDueAtForLead = commentDueAtForLead;
+  protected readonly showroomDueAtForLead = showroomDueAtForLead;
 
   protected formatMoney(value: number, currency: string): string {
     return this.i18n.formatMoney(value, currency);

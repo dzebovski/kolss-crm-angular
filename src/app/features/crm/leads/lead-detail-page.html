@@ -183,10 +183,10 @@
           <app-ui-badge [tone]="clientToneForLead(lead)">
             {{ clientStatusLabelForLead(lead) }}
           </app-ui-badge>
-          @if (
-            lead.callbackDueAt && (lead.clientStatus === 'thinking' || isShowroomSourcedDue(lead))
-          ) {
+          @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
             <app-lead-due-date class="status-item__due" [date]="lead.callbackDueAt" />
+          } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
+            <app-lead-due-date class="status-item__due" [date]="showroomDueAt" />
           }
           <small>
             {{

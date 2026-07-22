@@ -19,7 +19,7 @@ import {
   defaultCurrencyForOffice,
   leadIsInWork,
   leadIsTerminal,
-  isShowroomSourcedDue,
+  showroomDueAtForLead,
 } from '../../../services/crm-mock.helpers';
 import type {
   CallStatus,
@@ -366,9 +366,8 @@ export class LeadDetailView {
       return;
     }
     if (status === 'showroom_invited') {
-      const initialDate = isShowroomSourcedDue(lead)
-        ? this.dateInputValue(lead.callbackDueAt!)
-        : '';
+      const showroomDueAt = showroomDueAtForLead(lead);
+      const initialDate = showroomDueAt ? this.dateInputValue(showroomDueAt) : '';
       const dueDate = await this.openDueDateDialog(this.clientStatusLabel(status), {
         required: false,
         initialDate,
@@ -773,7 +772,7 @@ export class LeadDetailView {
     return { date, kind: isComment ? 'comment' : 'status' };
   }
 
-  protected readonly isShowroomSourcedDue = isShowroomSourcedDue;
+  protected readonly showroomDueAtForLead = showroomDueAtForLead;
 
   protected formatMoney(value: number | null | undefined, currency: string): string {
     return this.i18n.formatMoney(value, currency);

@@ -138,6 +138,18 @@ describe('mapLeadListRow callback due context', () => {
       }).callbackDueContext,
     ).toBeNull();
   });
+
+  it('maps an independent showroom date without reusing a comment reminder', () => {
+    const lead = mapLeadListRow({
+      ...baseRow,
+      callback_due_at: '2026-08-06T12:00:00.000Z',
+      callback_due_context: { event_category: 'comment', status_code: null },
+      showroom_due_at: '2026-08-05T12:00:00.000Z',
+    });
+
+    expect(lead.callbackDueAt).toBe('2026-08-06T12:00:00.000Z');
+    expect(lead.showroomDueAt).toBe('2026-08-05T12:00:00.000Z');
+  });
 });
 
 describe('mapLeadListRow contract embed', () => {

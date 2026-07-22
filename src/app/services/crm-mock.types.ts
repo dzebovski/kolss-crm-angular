@@ -175,6 +175,7 @@ export interface MockLead {
   readonly contract: LeadContract | null;
   readonly callbackDueAt: string | null;
   readonly callbackDueContext?: CallbackDueContext | null;
+  readonly showroomDueAt?: string | null;
   readonly lastComment: string | null;
   readonly latestTimelineComment: LatestTimelineComment | null;
   readonly lastActivityAt: string;

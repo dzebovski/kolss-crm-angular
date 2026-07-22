@@ -61,6 +61,7 @@ export type LeadListRow = Lead & {
   contract?: ContractEmbed | null;
   reactivated_at?: string | null;
   latest_timeline_comment?: LatestTimelineCommentEmbed | null;
+  showroom_due_at?: string | null;
   callback_due_context?: CallbackDueContextEmbed | null;
   markers?: readonly LeadMarkerEmbed[] | null;
 };
@@ -501,6 +502,15 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
       .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.created_at ??
     null;
 
+  const callbackDueContext = mapCallbackDueContext(row.callback_due_context);
+  const showroomDueAt =
+    row.showroom_due_at !== undefined
+      ? row.showroom_due_at
+      : callbackDueContext?.category === 'client_status' &&
+          callbackDueContext.statusCode === 'showroom_invited'
+        ? row.callback_due_at
+        : null;
+
   return {
     id: row.id,
     version: row.version ?? 1,
@@ -529,7 +539,8 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     close,
     contract,
     callbackDueAt: row.callback_due_at,
-    callbackDueContext: mapCallbackDueContext(row.callback_due_context),
+    callbackDueContext,
+    showroomDueAt,
     lastComment: row.last_comment,
     latestTimelineComment: mapLatestTimelineComment(row.latest_timeline_comment),
     lastActivityAt: row.updated_at,

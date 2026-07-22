@@ -1,8 +1,8 @@
 import {
   callStatusTone,
   clientStatusTone,
-  isCommentSourcedDue,
-  isShowroomSourcedDue,
+  commentDueAtForLead,
+  showroomDueAtForLead,
 } from './crm-mock.helpers';
 
 describe('CRM status tones', () => {
@@ -27,25 +27,42 @@ describe('CRM status tones', () => {
   });
 });
 
-describe('callback due source', () => {
+describe('independent due dates', () => {
   const base = {
     callbackDueAt: '2026-08-03T12:00:00.000Z',
-    callStatus: 'reached',
-    clientStatus: 'showroom_invited',
+    latestTimelineComment: null,
   };
 
-  it('distinguishes showroom scheduling from a comment reminder', () => {
+  it('returns showroom and comment dates independently', () => {
     expect(
-      isShowroomSourcedDue({
+      showroomDueAtForLead({
+        ...base,
+        showroomDueAt: '2026-08-05T12:00:00.000Z',
+      }),
+    ).toBe('2026-08-05T12:00:00.000Z');
+    expect(
+      commentDueAtForLead({
+        ...base,
+        latestTimelineComment: {
+          category: 'comment',
+          newValue: { callback_due_at: '2026-08-06T12:00:00.000Z' },
+        },
+      }),
+    ).toBe('2026-08-06T12:00:00.000Z');
+  });
+
+  it('supports the legacy callback context when independent fields are absent', () => {
+    expect(
+      showroomDueAtForLead({
         ...base,
         callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
       }),
-    ).toBe(true);
+    ).toBe(base.callbackDueAt);
     expect(
-      isCommentSourcedDue({
+      commentDueAtForLead({
         ...base,
         callbackDueContext: { category: 'comment', statusCode: null },
       }),
-    ).toBe(true);
+    ).toBe(base.callbackDueAt);
   });
 });

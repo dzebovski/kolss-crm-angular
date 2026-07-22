@@ -150,4 +150,28 @@ describe('DashboardPage lead workflow', () => {
     expect(meta?.textContent).toContain('До 03.08');
     expect(meta?.textContent).not.toContain('2026');
   });
+
+  it('shows showroom and latest comment dates independently', async () => {
+    const { fixture } = await render(undefined, {
+      callStatus: 'reached',
+      clientStatus: 'showroom_invited',
+      callbackDueAt: '2026-08-06T12:00:00.000Z',
+      callbackDueContext: { category: 'comment', statusCode: null },
+      showroomDueAt: '2026-08-05T12:00:00.000Z',
+      latestTimelineComment: {
+        comment: 'Уточнити час зустрічі',
+        occurredAt: '2026-08-01T10:00:00.000Z',
+        eventType: 'comment_added',
+        category: 'comment',
+        statusCode: null,
+        newValue: { callback_due_at: '2026-08-06T12:00:00.000Z' },
+      },
+    });
+    const page = fixture.nativeElement as HTMLElement;
+
+    expect(page.querySelector('.lead-meta')?.textContent).toContain('До 05.08');
+    expect(page.querySelector('.comment-next-action')?.textContent).toContain(
+      'Нагадування до 06.08',
+    );
+  });
 });

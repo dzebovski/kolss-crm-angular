@@ -551,29 +551,31 @@ export function callbackDueAtFromNewValue(value: unknown): string | null {
   return typeof due === 'string' && due.trim() ? due : null;
 }
 
-/** True when lead.callbackDueAt is shown as a comment next-action (not call/thinking due). */
-export function isCommentSourcedDue(lead: {
+/** Returns the reminder stored on the latest comment independently of status due dates. */
+export function commentDueAtForLead(lead: {
   callbackDueAt: string | null;
   callbackDueContext?: { category: string; statusCode: string | null } | null;
-  callStatus: string | null;
-  clientStatus: string;
-}): boolean {
-  if (lead.callbackDueContext) return lead.callbackDueContext.category === 'comment';
-  return (
-    !!lead.callbackDueAt &&
-    lead.callStatus !== 'callback_requested' &&
-    lead.clientStatus !== 'thinking'
-  );
+  latestTimelineComment: { category?: string | null; newValue: unknown } | null;
+}): string | null {
+  const embeddedDueAt =
+    lead.latestTimelineComment?.category === 'comment'
+      ? callbackDueAtFromNewValue(lead.latestTimelineComment.newValue)
+      : null;
+  if (embeddedDueAt) return embeddedDueAt;
+  return lead.callbackDueContext?.category === 'comment' ? lead.callbackDueAt : null;
 }
 
-/** True when callback_due_at was selected specifically for the showroom status. */
-export function isShowroomSourcedDue(lead: {
+/** Returns the active showroom date independently of callback/comment due dates. */
+export function showroomDueAtForLead(lead: {
   callbackDueAt: string | null;
   callbackDueContext?: { category: string; statusCode: string | null } | null;
-}): boolean {
+  showroomDueAt?: string | null;
+}): string | null {
+  if (lead.showroomDueAt !== undefined) return lead.showroomDueAt;
   return (
-    !!lead.callbackDueAt &&
     lead.callbackDueContext?.category === 'client_status' &&
     lead.callbackDueContext.statusCode === 'showroom_invited'
+      ? lead.callbackDueAt
+      : null
   );
 }

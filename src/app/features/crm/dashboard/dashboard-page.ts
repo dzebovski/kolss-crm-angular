@@ -9,10 +9,10 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
+  commentDueAtForLead,
   clientStatusTone,
   groupLeadsForDashboard,
-  isCommentSourcedDue,
-  isShowroomSourcedDue,
+  showroomDueAtForLead,
 } from '../../../services/crm-mock.helpers';
 import type { LeadMarkerKind, MockLead } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
@@ -129,10 +129,10 @@ import { LeadDueDate } from '../leads/lead-due-date';
                                 {{ formatDayMonth(latest.occurredAt) }} · {{ latest.comment }}
                               </small>
                             }
-                            @if (isCommentSourcedDue(lead)) {
+                            @if (commentDueAtForLead(lead); as commentDueAt) {
                               <app-lead-due-date
                                 class="comment-next-action"
-                                [date]="lead.callbackDueAt!"
+                                [date]="commentDueAt"
                                 kind="comment"
                               />
                             }
@@ -157,7 +157,7 @@ import { LeadDueDate } from '../leads/lead-due-date';
                                 }
                               </span>
                             }
-                            @if (lead.clientStatus === 'thinking' || isShowroomSourcedDue(lead)) {
+                            @if (lead.clientStatus === 'thinking') {
                               <span class="lead-status">
                                 <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
                                   {{ i18n.clientStatusLabel(lead.clientStatus) }}
@@ -165,6 +165,13 @@ import { LeadDueDate } from '../leads/lead-due-date';
                                 @if (lead.callbackDueAt) {
                                   <app-lead-due-date [date]="lead.callbackDueAt" />
                                 }
+                              </span>
+                            } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
+                              <span class="lead-status">
+                                <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
+                                  {{ i18n.clientStatusLabel(lead.clientStatus) }}
+                                </app-ui-badge>
+                                <app-lead-due-date [date]="showroomDueAt" />
                               </span>
                             }
                             <time class="created-date">{{
@@ -558,8 +565,8 @@ export class DashboardPage {
     );
   }
 
-  protected readonly isCommentSourcedDue = isCommentSourcedDue;
-  protected readonly isShowroomSourcedDue = isShowroomSourcedDue;
+  protected readonly commentDueAtForLead = commentDueAtForLead;
+  protected readonly showroomDueAtForLead = showroomDueAtForLead;
 
   protected pendingMarker(leadId: string): LeadMarkerKind | null {
     const prefix = `${leadId}:`;
