@@ -156,6 +156,7 @@ describe('DashboardPage lead workflow', () => {
       callStatus: 'reached',
       clientStatus: 'showroom_invited',
       callbackDueAt: '2026-08-06T12:00:00.000Z',
+      commentReminderDueAt: '2026-08-06T12:00:00.000Z',
       callbackDueContext: { category: 'comment', statusCode: null },
       showroomDueAt: '2026-08-05T12:00:00.000Z',
       latestTimelineComment: {
@@ -173,5 +174,25 @@ describe('DashboardPage lead workflow', () => {
     expect(page.querySelector('.comment-next-action')?.textContent).toContain(
       'Нагадування до 06.08',
     );
+  });
+
+  it('hides a stale comment reminder when the latest comment has no date', async () => {
+    const { fixture } = await render(undefined, {
+      callbackDueAt: '2026-08-06T12:00:00.000Z',
+      callbackDueContext: { category: 'comment', statusCode: null },
+      commentReminderDueAt: null,
+      latestTimelineComment: {
+        comment: 'Нове уточнення без нагадування',
+        occurredAt: '2026-08-02T10:00:00.000Z',
+        eventType: 'comment_added',
+        category: 'comment',
+        statusCode: null,
+        newValue: {},
+      },
+    });
+    const page = fixture.nativeElement as HTMLElement;
+
+    expect(page.textContent).toContain('Нове уточнення без нагадування');
+    expect(page.querySelector('.comment-next-action')).toBeNull();
   });
 });

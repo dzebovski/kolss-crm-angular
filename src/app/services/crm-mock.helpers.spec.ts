@@ -30,7 +30,7 @@ describe('CRM status tones', () => {
 describe('independent due dates', () => {
   const base = {
     callbackDueAt: '2026-08-03T12:00:00.000Z',
-    latestTimelineComment: null,
+    commentReminderDueAt: '2026-08-06T12:00:00.000Z',
   };
 
   it('returns showroom and comment dates independently', () => {
@@ -40,28 +40,18 @@ describe('independent due dates', () => {
         showroomDueAt: '2026-08-05T12:00:00.000Z',
       }),
     ).toBe('2026-08-05T12:00:00.000Z');
-    expect(
-      commentDueAtForLead({
-        ...base,
-        latestTimelineComment: {
-          category: 'comment',
-          newValue: { callback_due_at: '2026-08-06T12:00:00.000Z' },
-        },
-      }),
-    ).toBe('2026-08-06T12:00:00.000Z');
+    expect(commentDueAtForLead(base)).toBe('2026-08-06T12:00:00.000Z');
   });
 
-  it('supports the legacy callback context when independent fields are absent', () => {
+  it('does not resurrect a stale comment reminder when the API returns null', () => {
+    expect(commentDueAtForLead({ commentReminderDueAt: null })).toBeNull();
+  });
+
+  it('supports the legacy callback context for showroom dates', () => {
     expect(
       showroomDueAtForLead({
         ...base,
         callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
-      }),
-    ).toBe(base.callbackDueAt);
-    expect(
-      commentDueAtForLead({
-        ...base,
-        callbackDueContext: { category: 'comment', statusCode: null },
       }),
     ).toBe(base.callbackDueAt);
   });

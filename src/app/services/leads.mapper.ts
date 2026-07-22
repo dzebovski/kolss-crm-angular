@@ -61,6 +61,7 @@ export type LeadListRow = Lead & {
   contract?: ContractEmbed | null;
   reactivated_at?: string | null;
   latest_timeline_comment?: LatestTimelineCommentEmbed | null;
+  comment_reminder_due_at?: string | null;
   showroom_due_at?: string | null;
   callback_due_context?: CallbackDueContextEmbed | null;
   markers?: readonly LeadMarkerEmbed[] | null;
@@ -539,6 +540,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     close,
     contract,
     callbackDueAt: row.callback_due_at,
+    commentReminderDueAt: row.comment_reminder_due_at ?? null,
     callbackDueContext,
     showroomDueAt,
     lastComment: row.last_comment,

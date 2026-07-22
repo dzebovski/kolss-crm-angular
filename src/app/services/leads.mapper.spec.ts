@@ -120,6 +120,19 @@ describe('mapLeadListRow markers', () => {
 });
 
 describe('mapLeadListRow callback due context', () => {
+  it('maps the latest explicit comment reminder independently and defaults it to null', () => {
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        comment_reminder_due_at: '2026-08-06T12:00:00.000Z',
+      }).commentReminderDueAt,
+    ).toBe('2026-08-06T12:00:00.000Z');
+    expect(mapLeadListRow(baseRow).commentReminderDueAt).toBeNull();
+    expect(
+      mapLeadListRow({ ...baseRow, comment_reminder_due_at: null }).commentReminderDueAt,
+    ).toBeNull();
+  });
+
   it('maps a supported due source and ignores unknown categories', () => {
     expect(
       mapLeadListRow({

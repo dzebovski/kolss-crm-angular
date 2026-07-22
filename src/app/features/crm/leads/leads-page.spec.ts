@@ -151,6 +151,7 @@ describe('LeadsPage', () => {
         callStatus: 'reached',
         clientStatus: 'showroom_invited',
         callbackDueAt: '2026-07-22T12:00:00.000Z',
+        commentReminderDueAt: '2026-07-22T12:00:00.000Z',
         callbackDueContext: { category: 'comment', statusCode: null },
         showroomDueAt: '2026-07-25T12:00:00.000Z',
         latestTimelineComment: {
@@ -176,6 +177,59 @@ describe('LeadsPage', () => {
     );
     expect(cells[5]?.textContent).toContain('22.07');
     expect(cells[5]?.textContent).not.toContain('2026');
+  });
+
+  it('hides an old comment reminder after a newer comment without a date', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callbackDueAt: '2026-07-22T12:00:00.000Z',
+        callbackDueContext: { category: 'comment', statusCode: null },
+        commentReminderDueAt: null,
+        latestTimelineComment: {
+          comment: 'Клієнт надіслав уточнення без нагадування',
+          occurredAt: '2026-07-19T10:00:00.000Z',
+          eventType: 'comment_added',
+          category: 'comment',
+          statusCode: null,
+          newValue: {},
+        },
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const commentCell = (fixture.nativeElement as HTMLElement).querySelector(
+      '.lead-row td:nth-child(6)',
+    );
+
+    expect(commentCell?.textContent).toContain('Клієнт надіслав уточнення');
+    expect(commentCell?.querySelector('.comment-next-action')).toBeNull();
+    expect(commentCell?.textContent).not.toContain('22.07');
+  });
+
+  it('keeps a comment reminder visible after a later dated status', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callStatus: 'callback_requested',
+        callbackDueAt: '2026-07-25T12:00:00.000Z',
+        commentReminderDueAt: '2026-07-22T12:00:00.000Z',
+        latestTimelineComment: {
+          comment: 'Передзвонити після обіду',
+          occurredAt: '2026-07-20T10:00:00.000Z',
+          eventType: 'call_status_changed',
+          category: 'call_status',
+          statusCode: 'callback_requested',
+          newValue: { callback_due_at: '2026-07-25T12:00:00.000Z' },
+        },
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
+
+    expect(cells[3]?.textContent).toContain('До 25.07');
+    expect(cells[5]?.querySelector('.comment-next-action')?.textContent).toContain('22.07');
   });
 
   it('shows a showroom date under the client status, not as a comment reminder', async () => {

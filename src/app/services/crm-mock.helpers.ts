@@ -551,18 +551,9 @@ export function callbackDueAtFromNewValue(value: unknown): string | null {
   return typeof due === 'string' && due.trim() ? due : null;
 }
 
-/** Returns the reminder stored on the latest comment independently of status due dates. */
-export function commentDueAtForLead(lead: {
-  callbackDueAt: string | null;
-  callbackDueContext?: { category: string; statusCode: string | null } | null;
-  latestTimelineComment: { category?: string | null; newValue: unknown } | null;
-}): string | null {
-  const embeddedDueAt =
-    lead.latestTimelineComment?.category === 'comment'
-      ? callbackDueAtFromNewValue(lead.latestTimelineComment.newValue)
-      : null;
-  if (embeddedDueAt) return embeddedDueAt;
-  return lead.callbackDueContext?.category === 'comment' ? lead.callbackDueAt : null;
+/** Returns the API-derived reminder on the latest explicit comment. */
+export function commentDueAtForLead(lead: { commentReminderDueAt: string | null }): string | null {
+  return lead.commentReminderDueAt;
 }
 
 /** Returns the active showroom date independently of callback/comment due dates. */
@@ -572,10 +563,8 @@ export function showroomDueAtForLead(lead: {
   showroomDueAt?: string | null;
 }): string | null {
   if (lead.showroomDueAt !== undefined) return lead.showroomDueAt;
-  return (
-    lead.callbackDueContext?.category === 'client_status' &&
+  return lead.callbackDueContext?.category === 'client_status' &&
     lead.callbackDueContext.statusCode === 'showroom_invited'
-      ? lead.callbackDueAt
-      : null
-  );
+    ? lead.callbackDueAt
+    : null;
 }
