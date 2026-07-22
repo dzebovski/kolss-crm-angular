@@ -12,20 +12,25 @@ export type LeadDueDateKind = 'status' | 'comment';
     '[attr.data-kind]': 'kind()',
   },
   template: `
-    <app-ui-icon name="schedule" [size]="14" />
+    <app-ui-icon name="schedule" [size]="13" />
     <time [attr.datetime]="date()">{{ label() }}</time>
   `,
   styles: `
     :host {
       width: fit-content;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      gap: 0.3rem;
+      gap: 0.25rem;
+      margin-top: 0.2rem;
       color: var(--ui-action);
-      font-size: 0.75rem;
-      font-weight: 750;
-      line-height: 1.25;
+      font-size: 0.6875rem;
+      font-weight: 650;
+      line-height: 1.2;
       white-space: nowrap;
+    }
+
+    app-ui-icon {
+      flex: 0 0 auto;
     }
 
     :host([data-kind='comment']) {

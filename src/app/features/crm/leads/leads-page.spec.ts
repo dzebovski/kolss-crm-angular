@@ -140,6 +140,8 @@ describe('LeadsPage', () => {
     expect(cells[4]?.textContent).not.toContain('2026');
     expect(cells[3]?.querySelector('app-ui-icon')).toBeTruthy();
     expect(cells[4]?.querySelector('app-ui-icon')).toBeTruthy();
+    expect(cells[3]?.querySelector(':scope > app-ui-badge + app-lead-due-date')).toBeTruthy();
+    expect(cells[4]?.querySelector(':scope > app-ui-badge + app-lead-due-date')).toBeTruthy();
   });
 
   it('shows comment next-action in the comment column, not under status', async () => {
@@ -167,7 +169,9 @@ describe('LeadsPage', () => {
     expect(cells[4]?.textContent).toContain('Запрошено в салон');
     expect(cells[4]?.textContent).not.toContain('Нагадування');
     expect(cells[4]?.textContent).not.toContain('22.07');
-    expect(cells[5]?.querySelector('.comment-next-action')?.textContent).toContain('Нагадування:');
+    expect(cells[5]?.querySelector('.comment-next-action')?.textContent).toContain(
+      'Нагадування до',
+    );
     expect(cells[5]?.textContent).toContain('22.07');
     expect(cells[5]?.textContent).not.toContain('2026');
   });

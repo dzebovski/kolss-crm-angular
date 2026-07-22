@@ -411,11 +411,6 @@ import { LeadDueDate } from '../leads/lead-due-date';
       font-style: italic;
     }
 
-    .lead-main .comment-next-action {
-      margin-top: 2px;
-      font-style: normal;
-    }
-
     .lead-meta {
       display: inline-flex;
       align-items: center;
@@ -435,7 +430,6 @@ import { LeadDueDate } from '../leads/lead-due-date';
     .lead-status {
       display: inline-grid;
       justify-items: start;
-      gap: 0.2rem;
     }
 
     .lead-meta .created-date {

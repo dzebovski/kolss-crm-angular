@@ -479,9 +479,6 @@ import {
       color: var(--ui-text-subtle);
       font-size: 0.75rem;
     }
-    .lead-row .status-due {
-      margin-top: 0.3rem;
-    }
     .date-cell strong {
       text-transform: capitalize;
     }
@@ -493,9 +490,6 @@ import {
       line-height: 1.35;
     }
     .comment-cell small {
-      margin-top: 0.25rem;
-    }
-    .comment-cell .comment-next-action {
       margin-top: 0.25rem;
     }
     .table-state,

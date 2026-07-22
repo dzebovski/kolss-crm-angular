@@ -499,9 +499,9 @@ export const messages = {
   'activity.dueDateRequired': { uk: 'Оберіть дату.', pl: 'Wybierz datę.', en: 'Choose a date.' },
   'activity.dueDateShort': { uk: 'До {date}', pl: 'Do {date}', en: 'Due {date}' },
   'activity.reminderShort': {
-    uk: 'Нагадування: {date}',
-    pl: 'Przypomnienie: {date}',
-    en: 'Reminder: {date}',
+    uk: 'Нагадування до {date}',
+    pl: 'Przypomnienie do {date}',
+    en: 'Reminder due {date}',
   },
   'activity.finalStatus': { uk: 'Фінальний статус', pl: 'Status końcowy', en: 'Final status' },
   'activity.closeTitle': {

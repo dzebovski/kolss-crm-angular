@@ -23,6 +23,8 @@ describe('LeadDueDate', () => {
     );
     expect(element.querySelector('app-ui-icon')).toBeTruthy();
     expect(element.getAttribute('data-kind')).toBe('status');
+    expect(getComputedStyle(element).display).toBe('flex');
+    expect(getComputedStyle(element).fontSize).toBe('0.6875rem');
   });
 
   it('uses the concise reminder copy for comment dates', async () => {
@@ -32,7 +34,8 @@ describe('LeadDueDate', () => {
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.textContent).toContain('Нагадування: 22.07');
+    expect(element.textContent).toContain('Нагадування до 22.07');
+    expect(element.textContent).not.toContain('2026');
     expect(element.getAttribute('data-kind')).toBe('comment');
   });
 });
