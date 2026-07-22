@@ -2,6 +2,7 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import axe from 'axe-core';
+import { firstValueFrom } from 'rxjs';
 
 import { SessionService } from '../../../core/session/session.service';
 import { DueDateDialog, TextActivityDialog } from './lead-activity-dialogs';
@@ -59,6 +60,32 @@ describe('lead activity dialogs', () => {
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
     expect(submit.disabled).toBe(false);
+  });
+
+  it('prefills an optional showroom date and allows clearing it', async () => {
+    const ref = dialog.open(DueDateDialog, {
+      data: {
+        statusLabel: 'Запрошено в салон',
+        required: false,
+        initialDate: '2026-08-03',
+      },
+      ariaLabelledBy: 'due-date-title',
+      enterAnimationDuration: 0,
+    });
+    const closed = firstValueFrom(ref.afterClosed());
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const input = overlay.querySelector<HTMLInputElement>('input[type="date"]')!;
+    const submit = overlay.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(input.value).toBe('2026-08-03');
+    expect(submit.disabled).toBe(false);
+    expect(overlay.textContent).toContain('необов’язково');
+
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    submit.click();
+
+    await expect(closed).resolves.toBe('');
   });
 
   it('shows an optional due date field when allowDueDate is enabled', async () => {

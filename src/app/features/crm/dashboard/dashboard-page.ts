@@ -11,6 +11,8 @@ import {
   callStatusTone,
   clientStatusTone,
   groupLeadsForDashboard,
+  isCommentSourcedDue,
+  isShowroomSourcedDue,
 } from '../../../services/crm-mock.helpers';
 import type { LeadMarkerKind, MockLead } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
@@ -27,10 +29,20 @@ import {
   type LeadDetailDrawerState,
 } from '../leads/lead-detail-drawer';
 import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
+import { LeadDueDate } from '../leads/lead-due-date';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, LeadMarkerToggles, TranslatePipe, UiBadge, UiButton, UiIcon, UiUser],
+  imports: [
+    RouterLink,
+    LeadDueDate,
+    LeadMarkerToggles,
+    TranslatePipe,
+    UiBadge,
+    UiButton,
+    UiIcon,
+    UiUser,
+  ],
   template: `
     <section class="dashboard-page" aria-labelledby="dashboard-title">
       <header class="page-header">
@@ -117,6 +129,13 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                                 {{ formatDayMonth(latest.occurredAt) }} · {{ latest.comment }}
                               </small>
                             }
+                            @if (isCommentSourcedDue(lead)) {
+                              <app-lead-due-date
+                                class="comment-next-action"
+                                [date]="lead.callbackDueAt!"
+                                kind="comment"
+                              />
+                            }
                           </span>
                           <span class="lead-meta">
                             @if (hasActiveManager(lead.assignedToId)) {
@@ -134,28 +153,19 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
                                   {{ callStatusLabel(status) }}
                                 </app-ui-badge>
                                 @if (status === 'callback_requested' && lead.callbackDueAt) {
-                                  <time class="due-date" [attr.datetime]="lead.callbackDueAt">
-                                    {{ formatDueDate(lead.callbackDueAt) }}
-                                  </time>
+                                  <app-lead-due-date [date]="lead.callbackDueAt" />
                                 }
                               </span>
                             }
-                            @if (lead.clientStatus === 'thinking') {
+                            @if (lead.clientStatus === 'thinking' || isShowroomSourcedDue(lead)) {
                               <span class="lead-status">
                                 <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
                                   {{ i18n.clientStatusLabel(lead.clientStatus) }}
                                 </app-ui-badge>
                                 @if (lead.callbackDueAt) {
-                                  <time class="due-date" [attr.datetime]="lead.callbackDueAt">
-                                    {{ formatDueDate(lead.callbackDueAt) }}
-                                  </time>
+                                  <app-lead-due-date [date]="lead.callbackDueAt" />
                                 }
                               </span>
-                            }
-                            @if (showStandaloneReminder(lead)) {
-                              <time class="due-date" [attr.datetime]="lead.callbackDueAt">
-                                {{ formatReminderDate(lead.callbackDueAt!) }}
-                              </time>
                             }
                             <time class="created-date">{{
                               formatDayMonth(lead.sourceCreatedAt)
@@ -401,6 +411,11 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
       font-style: italic;
     }
 
+    .lead-main .comment-next-action {
+      margin-top: 2px;
+      font-style: normal;
+    }
+
     .lead-meta {
       display: inline-flex;
       align-items: center;
@@ -418,22 +433,15 @@ import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
     }
 
     .lead-status {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--ui-space-1);
+      display: inline-grid;
+      justify-items: start;
+      gap: 0.2rem;
     }
 
     .lead-meta .created-date {
       color: var(--ui-text-muted);
       font-size: 0.8125rem;
       text-transform: capitalize;
-    }
-
-    .lead-meta .due-date {
-      color: var(--ui-action);
-      font-size: 0.75rem;
-      font-weight: 750;
-      white-space: nowrap;
     }
 
     .group-empty {
@@ -556,25 +564,8 @@ export class DashboardPage {
     );
   }
 
-  protected formatDueDate(value: string): string {
-    return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
-  }
-
-  protected formatReminderDate(value: string): string {
-    return this.i18n.t('activity.reminderShort', { date: this.i18n.formatDate(value) });
-  }
-
-  protected showStandaloneReminder(lead: {
-    callbackDueAt: string | null;
-    callStatus: string | null;
-    clientStatus: string;
-  }): boolean {
-    return (
-      !!lead.callbackDueAt &&
-      lead.callStatus !== 'callback_requested' &&
-      lead.clientStatus !== 'thinking'
-    );
-  }
+  protected readonly isCommentSourcedDue = isCommentSourcedDue;
+  protected readonly isShowroomSourcedDue = isShowroomSourcedDue;
 
   protected pendingMarker(leadId: string): LeadMarkerKind | null {
     const prefix = `${leadId}:`;

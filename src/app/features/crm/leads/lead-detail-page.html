@@ -162,7 +162,7 @@
               {{ callStatusLabel(callStatus) }}
             </app-ui-badge>
             @if (callStatus === 'callback_requested' && lead.callbackDueAt) {
-              <small class="status-item__due">{{ formatDueDate(lead.callbackDueAt) }}</small>
+              <app-lead-due-date class="status-item__due" [date]="lead.callbackDueAt" />
             }
             @if (lead.callStatusChangedAt) {
               <small>{{ formatDateTime(lead.callStatusChangedAt) }}</small>
@@ -183,11 +183,10 @@
           <app-ui-badge [tone]="clientToneForLead(lead)">
             {{ clientStatusLabelForLead(lead) }}
           </app-ui-badge>
-          @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
-            <small class="status-item__due">{{ formatDueDate(lead.callbackDueAt) }}</small>
-          }
-          @if (showStandaloneReminder(lead)) {
-            <small class="status-item__due">{{ formatReminderDate(lead.callbackDueAt!) }}</small>
+          @if (
+            lead.callbackDueAt && (lead.clientStatus === 'thinking' || isShowroomSourcedDue(lead))
+          ) {
+            <app-lead-due-date class="status-item__due" [date]="lead.callbackDueAt" />
           }
           <small>
             {{
@@ -364,6 +363,13 @@
                 }
                 @if (eventBody(event); as body) {
                   <p>{{ body }}</p>
+                }
+                @if (eventDueDate(event); as due) {
+                  <app-lead-due-date
+                    class="timeline-card__due"
+                    [date]="due.date"
+                    [kind]="due.kind"
+                  />
                 }
                 @if (event.comment?.trim()) {
                   @if (event.translationEn; as translation) {

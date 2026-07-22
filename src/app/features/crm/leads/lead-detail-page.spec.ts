@@ -195,7 +195,7 @@ describe('LeadDetailView', () => {
         type: 'comment_added',
         rawType: 'comment_added',
         comment: 'Надіслано приклади матеріалів.',
-        newValue: null,
+        newValue: { callback_due_at: '2026-07-22T12:00:00.000Z' },
         actorId: 'emp-kyiv-1',
         actorName: 'Данило Мороз',
         occurredAt: '2026-07-15T16:00:00.000Z',
@@ -242,6 +242,9 @@ describe('LeadDetailView', () => {
 
     expect(cards[2]!.querySelector('app-ui-badge')).toBeNull();
     expect(cards[2]!.querySelector('p')?.textContent).toContain('Надіслано приклади матеріалів.');
+    expect(cards[2]!.querySelector('.timeline-card__due time')?.getAttribute('datetime')).toBe(
+      '2026-07-22T12:00:00.000Z',
+    );
     expect(cards[3]!.querySelector('app-ui-badge')).toBeNull();
     expect(cards[3]!.querySelector('.ui-user__fallback')).not.toBeNull();
 
@@ -253,6 +256,60 @@ describe('LeadDetailView', () => {
     expect(firstTimelineUser.size()).toBe('xs');
     expect(fallbackTimelineUser.userId()).toBeNull();
     expect(fallbackTimelineUser.name()).toBe('Не призначено');
+  });
+
+  it('renders callback, thinking and showroom dates consistently in the timeline', async () => {
+    const dueAt = '2026-08-03T12:00:00.000Z';
+    const events: readonly LeadEvent[] = [
+      {
+        id: 'callback-date',
+        type: 'call_status_changed',
+        rawType: 'call_status_changed',
+        comment: null,
+        newValue: { call_status: 'callback_requested', callback_due_at: dueAt },
+        actorId: 'emp-kyiv-1',
+        actorName: 'Данило Мороз',
+        occurredAt: '2026-08-01T10:00:00.000Z',
+        category: 'call_status',
+        statusCode: 'callback_requested',
+      },
+      {
+        id: 'thinking-date',
+        type: 'client_status_changed',
+        rawType: 'client_status_changed',
+        comment: null,
+        newValue: { client_status: 'thinking', callback_due_at: dueAt },
+        actorId: 'emp-kyiv-1',
+        actorName: 'Данило Мороз',
+        occurredAt: '2026-08-01T09:00:00.000Z',
+        category: 'client_status',
+        statusCode: 'thinking',
+      },
+      {
+        id: 'showroom-date',
+        type: 'client_status_changed',
+        rawType: 'client_status_changed',
+        comment: null,
+        newValue: { client_status: 'showroom_invited', callback_due_at: dueAt },
+        actorId: 'emp-kyiv-1',
+        actorName: 'Данило Мороз',
+        occurredAt: '2026-08-01T08:00:00.000Z',
+        category: 'client_status',
+        statusCode: 'showroom_invited',
+      },
+    ];
+    const { fixture } = await render({ ...CRM_MOCK_LEADS[2]!, events });
+    const dueDates = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.timeline-card__due'),
+    );
+
+    expect(dueDates).toHaveLength(3);
+    for (const due of dueDates) {
+      expect(due.textContent).toContain('До 03.08');
+      expect(due.textContent).not.toContain('2026');
+      expect(due.querySelector('time')?.getAttribute('datetime')).toBe(dueAt);
+      expect(due.querySelector('app-ui-icon')).toBeTruthy();
+    }
   });
 
   it('shows saved English text below the original and hides the translate button', async () => {
@@ -598,5 +655,41 @@ describe('LeadDetailView', () => {
       (action: { id: string }) => action.id === lead.clientStatus,
     )?.tone;
     expect(radialStatusTone).toBe(currentStatusTone);
+  });
+
+  it('allows reselecting showroom and prefills its optional date', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[2]!,
+      clientStatus: 'showroom_invited',
+      callbackDueAt: '2026-08-03T12:00:00.000Z',
+      callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
+    };
+    const { activities, dialogOpen, fixture } = await render(lead);
+    dialogOpen
+      .mockReturnValueOnce({ afterClosed: () => of('showroom_invited') })
+      .mockReturnValueOnce({ afterClosed: () => of('2026-08-08') });
+
+    findActionButton(fixture.nativeElement as HTMLElement, 'Статус клієнта')?.click();
+
+    await vi.waitFor(() =>
+      expect(activities.setClientStatus).toHaveBeenCalledWith(
+        lead.id,
+        'showroom_invited',
+        '2026-08-08',
+      ),
+    );
+    const radialConfig = dialogOpen.mock.calls[0]?.[1];
+    expect(
+      radialConfig?.data.actions.find((action: { id: string }) => action.id === 'showroom_invited')
+        ?.disabled,
+    ).toBe(false);
+    expect(dialogOpen.mock.calls[1]?.[1]).toMatchObject({
+      data: {
+        statusLabel: 'Запрошено в салон',
+        required: false,
+        initialDate: '2026-08-03',
+      },
+      ariaLabelledBy: 'due-date-title',
+    });
   });
 });

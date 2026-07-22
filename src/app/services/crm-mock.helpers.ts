@@ -543,3 +543,37 @@ export function calculateManagerTakenReport(
     unassignedCount,
   };
 }
+
+/** Reads callback_due_at from a lead event / latest comment new_value payload. */
+export function callbackDueAtFromNewValue(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const due = (value as Record<string, unknown>)['callback_due_at'];
+  return typeof due === 'string' && due.trim() ? due : null;
+}
+
+/** True when lead.callbackDueAt is shown as a comment next-action (not call/thinking due). */
+export function isCommentSourcedDue(lead: {
+  callbackDueAt: string | null;
+  callbackDueContext?: { category: string; statusCode: string | null } | null;
+  callStatus: string | null;
+  clientStatus: string;
+}): boolean {
+  if (lead.callbackDueContext) return lead.callbackDueContext.category === 'comment';
+  return (
+    !!lead.callbackDueAt &&
+    lead.callStatus !== 'callback_requested' &&
+    lead.clientStatus !== 'thinking'
+  );
+}
+
+/** True when callback_due_at was selected specifically for the showroom status. */
+export function isShowroomSourcedDue(lead: {
+  callbackDueAt: string | null;
+  callbackDueContext?: { category: string; statusCode: string | null } | null;
+}): boolean {
+  return (
+    !!lead.callbackDueAt &&
+    lead.callbackDueContext?.category === 'client_status' &&
+    lead.callbackDueContext.statusCode === 'showroom_invited'
+  );
+}

@@ -119,6 +119,27 @@ describe('mapLeadListRow markers', () => {
   });
 });
 
+describe('mapLeadListRow callback due context', () => {
+  it('maps a supported due source and ignores unknown categories', () => {
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        callback_due_at: '2026-08-03T12:00:00.000Z',
+        callback_due_context: {
+          event_category: 'client_status',
+          status_code: 'showroom_invited',
+        },
+      }).callbackDueContext,
+    ).toEqual({ category: 'client_status', statusCode: 'showroom_invited' });
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        callback_due_context: { event_category: 'future_category', status_code: null },
+      }).callbackDueContext,
+    ).toBeNull();
+  });
+});
+
 describe('mapLeadListRow contract embed', () => {
   it('maps embedded contract to lead.contract', () => {
     const lead = mapLeadListRow({

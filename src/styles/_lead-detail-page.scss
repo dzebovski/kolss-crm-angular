@@ -125,6 +125,10 @@
     gap: 0.35rem;
   }
 
+  .timeline-card__due {
+    margin-top: 0.08rem;
+  }
+
   .timeline-card__header {
     display: flex;
     align-items: flex-start;
@@ -634,8 +638,7 @@
     overflow-wrap: anywhere;
   }
   .status-item__copy .status-item__due {
-    color: var(--ui-action);
-    font-weight: 760;
+    grid-column: 1 / -1;
   }
   .status-item__copy strong {
     font-size: 0.82rem;

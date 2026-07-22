@@ -1,4 +1,9 @@
-import { callStatusTone, clientStatusTone } from './crm-mock.helpers';
+import {
+  callStatusTone,
+  clientStatusTone,
+  isCommentSourcedDue,
+  isShowroomSourcedDue,
+} from './crm-mock.helpers';
 
 describe('CRM status tones', () => {
   it('maps every call result to the shared semantic palette', () => {
@@ -19,5 +24,28 @@ describe('CRM status tones', () => {
       clientStatusTone('closed_lost'),
       clientStatusTone('contract_signed'),
     ]).toEqual(['brand', 'info', 'warning', 'brand', 'danger', 'success']);
+  });
+});
+
+describe('callback due source', () => {
+  const base = {
+    callbackDueAt: '2026-08-03T12:00:00.000Z',
+    callStatus: 'reached',
+    clientStatus: 'showroom_invited',
+  };
+
+  it('distinguishes showroom scheduling from a comment reminder', () => {
+    expect(
+      isShowroomSourcedDue({
+        ...base,
+        callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
+      }),
+    ).toBe(true);
+    expect(
+      isCommentSourcedDue({
+        ...base,
+        callbackDueContext: { category: 'comment', statusCode: null },
+      }),
+    ).toBe(true);
   });
 });

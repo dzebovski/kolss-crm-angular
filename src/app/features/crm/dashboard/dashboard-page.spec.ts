@@ -133,6 +133,21 @@ describe('DashboardPage lead workflow', () => {
 
     expect(meta?.textContent).toContain('Передзвонити');
     expect(meta?.textContent).toContain('Думає');
-    expect(meta?.textContent).toContain('25.07.2026');
+    expect(meta?.textContent).toContain('До 25.07');
+    expect(meta?.textContent).not.toContain('2026');
+  });
+
+  it('shows a dated showroom status with the shared compact treatment', async () => {
+    const { fixture } = await render(undefined, {
+      callStatus: 'reached',
+      clientStatus: 'showroom_invited',
+      callbackDueAt: '2026-08-03T12:00:00.000Z',
+      callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
+    });
+    const meta = (fixture.nativeElement as HTMLElement).querySelector('.lead-meta');
+
+    expect(meta?.textContent).toContain('Запрошено в салон');
+    expect(meta?.textContent).toContain('До 03.08');
+    expect(meta?.textContent).not.toContain('2026');
   });
 });

@@ -118,6 +118,8 @@ export class TextActivityDialog {
 
 export interface DueDateDialogData {
   readonly statusLabel: string;
+  readonly required?: boolean;
+  readonly initialDate?: string;
 }
 
 @Component({
@@ -132,7 +134,11 @@ export interface DueDateDialogData {
       </header>
       <app-ui-text-field
         type="date"
-        [label]="i18n.t('activity.dueDateLabel')"
+        [label]="
+          data.required === false
+            ? i18n.t('activity.dueDateOptionalLabel')
+            : i18n.t('activity.dueDateLabel')
+        "
         [formField]="dueDateForm.date"
         [error]="dateError()"
       />
@@ -152,9 +158,11 @@ export class DueDateDialog {
   protected readonly i18n = inject(I18nService);
   protected readonly data = inject<DueDateDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<DueDateDialog, string>);
-  protected readonly model = signal({ date: '' });
+  protected readonly model = signal({ date: this.data.initialDate ?? '' });
   protected readonly dueDateForm = form(this.model, (path) => {
-    required(path.date, { message: this.i18n.t('activity.dueDateRequired') });
+    if (this.data.required !== false) {
+      required(path.date, { message: this.i18n.t('activity.dueDateRequired') });
+    }
   });
 
   protected dateError(): string {

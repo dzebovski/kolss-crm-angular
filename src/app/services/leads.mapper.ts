@@ -3,6 +3,7 @@ import { formatPhoneDisplay } from '../core/phone/phone';
 import type {
   CloseReason,
   CallStatus,
+  CallbackDueContext,
   ClientStatus,
   ContractCurrency,
   FirstCall,
@@ -60,8 +61,14 @@ export type LeadListRow = Lead & {
   contract?: ContractEmbed | null;
   reactivated_at?: string | null;
   latest_timeline_comment?: LatestTimelineCommentEmbed | null;
+  callback_due_context?: CallbackDueContextEmbed | null;
   markers?: readonly LeadMarkerEmbed[] | null;
 };
+
+export interface CallbackDueContextEmbed {
+  readonly event_category: string;
+  readonly status_code: string | null;
+}
 
 export interface LeadMarkerEmbed {
   readonly kind: string;
@@ -522,6 +529,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     close,
     contract,
     callbackDueAt: row.callback_due_at,
+    callbackDueContext: mapCallbackDueContext(row.callback_due_context),
     lastComment: row.last_comment,
     latestTimelineComment: mapLatestTimelineComment(row.latest_timeline_comment),
     lastActivityAt: row.updated_at,
@@ -529,6 +537,19 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     events: mapEvents(relations.events),
     markers: mapLeadMarkers(row.markers),
   };
+}
+
+function mapCallbackDueContext(
+  value: CallbackDueContextEmbed | null | undefined,
+): CallbackDueContext | null {
+  if (
+    value?.event_category !== 'call_status' &&
+    value?.event_category !== 'client_status' &&
+    value?.event_category !== 'comment'
+  ) {
+    return null;
+  }
+  return { category: value.event_category, statusCode: value.status_code };
 }
 
 export function mapLeadMarker(value: LeadMarkerEmbed): LeadMarker | null {

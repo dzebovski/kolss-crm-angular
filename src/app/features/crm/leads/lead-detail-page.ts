@@ -13,11 +13,13 @@ import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
+  callbackDueAtFromNewValue,
   clientStatusTone,
   clientStatusToneForLead,
   defaultCurrencyForOffice,
   leadIsInWork,
   leadIsTerminal,
+  isShowroomSourcedDue,
 } from '../../../services/crm-mock.helpers';
 import type {
   CallStatus,
@@ -36,6 +38,7 @@ import { UiBadge, type UiBadgeTone } from '../../../ui/feedback/ui-badge';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
+import { LeadDueDate, type LeadDueDateKind } from './lead-due-date';
 import { LeadMarkerToggles } from './lead-marker-toggles';
 import { RadialActionDialog } from '../../../pages/design/radial-menu/radial-action-dialog';
 import type { RadialActionDialogData } from '../../../pages/design/radial-menu/radial-action-dialog';
@@ -91,7 +94,17 @@ const NO_MANAGER_VALUE = '__unassigned__';
 
 @Component({
   selector: 'app-lead-detail-view',
-  imports: [RouterLink, LeadMarkerToggles, UiBadge, UiButton, UiIcon, UiModal, UiSelect, UiUser],
+  imports: [
+    RouterLink,
+    LeadDueDate,
+    LeadMarkerToggles,
+    UiBadge,
+    UiButton,
+    UiIcon,
+    UiModal,
+    UiSelect,
+    UiUser,
+  ],
   templateUrl: './lead-detail-page.html',
   styleUrl: './lead-detail-page.scss',
 })
@@ -203,7 +216,7 @@ export class LeadDetailView {
               ...action,
               label: this.clientStatusLabel(action.id),
               tone: clientStatusTone(action.id),
-              disabled: action.id === lead.clientStatus,
+              disabled: action.id === lead.clientStatus && action.id !== 'showroom_invited',
             })),
             layout: CLIENT_STATUS_RADIAL_LAYOUT,
           },
@@ -312,7 +325,7 @@ export class LeadDetailView {
   }
 
   private async selectClientStatus(lead: MockLead, status: SelectableClientStatus): Promise<void> {
-    if (status === lead.clientStatus) return;
+    if (status === lead.clientStatus && status !== 'showroom_invited') return;
     if (status === 'closed_lost') {
       const result = await firstValueFrom(
         this.dialog
@@ -350,6 +363,18 @@ export class LeadDetailView {
           result.currency,
         ),
       );
+      return;
+    }
+    if (status === 'showroom_invited') {
+      const initialDate = isShowroomSourcedDue(lead)
+        ? this.dateInputValue(lead.callbackDueAt!)
+        : '';
+      const dueDate = await this.openDueDateDialog(this.clientStatusLabel(status), {
+        required: false,
+        initialDate,
+      });
+      if (dueDate === undefined) return;
+      await this.runActivity(() => this.activities.setClientStatus(lead.id, status, dueDate));
       return;
     }
     if (status === 'thinking') {
@@ -583,16 +608,23 @@ export class LeadDetailView {
     );
   }
 
-  private async openDueDateDialog(statusLabel: string): Promise<string | undefined> {
+  private async openDueDateDialog(
+    statusLabel: string,
+    options: Pick<DueDateDialogData, 'required' | 'initialDate'> = {},
+  ): Promise<string | undefined> {
     return firstValueFrom(
       this.dialog
         .open<DueDateDialog, DueDateDialogData, string>(DueDateDialog, {
-          data: { statusLabel },
+          data: { statusLabel, ...options },
           ariaLabelledBy: 'due-date-title',
           maxWidth: 'calc(100vw - 1rem)',
         })
         .afterClosed(),
     );
+  }
+
+  private dateInputValue(value: string): string {
+    return value.slice(0, 10);
   }
 
   private async runActivity(action: () => Promise<void>): Promise<void> {
@@ -726,21 +758,22 @@ export class LeadDetailView {
     return this.i18n.formatDateTime(value);
   }
 
-  protected formatDueDate(value: string): string {
-    return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
+  protected eventDueDate(
+    event: LeadEvent,
+  ): { readonly date: string; readonly kind: LeadDueDateKind } | null {
+    const date = callbackDueAtFromNewValue(event.newValue);
+    if (!date) return null;
+    const isComment =
+      event.category === 'comment' || event.type === 'comment' || event.type === 'comment_added';
+    const isScheduledStatus =
+      (event.category === 'call_status' && event.statusCode === 'callback_requested') ||
+      (event.category === 'client_status' &&
+        (event.statusCode === 'thinking' || event.statusCode === 'showroom_invited'));
+    if (!isComment && !isScheduledStatus) return null;
+    return { date, kind: isComment ? 'comment' : 'status' };
   }
 
-  protected formatReminderDate(value: string): string {
-    return this.i18n.t('activity.reminderShort', { date: this.i18n.formatDate(value) });
-  }
-
-  protected showStandaloneReminder(lead: MockLead): boolean {
-    return (
-      !!lead.callbackDueAt &&
-      lead.callStatus !== 'callback_requested' &&
-      lead.clientStatus !== 'thinking'
-    );
-  }
+  protected readonly isShowroomSourcedDue = isShowroomSourcedDue;
 
   protected formatMoney(value: number | null | undefined, currency: string): string {
     return this.i18n.formatMoney(value, currency);

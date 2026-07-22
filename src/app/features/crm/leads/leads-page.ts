@@ -10,6 +10,8 @@ import {
   clientStatusTone,
   clientStatusToneForLead,
   groupLeadsByYearMonth,
+  isCommentSourcedDue,
+  isShowroomSourcedDue,
   leadIsInWork,
 } from '../../../services/crm-mock.helpers';
 import type {
@@ -29,6 +31,7 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiIcon } from '../../../ui/icon/ui-icon';
 import { UiUser } from '../../../ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
+import { LeadDueDate } from './lead-due-date';
 import {
   readLeadsPagePreferences,
   writeLeadsPagePreferences,
@@ -40,6 +43,7 @@ import {
   selector: 'app-leads-page',
   imports: [
     CreateLeadDialog,
+    LeadDueDate,
     TranslatePipe,
     UiAlert,
     UiBadge,
@@ -258,7 +262,7 @@ import {
                           {{ callStatusLabel(status) }}
                         </app-ui-badge>
                         @if (status === 'callback_requested' && lead.callbackDueAt) {
-                          <small class="status-due">{{ formatDueDate(lead.callbackDueAt) }}</small>
+                          <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
                         }
                       } @else {
                         <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>
@@ -268,11 +272,11 @@ import {
                       <app-ui-badge [tone]="clientStatusToneForLead(lead)">
                         {{ clientStatusLabelForLead(lead) }}
                       </app-ui-badge>
-                      @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
-                        <small class="status-due">{{ formatDueDate(lead.callbackDueAt) }}</small>
-                      }
-                      @if (showStandaloneReminder(lead)) {
-                        <small class="status-due">{{ formatReminderDate(lead.callbackDueAt!) }}</small>
+                      @if (
+                        lead.callbackDueAt &&
+                        (lead.clientStatus === 'thinking' || isShowroomSourcedDue(lead))
+                      ) {
+                        <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
                       }
                     </td>
                     <td class="comment-cell">
@@ -283,6 +287,13 @@ import {
                         }
                       } @else {
                         <span class="muted">—</span>
+                      }
+                      @if (isCommentSourcedDue(lead)) {
+                        <app-lead-due-date
+                          class="comment-next-action"
+                          [date]="lead.callbackDueAt!"
+                          kind="comment"
+                        />
                       }
                     </td>
                   </tr>
@@ -299,49 +310,254 @@ import {
     }
   `,
   styles: `
-    .crm-page { display: grid; gap: var(--ui-space-5); }
-    .page-header { display: flex; align-items: end; justify-content: space-between; gap: var(--ui-space-5); }
-    .eyebrow { margin: 0 0 var(--ui-space-1); color: var(--ui-action); font-size: .72rem; font-weight: 800; letter-spacing: .14em; }
-    h1 { margin: 0; font-family: var(--ui-font-display), sans-serif; font-size: clamp(1.8rem, 4vw, 2.4rem); }
-    .page-actions { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); }
-    .period-row { display: flex; justify-content: flex-end; }
-    .filters-stack { display: grid; gap: var(--ui-space-2); }
-    .filters, .filter-chips { display: grid; grid-template-columns: minmax(16rem, 1.4fr) repeat(3, minmax(11rem, 1fr)); gap: var(--ui-space-3); }
-    .filters { padding: var(--ui-space-4); border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); background: var(--ui-surface-raised); align-items: end; box-shadow: var(--ui-shadow-1); }
-    .filter-chips { padding-inline: var(--ui-space-4); align-items: start; }
-    .filter-chips > span { min-width: 0; display: flex; }
-    .period-switcher { padding: .1875rem; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-surface-subtle); display: flex; flex-wrap: wrap; gap: .125rem; width: fit-content; }
-    .period-switcher button { min-height: 2rem; padding: 0 var(--ui-space-3); border: 0; border-radius: calc(var(--ui-radius-md) - .1875rem); background: transparent; color: var(--ui-text-muted); cursor: pointer; font-size: .8125rem; font-weight: 700; }
-    .period-switcher button.is-active { background: var(--ui-surface-raised); color: var(--ui-action); box-shadow: var(--ui-shadow-1); }
-    .table-panel { border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); background: var(--ui-surface-raised); box-shadow: var(--ui-shadow-1); overflow-x: auto; }
-    table { width: 100%; min-width: 68rem; border-collapse: collapse; table-layout: fixed; font-size: .8125rem; }
-    .col-date { width: 9%; } .col-client { width: 18%; } .col-manager { width: 16%; } .col-call { width: 15%; } .col-status { width: 17%; } .col-comment { width: 25%; }
-    th, td { padding: .75rem var(--ui-space-3); border-bottom: 1px solid var(--ui-border); overflow: hidden; text-align: left; vertical-align: middle; }
-    thead th { color: var(--ui-text-subtle); font-size: .6875rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
-    .month-row th { background: var(--ui-surface-subtle); color: var(--ui-text); font-size: .875rem; letter-spacing: 0; text-transform: none; }
-    .month-row small { margin-left: var(--ui-space-2); color: var(--ui-text-muted); }
-    .month-total { float: right; display: inline-flex; gap: var(--ui-space-3); font-weight: 700; }
-    .lead-row { cursor: pointer; transition: background var(--ui-duration-fast) var(--ui-ease); }
-    .lead-row:hover, .lead-row:focus-visible { background: var(--ui-surface-subtle); outline: none; }
-    .lead-row strong, .lead-row small, .comment-cell > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lead-row small, .muted { color: var(--ui-text-subtle); font-size: .75rem; }
-    .lead-row .status-due { margin-top: .3rem; color: var(--ui-action); font-weight: 700; }
-    .date-cell strong { text-transform: capitalize; }
-    .comment-cell > span:not(.muted) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; line-height: 1.35; }
-    .comment-cell small { margin-top: .25rem; }
-    .table-state, .empty-state { min-height: 16rem; border: 1px solid var(--ui-border); border-radius: var(--ui-radius-lg); background: var(--ui-surface-raised); display: grid; place-items: center; color: var(--ui-text-muted); }
-    .table-state { align-content: center; gap: var(--ui-space-3); padding: var(--ui-space-6); }
-    .table-state span { width: min(100%, 52rem); height: 2.5rem; border-radius: var(--ui-radius-md); background: var(--ui-surface-subtle); animation: pulse 1.1s ease-in-out infinite; }
-    .empty-state { align-content: center; gap: var(--ui-space-2); text-align: center; }
-    .empty-state h2, .empty-state p { margin: 0; }
-    @keyframes pulse { 50% { opacity: .5; } }
-    @media (max-width: 70rem) { .filters, .filter-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .crm-page {
+      display: grid;
+      gap: var(--ui-space-5);
+    }
+    .page-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--ui-space-5);
+    }
+    .eyebrow {
+      margin: 0 0 var(--ui-space-1);
+      color: var(--ui-action);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+    }
+    h1 {
+      margin: 0;
+      font-family: var(--ui-font-display), sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+    }
+    .page-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ui-space-2);
+    }
+    .period-row {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .filters-stack {
+      display: grid;
+      gap: var(--ui-space-2);
+    }
+    .filters,
+    .filter-chips {
+      display: grid;
+      grid-template-columns: minmax(16rem, 1.4fr) repeat(3, minmax(11rem, 1fr));
+      gap: var(--ui-space-3);
+    }
+    .filters {
+      padding: var(--ui-space-4);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-raised);
+      align-items: end;
+      box-shadow: var(--ui-shadow-1);
+    }
+    .filter-chips {
+      padding-inline: var(--ui-space-4);
+      align-items: start;
+    }
+    .filter-chips > span {
+      min-width: 0;
+      display: flex;
+    }
+    .period-switcher {
+      padding: 0.1875rem;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-md);
+      background: var(--ui-surface-subtle);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.125rem;
+      width: fit-content;
+    }
+    .period-switcher button {
+      min-height: 2rem;
+      padding: 0 var(--ui-space-3);
+      border: 0;
+      border-radius: calc(var(--ui-radius-md) - 0.1875rem);
+      background: transparent;
+      color: var(--ui-text-muted);
+      cursor: pointer;
+      font-size: 0.8125rem;
+      font-weight: 700;
+    }
+    .period-switcher button.is-active {
+      background: var(--ui-surface-raised);
+      color: var(--ui-action);
+      box-shadow: var(--ui-shadow-1);
+    }
+    .table-panel {
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-raised);
+      box-shadow: var(--ui-shadow-1);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      min-width: 68rem;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.8125rem;
+    }
+    .col-date {
+      width: 9%;
+    }
+    .col-client {
+      width: 18%;
+    }
+    .col-manager {
+      width: 16%;
+    }
+    .col-call {
+      width: 15%;
+    }
+    .col-status {
+      width: 17%;
+    }
+    .col-comment {
+      width: 25%;
+    }
+    th,
+    td {
+      padding: 0.75rem var(--ui-space-3);
+      border-bottom: 1px solid var(--ui-border);
+      overflow: hidden;
+      text-align: left;
+      vertical-align: middle;
+    }
+    thead th {
+      color: var(--ui-text-subtle);
+      font-size: 0.6875rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .month-row th {
+      background: var(--ui-surface-subtle);
+      color: var(--ui-text);
+      font-size: 0.875rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .month-row small {
+      margin-left: var(--ui-space-2);
+      color: var(--ui-text-muted);
+    }
+    .month-total {
+      float: right;
+      display: inline-flex;
+      gap: var(--ui-space-3);
+      font-weight: 700;
+    }
+    .lead-row {
+      cursor: pointer;
+      transition: background var(--ui-duration-fast) var(--ui-ease);
+    }
+    .lead-row:hover,
+    .lead-row:focus-visible {
+      background: var(--ui-surface-subtle);
+      outline: none;
+    }
+    .lead-row strong,
+    .lead-row small,
+    .comment-cell > span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lead-row small,
+    .muted {
+      color: var(--ui-text-subtle);
+      font-size: 0.75rem;
+    }
+    .lead-row .status-due {
+      margin-top: 0.3rem;
+    }
+    .date-cell strong {
+      text-transform: capitalize;
+    }
+    .comment-cell > span:not(.muted) {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .comment-cell small {
+      margin-top: 0.25rem;
+    }
+    .comment-cell .comment-next-action {
+      margin-top: 0.25rem;
+    }
+    .table-state,
+    .empty-state {
+      min-height: 16rem;
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-raised);
+      display: grid;
+      place-items: center;
+      color: var(--ui-text-muted);
+    }
+    .table-state {
+      align-content: center;
+      gap: var(--ui-space-3);
+      padding: var(--ui-space-6);
+    }
+    .table-state span {
+      width: min(100%, 52rem);
+      height: 2.5rem;
+      border-radius: var(--ui-radius-md);
+      background: var(--ui-surface-subtle);
+      animation: pulse 1.1s ease-in-out infinite;
+    }
+    .empty-state {
+      align-content: center;
+      gap: var(--ui-space-2);
+      text-align: center;
+    }
+    .empty-state h2,
+    .empty-state p {
+      margin: 0;
+    }
+    @keyframes pulse {
+      50% {
+        opacity: 0.5;
+      }
+    }
+    @media (max-width: 70rem) {
+      .filters,
+      .filter-chips {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
     @media (max-width: 48rem) {
-      .page-header { align-items: start; flex-direction: column; }
-      .filters, .filter-chips { grid-template-columns: minmax(0, 1fr); }
-      .filter-chips > span:first-child:empty { display: none; }
-      .period-switcher { width: 100%; }
-      .page-actions { width: 100%; }
+      .page-header {
+        align-items: start;
+        flex-direction: column;
+      }
+      .filters,
+      .filter-chips {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .filter-chips > span:first-child:empty {
+        display: none;
+      }
+      .period-switcher {
+        width: 100%;
+      }
+      .page-actions {
+        width: 100%;
+      }
     }
   `,
 })
@@ -426,7 +642,9 @@ export class LeadsPage {
     loader: ({ params }) => this.leadsService.list(params),
   });
 
-  protected readonly employeesResource = resource({ loader: () => this.usersService.listManagers() });
+  protected readonly employeesResource = resource({
+    loader: () => this.usersService.listManagers(),
+  });
 
   protected readonly managerOptions = computed((): readonly UiSelectOption[] => {
     const officeFilter = this.session.officeFilter();
@@ -437,14 +655,22 @@ export class LeadsPage {
           employee.role !== 'super_admin' &&
           (officeFilter === 'all' || employee.officeIds.includes(officeFilter)),
       )
-      .map((employee) => ({ value: employee.id, label: employee.displayName, userId: employee.id }));
+      .map((employee) => ({
+        value: employee.id,
+        label: employee.displayName,
+        userId: employee.id,
+      }));
   });
 
   protected readonly leads = computed(() => this.leadsResource.value() ?? []);
   protected readonly groupedLeads = computed(() => groupLeadsByYearMonth(this.leads()));
   protected readonly loadError = computed(() => {
     const error = this.leadsResource.error();
-    return error instanceof Error ? this.i18n.localizeError(error.message) : error ? String(error) : '';
+    return error instanceof Error
+      ? this.i18n.localizeError(error.message)
+      : error
+        ? String(error)
+        : '';
   });
 
   protected callStatusLabel(status: CallStatus): string {
@@ -475,33 +701,20 @@ export class LeadsPage {
 
   protected formatDayMonth(value: string): string {
     const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
-    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(new Date(value));
+    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(
+      new Date(value),
+    );
   }
 
   protected formatTime(value: string): string {
     const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
-    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
-  }
-
-  protected formatDueDate(value: string): string {
-    return this.i18n.t('activity.dueDateShort', { date: this.i18n.formatDate(value) });
-  }
-
-  protected formatReminderDate(value: string): string {
-    return this.i18n.t('activity.reminderShort', { date: this.i18n.formatDate(value) });
-  }
-
-  protected showStandaloneReminder(lead: {
-    callbackDueAt: string | null;
-    callStatus: string | null;
-    clientStatus: string;
-  }): boolean {
-    return (
-      !!lead.callbackDueAt &&
-      lead.callStatus !== 'callback_requested' &&
-      lead.clientStatus !== 'thinking'
+    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
+      new Date(value),
     );
   }
+
+  protected readonly isCommentSourcedDue = isCommentSourcedDue;
+  protected readonly isShowroomSourcedDue = isShowroomSourcedDue;
 
   protected formatMoney(value: number, currency: string): string {
     return this.i18n.formatMoney(value, currency);
@@ -516,7 +729,10 @@ export class LeadsPage {
   }
 
   protected hasActiveManager(employeeId: string | null): boolean {
-    return !!employeeId && (this.employeesResource.value() ?? []).some((employee) => employee.id === employeeId);
+    return (
+      !!employeeId &&
+      (this.employeesResource.value() ?? []).some((employee) => employee.id === employeeId)
+    );
   }
 
   protected clearFilter(kind: 'call' | 'client' | 'manager'): void {

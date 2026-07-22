@@ -5,6 +5,7 @@ import { SessionService } from '../session/session.service';
 import {
   compareForLocale,
   formatDateForLocale,
+  formatShortDateForLocale,
   formatDateTimeForLocale,
   formatMoneyForLocale,
   formatMonthYearForLocale,
@@ -23,11 +24,7 @@ export class I18nService {
     return translateMessage(key, this.locale(), params);
   }
 
-  tField(
-    row: Record<string, unknown> | null | undefined,
-    base: string,
-    fallback = '',
-  ): string {
+  tField(row: Record<string, unknown> | null | undefined, base: string, fallback = ''): string {
     if (!row) return fallback;
     const locale = this.locale();
     const enKey = `${base}_en`;
@@ -56,6 +53,10 @@ export class I18nService {
 
   formatDate(value: string | null | undefined): string {
     return formatDateForLocale(value, this.locale());
+  }
+
+  formatShortDate(value: string | null | undefined): string {
+    return formatShortDateForLocale(value, this.locale());
   }
 
   formatDateTime(value: string | null | undefined): string {
@@ -92,7 +93,11 @@ export class I18nService {
 
   closeReasonLabel(
     code: string,
-    reasons?: readonly { readonly code: string; readonly label_uk: string; readonly label_pl: string }[],
+    reasons?: readonly {
+      readonly code: string;
+      readonly label_uk: string;
+      readonly label_pl: string;
+    }[],
   ): string {
     const key = `closeReason.${code}` as MessageKey;
     if (key in messages) return this.t(key);

@@ -133,9 +133,62 @@ describe('LeadsPage', () => {
     const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
 
     expect(cells[3]?.textContent).toContain('Передзвонити');
-    expect(cells[3]?.textContent).toContain('25.07.2026');
+    expect(cells[3]?.textContent).toContain('До 25.07');
+    expect(cells[3]?.textContent).not.toContain('2026');
     expect(cells[4]?.textContent).toContain('Думає');
-    expect(cells[4]?.textContent).toContain('25.07.2026');
+    expect(cells[4]?.textContent).toContain('До 25.07');
+    expect(cells[4]?.textContent).not.toContain('2026');
+    expect(cells[3]?.querySelector('app-ui-icon')).toBeTruthy();
+    expect(cells[4]?.querySelector('app-ui-icon')).toBeTruthy();
+  });
+
+  it('shows comment next-action in the comment column, not under status', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callStatus: 'reached',
+        clientStatus: 'showroom_invited',
+        callbackDueAt: '2026-07-22T12:00:00.000Z',
+        callbackDueContext: { category: 'comment', statusCode: null },
+        latestTimelineComment: {
+          comment: 'Повторно набрати 22.07',
+          occurredAt: '2026-07-18T10:00:00.000Z',
+          eventType: 'comment_added',
+          category: 'comment',
+          statusCode: null,
+          newValue: { callback_due_at: '2026-07-22T12:00:00.000Z' },
+        },
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
+
+    expect(cells[4]?.textContent).toContain('Запрошено в салон');
+    expect(cells[4]?.textContent).not.toContain('Нагадування');
+    expect(cells[4]?.textContent).not.toContain('22.07');
+    expect(cells[5]?.querySelector('.comment-next-action')?.textContent).toContain('Нагадування:');
+    expect(cells[5]?.textContent).toContain('22.07');
+    expect(cells[5]?.textContent).not.toContain('2026');
+  });
+
+  it('shows a showroom date under the client status, not as a comment reminder', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callStatus: 'reached',
+        clientStatus: 'showroom_invited',
+        callbackDueAt: '2026-08-03T12:00:00.000Z',
+        callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
+
+    expect(cells[4]?.textContent).toContain('Запрошено в салон');
+    expect(cells[4]?.textContent).toContain('До 03.08');
+    expect(cells[5]?.querySelector('.comment-next-action')).toBeNull();
   });
 
   it('opens a lead from a table row', async () => {

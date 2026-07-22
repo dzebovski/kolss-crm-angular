@@ -10,7 +10,21 @@ export function formatDateForLocale(value: string | null | undefined, locale: Lo
   }).format(new Date(value));
 }
 
-export function formatDateTimeForLocale(value: string | null | undefined, locale: LocaleCode): string {
+export function formatShortDateForLocale(
+  value: string | null | undefined,
+  locale: LocaleCode,
+): string {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat(localeToBcp47(locale), {
+    day: '2-digit',
+    month: '2-digit',
+  }).format(new Date(value));
+}
+
+export function formatDateTimeForLocale(
+  value: string | null | undefined,
+  locale: LocaleCode,
+): string {
   if (!value) return '—';
   return new Intl.DateTimeFormat(localeToBcp47(locale), {
     day: '2-digit',

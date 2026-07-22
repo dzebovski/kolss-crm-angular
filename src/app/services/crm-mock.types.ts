@@ -174,12 +174,18 @@ export interface MockLead {
   readonly close: LeadClose | null;
   readonly contract: LeadContract | null;
   readonly callbackDueAt: string | null;
+  readonly callbackDueContext?: CallbackDueContext | null;
   readonly lastComment: string | null;
   readonly latestTimelineComment: LatestTimelineComment | null;
   readonly lastActivityAt: string;
   readonly attachments: readonly LeadAttachment[];
   readonly events: readonly LeadEvent[];
   readonly markers: readonly LeadMarker[];
+}
+
+export interface CallbackDueContext {
+  readonly category: Exclude<LeadEventCategory, 'system'>;
+  readonly statusCode: string | null;
 }
 
 export interface LatestTimelineComment {
