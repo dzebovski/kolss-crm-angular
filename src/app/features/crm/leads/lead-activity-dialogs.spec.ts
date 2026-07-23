@@ -89,21 +89,31 @@ describe('lead activity dialogs', () => {
   });
 
   it('shows an optional due date field when allowDueDate is enabled', async () => {
-    dialog.open(TextActivityDialog, {
+    const ref = dialog.open(TextActivityDialog, {
       data: {
-        eyebrow: 'Нотатка менеджера',
-        title: 'Додати коментар',
-        description: 'Коментар не змінює статуси.',
+        eyebrow: 'Думає',
+        title: 'Зафіксувати паузу',
+        description: 'За потреби додайте контекст.',
         placeholder: 'Коментар',
-        submitLabel: 'Додати',
+        submitLabel: 'Зберегти',
+        commentOptional: true,
         allowDueDate: true,
       },
       ariaLabelledBy: 'text-activity-title',
       enterAnimationDuration: 0,
     });
+    const closed = firstValueFrom(ref.afterClosed());
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
     expect(overlay.querySelector('input[type="date"]')).toBeTruthy();
+    expect(overlay.textContent).toContain('Коментар (необов’язково)');
+    expect(overlay.textContent).toContain('Дата наступної дії (необов’язково)');
+
+    const submit = overlay.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(submit.disabled).toBe(false);
+    submit.click();
+
+    await expect(closed).resolves.toEqual({ comment: '' });
   });
 
   it('has no automated accessibility violations', async () => {

@@ -52,7 +52,9 @@ export interface TextActivityDialogResult {
         <p>{{ data.description }}</p>
       </header>
       <app-ui-textarea
-        [label]="i18n.t('lead.comment')"
+        [label]="
+          data.commentOptional ? i18n.t('activity.commentOptionalLabel') : i18n.t('lead.comment')
+        "
         [placeholder]="data.placeholder"
         [rows]="4"
         [formField]="commentForm.comment"
@@ -61,7 +63,7 @@ export interface TextActivityDialogResult {
       @if (data.allowDueDate) {
         <app-ui-text-field
           type="date"
-          [label]="i18n.t('activity.dueDateLabel')"
+          [label]="i18n.t('activity.dueDateOptionalLabel')"
           [formField]="commentForm.dueDate"
         />
       }

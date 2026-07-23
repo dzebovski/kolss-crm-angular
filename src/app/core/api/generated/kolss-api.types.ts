@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '../../../services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.4.0' as const;
+export const API_CONTRACT_VERSION = '2.5.0' as const;
 
 export interface ApiErrorResponse {
   readonly code: string;

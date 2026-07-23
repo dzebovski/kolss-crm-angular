@@ -57,6 +57,11 @@ export interface LeadStatus {
   is_terminal: boolean;
 }
 
+export interface LeadCallStatusActor {
+  actor_id: string;
+  actor_name: string;
+}
+
 export interface Lead {
   id: string;
   office_id: string;
@@ -68,6 +73,7 @@ export interface Lead {
   workflow_status_changed_at: string | null;
   call_status: string | null;
   call_status_changed_at: string | null;
+  call_status_actor?: LeadCallStatusActor | null;
   client_status: string;
   client_status_changed_at: string;
   assigned_to: string | null;

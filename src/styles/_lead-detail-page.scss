@@ -513,6 +513,12 @@
     font-size: 0.98rem;
     letter-spacing: -0.025em;
   }
+  .lead-details__edit {
+    margin-left: auto;
+  }
+  .lead-details__edit .ui-button {
+    color: var(--ui-text-muted);
+  }
   .client-data {
     margin-top: 0.1rem;
     border: 0;

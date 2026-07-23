@@ -29,6 +29,7 @@ import { UiChip } from '../../../ui/feedback/ui-chip';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { LinkifiedText } from '../../../ui/text/linkified-text';
 import { UiUser } from '../../../ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
 import { LeadDueDate } from './lead-due-date';
@@ -44,6 +45,7 @@ import {
   imports: [
     CreateLeadDialog,
     LeadDueDate,
+    LinkifiedText,
     TranslatePipe,
     UiAlert,
     UiBadge,
@@ -59,7 +61,18 @@ import {
       <header class="page-header">
         <div>
           <p class="eyebrow">CRM</p>
-          <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
+          <div class="title-row">
+            <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
+            @if (leadsResource.hasValue()) {
+              <span class="lead-count muted" aria-live="polite">
+                {{ 'leads.filteredCountPrefix' | translate }}
+                <app-ui-badge class="lead-count-badge" tone="brand">
+                  <app-ui-icon name="person" [size]="14" [style.margin-right.rem]="0.25" />
+                  {{ 'leads.count' | translate: { count: leads().length } }}
+                </app-ui-badge>
+              </span>
+            }
+          </div>
         </div>
 
         <div class="page-actions">
@@ -261,6 +274,15 @@ import {
                         <app-ui-badge [tone]="callStatusTone(status)">
                           {{ callStatusLabel(status) }}
                         </app-ui-badge>
+                        @if (lead.callStatusActor; as actor) {
+                          <small
+                            class="call-status-actor"
+                            [title]="actor.actorName"
+                            [style.margin-top.rem]="0.25"
+                          >
+                            {{ actor.actorName }}
+                          </small>
+                        }
                         @if (status === 'callback_requested' && lead.callbackDueAt) {
                           <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
                         }
@@ -280,7 +302,9 @@ import {
                     </td>
                     <td class="comment-cell">
                       @if (lead.latestTimelineComment; as latest) {
-                        <span [title]="latest.comment">{{ latest.comment }}</span>
+                        <span [title]="latest.comment">
+                          <app-linkified-text [text]="latest.comment" />
+                        </span>
                         @if (commentContext(latest.category, latest.statusCode); as context) {
                           <small>{{ context }}</small>
                         }
@@ -330,6 +354,12 @@ import {
       margin: 0;
       font-family: var(--ui-font-display), sans-serif;
       font-size: clamp(1.8rem, 4vw, 2.4rem);
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--ui-space-2);
+      flex-wrap: wrap;
     }
     .page-actions {
       display: flex;

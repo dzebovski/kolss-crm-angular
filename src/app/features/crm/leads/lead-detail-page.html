@@ -112,6 +112,20 @@
           <header>
             <span>02</span>
             <h2 id="client-data-title">{{ i18n.t('leadDetail.contactRequest') }}</h2>
+            @if (canEditLead(lead)) {
+              <app-ui-button
+                class="lead-details__edit"
+                variant="ghost"
+                size="small"
+                [attr.title]="i18n.t('lead.editLeadTitle')"
+                [attr.aria-label]="i18n.t('lead.editLeadTitle')"
+                [disabled]="actionPending()"
+                (pressed)="openLeadEditDialog(lead)"
+              >
+                <app-ui-icon name="edit" [size]="15" />
+                {{ i18n.t('lead.editLeadTitle') }}
+              </app-ui-button>
+            }
           </header>
           <dl class="client-data">
             <div>
@@ -134,7 +148,13 @@
             </div>
             <div class="client-data__message">
               <dt>{{ i18n.t('leadDetail.clientMessage') }}</dt>
-              <dd>{{ lead.initialMessage || '—' }}</dd>
+              <dd>
+                @if (lead.initialMessage; as message) {
+                  <app-linkified-text [text]="message" />
+                } @else {
+                  —
+                }
+              </dd>
             </div>
           </dl>
         </section>
@@ -362,7 +382,7 @@
                   </app-ui-badge>
                 }
                 @if (eventBody(event); as body) {
-                  <p>{{ body }}</p>
+                  <p><app-linkified-text [text]="body" /></p>
                 }
                 @if (eventDueDate(event); as due) {
                   <app-lead-due-date
@@ -375,7 +395,7 @@
                   @if (event.translationEn; as translation) {
                     <div class="timeline-card__translation">
                       <span>{{ i18n.t('leadDetail.englishTranslation') }}</span>
-                      <p>{{ translation }}</p>
+                      <p><app-linkified-text [text]="translation" /></p>
                     </div>
                   } @else {
                     <app-ui-button
@@ -419,6 +439,14 @@
         <p class="timeline-empty">{{ i18n.t('leadDetail.timelineEmpty') }}</p>
       }
     </section>
+
+    @if (editLeadDialogOpen()) {
+      <app-edit-lead-dialog
+        [lead]="lead"
+        (dismissed)="closeLeadEditDialog()"
+        (saved)="handleLeadEditSaved()"
+      />
+    }
 
     @if (assignManagerDialogOpen()) {
       <app-ui-modal

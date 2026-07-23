@@ -84,6 +84,35 @@ describe('mapLeadListRow first_contact_attempt', () => {
   });
 });
 
+describe('mapLeadListRow call_status_actor', () => {
+  it('maps and trims the manager who recorded the current call status', () => {
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        call_status: 'reached',
+        call_status_actor: {
+          actor_id: '  emp-kyiv-2  ',
+          actor_name: '  Софія Литвин  ',
+        },
+      }).callStatusActor,
+    ).toEqual({
+      actorId: 'emp-kyiv-2',
+      actorName: 'Софія Литвин',
+    });
+  });
+
+  it('uses null for a missing, null, or incomplete call status actor', () => {
+    expect(mapLeadListRow(baseRow).callStatusActor).toBeNull();
+    expect(mapLeadListRow({ ...baseRow, call_status_actor: null }).callStatusActor).toBeNull();
+    expect(
+      mapLeadListRow({
+        ...baseRow,
+        call_status_actor: { actor_id: 'emp-kyiv-2', actor_name: '   ' },
+      }).callStatusActor,
+    ).toBeNull();
+  });
+});
+
 describe('mapLeadListRow markers', () => {
   it('maps supported markers and ignores unknown future values', () => {
     const lead = mapLeadListRow({

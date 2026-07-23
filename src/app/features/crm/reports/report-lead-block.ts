@@ -2,6 +2,7 @@ import { Component, inject, input } from '@angular/core';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
 import type { ClientStatus } from '../../../services/crm-mock.types';
+import { LinkifiedText } from '../../../ui/text/linkified-text';
 import type { ReportLead } from './reports.types';
 
 @Component({
@@ -9,6 +10,7 @@ import type { ReportLead } from './reports.types';
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'tr[appReportLeadBlock]',
   host: { class: 'report-lead-block' },
+  imports: [LinkifiedText],
   template: `
     <td class="lead-date">
       <time [attr.datetime]="lead().createdAt">{{ i18n.formatDate(lead().createdAt) }}</time>
@@ -44,7 +46,7 @@ import type { ReportLead } from './reports.types';
               {{ i18n.formatDateTime(latestComment.occurredAt) }}
             </time>
           </header>
-          <p>{{ latestComment.body }}</p>
+          <p><app-linkified-text [text]="latestComment.body" /></p>
         </article>
       } @else {
         <span class="empty-value">—</span>
@@ -59,7 +61,7 @@ import type { ReportLead } from './reports.types';
               {{ i18n.formatDateTime(previousComment.occurredAt) }}
             </time>
           </header>
-          <p>{{ previousComment.body }}</p>
+          <p><app-linkified-text [text]="previousComment.body" /></p>
         </article>
       } @else {
         <span class="empty-value">—</span>

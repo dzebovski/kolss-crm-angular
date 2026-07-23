@@ -1,6 +1,7 @@
 import type { Lead, Office } from '../models/database';
 import { formatPhoneDisplay } from '../core/phone/phone';
 import type {
+  CallStatusActor,
   CloseReason,
   CallStatus,
   CallbackDueContext,
@@ -264,6 +265,13 @@ function mapContractEmbed(embed: ContractEmbed | null | undefined): LeadContract
   };
 }
 
+function mapCallStatusActor(value: LeadListRow['call_status_actor']): CallStatusActor | null {
+  if (!value) return null;
+  const actorId = typeof value.actor_id === 'string' ? value.actor_id.trim() : '';
+  const actorName = typeof value.actor_name === 'string' ? value.actor_name.trim() : '';
+  return actorId && actorName ? { actorId, actorName } : null;
+}
+
 function buildContract(
   contracts: readonly ContractRow[],
   events: readonly LeadEventRow[],
@@ -523,6 +531,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     workflowStatus,
     callStatus: mapCallStatus(row.call_status),
     callStatusChangedAt: row.call_status_changed_at,
+    callStatusActor: mapCallStatusActor(row.call_status_actor),
     clientStatus,
     clientStatusChangedAt: row.client_status_changed_at ?? row.updated_at,
     officeCode,

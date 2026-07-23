@@ -29,6 +29,7 @@ describe('LeadDetailView', () => {
   ) {
     TestBed.resetTestingModule();
     const updateLeadDetails = options.updateLeadDetails ?? vi.fn(async () => undefined);
+    const getById = vi.fn(async () => lead);
     const archiveLead = vi.fn(async () => undefined);
     const restoreLead = vi.fn(async () => undefined);
     const deleteLeadPermanently = vi.fn(async () => undefined);
@@ -64,7 +65,7 @@ describe('LeadDetailView', () => {
         {
           provide: LeadsService,
           useValue: {
-            getById: async () => lead,
+            getById,
             updateLeadDetails,
             archiveLead,
             restoreLead,
@@ -99,6 +100,7 @@ describe('LeadDetailView', () => {
       dialogConfirm,
       dialogOpen,
       fixture,
+      getById,
       restoreLead,
       translateHistoryEvent,
       updateLeadDetails,
@@ -523,6 +525,66 @@ describe('LeadDetailView', () => {
     ).toBeNull();
   });
 
+  it('shows lead data editing only to authorized admins of an active lead', async () => {
+    const lead = CRM_MOCK_LEADS[0]!;
+    const superAdminView = await render(lead, { role: 'super_admin' });
+    expect(
+      (superAdminView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).not.toBeNull();
+
+    const officeAdminView = await render(lead, {
+      role: 'office_admin',
+      userOffices: [{ code: lead.officeCode }],
+    });
+    expect(
+      (officeAdminView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).not.toBeNull();
+
+    const closedLeadView = await render(CRM_MOCK_LEADS[7]!, { role: 'super_admin' });
+    expect(
+      (closedLeadView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).not.toBeNull();
+
+    const wrongOfficeView = await render(lead, {
+      role: 'office_admin',
+      userOffices: [{ code: 'warsaw' }],
+    });
+    expect(
+      (wrongOfficeView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).toBeNull();
+
+    const memberView = await render(lead, { role: 'office_member' });
+    expect(
+      (memberView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).toBeNull();
+
+    const archivedView = await render(
+      { ...lead, archivedAt: '2026-07-23T10:00:00.000Z' },
+      { role: 'super_admin' },
+    );
+    expect(
+      (archivedView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).toBeNull();
+  });
+
+  it('reloads the lead and emits changed after lead data is saved', async () => {
+    const lead = CRM_MOCK_LEADS[0]!;
+    const { fixture, getById } = await render(lead, { role: 'super_admin' });
+    const changed = vi.fn();
+    fixture.componentInstance.changed.subscribe(changed);
+
+    fixture.componentInstance['openLeadEditDialog'](lead);
+    await fixture.whenStable();
+    const dialog = fixture.debugElement.query(By.css('app-edit-lead-dialog'));
+    expect(dialog).not.toBeNull();
+
+    dialog.componentInstance.saved.emit();
+
+    await vi.waitFor(() => expect(getById).toHaveBeenCalledTimes(2));
+    expect(changed).toHaveBeenCalledOnce();
+    expect(fixture.componentInstance['editLeadDialogOpen']()).toBe(false);
+  });
+
   it('assigns a manager through the existing lead details update contract', async () => {
     const lead: MockLead = { ...CRM_MOCK_LEADS[0]!, assignedToId: null };
     const updateLeadDetails = vi.fn(async () => undefined);
@@ -614,14 +676,19 @@ describe('LeadDetailView', () => {
       clientStatus: 'calculation_in_progress',
     };
     const { activities, dialogOpen, fixture } = await render(lead);
-    dialogOpen
-      .mockReturnValueOnce({ afterClosed: () => of('thinking') })
-      .mockReturnValueOnce({ afterClosed: () => of('2026-07-28') });
+    dialogOpen.mockReturnValueOnce({ afterClosed: () => of('thinking') }).mockReturnValueOnce({
+      afterClosed: () => of({ comment: 'Попросив час на рішення.', dueDate: '2026-07-28' }),
+    });
     const element = fixture.nativeElement as HTMLElement;
 
     findActionButton(element, 'Статус клієнта')?.click();
     await vi.waitFor(() =>
-      expect(activities.setClientStatus).toHaveBeenCalledWith(lead.id, 'thinking', '2026-07-28'),
+      expect(activities.setClientStatus).toHaveBeenCalledWith(
+        lead.id,
+        'thinking',
+        '2026-07-28',
+        'Попросив час на рішення.',
+      ),
     );
 
     const config = dialogOpen.mock.calls[0]?.[1];
@@ -655,6 +722,15 @@ describe('LeadDetailView', () => {
       (action: { id: string }) => action.id === lead.clientStatus,
     )?.tone;
     expect(radialStatusTone).toBe(currentStatusTone);
+    expect(dialogOpen.mock.calls[1]?.[1]).toMatchObject({
+      data: {
+        eyebrow: 'Думає',
+        title: 'Зафіксувати паузу',
+        commentOptional: true,
+        allowDueDate: true,
+      },
+      ariaLabelledBy: 'text-activity-title',
+    });
   });
 
   it('allows reselecting showroom and prefills its optional date', async () => {

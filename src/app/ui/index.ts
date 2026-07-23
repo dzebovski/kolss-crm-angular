@@ -17,5 +17,6 @@ export * from './menu/ui-menu';
 export * from './pagination/ui-pagination';
 export * from './table/ui-data-table';
 export * from './tabs/ui-tabs';
+export * from './text/linkified-text';
 export * from './tooltip/ui-tooltip';
 export * from './user/ui-user';

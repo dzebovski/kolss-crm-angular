@@ -33,10 +33,12 @@ export class LeadActivitiesService {
     leadId: string,
     status: Exclude<ClientStatus, 'new_lead' | 'closed_lost' | 'contract_signed'>,
     dueDate = '',
+    comment = '',
   ): Promise<void> {
     return this.commit(leadId, {
       type: 'client_status',
       status,
+      ...(comment.trim() ? { comment: comment.trim() } : {}),
       ...(dueDate ? { dueAt: dueAtFromDate(dueDate) } : {}),
     });
   }

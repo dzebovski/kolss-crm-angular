@@ -37,6 +37,7 @@ import { UiModal } from '../../../ui/dialog/ui-modal';
 import { UiBadge, type UiBadgeTone } from '../../../ui/feedback/ui-badge';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { LinkifiedText } from '../../../ui/text/linkified-text';
 import { UiUser } from '../../../ui/user/ui-user';
 import { LeadDueDate, type LeadDueDateKind } from './lead-due-date';
 import { LeadMarkerToggles } from './lead-marker-toggles';
@@ -59,6 +60,7 @@ import {
   type TextActivityDialogData,
   type TextActivityDialogResult,
 } from './lead-activity-dialogs';
+import { EditLeadDialog } from './edit-lead-dialog';
 
 const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label' | 'tone'>[] = [
   { id: 'reached', icon: 'check_circle' },
@@ -96,8 +98,10 @@ const NO_MANAGER_VALUE = '__unassigned__';
   selector: 'app-lead-detail-view',
   imports: [
     RouterLink,
+    EditLeadDialog,
     LeadDueDate,
     LeadMarkerToggles,
+    LinkifiedText,
     UiBadge,
     UiButton,
     UiIcon,
@@ -123,6 +127,7 @@ export class LeadDetailView {
 
   protected readonly actionPending = signal(false);
   protected readonly actionError = signal('');
+  protected readonly editLeadDialogOpen = signal(false);
   protected readonly deletingLead = signal(false);
   protected readonly markerPending = signal<LeadMarkerKind | null>(null);
   protected readonly markerError = signal('');
@@ -377,9 +382,19 @@ export class LeadDetailView {
       return;
     }
     if (status === 'thinking') {
-      const dueDate = await this.openDueDateDialog(this.clientStatusLabel(status));
-      if (!dueDate) return;
-      await this.runActivity(() => this.activities.setClientStatus(lead.id, status, dueDate));
+      const result = await this.openTextDialog({
+        eyebrow: this.clientStatusLabel(status),
+        title: this.i18n.t('leadDetail.thinkingTitle'),
+        description: this.i18n.t('leadDetail.thinkingDescription'),
+        placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
+        submitLabel: this.i18n.t('common.save'),
+        commentOptional: true,
+        allowDueDate: true,
+      });
+      if (result === undefined) return;
+      await this.runActivity(() =>
+        this.activities.setClientStatus(lead.id, status, result.dueDate ?? '', result.comment),
+      );
       return;
     }
     await this.runActivity(() => this.activities.setClientStatus(lead.id, status));
@@ -387,6 +402,27 @@ export class LeadDetailView {
 
   protected async reopenLead(lead: MockLead): Promise<void> {
     await this.runActivity(() => this.activities.reopen(lead.id));
+  }
+
+  protected openLeadEditDialog(lead: MockLead): void {
+    if (!this.canEditLead(lead)) return;
+    this.actionError.set('');
+    this.editLeadDialogOpen.set(true);
+  }
+
+  protected closeLeadEditDialog(): void {
+    this.editLeadDialogOpen.set(false);
+  }
+
+  protected async handleLeadEditSaved(): Promise<void> {
+    this.editLeadDialogOpen.set(false);
+    try {
+      await this.leadResource.reload();
+      this.changed.emit();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'error.actionFailed';
+      this.actionError.set(this.i18n.localizeError(message));
+    }
   }
 
   protected canEditLead(lead: MockLead): boolean {

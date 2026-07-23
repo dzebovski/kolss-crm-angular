@@ -475,10 +475,25 @@ export const messages = {
     pl: 'Dodaj do osi czasu',
     en: 'Add to timeline',
   },
+  'leadDetail.thinkingTitle': {
+    uk: 'Зафіксувати паузу',
+    pl: 'Zapisz przerwę',
+    en: 'Record the pause',
+  },
+  'leadDetail.thinkingDescription': {
+    uk: 'За потреби додайте коментар або дату наступної дії.',
+    pl: 'W razie potrzeby dodaj komentarz lub datę następnego działania.',
+    en: 'Optionally add a comment or the next action date.',
+  },
   'activity.commentRequired': {
     uk: 'Додайте коментар.',
     pl: 'Dodaj komentarz.',
     en: 'Add a comment.',
+  },
+  'activity.commentOptionalLabel': {
+    uk: 'Коментар (необов’язково)',
+    pl: 'Komentarz (opcjonalnie)',
+    en: 'Comment (optional)',
   },
   'activity.dueDateTitle': { uk: 'Оберіть дату', pl: 'Wybierz datę', en: 'Choose a date' },
   'activity.dueDateDescription': {
@@ -702,9 +717,9 @@ export const messages = {
     en: 'Edit lead details',
   },
   'lead.editLeadHint': {
-    uk: 'Контакти, деталі заявки та відповідальний менеджер.',
-    pl: 'Kontakty, szczegóły zgłoszenia i odpowiedzialny menedżer.',
-    en: 'Contacts, lead details, and assigned manager.',
+    uk: 'Контакти та деталі заявки.',
+    pl: 'Kontakty i szczegóły zgłoszenia.',
+    en: 'Contacts and lead details.',
   },
   'lead.editHistoryHint': {
     uk: 'Дата події не змінюється. Позначка про редагування буде видима всім.',
@@ -892,6 +907,7 @@ export const messages = {
     en: 'Not recorded yet',
   },
   'leads.count': { uk: '{count} лідів', pl: '{count} leadów', en: '{count} leads' },
+  'leads.filteredCountPrefix': { uk: 'Відображається', pl: 'Wyświetla się', en: 'Displaying' },
   'leads.monthContractTotal': {
     uk: 'Сума договорів за місяць',
     pl: 'Suma umów za miesiąc',

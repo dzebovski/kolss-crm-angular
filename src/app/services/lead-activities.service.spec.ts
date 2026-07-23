@@ -35,7 +35,12 @@ describe('LeadActivitiesService', () => {
   });
 
   it('sends the selected date for a waiting client', async () => {
-    await service.setClientStatus('lead-1', 'thinking', '2026-07-28');
+    await service.setClientStatus(
+      'lead-1',
+      'thinking',
+      '2026-07-28',
+      '  Попросив час на рішення  ',
+    );
     await service.setClientStatus('lead-1', 'showroom_invited', '2026-08-03');
     await service.setClientStatus('lead-1', 'showroom_invited');
 
@@ -43,6 +48,7 @@ describe('LeadActivitiesService', () => {
       {
         type: 'client_status',
         status: 'thinking',
+        comment: 'Попросив час на рішення',
         dueAt: '2026-07-28T12:00:00.000Z',
       },
       {

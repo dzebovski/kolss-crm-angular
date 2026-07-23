@@ -146,6 +146,11 @@ export interface LeadClose {
   readonly actorId: string;
 }
 
+export interface CallStatusActor {
+  readonly actorId: string;
+  readonly actorName: string;
+}
+
 export interface MockLead {
   readonly id: string;
   readonly version?: number;
@@ -157,6 +162,7 @@ export interface MockLead {
   readonly workflowStatus: LeadWorkflowStatus;
   readonly callStatus: CallStatus | null;
   readonly callStatusChangedAt: string | null;
+  readonly callStatusActor?: CallStatusActor | null;
   readonly clientStatus: ClientStatus;
   readonly clientStatusChangedAt: string;
   readonly officeCode: OfficeId;

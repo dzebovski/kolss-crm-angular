@@ -21,6 +21,7 @@ import { UiButton } from '../../../ui/button/ui-button';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiBadge } from '../../../ui/feedback/ui-badge';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { LinkifiedText } from '../../../ui/text/linkified-text';
 import { UiUser } from '../../../ui/user/ui-user';
 import {
   LeadDetailDrawer,
@@ -37,6 +38,7 @@ import { LeadDueDate } from '../leads/lead-due-date';
     RouterLink,
     LeadDueDate,
     LeadMarkerToggles,
+    LinkifiedText,
     TranslatePipe,
     UiBadge,
     UiButton,
@@ -126,7 +128,8 @@ import { LeadDueDate } from '../leads/lead-due-date';
                             <small>{{ lead.phone }}</small>
                             @if (lead.latestTimelineComment; as latest) {
                               <small class="lead-comment" [title]="latest.comment">
-                                {{ formatDayMonth(latest.occurredAt) }} · {{ latest.comment }}
+                                {{ formatDayMonth(latest.occurredAt) }} ·
+                                <app-linkified-text [text]="latest.comment" />
                               </small>
                             }
                             @if (commentDueAtForLead(lead); as commentDueAt) {

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { SessionService } from '../../../core/session/session.service';
@@ -7,6 +8,7 @@ import { CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
 import type { MockLead } from '../../../services/crm-mock.types';
 import { LeadsService, type LeadsListFilters } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
+import { UiSelect } from '../../../ui/form/ui-select';
 import { LeadsPage } from './leads-page';
 
 describe('LeadsPage', () => {
@@ -48,7 +50,20 @@ describe('LeadsPage', () => {
       providers: [
         provideRouter([]),
         { provide: LeadsService, useValue: { list } },
-        { provide: UsersService, useValue: { listManagers: async () => [] } },
+        {
+          provide: UsersService,
+          useValue: {
+            listManagers: async () => [
+              {
+                id: 'emp-kyiv-1',
+                displayName: 'Данило Мороз',
+                role: 'office_member',
+                officeIds: ['kyiv'],
+                status: 'active',
+              },
+            ],
+          },
+        },
         {
           provide: SessionService,
           useValue: {
@@ -81,6 +96,67 @@ describe('LeadsPage', () => {
     expect(element.textContent).toContain('Прорахунок');
     expect(element.textContent).toContain('Погодили матеріали фасадів.');
     expect(element.textContent).not.toContain('Візит у салон');
+  });
+
+  it('shows the call author below the status independently from the assigned manager', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        assignedToId: 'emp-kyiv-1',
+        callStatus: 'reached',
+        callStatusActor: {
+          actorId: 'emp-kyiv-2',
+          actorName: 'Софія Литвин',
+        },
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
+
+    expect(cells[2]?.textContent).toContain('Данило Мороз');
+    expect(cells[2]?.textContent).not.toContain('Софія Литвин');
+    expect(cells[3]?.textContent).toContain('Успішний дзвінок');
+    expect(cells[3]?.querySelector('.call-status-actor')?.textContent).toContain('Софія Литвин');
+  });
+
+  it('does not render an author line when the current call author is unknown', async () => {
+    list.mockResolvedValueOnce([
+      {
+        ...CRM_MOCK_LEADS[2]!,
+        callStatus: 'reached',
+        callStatusActor: null,
+      },
+    ]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const callCell = (fixture.nativeElement as HTMLElement).querySelector(
+      '.lead-row td:nth-child(4)',
+    );
+
+    expect(callCell?.textContent).toContain('Успішний дзвінок');
+    expect(callCell?.querySelector('.call-status-actor')).toBeNull();
+  });
+
+  it('shows and updates the count for the current filters', async () => {
+    list.mockResolvedValueOnce([CRM_MOCK_LEADS[1]!, CRM_MOCK_LEADS[2]!]).mockResolvedValueOnce([]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const count = element.querySelector('.title-row h1 + .lead-count');
+    expect(count?.textContent).toContain('Відображається');
+    expect(count?.textContent).not.toContain('фільтрами');
+    expect(count?.querySelector('.lead-count-badge')?.textContent).toContain('2 лідів');
+    expect(count?.querySelector('.lead-count-badge app-ui-icon')).not.toBeNull();
+
+    const callStatusSelect = fixture.debugElement.queryAll(By.directive(UiSelect))[0]
+      ?.componentInstance as UiSelect;
+    callStatusSelect.value.set('reached');
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ callStatus: 'reached' }));
+    expect(element.querySelector('.lead-count-badge')?.textContent).toContain('0 лідів');
   });
 
   it('shows a new lead as in progress after any call result is recorded', async () => {
