@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, InjectionToken, output, signal } from '@angular/core';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { normalizePhoneForOffice } from '../../../core/phone/phone';
 import { SessionService } from '../../../core/session/session.service';
 import type { LeadSource } from '../../../services/crm-mock.types';
@@ -39,22 +38,22 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
 
 @Component({
   selector: 'app-create-lead-dialog',
-  imports: [UiButton, UiModal, UiSelect, UiTextField, UiTextarea, TranslatePipe],
+  imports: [UiButton, UiModal, UiSelect, UiTextField, UiTextarea],
   template: `
     <app-ui-modal [wide]="true" labelledBy="create-lead-dialog-title" (dismissed)="dismiss()">
-      <h2 id="create-lead-dialog-title">{{ 'lead.create' | translate }}</h2>
-      <p>{{ 'lead.createHint' | translate }}</p>
+      <h2 id="create-lead-dialog-title">{{ i18n.t('lead.create') }}</h2>
+      <p>{{ i18n.t('lead.createHint') }}</p>
 
       @if (error()) {
         <div class="inline-error" role="alert">{{ error() }}</div>
       }
 
       <div class="modal-section">
-        <h3>Офіс і джерело</h3>
+        <h3>{{ i18n.t('lead.officeAndSource') }}</h3>
         <div class="modal-grid">
           <app-ui-select
-            label="Офіс"
-            placeholder="Оберіть офіс"
+            [label]="i18n.t('common.office')"
+            [placeholder]="i18n.t('lead.selectOffice')"
             [required]="true"
             [error]="officeIdError()"
             [options]="officeOptions()"
@@ -62,7 +61,7 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
             (valueChange)="changeOffice($event)"
           />
           <app-ui-select
-            label="Джерело"
+            [label]="i18n.t('common.source')"
             [required]="true"
             [error]="sourceError()"
             [options]="sourceOptions()"
@@ -72,31 +71,36 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
       </div>
 
       <div class="modal-section">
-        <h3>Контакти</h3>
+        <h3>{{ i18n.t('lead.contacts') }}</h3>
         <div class="modal-grid">
           <app-ui-text-field
-            label="Імʼя"
+            [label]="i18n.t('common.name')"
             [required]="true"
             [error]="nameError()"
             [(value)]="name"
           />
           <app-ui-text-field
-            label="Телефон"
+            [label]="i18n.t('common.phone')"
             type="tel"
             [required]="true"
             [error]="phoneError()"
             [(value)]="phone"
           />
-          <app-ui-text-field label="Email" type="email" [error]="emailError()" [(value)]="email" />
-          <app-ui-text-field label="Місто / район" [(value)]="cityRegion" />
+          <app-ui-text-field
+            [label]="i18n.t('common.email')"
+            type="email"
+            [error]="emailError()"
+            [(value)]="email"
+          />
+          <app-ui-text-field [label]="i18n.t('common.cityRegion')" [(value)]="cityRegion" />
         </div>
       </div>
 
       <div class="modal-section">
-        <h3>Дані ліда</h3>
+        <h3>{{ i18n.t('lead.leadData') }}</h3>
         <div class="modal-grid">
           <app-ui-text-field
-            label="Дата ліда"
+            [label]="i18n.t('lead.sourceDate')"
             type="date"
             name="lead-source-date"
             [required]="true"
@@ -105,7 +109,7 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
             (valueChange)="changeSourceDate($event)"
           />
           <app-ui-text-field
-            label="Час ліда"
+            [label]="i18n.t('lead.sourceTime')"
             type="time"
             name="lead-source-time"
             [required]="true"
@@ -113,16 +117,24 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
             [value]="sourceTime()"
             (valueChange)="changeSourceTime($event)"
           />
-          <app-ui-text-field label="Продукт" [(value)]="productInterest" />
-          <app-ui-text-field label="Бюджет, EUR" [error]="budgetError()" [(value)]="budget" />
+          <app-ui-text-field [label]="i18n.t('common.product')" [(value)]="productInterest" />
+          <app-ui-text-field
+            [label]="i18n.t('common.budgetEur')"
+            [error]="budgetError()"
+            [(value)]="budget"
+          />
         </div>
-        <app-ui-textarea label="Початкове повідомлення" [rows]="4" [(value)]="initialMessage" />
+        <app-ui-textarea
+          [label]="i18n.t('lead.initialMessage')"
+          [rows]="4"
+          [(value)]="initialMessage"
+        />
       </div>
 
       <div class="modal-actions">
-        <app-ui-button variant="ghost" (pressed)="dismiss()">Скасувати</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="dismiss()">{{ i18n.t('common.cancel') }}</app-ui-button>
         <app-ui-button [loading]="submitting()" [disabled]="submitting()" (pressed)="submit()">
-          Створити
+          {{ i18n.t('common.create') }}
         </app-ui-button>
       </div>
     </app-ui-modal>
@@ -171,7 +183,7 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
 export class CreateLeadDialog {
   private readonly session = inject(SessionService);
   private readonly leadsService = inject(LeadsService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   private readonly now = inject(CREATE_LEAD_NOW);
 
   readonly dismissed = output<void>();
@@ -283,15 +295,15 @@ export class CreateLeadDialog {
 
     let valid = true;
     if (!officeId) {
-      this.officeIdError.set('Оберіть офіс.');
+      this.officeIdError.set(this.i18n.t('lead.selectOffice'));
       valid = false;
     }
     if (!source) {
-      this.sourceError.set('Оберіть джерело.');
+      this.sourceError.set(this.i18n.t('lead.selectSource'));
       valid = false;
     }
     if (!name) {
-      this.nameError.set('Вкажіть імʼя клієнта.');
+      this.nameError.set(this.i18n.t('lead.nameRequired'));
       valid = false;
     }
     if (!phoneRaw) {
@@ -302,19 +314,23 @@ export class CreateLeadDialog {
       valid = false;
     }
     if (email && !this.isValidEmail(email)) {
-      this.emailError.set('Email має некоректний формат.');
+      this.emailError.set(this.i18n.t('lead.emailInvalid'));
       valid = false;
     }
     if (Number.isNaN(estimatedBudget) || (estimatedBudget != null && estimatedBudget < 0)) {
-      this.budgetError.set('Бюджет має бути додатним числом або порожнім.');
+      this.budgetError.set(this.i18n.t('lead.budgetInvalid'));
       valid = false;
     }
     if (!this.isValidDate(sourceDate)) {
-      this.sourceDateError.set(sourceDate ? 'Дата має некоректний формат.' : 'Вкажіть дату ліда.');
+      this.sourceDateError.set(
+        this.i18n.t(sourceDate ? 'lead.sourceDateInvalid' : 'lead.sourceDateRequired'),
+      );
       valid = false;
     }
     if (!this.isValidTime(sourceTime)) {
-      this.sourceTimeError.set(sourceTime ? 'Час має некоректний формат.' : 'Вкажіть час ліда.');
+      this.sourceTimeError.set(
+        this.i18n.t(sourceTime ? 'lead.sourceTimeInvalid' : 'lead.sourceTimeRequired'),
+      );
       valid = false;
     }
     if (!valid || !phone) return;
@@ -335,7 +351,7 @@ export class CreateLeadDialog {
       });
       this.created.emit(lead.id);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Не вдалося створити лід');
+      this.error.set(e instanceof Error ? e.message : this.i18n.t('error.leadCreateFailed'));
     } finally {
       this.submitting.set(false);
     }

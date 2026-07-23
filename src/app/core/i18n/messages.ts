@@ -27,6 +27,7 @@ export const messages = {
   'common.role': { uk: 'Роль', pl: 'Rola', en: 'Role' },
   'common.office': { uk: 'Офіс', pl: 'Biuro', en: 'Office' },
   'common.offices': { uk: 'Офіси', pl: 'Biura', en: 'Offices' },
+  'common.source': { uk: 'Джерело', pl: 'Źródło', en: 'Source' },
   'common.name': { uk: 'Імʼя', pl: 'Imię', en: 'Name' },
   'common.search': { uk: 'Пошук', pl: 'Szukaj', en: 'Search' },
   'common.phone': { uk: 'Телефон', pl: 'Telefon', en: 'Phone' },
@@ -877,6 +878,43 @@ export const messages = {
   'lead.clientData': { uk: 'Дані клієнта', pl: 'Dane klienta', en: 'Client data' },
   'lead.contacts': { uk: 'Контакти', pl: 'Kontakty', en: 'Contacts' },
   'lead.leadData': { uk: 'Дані ліда', pl: 'Dane leada', en: 'Lead data' },
+  'lead.officeAndSource': {
+    uk: 'Офіс і джерело',
+    pl: 'Biuro i źródło',
+    en: 'Office and source',
+  },
+  'lead.selectOffice': {
+    uk: 'Оберіть офіс',
+    pl: 'Wybierz biuro',
+    en: 'Select an office',
+  },
+  'lead.selectSource': {
+    uk: 'Оберіть джерело.',
+    pl: 'Wybierz źródło.',
+    en: 'Select a source.',
+  },
+  'lead.sourceDate': { uk: 'Дата ліда', pl: 'Data leada', en: 'Lead date' },
+  'lead.sourceTime': { uk: 'Час ліда', pl: 'Godzina leada', en: 'Lead time' },
+  'lead.sourceDateRequired': {
+    uk: 'Вкажіть дату ліда.',
+    pl: 'Podaj datę leada.',
+    en: 'Enter the lead date.',
+  },
+  'lead.sourceDateInvalid': {
+    uk: 'Дата має некоректний формат.',
+    pl: 'Data ma nieprawidłowy format.',
+    en: 'Date format is invalid.',
+  },
+  'lead.sourceTimeRequired': {
+    uk: 'Вкажіть час ліда.',
+    pl: 'Podaj godzinę leada.',
+    en: 'Enter the lead time.',
+  },
+  'lead.sourceTimeInvalid': {
+    uk: 'Час має некоректний формат.',
+    pl: 'Godzina ma nieprawidłowy format.',
+    en: 'Time format is invalid.',
+  },
   'lead.noFiles': { uk: 'Файлів поки немає.', pl: 'Brak plików.', en: 'No files yet.' },
   'lead.addFile': { uk: 'Додати файл', pl: 'Dodaj plik', en: 'Add file' },
   'lead.editLeadTitle': {
