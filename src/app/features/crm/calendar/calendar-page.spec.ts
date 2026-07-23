@@ -53,7 +53,7 @@ const appointment: Appointment = {
   startsAt: '2026-07-23T07:00:00.000Z',
   endsAt: '2026-07-23T08:00:00.000Z',
   status: 'scheduled',
-  comment: null,
+  comment: 'Підготувати документи для зустрічі',
   version: 1,
   hasConflict: false,
   isOutsideWorkingHours: false,
@@ -152,6 +152,12 @@ describe('CalendarPage', () => {
     expect(element.textContent).toContain('Ірина Бондар');
     expect(element.textContent).toContain('Максим Левченко');
     expect(element.textContent).toContain('Олена Савчук');
+    expect(element.querySelector('.week-card .appointment-comment')?.textContent).toContain(
+      'Підготувати документи для зустрічі',
+    );
+    expect(element.querySelector('.agenda-card .appointment-comment')?.textContent).toContain(
+      'Підготувати документи для зустрічі',
+    );
     expect(element.textContent).not.toContain('Старий запис');
     expect(element.querySelector('.week-card.is-visited')).not.toBeNull();
     expect(element.querySelector('.week-card.is-no-show')).not.toBeNull();
@@ -166,6 +172,9 @@ describe('CalendarPage', () => {
 
     expect(element.querySelector('.day-grid')).not.toBeNull();
     expect(element.textContent).toContain('Олена');
+    expect(element.querySelector('.appointment-card .appointment-comment')?.textContent).toContain(
+      'Підготувати документи для зустрічі',
+    );
   });
 
   it('opens the drawer from a week appointment and has no basic AXE violations', async () => {

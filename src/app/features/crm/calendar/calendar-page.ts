@@ -169,6 +169,9 @@ type CalendarView = 'day' | 'week';
                         } @else if (appointment.warnings.length) {
                           <app-ui-icon name="warning" [size]="15" />
                         }
+                        @if (appointment.comment; as comment) {
+                          <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                        }
                       </button>
                     }
                   </div>
@@ -234,6 +237,9 @@ type CalendarView = 'day' | 'week';
                       <small>{{
                         appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
                       }}</small>
+                      @if (appointment.comment; as comment) {
+                        <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                      }
                     </button>
                   } @empty {
                     <p class="empty-day">{{ i18n.t('calendar.freeDay') }}</p>
@@ -264,6 +270,9 @@ type CalendarView = 'day' | 'week';
                     <small>{{
                       appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
                     }}</small>
+                    @if (appointment.comment; as comment) {
+                      <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                    }
                     @if (appointment.status !== 'scheduled') {
                       <small
                         class="appointment-status"
@@ -539,8 +548,17 @@ type CalendarView = 'day' | 'week';
       white-space: nowrap;
     }
 
+    .appointment-comment {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .appointment-card .appointment-comment {
+      grid-column: 1 / -1;
+    }
+
     .has-warning {
-      border-color: color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border));
       border-left-color: var(--ui-warning);
     }
 
@@ -579,12 +597,6 @@ type CalendarView = 'day' | 'week';
     .appointment-status.is-canceled,
     .appointment-status-icon.is-canceled {
       color: var(--ui-danger);
-    }
-
-    .appointment-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.2rem;
     }
 
     .week-head,

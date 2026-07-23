@@ -43,7 +43,7 @@ describe('TodayAppointmentsWidget', () => {
         startsAt: '2026-07-23T09:00:00.000Z',
         endsAt: '2026-07-23T10:00:00.000Z',
         status: 'scheduled',
-        comment: null,
+        comment: 'Підготувати документи для зустрічі',
         version: 1,
         hasConflict: false,
         isOutsideWorkingHours: false,
@@ -125,6 +125,9 @@ describe('TodayAppointmentsWidget', () => {
     expect(element.textContent).toContain('Відвідав');
     expect(element.textContent).toContain('Не прийшов');
     expect(element.textContent).toContain('Скасовано');
+    expect(element.querySelector('.appointment-comment')?.textContent).toContain(
+      'Підготувати документи для зустрічі',
+    );
     expect(element.textContent).not.toContain('Старий перенесений запис');
     expect(element.querySelectorAll('.appointment-row')).toHaveLength(8);
 

@@ -4,7 +4,9 @@ import { firstValueFrom } from 'rxjs';
 
 import { SessionService } from '../../../core/session/session.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { ASSIGNABLE_ROLES, roleLabel } from '../../../core/roles/roles';
+import { TranslatePipe } from '../../../core/i18n/translate.pipe';
+import { ASSIGNABLE_ROLES } from '../../../core/roles/roles';
+import type { MessageKey } from '../../../core/i18n/messages';
 import type { UserRole } from '../../../models/database';
 import {
   callStatusTone,
@@ -22,10 +24,36 @@ import { UiUser } from '../../../ui/user/ui-user';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 
+const SUPER_ADMIN_PERMISSIONS = [
+  'accounts.permission.allOffices',
+  'accounts.permission.manageAccounts',
+  'accounts.permission.viewAllLeads',
+  'accounts.permission.officeFilter',
+] as const satisfies readonly MessageKey[];
+
+const CURATOR_PERMISSIONS = [
+  'accounts.permission.multiOffice',
+  'accounts.permission.officeFilter',
+  'accounts.permission.opsOverview',
+] as const satisfies readonly MessageKey[];
+
+const OFFICE_ADMIN_PERMISSIONS = [
+  'accounts.permission.officeLeads',
+  'accounts.permission.officeTeam',
+  'accounts.permission.basicAccessAdmin',
+] as const satisfies readonly MessageKey[];
+
+const OFFICE_MEMBER_PERMISSIONS = [
+  'accounts.permission.officeLeads',
+  'accounts.permission.updateStatuses',
+  'accounts.permission.commentsCalls',
+] as const satisfies readonly MessageKey[];
+
 @Component({
   selector: 'app-employee-detail-page',
   imports: [
     RouterLink,
+    TranslatePipe,
     UiAlert,
     UiBadge,
     UiButton,
@@ -39,11 +67,11 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
       <section class="employee-page" [attr.aria-labelledby]="'employee-' + employee.id">
         <a class="back-link" routerLink="/crm/accounts">
           <app-ui-icon name="arrow_back" [size]="17" />
-          До акаунтів
+          {{ 'accounts.detail.back' | translate }}
         </a>
 
         @if (actionError()) {
-          <app-ui-alert tone="danger" title="Помилка">
+          <app-ui-alert tone="danger" [title]="'common.error' | translate">
             {{ actionError() }}
           </app-ui-alert>
         }
@@ -64,65 +92,75 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
           <div>
             <p class="page-kicker">{{ roleLabel(employee.role) }}</p>
             <h1 [id]="'employee-' + employee.id">{{ employee.displayName }}</h1>
-            <p>{{ employee.email ?? 'Email недоступний' }}</p>
+            <p>{{ employee.email ?? ('accounts.detail.emailUnavailable' | translate) }}</p>
             <small>ID: {{ employee.id }}</small>
           </div>
           <app-ui-badge [tone]="employee.status === 'active' ? 'success' : 'warning'">
-            {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+            {{
+              employee.status === 'active'
+                ? ('common.active' | translate)
+                : ('common.inactive' | translate)
+            }}
           </app-ui-badge>
         </header>
 
         <div class="actions-bar">
           @if (!editing()) {
             <app-ui-button variant="secondary" (pressed)="startEditing(employee)">
-              Редагувати
+              {{ 'common.edit' | translate }}
             </app-ui-button>
             @if (employee.status === 'active' && employee.role !== 'super_admin') {
               <app-ui-button variant="danger" (pressed)="deactivate(employee)">
-                Деактивувати
+                {{ 'accounts.detail.deactivate' | translate }}
               </app-ui-button>
             }
             @if (employee.status === 'inactive') {
               <app-ui-button variant="secondary" (pressed)="reactivate(employee)">
-                Реактивувати
+                {{ 'accounts.detail.reactivate' | translate }}
               </app-ui-button>
               @if (employee.role !== 'super_admin') {
                 <app-ui-button variant="danger" (pressed)="deletePermanently(employee)">
-                  Видалити назавжди
+                  {{ 'accounts.detail.deleteForever' | translate }}
                 </app-ui-button>
               }
             }
           } @else {
-            <app-ui-button variant="secondary" (pressed)="cancelEditing()">Скасувати</app-ui-button>
+            <app-ui-button variant="secondary" (pressed)="cancelEditing()">
+              {{ 'common.cancel' | translate }}
+            </app-ui-button>
             <app-ui-button [disabled]="saving()" (pressed)="saveEdit(employee)">
-              {{ saving() ? 'Збереження…' : 'Зберегти' }}
+              {{ saving() ? ('common.saving' | translate) : ('common.save' | translate) }}
             </app-ui-button>
           }
         </div>
 
         @if (editing()) {
           <section class="profile-panel edit-panel" aria-labelledby="edit-title">
-            <h2 id="edit-title">Редагування профілю</h2>
+            <h2 id="edit-title">{{ 'accounts.detail.editTitle' | translate }}</h2>
             <div class="edit-form">
-              <app-ui-text-field label="Email" type="email" [(value)]="editEmail" />
-              <app-ui-text-field label="Імʼя" [(value)]="editDisplayName" />
               <app-ui-text-field
-                label="Новий пароль (опційно)"
+                [label]="'common.email' | translate"
+                type="email"
+                [(value)]="editEmail"
+              />
+              <app-ui-text-field [label]="'common.name' | translate" [(value)]="editDisplayName" />
+              <app-ui-text-field
+                [label]="'accounts.detail.newPasswordOptional' | translate"
                 type="password"
                 [(value)]="editPassword"
               />
               <app-ui-text-field
-                label="Підтвердження пароля"
+                [label]="'accounts.detail.passwordConfirm' | translate"
                 type="password"
                 [(value)]="editPasswordConfirm"
               />
               <app-ui-select
-                label="Роль"
-                [options]="assignableRoleOptions"
+                [label]="'common.role' | translate"
+                [options]="assignableRoleOptions()"
                 [(value)]="editRole"
               />
               <fieldset class="office-fieldset">
-                <legend>Офіси</legend>
+                <legend>{{ 'common.offices' | translate }}</legend>
                 @for (office of availableOffices(); track office.id) {
                   <label class="office-check">
                     <input
@@ -140,25 +178,25 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
         <div class="employee-layout">
           <section class="profile-panel" aria-labelledby="profile-title">
-            <h2 id="profile-title">Профіль і доступ</h2>
+            <h2 id="profile-title">{{ 'accounts.detail.profileAccess' | translate }}</h2>
             <dl>
               <div>
-                <dt>Офіс</dt>
+                <dt>{{ 'common.office' | translate }}</dt>
                 <dd>{{ officeLabels(employee) }}</dd>
               </div>
               <div>
-                <dt>Створено</dt>
+                <dt>{{ 'accounts.detail.created' | translate }}</dt>
                 <dd>{{ formatDateTime(employee.createdAt) }}</dd>
               </div>
               <div>
-                <dt>Остання активність</dt>
+                <dt>{{ 'accounts.lastActivity' | translate }}</dt>
                 <dd>{{ formatDateTime(employee.lastActiveAt) }}</dd>
               </div>
             </dl>
           </section>
 
           <section class="profile-panel" aria-labelledby="permissions-title">
-            <h2 id="permissions-title">Дозволи</h2>
+            <h2 id="permissions-title">{{ 'accounts.detail.permissions' | translate }}</h2>
             <ul class="permissions">
               @for (permission of permissions(employee); track permission) {
                 <li>
@@ -172,18 +210,20 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
 
         <section class="leads-panel" aria-labelledby="employee-leads-title">
           <header>
-            <h2 id="employee-leads-title">Повʼязані ліди</h2>
-            <span>{{ assignedLeads().length }} записів</span>
+            <h2 id="employee-leads-title">{{ 'accounts.detail.relatedLeads' | translate }}</h2>
+            <span>{{
+              'accounts.detail.recordsCount' | translate: { count: assignedLeads().length }
+            }}</span>
           </header>
 
           @if (assignedLeads().length) {
             <table>
               <thead>
                 <tr>
-                  <th>Клієнт</th>
-                  <th>Статус</th>
-                  <th>Офіс</th>
-                  <th>Остання активність</th>
+                  <th>{{ 'calendar.client' | translate }}</th>
+                  <th>{{ 'common.status' | translate }}</th>
+                  <th>{{ 'common.office' | translate }}</th>
+                  <th>{{ 'accounts.lastActivity' | translate }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,15 +252,15 @@ import { UiTextField } from '../../../ui/form/ui-text-field';
               </tbody>
             </table>
           } @else {
-            <p class="empty">У цього співробітника поки немає призначених лідів.</p>
+            <p class="empty">{{ 'accounts.detail.noAssignedLeads' | translate }}</p>
           }
         </section>
       </section>
     } @else if (!employeeResource.isLoading()) {
       <section class="missing-state">
         <app-ui-icon name="inbox" [size]="30" />
-        <h1>Співробітника не знайдено</h1>
-        <a routerLink="/crm/accounts">Повернутись до акаунтів</a>
+        <h1>{{ 'accounts.detail.notFound' | translate }}</h1>
+        <a routerLink="/crm/accounts">{{ 'accounts.detail.returnToAccounts' | translate }}</a>
       </section>
     }
   `,
@@ -496,11 +536,11 @@ export class EmployeeDetailPage {
   protected readonly availableOffices = computed(
     () => this.session.officeContext()?.offices ?? this.session.offices(),
   );
-  protected readonly assignableRoleOptions: readonly UiSelectOption[] = ASSIGNABLE_ROLES.map(
-    (role) => ({ value: role, label: roleLabel(role) }),
+  protected readonly assignableRoleOptions = computed((): readonly UiSelectOption[] =>
+    ASSIGNABLE_ROLES.map((role) => ({ value: role, label: this.i18n.roleLabel(role) })),
   );
 
-  protected readonly roleLabel = roleLabel;
+  protected readonly roleLabel = (role: string) => this.i18n.roleLabel(role);
   protected readonly formatDateTime = formatDateTime;
   protected readonly callStatusTone = callStatusTone;
   protected readonly clientStatusTone = clientStatusTone;
@@ -514,16 +554,15 @@ export class EmployeeDetailPage {
   }
 
   protected permissions(employee: CrmEmployee): readonly string[] {
-    if (employee.role === 'super_admin') {
-      return ['Усі офіси', 'Керування акаунтами', 'Перегляд усіх лідів', 'Офісний фільтр'];
-    }
-    if (employee.role === 'curator') {
-      return ['Кілька офісів', 'Офісний фільтр', 'Перегляд операційної картини'];
-    }
-    if (employee.role === 'office_admin') {
-      return ['Ліди свого офісу', 'Команда офісу', 'Базове адміністрування доступу'];
-    }
-    return ['Ліди свого офісу', 'Оновлення статусів', 'Коментарі та дзвінки'];
+    const keys =
+      employee.role === 'super_admin'
+        ? SUPER_ADMIN_PERMISSIONS
+        : employee.role === 'curator'
+          ? CURATOR_PERMISSIONS
+          : employee.role === 'office_admin'
+            ? OFFICE_ADMIN_PERMISSIONS
+            : OFFICE_MEMBER_PERMISSIONS;
+    return keys.map((key) => this.i18n.t(key));
   }
 
   protected isOfficeSelected(officeId: string): boolean {
@@ -565,11 +604,13 @@ export class EmployeeDetailPage {
         role: this.editRole(),
         officeIds: this.selectedOfficeIds(),
       });
-      this.notice.set('Профіль оновлено.');
+      this.notice.set(this.i18n.t('accounts.detail.updated'));
       this.editing.set(false);
       this.employeeResource.reload();
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося зберегти');
+      this.actionError.set(
+        error instanceof Error ? error.message : this.i18n.t('accounts.detail.saveFailed'),
+      );
     } finally {
       this.saving.set(false);
     }
@@ -578,33 +619,39 @@ export class EmployeeDetailPage {
   protected async deactivate(employee: CrmEmployee): Promise<void> {
     const confirmed = await firstValueFrom(
       this.dialog.confirm({
-        title: 'Деактивувати акаунт',
-        description: `Підтвердіть деактивацію ${employee.displayName}. Потрібно ввести email у наступному кроці.`,
-        confirmLabel: 'Продовжити',
+        title: this.i18n.t('accounts.detail.deactivateTitle'),
+        description: this.i18n.t('accounts.detail.deactivateDesc', {
+          name: employee.displayName,
+        }),
+        confirmLabel: this.i18n.t('common.continue'),
         danger: true,
       }).afterClosed(),
     );
     if (!confirmed || !employee.email) return;
 
-    const email = window.prompt('Введіть email для підтвердження:', employee.email);
+    const email = window.prompt(this.i18n.t('accounts.detail.confirmEmail'), employee.email);
     if (!email) return;
 
     this.actionError.set('');
     try {
       await this.usersService.deactivateEmployee(employee.id, email);
-      this.notice.set('Акаунт деактивовано.');
+      this.notice.set(this.i18n.t('accounts.detail.deactivated'));
       this.employeeResource.reload();
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося деактивувати');
+      this.actionError.set(
+        error instanceof Error ? error.message : this.i18n.t('accounts.detail.deactivateFailed'),
+      );
     }
   }
 
   protected async reactivate(employee: CrmEmployee): Promise<void> {
     const confirmed = await firstValueFrom(
       this.dialog.confirm({
-        title: 'Реактивувати акаунт',
-        description: `Повернути доступ для ${employee.displayName}?`,
-        confirmLabel: 'Реактивувати',
+        title: this.i18n.t('accounts.detail.reactivateTitle'),
+        description: this.i18n.t('accounts.detail.reactivateDesc', {
+          name: employee.displayName,
+        }),
+        confirmLabel: this.i18n.t('accounts.detail.reactivate'),
       }).afterClosed(),
     );
     if (!confirmed) return;
@@ -612,25 +659,32 @@ export class EmployeeDetailPage {
     this.actionError.set('');
     try {
       await this.usersService.reactivateEmployee(employee.id);
-      this.notice.set('Акаунт реактивовано.');
+      this.notice.set(this.i18n.t('accounts.detail.reactivated'));
       this.employeeResource.reload();
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося реактивувати');
+      this.actionError.set(
+        error instanceof Error ? error.message : this.i18n.t('accounts.detail.reactivateFailed'),
+      );
     }
   }
 
   protected async deletePermanently(employee: CrmEmployee): Promise<void> {
     const confirmed = await firstValueFrom(
       this.dialog.confirm({
-        title: 'Видалити акаунт назавжди',
-        description: `Цю дію не можна скасувати. ${employee.displayName} буде видалений повністю.`,
-        confirmLabel: 'Видалити',
+        title: this.i18n.t('accounts.detail.deleteTitle'),
+        description: this.i18n.t('accounts.detail.deleteDesc', {
+          name: employee.displayName,
+        }),
+        confirmLabel: this.i18n.t('common.delete'),
         danger: true,
       }).afterClosed(),
     );
     if (!confirmed || !employee.email) return;
 
-    const email = window.prompt('Введіть email для підтвердження видалення:', employee.email);
+    const email = window.prompt(
+      this.i18n.t('accounts.detail.confirmEmailDelete'),
+      employee.email,
+    );
     if (!email) return;
 
     this.actionError.set('');
@@ -638,7 +692,9 @@ export class EmployeeDetailPage {
       await this.usersService.deleteEmployee(employee.id, email);
       await this.router.navigate(['/crm/accounts']);
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося видалити');
+      this.actionError.set(
+        error instanceof Error ? error.message : this.i18n.t('accounts.detail.deleteFailed'),
+      );
     }
   }
 }

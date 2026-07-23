@@ -1273,6 +1273,196 @@ export const messages = {
     pl: 'Menedżerowie Warszawa',
     en: 'Managers Warsaw',
   },
+  'accounts.detail.back': { uk: 'До акаунтів', pl: 'Do kont', en: 'Back to accounts' },
+  'accounts.detail.emailUnavailable': {
+    uk: 'Email недоступний',
+    pl: 'Email niedostępny',
+    en: 'Email unavailable',
+  },
+  'accounts.detail.deactivate': { uk: 'Деактивувати', pl: 'Dezaktywuj', en: 'Deactivate' },
+  'accounts.detail.reactivate': { uk: 'Реактивувати', pl: 'Reaktywuj', en: 'Reactivate' },
+  'accounts.detail.deleteForever': {
+    uk: 'Видалити назавжди',
+    pl: 'Usuń na zawsze',
+    en: 'Delete permanently',
+  },
+  'accounts.detail.editTitle': {
+    uk: 'Редагування профілю',
+    pl: 'Edycja profilu',
+    en: 'Edit profile',
+  },
+  'accounts.detail.newPasswordOptional': {
+    uk: 'Новий пароль (опційно)',
+    pl: 'Nowe hasło (opcjonalnie)',
+    en: 'New password (optional)',
+  },
+  'accounts.detail.passwordConfirm': {
+    uk: 'Підтвердження пароля',
+    pl: 'Potwierdzenie hasła',
+    en: 'Confirm password',
+  },
+  'accounts.detail.profileAccess': {
+    uk: 'Профіль і доступ',
+    pl: 'Profil i dostęp',
+    en: 'Profile & access',
+  },
+  'accounts.detail.created': { uk: 'Створено', pl: 'Utworzono', en: 'Created' },
+  'accounts.detail.permissions': { uk: 'Дозволи', pl: 'Uprawnienia', en: 'Permissions' },
+  'accounts.detail.relatedLeads': {
+    uk: 'Повʼязані ліди',
+    pl: 'Powiązane leady',
+    en: 'Related leads',
+  },
+  'accounts.detail.recordsCount': {
+    uk: '{count} записів',
+    pl: '{count} rekordów',
+    en: '{count} records',
+  },
+  'accounts.detail.noAssignedLeads': {
+    uk: 'У цього співробітника поки немає призначених лідів.',
+    pl: 'Ten pracownik nie ma jeszcze przypisanych leadów.',
+    en: 'This employee has no assigned leads yet.',
+  },
+  'accounts.detail.notFound': {
+    uk: 'Співробітника не знайдено',
+    pl: 'Nie znaleziono pracownika',
+    en: 'Employee not found',
+  },
+  'accounts.detail.returnToAccounts': {
+    uk: 'Повернутись до акаунтів',
+    pl: 'Wróć do kont',
+    en: 'Return to accounts',
+  },
+  'accounts.detail.updated': {
+    uk: 'Профіль оновлено.',
+    pl: 'Profil zaktualizowany.',
+    en: 'Profile updated.',
+  },
+  'accounts.detail.saveFailed': {
+    uk: 'Не вдалося зберегти',
+    pl: 'Nie udało się zapisać',
+    en: 'Failed to save',
+  },
+  'accounts.detail.deactivateTitle': {
+    uk: 'Деактивувати акаунт',
+    pl: 'Dezaktywuj konto',
+    en: 'Deactivate account',
+  },
+  'accounts.detail.deactivateDesc': {
+    uk: 'Підтвердіть деактивацію {name}. Потрібно ввести email у наступному кроці.',
+    pl: 'Potwierdź dezaktywację {name}. W następnym kroku wpisz email.',
+    en: 'Confirm deactivation of {name}. You will need to enter the email in the next step.',
+  },
+  'accounts.detail.confirmEmail': {
+    uk: 'Введіть email для підтвердження:',
+    pl: 'Wpisz email, aby potwierdzić:',
+    en: 'Enter email to confirm:',
+  },
+  'accounts.detail.deactivated': {
+    uk: 'Акаунт деактивовано.',
+    pl: 'Konto dezaktywowane.',
+    en: 'Account deactivated.',
+  },
+  'accounts.detail.deactivateFailed': {
+    uk: 'Не вдалося деактивувати',
+    pl: 'Nie udało się dezaktywować',
+    en: 'Failed to deactivate',
+  },
+  'accounts.detail.reactivateTitle': {
+    uk: 'Реактивувати акаунт',
+    pl: 'Reaktywuj konto',
+    en: 'Reactivate account',
+  },
+  'accounts.detail.reactivateDesc': {
+    uk: 'Повернути доступ для {name}?',
+    pl: 'Przywrócić dostęp dla {name}?',
+    en: 'Restore access for {name}?',
+  },
+  'accounts.detail.reactivated': {
+    uk: 'Акаунт реактивовано.',
+    pl: 'Konto reaktywowane.',
+    en: 'Account reactivated.',
+  },
+  'accounts.detail.reactivateFailed': {
+    uk: 'Не вдалося реактивувати',
+    pl: 'Nie udało się reaktywować',
+    en: 'Failed to reactivate',
+  },
+  'accounts.detail.deleteTitle': {
+    uk: 'Видалити акаунт назавжди',
+    pl: 'Usuń konto na zawsze',
+    en: 'Delete account permanently',
+  },
+  'accounts.detail.deleteDesc': {
+    uk: 'Цю дію не можна скасувати. {name} буде видалений повністю.',
+    pl: 'Tej czynności nie można cofnąć. {name} zostanie całkowicie usunięty.',
+    en: 'This action cannot be undone. {name} will be permanently deleted.',
+  },
+  'accounts.detail.confirmEmailDelete': {
+    uk: 'Введіть email для підтвердження видалення:',
+    pl: 'Wpisz email, aby potwierdzić usunięcie:',
+    en: 'Enter email to confirm deletion:',
+  },
+  'accounts.detail.deleteFailed': {
+    uk: 'Не вдалося видалити',
+    pl: 'Nie udało się usunąć',
+    en: 'Failed to delete',
+  },
+  'accounts.permission.allOffices': {
+    uk: 'Усі офіси',
+    pl: 'Wszystkie biura',
+    en: 'All offices',
+  },
+  'accounts.permission.manageAccounts': {
+    uk: 'Керування акаунтами',
+    pl: 'Zarządzanie kontami',
+    en: 'Account management',
+  },
+  'accounts.permission.viewAllLeads': {
+    uk: 'Перегляд усіх лідів',
+    pl: 'Podgląd wszystkich leadów',
+    en: 'View all leads',
+  },
+  'accounts.permission.officeFilter': {
+    uk: 'Офісний фільтр',
+    pl: 'Filtr biura',
+    en: 'Office filter',
+  },
+  'accounts.permission.multiOffice': {
+    uk: 'Кілька офісів',
+    pl: 'Wiele biur',
+    en: 'Multiple offices',
+  },
+  'accounts.permission.opsOverview': {
+    uk: 'Перегляд операційної картини',
+    pl: 'Podgląd obrazu operacyjnego',
+    en: 'Operational overview',
+  },
+  'accounts.permission.officeLeads': {
+    uk: 'Ліди свого офісу',
+    pl: 'Leady własnego biura',
+    en: 'Own office leads',
+  },
+  'accounts.permission.officeTeam': {
+    uk: 'Команда офісу',
+    pl: 'Zespół biura',
+    en: 'Office team',
+  },
+  'accounts.permission.basicAccessAdmin': {
+    uk: 'Базове адміністрування доступу',
+    pl: 'Podstawowa administracja dostępem',
+    en: 'Basic access administration',
+  },
+  'accounts.permission.updateStatuses': {
+    uk: 'Оновлення статусів',
+    pl: 'Aktualizacja statusów',
+    en: 'Status updates',
+  },
+  'accounts.permission.commentsCalls': {
+    uk: 'Коментарі та дзвінки',
+    pl: 'Komentarze i połączenia',
+    en: 'Comments and calls',
+  },
 
   'reports.title': { uk: 'Звітність', pl: 'Raporty', en: 'Reports' },
   'reports.subtitle': {

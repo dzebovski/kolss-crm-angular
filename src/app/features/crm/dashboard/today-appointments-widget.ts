@@ -76,6 +76,9 @@ interface OfficeAppointmentGroup {
                         <small>{{
                           appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
                         }}</small>
+                        @if (appointment.comment; as comment) {
+                          <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                        }
                         @if (appointment.status !== 'scheduled') {
                           <small
                             class="appointment-status"
@@ -268,6 +271,11 @@ interface OfficeAppointmentGroup {
     li small {
       color: var(--ui-text-muted);
       font-size: 0.72rem;
+    }
+
+    .appointment-comment {
+      color: var(--ui-text-subtle);
+      font-style: italic;
     }
 
     .warning,
