@@ -62,11 +62,57 @@ const appointment: Appointment = {
   updatedAt: '2026-07-20T12:00:00.000Z',
 };
 
+const visitedAppointment: Appointment = {
+  ...appointment,
+  id: 'appointment-visited',
+  lead: { id: 'lead-visited', name: 'Ірина Бондар', phone: '+380501112244' },
+  startsAt: '2026-07-23T08:00:00.000Z',
+  endsAt: '2026-07-23T09:00:00.000Z',
+  status: 'visited',
+  version: 2,
+};
+
+const noShowAppointment: Appointment = {
+  ...appointment,
+  id: 'appointment-no-show',
+  lead: { id: 'lead-no-show', name: 'Максим Левченко', phone: '+380501112255' },
+  startsAt: '2026-07-23T09:00:00.000Z',
+  endsAt: '2026-07-23T10:00:00.000Z',
+  status: 'no_show',
+  version: 2,
+};
+
+const canceledAppointment: Appointment = {
+  ...appointment,
+  id: 'appointment-canceled',
+  lead: { id: 'lead-canceled', name: 'Олена Савчук', phone: '+380501112266' },
+  startsAt: '2026-07-23T10:00:00.000Z',
+  endsAt: '2026-07-23T11:00:00.000Z',
+  status: 'canceled',
+  version: 2,
+};
+
+const rescheduledAppointment: Appointment = {
+  ...appointment,
+  id: 'appointment-rescheduled',
+  lead: { id: 'lead-rescheduled', name: 'Старий запис', phone: '+380501112277' },
+  startsAt: '2026-07-23T11:00:00.000Z',
+  endsAt: '2026-07-23T12:00:00.000Z',
+  status: 'rescheduled',
+  version: 2,
+};
+
 describe('CalendarPage', () => {
   async function render() {
     const selectedOfficeId = signal<string | null>(office.id);
     const list = vi.fn().mockResolvedValue({
-      items: [appointment],
+      items: [
+        appointment,
+        visitedAppointment,
+        noShowAppointment,
+        canceledAppointment,
+        rescheduledAppointment,
+      ],
       timezone: office.timezone_name,
       from: '2026-07-20',
       to: '2026-07-27',
@@ -103,6 +149,13 @@ describe('CalendarPage', () => {
     );
     expect(element.querySelector('.week-grid')).not.toBeNull();
     expect(element.textContent).toContain('Анна Коваль');
+    expect(element.textContent).toContain('Ірина Бондар');
+    expect(element.textContent).toContain('Максим Левченко');
+    expect(element.textContent).toContain('Олена Савчук');
+    expect(element.textContent).not.toContain('Старий запис');
+    expect(element.querySelector('.week-card.is-visited')).not.toBeNull();
+    expect(element.querySelector('.week-card.is-no-show')).not.toBeNull();
+    expect(element.querySelector('.week-card.is-canceled')).not.toBeNull();
 
     const dayButton = Array.from(
       element.querySelectorAll<HTMLButtonElement>('.view-switch button'),

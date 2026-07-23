@@ -17,6 +17,7 @@ import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiTextField } from '../../../ui/form/ui-text-field';
 import { UiTextarea } from '../../../ui/form/ui-textarea';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 
 export interface AppointmentDrawerData {
   readonly office: Office;
@@ -51,6 +52,16 @@ interface AppointmentFormModel {
           <h2 id="appointment-drawer-title">
             {{ data.appointment ? i18n.t('calendar.editTitle') : i18n.t('calendar.createTitle') }}
           </h2>
+          @if (data.appointment && isTerminal) {
+            <span
+              class="terminal-status"
+              [class.is-no-show]="data.appointment.status === 'no_show'"
+              [class.is-canceled]="data.appointment.status === 'canceled'"
+            >
+              <app-ui-icon name="check_circle" [size]="15" />
+              {{ appointmentStatusLabel(data.appointment.status) }}
+            </span>
+          }
         </div>
         <button
           type="button"
@@ -239,6 +250,30 @@ interface AppointmentFormModel {
       text-transform: uppercase;
     }
 
+    .terminal-status {
+      width: fit-content;
+      margin-top: var(--ui-space-2);
+      padding: 0.2rem var(--ui-space-2);
+      border-radius: var(--ui-radius-pill);
+      background: var(--ui-success-soft);
+      color: var(--ui-success);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ui-space-1);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .terminal-status.is-no-show {
+      background: var(--ui-warning-soft);
+      color: var(--ui-warning);
+    }
+
+    .terminal-status.is-canceled {
+      background: var(--ui-danger-soft);
+      color: var(--ui-danger);
+    }
+
     h2 {
       margin: 0;
       font: 700 1.35rem/1.2 var(--ui-font-display);
@@ -415,6 +450,8 @@ export class AppointmentDrawer {
   protected readonly selectedLead = signal<MockLead | null>(
     this.data.lead ?? this.leadFromAppointment(this.data.appointment),
   );
+  protected readonly isTerminal =
+    this.data.appointment != null && this.data.appointment.status !== 'scheduled';
   private searchSequence = 0;
 
   private readonly initial = this.initialModel();
@@ -569,6 +606,21 @@ export class AppointmentDrawer {
     this.dialogRef.close();
   }
 
+  protected appointmentStatusLabel(status: Appointment['status']): string {
+    switch (status) {
+      case 'visited':
+        return this.i18n.t('calendar.visited');
+      case 'no_show':
+        return this.i18n.t('calendar.noShow');
+      case 'canceled':
+        return this.i18n.t('calendar.canceled');
+      case 'rescheduled':
+        return this.i18n.t('calendar.rescheduled');
+      case 'scheduled':
+        return this.i18n.t('calendar.scheduled');
+    }
+  }
+
   private handleError(error: unknown): void {
     if (error instanceof KolssApiError && error.code === 'version_conflict') {
       this.error.set(this.i18n.t('calendar.stale'));
@@ -627,4 +679,20 @@ export class AppointmentDrawer {
       clientStatus: 'showroom_invited',
     } as MockLead;
   }
+}
+
+export function openAppointmentDrawer(dialogs: UiDialogService, data: AppointmentDrawerData) {
+  return dialogs.open<
+    AppointmentDrawer,
+    AppointmentDrawerData,
+    AppointmentDrawerResult | undefined
+  >(AppointmentDrawer, {
+    data,
+    position: { right: '0', top: '0' },
+    width: 'min(31rem, 100vw)',
+    maxWidth: '100vw',
+    height: '100dvh',
+    maxHeight: '100dvh',
+    panelClass: ['ui-dialog-panel', 'appointment-drawer-panel'],
+  });
 }

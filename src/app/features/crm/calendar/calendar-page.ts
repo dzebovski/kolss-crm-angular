@@ -14,13 +14,9 @@ import {
 import { UsersService } from '../../../services/users.service';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiIcon, type UiIconName } from '../../../ui/icon/ui-icon';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import {
-  AppointmentDrawer,
-  type AppointmentDrawerData,
-  type AppointmentDrawerResult,
-} from './appointment-drawer';
+import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 
 type CalendarView = 'day' | 'week';
 
@@ -153,12 +149,24 @@ type CalendarView = 'day' | 'week';
                         type="button"
                         class="appointment-card"
                         [class.has-warning]="appointment.warnings.length"
+                        [class.is-visited]="appointment.status === 'visited'"
+                        [class.is-no-show]="appointment.status === 'no_show'"
+                        [class.is-canceled]="appointment.status === 'canceled'"
                         [style.height.px]="appointmentHeight(appointment)"
                         (click)="openEdit(appointment)"
                       >
                         <time>{{ localTime(appointment.startsAt) }}</time>
                         <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
-                        @if (appointment.warnings.length) {
+                        @if (appointment.status !== 'scheduled') {
+                          <app-ui-icon
+                            class="appointment-status-icon"
+                            [class.is-no-show]="appointment.status === 'no_show'"
+                            [class.is-canceled]="appointment.status === 'canceled'"
+                            [name]="appointmentStatusIcon(appointment)"
+                            [size]="15"
+                            [attr.aria-label]="appointmentStatusLabel(appointment)"
+                          />
+                        } @else if (appointment.warnings.length) {
                           <app-ui-icon name="warning" [size]="15" />
                         }
                       </button>
@@ -201,6 +209,9 @@ type CalendarView = 'day' | 'week';
                       type="button"
                       class="week-card"
                       [class.has-warning]="appointment.warnings.length"
+                      [class.is-visited]="appointment.status === 'visited'"
+                      [class.is-no-show]="appointment.status === 'no_show'"
+                      [class.is-canceled]="appointment.status === 'canceled'"
                       (click)="openEdit(appointment)"
                     >
                       <span>
@@ -210,6 +221,16 @@ type CalendarView = 'day' | 'week';
                         }
                       </span>
                       <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                      @if (appointment.status !== 'scheduled') {
+                        <small
+                          class="appointment-status"
+                          [class.is-no-show]="appointment.status === 'no_show'"
+                          [class.is-canceled]="appointment.status === 'canceled'"
+                        >
+                          <app-ui-icon [name]="appointmentStatusIcon(appointment)" [size]="14" />
+                          {{ appointmentStatusLabel(appointment) }}
+                        </small>
+                      }
                       <small>{{
                         appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
                       }}</small>
@@ -232,6 +253,9 @@ type CalendarView = 'day' | 'week';
                   type="button"
                   class="agenda-card"
                   [class.has-warning]="appointment.warnings.length"
+                  [class.is-visited]="appointment.status === 'visited'"
+                  [class.is-no-show]="appointment.status === 'no_show'"
+                  [class.is-canceled]="appointment.status === 'canceled'"
                   (click)="openEdit(appointment)"
                 >
                   <time>{{ localTime(appointment.startsAt) }}</time>
@@ -240,6 +264,15 @@ type CalendarView = 'day' | 'week';
                     <small>{{
                       appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
                     }}</small>
+                    @if (appointment.status !== 'scheduled') {
+                      <small
+                        class="appointment-status"
+                        [class.is-no-show]="appointment.status === 'no_show'"
+                        [class.is-canceled]="appointment.status === 'canceled'"
+                      >
+                        {{ appointmentStatusLabel(appointment) }}
+                      </small>
+                    }
                   </span>
                   <span class="agenda-trailing">
                     @if (appointment.warnings.length) {
@@ -509,6 +542,49 @@ type CalendarView = 'day' | 'week';
     .has-warning {
       border-color: color-mix(in srgb, var(--ui-warning) 55%, var(--ui-border));
       border-left-color: var(--ui-warning);
+    }
+
+    .is-visited {
+      border-left-color: var(--ui-success);
+      background: var(--ui-success-soft);
+    }
+
+    .appointment-card.is-no-show,
+    .week-card.is-no-show,
+    .agenda-card.is-no-show {
+      border-left-color: var(--ui-warning);
+      background: var(--ui-warning-soft);
+    }
+
+    .appointment-card.is-canceled,
+    .week-card.is-canceled,
+    .agenda-card.is-canceled {
+      border-left-color: var(--ui-danger);
+      background: var(--ui-danger-soft);
+    }
+
+    .is-visited time,
+    .appointment-status,
+    .appointment-status-icon {
+      color: var(--ui-success);
+    }
+
+    .is-no-show time,
+    .appointment-status.is-no-show,
+    .appointment-status-icon.is-no-show {
+      color: var(--ui-warning);
+    }
+
+    .is-canceled time,
+    .appointment-status.is-canceled,
+    .appointment-status-icon.is-canceled {
+      color: var(--ui-danger);
+    }
+
+    .appointment-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
     }
 
     .week-head,
@@ -904,7 +980,10 @@ export class CalendarPage {
     const [slotHour, slotMinute] = slot.split(':').map(Number);
     const slotStart = slotHour * 60 + slotMinute;
     return this.items().filter((appointment) => {
-      if (appointment.status !== 'scheduled' || appointment.responsibleManager?.id !== managerId) {
+      if (
+        !this.isTimelineAppointment(appointment) ||
+        appointment.responsibleManager?.id !== managerId
+      ) {
         return false;
       }
       const parts = officeDateTimeParts(
@@ -922,7 +1001,7 @@ export class CalendarPage {
     return this.items()
       .filter(
         (appointment) =>
-          appointment.status === 'scheduled' &&
+          this.isTimelineAppointment(appointment) &&
           officeDateTimeParts(appointment.startsAt, timeZone).date === date,
       )
       .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
@@ -931,7 +1010,7 @@ export class CalendarPage {
   protected appointmentsForManager(managerId: string): readonly Appointment[] {
     return this.items().filter(
       (appointment) =>
-        appointment.status === 'scheduled' && appointment.responsibleManager?.id === managerId,
+        this.isTimelineAppointment(appointment) && appointment.responsibleManager?.id === managerId,
     );
   }
 
@@ -943,6 +1022,34 @@ export class CalendarPage {
     const minutes =
       (new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime()) / 60_000;
     return Math.max(48, (minutes / 30) * 57.6 - 6);
+  }
+
+  protected appointmentStatusLabel(appointment: Appointment): string {
+    switch (appointment.status) {
+      case 'visited':
+        return this.i18n.t('calendar.visited');
+      case 'no_show':
+        return this.i18n.t('calendar.noShow');
+      case 'canceled':
+        return this.i18n.t('calendar.canceled');
+      case 'rescheduled':
+        return this.i18n.t('calendar.rescheduled');
+      case 'scheduled':
+        return this.i18n.t('calendar.scheduled');
+    }
+  }
+
+  protected appointmentStatusIcon(appointment: Appointment): UiIconName {
+    switch (appointment.status) {
+      case 'visited':
+        return 'check_circle';
+      case 'no_show':
+        return 'warning';
+      case 'canceled':
+        return 'close';
+      default:
+        return 'schedule';
+    }
   }
 
   protected slotLabel(date: string, time: string, manager: string): string {
@@ -1008,23 +1115,15 @@ export class CalendarPage {
   }
 
   private openDrawer(data: AppointmentDrawerData): void {
-    const ref = this.dialogs.open<
-      AppointmentDrawer,
-      AppointmentDrawerData,
-      AppointmentDrawerResult | undefined
-    >(AppointmentDrawer, {
-      data,
-      position: { right: '0', top: '0' },
-      width: 'min(31rem, 100vw)',
-      maxWidth: '100vw',
-      height: '100dvh',
-      maxHeight: '100dvh',
-      panelClass: ['ui-dialog-panel', 'appointment-drawer-panel'],
-    });
+    const ref = openAppointmentDrawer(this.dialogs, data);
     ref.afterClosed().subscribe((result) => {
       if (result?.kind === 'saved' || result?.kind === 'stale') {
         this.appointmentsResource.reload();
       }
     });
+  }
+
+  private isTimelineAppointment(appointment: Appointment): boolean {
+    return appointment.status !== 'rescheduled';
   }
 }

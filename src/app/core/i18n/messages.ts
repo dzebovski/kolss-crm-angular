@@ -185,6 +185,9 @@ export const messages = {
   'calendar.statusActions': { uk: 'Статус візиту', pl: 'Status wizyty', en: 'Appointment status' },
   'calendar.visited': { uk: 'Відвідав', pl: 'Odbyta', en: 'Visited' },
   'calendar.noShow': { uk: 'Не прийшов', pl: 'Nie przyszedł', en: 'No show' },
+  'calendar.scheduled': { uk: 'Заплановано', pl: 'Zaplanowana', en: 'Scheduled' },
+  'calendar.canceled': { uk: 'Скасовано', pl: 'Odwołana', en: 'Canceled' },
+  'calendar.rescheduled': { uk: 'Перенесено', pl: 'Przełożona', en: 'Rescheduled' },
   'calendar.cancelAppointment': {
     uk: 'Скасувати запис',
     pl: 'Odwołaj wizytę',
@@ -206,9 +209,9 @@ export const messages = {
     en: 'This lead already has an active appointment. Open it in the calendar.',
   },
   'calendar.terminal': {
-    uk: 'Завершений запис не можна редагувати. Створіть новий візит.',
-    pl: 'Zakończonej wizyty nie można edytować. Utwórz nową.',
-    en: 'A completed appointment cannot be edited. Create a new visit.',
+    uk: 'Статус завершеного візиту не можна змінити повторно.',
+    pl: 'Statusu zakończonej wizyty nie można zmienić ponownie.',
+    en: 'A completed appointment status cannot be changed again.',
   },
   'calendar.officeForbidden': {
     uk: 'У вас немає доступу до розкладу цього офісу.',
@@ -234,6 +237,11 @@ export const messages = {
     uk: 'Не вдалося завантажити записи',
     pl: 'Nie udało się wczytać wizyt',
     en: 'Could not load appointments',
+  },
+  'calendar.drawerLoadFailed': {
+    uk: 'Не вдалося відкрити дані візиту',
+    pl: 'Nie udało się otworzyć danych wizyty',
+    en: 'Could not open appointment details',
   },
   'calendar.todayEmpty': {
     uk: 'На сьогодні записів немає',

@@ -1,4 +1,4 @@
-import { Component, computed, inject, resource } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -11,8 +11,12 @@ import {
   officeDateKey,
   officeDateTimeParts,
 } from '../../../services/appointments.service';
+import type { CrmEmployee } from '../../../services/users.service';
+import { UsersService } from '../../../services/users.service';
 import { UiButton } from '../../../ui/button/ui-button';
+import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiIcon } from '../../../ui/icon/ui-icon';
+import { openAppointmentDrawer } from '../calendar/appointment-drawer';
 
 interface OfficeAppointmentGroup {
   readonly office: Office;
@@ -58,27 +62,52 @@ interface OfficeAppointmentGroup {
               <ol>
                 @for (appointment of group.items.slice(0, 5); track appointment.id) {
                   <li>
-                    <time>{{ localTime(appointment) }}</time>
-                    <span>
-                      <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
-                      <small>{{
-                        appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
-                      }}</small>
-                    </span>
-                    @if (appointment.warnings.length) {
-                      <app-ui-icon
-                        class="warning"
-                        name="warning"
-                        [size]="17"
-                        [attr.aria-label]="i18n.t('calendar.hasWarning')"
-                      />
-                    }
+                    <button
+                      type="button"
+                      class="appointment-row"
+                      [class.is-visited]="appointment.status === 'visited'"
+                      [class.is-no-show]="appointment.status === 'no_show'"
+                      [class.is-canceled]="appointment.status === 'canceled'"
+                      (click)="openAppointment(group, appointment)"
+                    >
+                      <time>{{ localTime(appointment) }}</time>
+                      <span>
+                        <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                        <small>{{
+                          appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
+                        }}</small>
+                        @if (appointment.status !== 'scheduled') {
+                          <small
+                            class="appointment-status"
+                            [class.is-no-show]="appointment.status === 'no_show'"
+                            [class.is-canceled]="appointment.status === 'canceled'"
+                          >
+                            {{ appointmentStatusLabel(appointment) }}
+                          </small>
+                        }
+                      </span>
+                      <span class="trailing">
+                        @if (appointment.warnings.length) {
+                          <app-ui-icon
+                            class="warning"
+                            name="warning"
+                            [size]="17"
+                            [attr.aria-label]="i18n.t('calendar.hasWarning')"
+                          />
+                        }
+                        <app-ui-icon name="chevron_right" [size]="17" />
+                      </span>
+                    </button>
                   </li>
                 }
               </ol>
             </section>
           }
         </div>
+      }
+
+      @if (openError()) {
+        <p class="open-error" role="alert">{{ openError() }}</p>
       }
 
       <footer>
@@ -183,12 +212,31 @@ interface OfficeAppointmentGroup {
     }
 
     li {
+      border-bottom: 1px solid var(--ui-border);
+    }
+
+    .appointment-row {
+      width: 100%;
       min-height: 3.35rem;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
       display: grid;
       grid-template-columns: 3.6rem minmax(0, 1fr) auto;
       align-items: center;
       gap: var(--ui-space-3);
-      border-bottom: 1px solid var(--ui-border);
+      text-align: left;
+    }
+
+    .appointment-row:hover {
+      background: color-mix(in srgb, var(--ui-action) 5%, transparent);
+    }
+
+    .appointment-row:focus-visible {
+      outline: 2px solid var(--ui-focus);
+      outline-offset: -2px;
     }
 
     li:last-child {
@@ -201,7 +249,7 @@ interface OfficeAppointmentGroup {
       font-weight: 750;
     }
 
-    li > span {
+    .appointment-row > span {
       min-width: 0;
       display: grid;
     }
@@ -225,6 +273,58 @@ interface OfficeAppointmentGroup {
     .warning,
     .warning-summary {
       color: var(--ui-warning);
+    }
+
+    .trailing {
+      display: flex;
+      align-items: center;
+      gap: var(--ui-space-1);
+      color: var(--ui-text-subtle);
+    }
+
+    .appointment-status {
+      color: var(--ui-success);
+      font-weight: 700;
+    }
+
+    .appointment-status.is-no-show {
+      color: var(--ui-warning);
+    }
+
+    .appointment-status.is-canceled {
+      color: var(--ui-danger);
+    }
+
+    .appointment-row.is-visited {
+      background: color-mix(in srgb, var(--ui-success-soft) 68%, transparent);
+    }
+
+    .appointment-row.is-no-show {
+      background: color-mix(in srgb, var(--ui-warning-soft) 68%, transparent);
+    }
+
+    .appointment-row.is-canceled {
+      background: color-mix(in srgb, var(--ui-danger-soft) 62%, transparent);
+    }
+
+    .appointment-row.is-visited time {
+      color: var(--ui-success);
+    }
+
+    .appointment-row.is-no-show time {
+      color: var(--ui-warning);
+    }
+
+    .appointment-row.is-canceled time {
+      color: var(--ui-danger);
+    }
+
+    .open-error {
+      margin: 0;
+      padding: var(--ui-space-2) var(--ui-space-5);
+      background: var(--ui-danger-soft);
+      color: var(--ui-danger);
+      font-size: 0.75rem;
     }
 
     footer {
@@ -283,7 +383,11 @@ export class TodayAppointmentsWidget {
   protected readonly i18n = inject(I18nService);
   private readonly session = inject(SessionService);
   private readonly appointments = inject(AppointmentsService);
+  private readonly users = inject(UsersService);
+  private readonly dialogs = inject(UiDialogService);
+  private managersPromise: Promise<readonly CrmEmployee[]> | null = null;
 
+  protected readonly openError = signal('');
   protected readonly groupsResource = resource({
     params: () => ({
       selectedOfficeId: this.session.selectedOfficeId(),
@@ -302,9 +406,11 @@ export class TodayAppointmentsWidget {
             officeId: office.id,
             from,
             to: addCalendarDays(from, 1),
-            status: 'scheduled',
           });
-          return { office, items: response.items };
+          return {
+            office,
+            items: response.items.filter((appointment) => appointment.status !== 'rescheduled'),
+          };
         }),
       );
     },
@@ -332,7 +438,53 @@ export class TodayAppointmentsWidget {
     return this.i18n.locale() === 'pl' ? office.name_pl : office.name_uk;
   }
 
+  protected appointmentStatusLabel(appointment: Appointment): string {
+    switch (appointment.status) {
+      case 'visited':
+        return this.i18n.t('calendar.visited');
+      case 'no_show':
+        return this.i18n.t('calendar.noShow');
+      case 'canceled':
+        return this.i18n.t('calendar.canceled');
+      case 'rescheduled':
+        return this.i18n.t('calendar.rescheduled');
+      case 'scheduled':
+        return this.i18n.t('calendar.scheduled');
+    }
+  }
+
+  protected async openAppointment(
+    group: OfficeAppointmentGroup,
+    appointment: Appointment,
+  ): Promise<void> {
+    this.openError.set('');
+    try {
+      const managers = await this.loadManagers();
+      const ref = openAppointmentDrawer(this.dialogs, {
+        office: group.office,
+        managers,
+        appointment,
+        appointments: group.items,
+      });
+      ref.afterClosed().subscribe((result) => {
+        if (result?.kind === 'saved' || result?.kind === 'stale') {
+          this.groupsResource.reload();
+        }
+      });
+    } catch {
+      this.openError.set(this.i18n.t('calendar.drawerLoadFailed'));
+    }
+  }
+
   private offices(): readonly Office[] {
     return this.session.officeContext()?.filterOffices ?? [];
+  }
+
+  private loadManagers(): Promise<readonly CrmEmployee[]> {
+    this.managersPromise ??= this.users.listManagers().catch((error: unknown) => {
+      this.managersPromise = null;
+      throw error;
+    });
+    return this.managersPromise;
   }
 }
