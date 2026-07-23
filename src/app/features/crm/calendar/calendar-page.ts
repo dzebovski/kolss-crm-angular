@@ -1,5 +1,5 @@
 import { Grid, GridCell, GridCellWidget, GridRow } from '@angular/aria/grid';
-import { Component, computed, effect, inject, resource, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 
 import type { Appointment } from '../../../core/api/generated/kolss-api.types';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -761,10 +761,13 @@ export class CalendarPage {
   private readonly dialogs = inject(UiDialogService);
 
   protected readonly view = signal<CalendarView>('week');
-  protected readonly officeId = signal(
-    this.session.selectedOfficeId() ?? this.availableOffices()[0]?.id ?? '',
+  protected readonly officeId = linkedSignal(
+    () => this.session.selectedOfficeId() ?? this.availableOffices()[0]?.id ?? '',
   );
-  protected readonly managerId = signal('all');
+  protected readonly managerId = linkedSignal(() => {
+    this.officeId();
+    return 'all';
+  });
   protected readonly selectedDate = signal(this.initialDate());
   protected readonly timeSlots = Array.from({ length: 20 }, (_, index) => {
     const minutes = 9 * 60 + index * 30;
@@ -848,16 +851,6 @@ export class CalendarPage {
     const end = addCalendarDays(start, 5);
     return `${this.shortDateLabel(start)} — ${this.shortDateLabel(end)}`;
   });
-
-  constructor() {
-    effect(() => {
-      const offices = this.availableOffices();
-      if (!offices.length) return;
-      if (!offices.some((office) => office.id === this.officeId())) {
-        this.officeId.set(this.session.selectedOfficeId() ?? offices[0].id);
-      }
-    });
-  }
 
   protected navigate(direction: number): void {
     this.selectedDate.update((date) =>

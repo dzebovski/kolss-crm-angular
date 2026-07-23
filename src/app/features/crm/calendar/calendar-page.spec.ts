@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import axe from 'axe-core';
 import { of } from 'rxjs';
@@ -15,6 +16,15 @@ const office = {
   name_uk: 'Київ',
   name_pl: 'Kijów',
   timezone_name: 'Europe/Kyiv',
+  is_active: true,
+};
+
+const warsawOffice = {
+  id: 'office-warsaw',
+  code: 'warsaw',
+  name_uk: 'Варшава',
+  name_pl: 'Warszawa',
+  timezone_name: 'Europe/Warsaw',
   is_active: true,
 };
 
@@ -54,6 +64,7 @@ const appointment: Appointment = {
 
 describe('CalendarPage', () => {
   async function render() {
+    const selectedOfficeId = signal<string | null>(office.id);
     const list = vi.fn().mockResolvedValue({
       items: [appointment],
       timezone: office.timezone_name,
@@ -67,8 +78,8 @@ describe('CalendarPage', () => {
         {
           provide: SessionService,
           useValue: {
-            selectedOfficeId: () => office.id,
-            officeContext: () => ({ filterOffices: [office] }),
+            selectedOfficeId,
+            officeContext: () => ({ filterOffices: [office, warsawOffice] }),
             locale: () => 'uk',
           },
         },
@@ -80,7 +91,7 @@ describe('CalendarPage', () => {
     const fixture = TestBed.createComponent(CalendarPage);
     await fixture.whenStable();
     fixture.detectChanges();
-    return { fixture, list, open };
+    return { fixture, list, open, selectedOfficeId };
   }
 
   it('loads the office-local week and switches to the manager day grid', async () => {
@@ -120,5 +131,17 @@ describe('CalendarPage', () => {
       }),
     );
     expect((await axe.run(element)).violations).toEqual([]);
+  });
+
+  it('reloads appointments when the global office changes', async () => {
+    const { fixture, list, selectedOfficeId } = await render();
+    list.mockClear();
+
+    selectedOfficeId.set(warsawOffice.id);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({ officeId: warsawOffice.id, managerId: undefined }),
+    );
   });
 });
