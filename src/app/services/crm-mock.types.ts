@@ -123,8 +123,12 @@ export interface FirstCall {
 }
 
 export interface ShowroomVisit {
+  readonly id?: string;
   readonly status: VisitStatus;
   readonly scheduledAt: string;
+  readonly endsAt?: string;
+  readonly responsibleManagerId?: string | null;
+  readonly version?: number;
   readonly completedAt?: string;
   readonly comment?: string;
 }

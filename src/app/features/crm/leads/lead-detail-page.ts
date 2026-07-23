@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { KolssApiError } from '../../../core/api/generated/kolss-api.client';
 import {
   presentEventBodyFromLeadEvent,
   presentEventTitleFromLeadEvent,
@@ -31,6 +32,11 @@ import type {
 import { LeadActivitiesService } from '../../../services/lead-activities.service';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
+import {
+  addCalendarDays,
+  AppointmentsService,
+  officeDateKey,
+} from '../../../services/appointments.service';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiModal } from '../../../ui/dialog/ui-modal';
@@ -61,6 +67,11 @@ import {
   type TextActivityDialogResult,
 } from './lead-activity-dialogs';
 import { EditLeadDialog } from './edit-lead-dialog';
+import {
+  AppointmentDrawer,
+  type AppointmentDrawerData,
+  type AppointmentDrawerResult,
+} from '../calendar/appointment-drawer';
 
 const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label' | 'tone'>[] = [
   { id: 'reached', icon: 'check_circle' },
@@ -117,6 +128,7 @@ export class LeadDetailView {
   private readonly leadsService = inject(LeadsService);
   private readonly activities = inject(LeadActivitiesService);
   private readonly usersService = inject(UsersService);
+  private readonly appointments = inject(AppointmentsService);
   private readonly dialog = inject(UiDialogService);
   private readonly router = inject(Router);
   private readonly session = inject(SessionService);
@@ -371,14 +383,7 @@ export class LeadDetailView {
       return;
     }
     if (status === 'showroom_invited') {
-      const showroomDueAt = showroomDueAtForLead(lead);
-      const initialDate = showroomDueAt ? this.dateInputValue(showroomDueAt) : '';
-      const dueDate = await this.openDueDateDialog(this.clientStatusLabel(status), {
-        required: false,
-        initialDate,
-      });
-      if (dueDate === undefined) return;
-      await this.runActivity(() => this.activities.setClientStatus(lead.id, status, dueDate));
+      await this.openLeadAppointment(lead);
       return;
     }
     if (status === 'thinking') {
@@ -658,8 +663,64 @@ export class LeadDetailView {
     );
   }
 
-  private dateInputValue(value: string): string {
-    return value.slice(0, 10);
+  private async openLeadAppointment(lead: MockLead): Promise<void> {
+    const office = (this.session.officeContext()?.filterOffices ?? []).find(
+      (item) => item.code === lead.officeCode,
+    );
+    if (!office) {
+      this.actionError.set(this.i18n.t('calendar.officeUnavailable'));
+      return;
+    }
+    const timeZone =
+      office.timezone_name ?? (office.code === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv');
+    const showroomDueAt = showroomDueAtForLead(lead);
+    const date = showroomDueAt
+      ? officeDateKey(new Date(showroomDueAt), timeZone)
+      : officeDateKey(new Date(), timeZone);
+    this.actionPending.set(true);
+    this.actionError.set('');
+    try {
+      const response = await this.appointments.list({
+        officeId: office.id,
+        from: date,
+        to: addCalendarDays(date, 1),
+        status: 'scheduled',
+      });
+      const appointment = response.items.find((item) => item.lead.id === lead.id);
+      const result = await firstValueFrom(
+        this.dialog
+          .open<AppointmentDrawer, AppointmentDrawerData, AppointmentDrawerResult | undefined>(
+            AppointmentDrawer,
+            {
+              data: {
+                office: { ...office, timezone_name: timeZone },
+                managers: this.employeesResource.value() ?? [],
+                lead,
+                date,
+                appointment,
+                appointments: response.items,
+              },
+              position: { right: '0', top: '0' },
+              width: 'min(31rem, 100vw)',
+              maxWidth: '100vw',
+              height: '100dvh',
+              maxHeight: '100dvh',
+              panelClass: ['ui-dialog-panel', 'appointment-drawer-panel'],
+            },
+          )
+          .afterClosed(),
+      );
+      if (result?.kind === 'saved' || result?.kind === 'stale') {
+        await this.leadResource.reload();
+        this.changed.emit();
+      }
+    } catch (error) {
+      this.actionError.set(
+        error instanceof Error ? error.message : this.i18n.t('calendar.loadFailed'),
+      );
+    } finally {
+      this.actionPending.set(false);
+    }
   }
 
   private async runActivity(action: () => Promise<void>): Promise<void> {
@@ -672,7 +733,13 @@ export class LeadDetailView {
       await this.employeesResource.reload();
       this.changed.emit();
     } catch (error) {
-      this.actionError.set(error instanceof Error ? error.message : 'Не вдалося зберегти дію.');
+      this.actionError.set(
+        error instanceof KolssApiError && error.code === 'active_appointment_exists'
+          ? this.i18n.t('calendar.activeExists')
+          : error instanceof Error
+            ? error.message
+            : 'Не вдалося зберегти дію.',
+      );
     } finally {
       this.actionPending.set(false);
     }

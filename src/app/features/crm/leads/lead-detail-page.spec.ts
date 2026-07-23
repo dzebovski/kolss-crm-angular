@@ -12,6 +12,7 @@ import type { LeadEvent, MockLead } from '../../../services/crm-mock.types';
 import { LeadActivitiesService } from '../../../services/lead-activities.service';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
+import { AppointmentsService } from '../../../services/appointments.service';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { UiUser } from '../../../ui/user/ui-user';
 import { LeadDetailView } from './lead-detail-page';
@@ -50,6 +51,12 @@ describe('LeadDetailView', () => {
     };
     const dialogOpen = vi.fn();
     const dialogConfirm = vi.fn();
+    const appointmentsList = vi.fn(async () => ({
+      items: [],
+      timezone: lead.officeCode === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv',
+      from: '2026-08-03',
+      to: '2026-08-04',
+    }));
     await TestBed.configureTestingModule({
       imports: [LeadDetailView],
       providers: [
@@ -74,6 +81,7 @@ describe('LeadDetailView', () => {
           },
         },
         { provide: LeadActivitiesService, useValue: activities },
+        { provide: AppointmentsService, useValue: { list: appointmentsList } },
         {
           provide: UsersService,
           useValue: { listManagers: async () => options.managers ?? CRM_MOCK_EMPLOYEES },
@@ -85,6 +93,16 @@ describe('LeadDetailView', () => {
             locale: () => 'uk',
             officeContext: () => ({
               userOffices: options.userOffices ?? [{ code: lead.officeCode }],
+              filterOffices: [
+                {
+                  id: `office-${lead.officeCode}`,
+                  code: lead.officeCode,
+                  name_uk: lead.officeCode === 'warsaw' ? 'Варшава' : 'Київ',
+                  name_pl: lead.officeCode === 'warsaw' ? 'Warszawa' : 'Kijów',
+                  timezone_name: lead.officeCode === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv',
+                  is_active: true,
+                },
+              ],
             }),
           },
         },
@@ -95,6 +113,7 @@ describe('LeadDetailView', () => {
     await fixture.whenStable();
     return {
       activities,
+      appointmentsList,
       archiveLead,
       deleteLeadPermanently,
       dialogConfirm,
@@ -740,20 +759,15 @@ describe('LeadDetailView', () => {
       callbackDueAt: '2026-08-03T12:00:00.000Z',
       callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
     };
-    const { activities, dialogOpen, fixture } = await render(lead);
+    const { activities, appointmentsList, dialogOpen, fixture } = await render(lead);
     dialogOpen
       .mockReturnValueOnce({ afterClosed: () => of('showroom_invited') })
-      .mockReturnValueOnce({ afterClosed: () => of('2026-08-08') });
+      .mockReturnValueOnce({ afterClosed: () => of(undefined) });
 
     findActionButton(fixture.nativeElement as HTMLElement, 'Статус клієнта')?.click();
 
-    await vi.waitFor(() =>
-      expect(activities.setClientStatus).toHaveBeenCalledWith(
-        lead.id,
-        'showroom_invited',
-        '2026-08-08',
-      ),
-    );
+    await vi.waitFor(() => expect(appointmentsList).toHaveBeenCalledOnce());
+    expect(activities.setClientStatus).not.toHaveBeenCalled();
     const radialConfig = dialogOpen.mock.calls[0]?.[1];
     expect(
       radialConfig?.data.actions.find((action: { id: string }) => action.id === 'showroom_invited')
@@ -761,11 +775,11 @@ describe('LeadDetailView', () => {
     ).toBe(false);
     expect(dialogOpen.mock.calls[1]?.[1]).toMatchObject({
       data: {
-        statusLabel: 'Запрошено в салон',
-        required: false,
-        initialDate: '2026-08-03',
+        lead: { id: lead.id },
+        date: '2026-08-03',
       },
-      ariaLabelledBy: 'due-date-title',
+      position: { right: '0', top: '0' },
+      height: '100dvh',
     });
   });
 });

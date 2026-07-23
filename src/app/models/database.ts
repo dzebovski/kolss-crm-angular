@@ -1,8 +1,4 @@
-export type UserRole =
-  | 'super_admin'
-  | 'curator'
-  | 'office_admin'
-  | 'office_member';
+export type UserRole = 'super_admin' | 'curator' | 'office_admin' | 'office_member';
 
 export interface Profile {
   id: string;
@@ -19,6 +15,7 @@ export interface Office {
   code: string;
   name_uk: string;
   name_pl: string;
+  timezone_name?: string;
   is_active: boolean;
 }
 

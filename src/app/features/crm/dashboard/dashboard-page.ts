@@ -31,6 +31,7 @@ import {
 } from '../leads/lead-detail-drawer';
 import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
 import { LeadDueDate } from '../leads/lead-due-date';
+import { TodayAppointmentsWidget } from './today-appointments-widget';
 
 @Component({
   selector: 'app-dashboard-page',
@@ -44,6 +45,7 @@ import { LeadDueDate } from '../leads/lead-due-date';
     UiButton,
     UiIcon,
     UiUser,
+    TodayAppointmentsWidget,
   ],
   template: `
     <section class="dashboard-page" aria-labelledby="dashboard-title">
@@ -81,6 +83,8 @@ import { LeadDueDate } from '../leads/lead-due-date';
           <app-ui-badge tone="neutral">{{ 'dashboard.badge.profiles' | translate }}</app-ui-badge>
         </article>
       </div>
+
+      <app-today-appointments-widget />
 
       <div class="reminders">
         <div class="reminders-head">

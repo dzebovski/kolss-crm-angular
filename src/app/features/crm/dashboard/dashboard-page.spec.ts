@@ -30,7 +30,11 @@ describe('DashboardPage lead workflow', () => {
         provideRouter([]),
         {
           provide: SessionService,
-          useValue: { selectedOfficeId: () => null, locale: () => 'uk' },
+          useValue: {
+            selectedOfficeId: () => null,
+            locale: () => 'uk',
+            officeContext: () => ({ filterOffices: [] }),
+          },
         },
         {
           provide: KolssApiClient,

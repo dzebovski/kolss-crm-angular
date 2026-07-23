@@ -44,6 +44,11 @@ export const routes: Routes = [
           import('./features/crm/leads/leads-page').then((page) => page.LeadsPage),
       },
       {
+        path: 'calendar',
+        loadComponent: () =>
+          import('./features/crm/calendar/calendar-page').then((page) => page.CalendarPage),
+      },
+      {
         path: 'leads/:leadId',
         loadComponent: () =>
           import('./features/crm/leads/lead-detail-route').then((page) => page.LeadDetailPage),

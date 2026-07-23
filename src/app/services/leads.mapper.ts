@@ -110,6 +110,10 @@ export interface ShowroomVisitRow {
   id: string;
   lead_id: string;
   scheduled_at: string;
+  ends_at?: string;
+  responsible_manager_id?: string | null;
+  updated_by?: string | null;
+  version?: number;
   status: string;
   comment: string | null;
   created_at: string;
@@ -194,9 +198,13 @@ function mapEventType(eventType: string): LeadEventType {
     first_call: 'first_call',
     showroom_visit_scheduled: 'visit_scheduled',
     visit_scheduled: 'visit_scheduled',
+    appointment_scheduled: 'visit_scheduled',
     visit_rescheduled: 'visit_rescheduled',
+    appointment_rescheduled: 'visit_rescheduled',
     showroom_visit_completed: 'visit_completed',
     visit_completed: 'visit_completed',
+    appointment_status_changed: 'visit_completed',
+    appointment_updated: 'lead_updated',
     comment: 'comment',
     thinking: 'thinking',
     activated: 'activated',
@@ -228,7 +236,7 @@ function buildFirstCall(attempts: readonly ContactAttemptRow[]): FirstCall | nul
 }
 
 function buildVisit(visits: readonly ShowroomVisitRow[]): ShowroomVisit | null {
-  const latest = visits[0];
+  const latest = visits.find((visit) => visit.status === 'scheduled') ?? visits[0];
   if (!latest) return null;
   const statusMap: Record<string, ShowroomVisit['status']> = {
     scheduled: 'scheduled',
@@ -239,8 +247,12 @@ function buildVisit(visits: readonly ShowroomVisitRow[]): ShowroomVisit | null {
     canceled: 'rescheduled',
   };
   return {
+    id: latest.id,
     status: statusMap[latest.status] ?? 'scheduled',
     scheduledAt: latest.scheduled_at,
+    endsAt: latest.ends_at,
+    responsibleManagerId: latest.responsible_manager_id,
+    version: latest.version,
     completedAt: latest.status === 'visited' ? latest.updated_at : undefined,
     comment: latest.comment ?? undefined,
   };

@@ -31,7 +31,11 @@ import { ImpersonationDialog } from './impersonation-dialog';
         <div class="crm-shell__impersonation" role="status">
           <app-ui-icon name="person" [size]="16" />
           <span>{{ impersonationBanner() }}</span>
-          <button type="button" class="crm-shell__impersonation-action" (click)="stopImpersonation()">
+          <button
+            type="button"
+            class="crm-shell__impersonation-action"
+            (click)="stopImpersonation()"
+          >
             {{ 'nav.returnToAdmin' | translate }}
           </button>
         </div>
@@ -94,7 +98,10 @@ import { ImpersonationDialog } from './impersonation-dialog';
                     d="M63.8404 0H77.5766C77.5705 1.04283 77.5751 2.08568 77.5888 3.12843C77.4579 3.12529 77.3279 3.12332 77.1971 3.12255L68.7178 3.11834L66.1827 3.11757C65.213 3.11792 64.0279 3.01591 63.2491 3.72336C62.9366 4.00724 62.9951 4.45172 63.2915 4.72601C64.0728 5.44896 65.1475 5.31959 66.1246 5.31735L71.5284 5.31514C73.9015 5.31387 76.289 4.94855 78.0938 6.78935C79.8392 8.56964 79.9107 11.5152 78.1052 13.2843C76.5232 14.8339 75.2984 14.7678 73.252 14.7685L70.5084 14.7686H60.2432L60.2422 11.5406C63.461 11.6279 66.7026 11.5492 69.9239 11.5491C70.9063 11.5491 74.209 11.6613 74.9249 11.4686C75.3814 11.3459 75.8292 11.0427 76.0677 10.6279C76.2038 10.3902 76.292 10.0924 76.2183 9.82013C76.0715 9.27801 75.6744 8.82419 75.1421 8.63945C74.4229 8.38992 73.4502 8.52461 72.689 8.52598L67.5249 8.52499C66.2999 8.52682 65.1743 8.5761 63.9371 8.42239C60.9639 8.0533 58.7168 5.05201 60.3789 2.20837C61.2408 0.734301 62.2935 0.412838 63.8404 0Z"
                     fill="url(#kolssBrandGradient)"
                   />
-                  <path d="M0 0.136719L3.12095 0.141024L3.12486 14.7692L0 14.7668V0.136719Z" fill="url(#kolssBrandGradient)" />
+                  <path
+                    d="M0 0.136719L3.12095 0.141024L3.12486 14.7692L0 14.7668V0.136719Z"
+                    fill="url(#kolssBrandGradient)"
+                  />
                 </g>
               </svg>
             </span>
@@ -109,6 +116,10 @@ import { ImpersonationDialog } from './impersonation-dialog';
               <app-ui-icon name="view_kanban" [size]="17" />
               {{ 'nav.leads' | translate }}
             </a>
+            <a routerLink="/crm/calendar" routerLinkActive="is-active">
+              <app-ui-icon name="calendar_month" [size]="17" />
+              {{ 'nav.calendar' | translate }}
+            </a>
             <a routerLink="/crm/reports" routerLinkActive="is-active">
               <app-ui-icon name="bar_chart" [size]="17" />
               {{ 'nav.reports' | translate }}
@@ -121,7 +132,10 @@ import { ImpersonationDialog } from './impersonation-dialog';
             }
           </nav>
 
-          <div class="crm-shell__context-controls" [attr.aria-label]="'nav.crmControls' | translate">
+          <div
+            class="crm-shell__context-controls"
+            [attr.aria-label]="'nav.crmControls' | translate"
+          >
             @if (showOfficeFilter()) {
               <div
                 class="crm-shell__segmented crm-shell__segmented--office"
@@ -155,7 +169,11 @@ import { ImpersonationDialog } from './impersonation-dialog';
             <span>{{ displayName() }}</span>
             <small>{{ roleName() }}</small>
           </div>
-          <app-ui-menu [label]="'nav.menu' | translate" [items]="userMenuItems()" (selected)="handleUserMenu($event)" />
+          <app-ui-menu
+            [label]="'nav.menu' | translate"
+            [items]="userMenuItems()"
+            (selected)="handleUserMenu($event)"
+          />
         </div>
       </header>
 
@@ -392,7 +410,9 @@ export class CrmShell {
   });
 
   readonly displayName = () =>
-    this.auth.profile()?.display_name ?? this.auth.sessionContext()?.user.email ?? this.i18n.t('common.user');
+    this.auth.profile()?.display_name ??
+    this.auth.sessionContext()?.user.email ??
+    this.i18n.t('common.user');
   readonly userId = () => this.auth.profile()?.id ?? null;
   readonly roleName = () => this.i18n.roleLabel(this.auth.profile()?.role ?? 'office_member');
   readonly canManageAccounts = () => this.session.officeContext()?.isSuperAdmin ?? false;

@@ -1,17 +1,34 @@
-// Generated contract adapter for api/openapi.yaml v2.5.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.6.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import type {
+  AppointmentListResponse,
+  AppointmentMutationResponse,
+  CreateAppointmentRequest,
   LeadDetailResponse,
   LeadEventTranslationResponse,
   LeadMarkerResponse,
   LeadListResponse,
   MeResponse,
+  UpdateAppointmentRequest,
   UsersResponse,
 } from './kolss-api.types';
+
+export class KolssApiError extends Error {
+  constructor(
+    message: string,
+    readonly code: string,
+    readonly status: number,
+    readonly requestId?: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = 'KolssApiError';
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class KolssApiClient {
@@ -109,6 +126,30 @@ export class KolssApiClient {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/delete`, {}).then(() => undefined);
   }
 
+  appointments(query: {
+    readonly officeId: string;
+    readonly from: string;
+    readonly to: string;
+    readonly managerId?: string;
+    readonly status?: string;
+  }): Promise<AppointmentListResponse> {
+    return this.get('/v1/appointments', query);
+  }
+
+  createAppointment(body: CreateAppointmentRequest): Promise<AppointmentMutationResponse> {
+    return this.post('/v1/appointments', body);
+  }
+
+  updateAppointment(
+    id: string,
+    version: number,
+    body: UpdateAppointmentRequest,
+  ): Promise<AppointmentMutationResponse> {
+    return this.patch(`/v1/appointments/${encodeURIComponent(id)}`, body, {
+      'If-Match': String(version),
+    });
+  }
+
   users(active?: boolean): Promise<UsersResponse> {
     return this.get('/v1/users', { active: active == null ? undefined : String(active) });
   }
@@ -202,7 +243,13 @@ export class KolssApiClient {
         } | null;
         const message = typeof body?.message === 'string' ? body.message : error.message;
         const requestId = typeof body?.requestId === 'string' ? ` (${body.requestId})` : '';
-        throw new Error(message + requestId, { cause: error });
+        throw new KolssApiError(
+          message + requestId,
+          typeof body?.code === 'string' ? body.code : 'http_error',
+          error.status,
+          typeof body?.requestId === 'string' ? body.requestId : undefined,
+          { cause: error },
+        );
       }
       throw error;
     }
