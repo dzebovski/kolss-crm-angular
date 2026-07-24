@@ -3,5 +3,10 @@
   "framework": "angular",
   "buildCommand": "npm run build",
   "outputDirectory": "dist/kolss-crm-angular/browser",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/:path((?!.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

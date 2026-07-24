@@ -4,11 +4,15 @@ import { KolssApiClient } from '../core/api/generated/kolss-api.client';
 import type { Appointment } from '../core/api/generated/kolss-api.types';
 import {
   addCalendarDays,
+  addCalendarMonths,
   AppointmentsService,
   calendarAppointmentDeepLink,
+  monthGridDays,
+  monthGridRange,
   officeDateKey,
   officeDateTimeParts,
   parseCalendarAppointmentQuery,
+  startOfCalendarMonth,
 } from './appointments.service';
 
 const appointment: Appointment = {
@@ -101,6 +105,17 @@ describe('appointment office-time helpers', () => {
   it('adds date-only days without browser timezone drift', () => {
     expect(addCalendarDays('2026-03-28', 1)).toBe('2026-03-29');
     expect(addCalendarDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+
+  it('computes month starts, month shifts, and padded month grids', () => {
+    expect(startOfCalendarMonth('2026-07-23')).toBe('2026-07-01');
+    expect(addCalendarMonths('2026-07-23', 1)).toBe('2026-08-23');
+    expect(addCalendarMonths('2026-01-31', 1)).toBe('2026-02-28');
+    expect(addCalendarMonths('2026-07-01', 1)).toBe('2026-08-01');
+    expect(monthGridRange('2026-07-15')).toEqual({ from: '2026-06-29', to: '2026-08-03' });
+    expect(monthGridDays('2026-07-15')).toHaveLength(35);
+    expect(monthGridDays('2026-07-15')[0]).toBe('2026-06-29');
+    expect(monthGridDays('2026-07-15').at(-1)).toBe('2026-08-02');
   });
 
   it('builds and parses calendar appointment deep-link query params', () => {

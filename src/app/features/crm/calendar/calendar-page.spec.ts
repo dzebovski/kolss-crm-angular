@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import type { Appointment } from '../../../core/api/generated/kolss-api.types';
 import { SessionService } from '../../../core/session/session.service';
 import { AppointmentsService } from '../../../services/appointments.service';
-import { UsersService } from '../../../services/users.service';
+import { type CrmEmployee, UsersService } from '../../../services/users.service';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { CalendarPage } from './calendar-page';
 
@@ -103,8 +103,40 @@ const rescheduledAppointment: Appointment = {
   version: 2,
 };
 
+const inactiveManager = {
+  ...manager,
+  id: 'manager-inactive',
+  displayName: 'Деактивований',
+  status: 'inactive' as const,
+};
+
+const curator = {
+  ...manager,
+  id: 'manager-curator',
+  displayName: 'Куратор Офісу',
+  role: 'curator' as const,
+};
+
+const officeAdmin = {
+  ...manager,
+  id: 'manager-admin',
+  displayName: 'Адмін Офісу',
+  role: 'office_admin' as const,
+};
+
+const otherOfficeManager = {
+  ...manager,
+  id: 'manager-warsaw',
+  displayName: 'Варшавський',
+  officeIds: ['warsaw'] as const,
+  officeUuids: ['office-warsaw'],
+};
+
 describe('CalendarPage', () => {
-  async function render(queryParams: Record<string, string> = {}) {
+  async function render(
+    queryParams: Record<string, string> = {},
+    managers: readonly CrmEmployee[] = [manager],
+  ) {
     TestBed.resetTestingModule();
     const selectedOfficeId = signal<string | null>(office.id);
     const list = vi.fn().mockResolvedValue({
@@ -133,7 +165,7 @@ describe('CalendarPage', () => {
           },
         },
         { provide: AppointmentsService, useValue: { list } },
-        { provide: UsersService, useValue: { listManagers: vi.fn().mockResolvedValue([manager]) } },
+        { provide: UsersService, useValue: { listManagers: vi.fn().mockResolvedValue(managers) } },
         { provide: UiDialogService, useValue: { open } },
         {
           provide: ActivatedRoute,
@@ -186,6 +218,73 @@ describe('CalendarPage', () => {
     expect(element.querySelector('.appointment-card .appointment-comment')?.textContent).toContain(
       'Підготувати документи для зустрічі',
     );
+  });
+
+  it('shows only active managers of the selected office in day view', async () => {
+    const { fixture } = await render({}, [
+      manager,
+      inactiveManager,
+      curator,
+      officeAdmin,
+      otherOfficeManager,
+    ]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const heads = Array.from(element.querySelectorAll('.manager-head strong')).map(
+      (node) => node.textContent?.trim(),
+    );
+    expect(heads).toEqual(['Олена']);
+    expect(element.textContent).not.toContain('Деактивований');
+    expect(element.textContent).not.toContain('Куратор Офісу');
+    expect(element.textContent).not.toContain('Адмін Офісу');
+    expect(element.textContent).not.toContain('Варшавський');
+  });
+
+  it('loads the padded month range and opens day view from a month day number', async () => {
+    const { fixture, list } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    list.mockClear();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const monthButton = Array.from(
+      element.querySelectorAll<HTMLButtonElement>('.view-switch button'),
+    ).find((button) => button.textContent?.includes('Місяць'))!;
+    monthButton.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        officeId: office.id,
+        from: '2026-06-29',
+        to: '2026-08-03',
+        managerId: undefined,
+      }),
+    );
+    expect(element.querySelector('.month-grid')).not.toBeNull();
+    expect(element.querySelector('.week-grid')).toBeNull();
+    expect(element.textContent).toContain('Анна Коваль');
+    expect(element.querySelector('.month-card.is-visited')).not.toBeNull();
+
+    const dayNumber = Array.from(
+      element.querySelectorAll<HTMLButtonElement>('.month-day-number'),
+    ).find((button) => button.textContent?.trim() === '23' && !button.closest('.is-outside'))!;
+    dayNumber.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.day-grid')).not.toBeNull();
+    expect(fixture.componentInstance['selectedDate']()).toBe('2026-07-23');
+    expect(fixture.componentInstance['view']()).toBe('day');
   });
 
   it('opens the drawer from a week appointment and has no basic AXE violations', async () => {

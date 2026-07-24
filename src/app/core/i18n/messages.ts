@@ -119,6 +119,8 @@ export const messages = {
   'calendar.view': { uk: 'Вигляд календаря', pl: 'Widok kalendarza', en: 'Calendar view' },
   'calendar.day': { uk: 'День', pl: 'Dzień', en: 'Day' },
   'calendar.week': { uk: 'Тиждень', pl: 'Tydzień', en: 'Week' },
+  'calendar.month': { uk: 'Місяць', pl: 'Miesiąc', en: 'Month' },
+  'calendar.moreCount': { uk: '+{count} ще', pl: '+{count} więcej', en: '+{count} more' },
   'calendar.allManagers': { uk: 'Усі менеджери', pl: 'Wszyscy menedżerowie', en: 'All managers' },
   'calendar.sundayBanner': {
     uk: 'На неділю є записів: {count}. Відкрити день',

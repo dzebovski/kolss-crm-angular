@@ -17,11 +17,16 @@ import { SessionService } from '../../../core/session/session.service';
 import type { Office } from '../../../models/database';
 import {
   addCalendarDays,
+  addCalendarMonths,
   AppointmentsService,
   type CalendarAppointmentDeepLink,
+  mondayOfWeek,
+  monthGridDays,
+  monthGridRange,
   officeDateKey,
   officeDateTimeParts,
   parseCalendarAppointmentQuery,
+  startOfCalendarMonth,
 } from '../../../services/appointments.service';
 import { UsersService } from '../../../services/users.service';
 import { UiButton } from '../../../ui/button/ui-button';
@@ -30,7 +35,9 @@ import { UiIcon, type UiIconName } from '../../../ui/icon/ui-icon';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 
-type CalendarView = 'day' | 'week';
+type CalendarView = 'day' | 'week' | 'month';
+
+const MONTH_VISIBLE_APPOINTMENTS = 3;
 
 @Component({
   selector: 'app-calendar-page',
@@ -95,6 +102,9 @@ type CalendarView = 'day' | 'week';
             </button>
             <button type="button" [class.is-active]="view() === 'week'" (click)="view.set('week')">
               {{ i18n.t('calendar.week') }}
+            </button>
+            <button type="button" [class.is-active]="view() === 'month'" (click)="view.set('month')">
+              {{ i18n.t('calendar.month') }}
             </button>
           </div>
         </div>
@@ -191,7 +201,7 @@ type CalendarView = 'day' | 'week';
               </div>
             }
           </div>
-        } @else {
+        } @else if (view() === 'week') {
           <div
             ngGrid
             focusMode="roving"
@@ -259,6 +269,92 @@ type CalendarView = 'day' | 'week';
                 </div>
               }
             </div>
+          </div>
+        } @else {
+          <div
+            ngGrid
+            focusMode="roving"
+            class="month-grid desktop-calendar"
+            [attr.aria-label]="rangeLabel()"
+          >
+            <div ngGridRow class="month-head">
+              @for (day of monthWeekdayHeaders(); track day) {
+                <div ngGridCell>{{ weekdayLabel(day) }}</div>
+              }
+            </div>
+            @for (week of monthWeeks(); track week[0]) {
+              <div ngGridRow class="month-week">
+                @for (day of week; track day) {
+                  <div
+                    ngGridCell
+                    class="month-day"
+                    [class.is-today]="day === todayKey()"
+                    [class.is-outside]="isOutsideMonth(day)"
+                  >
+                    <div class="month-day-header">
+                      <button
+                        ngGridCellWidget
+                        type="button"
+                        class="month-day-number"
+                        [attr.aria-label]="fullDateLabel(day)"
+                        (click)="openDay(day)"
+                      >
+                        {{ dayNumber(day) }}
+                      </button>
+                      <button
+                        ngGridCellWidget
+                        type="button"
+                        class="month-add"
+                        [attr.aria-label]="i18n.t('calendar.add')"
+                        (click)="openCreate(day, '10:00')"
+                      >
+                        <app-ui-icon name="add" [size]="14" />
+                      </button>
+                    </div>
+                    @for (
+                      appointment of visibleMonthAppointments(day);
+                      track appointment.id
+                    ) {
+                      <button
+                        ngGridCellWidget
+                        type="button"
+                        class="month-card"
+                        [class.has-warning]="appointment.warnings.length"
+                        [class.is-visited]="appointment.status === 'visited'"
+                        [class.is-no-show]="appointment.status === 'no_show'"
+                        [class.is-canceled]="appointment.status === 'canceled'"
+                        (click)="openEdit(appointment)"
+                      >
+                        <time>{{ localTime(appointment.startsAt) }}</time>
+                        <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                        @if (appointment.status !== 'scheduled') {
+                          <app-ui-icon
+                            class="appointment-status-icon"
+                            [class.is-no-show]="appointment.status === 'no_show'"
+                            [class.is-canceled]="appointment.status === 'canceled'"
+                            [name]="appointmentStatusIcon(appointment)"
+                            [size]="12"
+                            [attr.aria-label]="appointmentStatusLabel(appointment)"
+                          />
+                        } @else if (appointment.warnings.length) {
+                          <app-ui-icon name="warning" [size]="12" />
+                        }
+                      </button>
+                    }
+                    @if (monthOverflowCount(day); as overflow) {
+                      <button
+                        ngGridCellWidget
+                        type="button"
+                        class="month-more"
+                        (click)="openDay(day)"
+                      >
+                        {{ i18n.t('calendar.moreCount', { count: overflow }) }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
           </div>
         }
 
@@ -438,7 +534,8 @@ type CalendarView = 'day' | 'week';
     }
 
     .day-grid,
-    .week-grid {
+    .week-grid,
+    .month-grid {
       min-width: 55rem;
       border: 1px solid var(--ui-border);
       border-radius: var(--ui-radius-lg);
@@ -522,7 +619,8 @@ type CalendarView = 'day' | 'week';
     }
 
     .appointment-card,
-    .week-card {
+    .week-card,
+    .month-card {
       position: relative;
       z-index: 1;
       width: 100%;
@@ -547,7 +645,8 @@ type CalendarView = 'day' | 'week';
     }
 
     .appointment-card time,
-    .week-card time {
+    .week-card time,
+    .month-card time {
       color: var(--ui-action);
       font-size: 0.72rem;
       font-weight: 750;
@@ -581,6 +680,7 @@ type CalendarView = 'day' | 'week';
 
     .appointment-card.is-no-show,
     .week-card.is-no-show,
+    .month-card.is-no-show,
     .agenda-card.is-no-show {
       border-left-color: var(--ui-warning);
       background: var(--ui-warning-soft);
@@ -588,6 +688,7 @@ type CalendarView = 'day' | 'week';
 
     .appointment-card.is-canceled,
     .week-card.is-canceled,
+    .month-card.is-canceled,
     .agenda-card.is-canceled {
       border-left-color: var(--ui-danger);
       background: var(--ui-danger-soft);
@@ -693,6 +794,114 @@ type CalendarView = 'day' | 'week';
     .empty-day {
       margin: var(--ui-space-5) 0;
       text-align: center;
+    }
+
+    .month-head,
+    .month-week {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(7rem, 1fr));
+    }
+
+    .month-head > div {
+      padding: var(--ui-space-2) var(--ui-space-3);
+      border-right: 1px solid var(--ui-border);
+      border-bottom: 1px solid var(--ui-border);
+      color: var(--ui-text-subtle);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .month-day {
+      min-height: 8.5rem;
+      padding: var(--ui-space-1);
+      border-right: 1px solid var(--ui-border);
+      border-bottom: 1px solid var(--ui-border);
+      display: grid;
+      align-content: start;
+      gap: 0.2rem;
+    }
+
+    .month-day.is-outside {
+      background: color-mix(in srgb, var(--ui-surface-muted) 55%, transparent);
+      color: var(--ui-text-muted);
+    }
+
+    .month-day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ui-space-1);
+      min-height: 1.75rem;
+    }
+
+    .month-day-number {
+      min-width: 1.75rem;
+      height: 1.75rem;
+      padding: 0 0.35rem;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .month-day.is-today .month-day-number {
+      background: var(--ui-action);
+      color: white;
+    }
+
+    .month-add {
+      width: 1.5rem;
+      height: 1.5rem;
+      border: 0;
+      border-radius: var(--ui-radius-sm);
+      background: transparent;
+      color: var(--ui-text-muted);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+    }
+
+    .month-day:hover .month-add,
+    .month-day:focus-within .month-add {
+      opacity: 1;
+    }
+
+    .month-card {
+      padding: 0.2rem 0.35rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+
+    .month-card time {
+      font-size: 0.65rem;
+    }
+
+    .month-card strong {
+      overflow: hidden;
+      font-size: 0.7rem;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .month-more {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--ui-action);
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-align: left;
+      padding: 0.15rem 0.25rem;
     }
 
     .calendar-skeleton {
@@ -915,13 +1124,26 @@ export class CalendarPage {
   protected readonly todayKey = computed(() =>
     officeDateKey(new Date(), this.office()?.timezone_name ?? 'UTC'),
   );
-  protected readonly weekStart = computed(() => this.mondayFor(this.selectedDate()));
+  protected readonly weekStart = computed(() => mondayOfWeek(this.selectedDate()));
   protected readonly weekDays = computed(() =>
     Array.from({ length: 6 }, (_, index) => addCalendarDays(this.weekStart(), index)),
   );
+  protected readonly monthDays = computed(() => monthGridDays(this.selectedDate()));
+  protected readonly monthWeeks = computed(() => {
+    const days = this.monthDays();
+    const weeks: string[][] = [];
+    for (let index = 0; index < days.length; index += 7) {
+      weeks.push([...days.slice(index, index + 7)]);
+    }
+    return weeks;
+  });
+  protected readonly monthWeekdayHeaders = computed(() => this.monthWeeks()[0] ?? []);
   private readonly range = computed(() => {
     if (this.view() === 'day') {
       return { from: this.selectedDate(), to: addCalendarDays(this.selectedDate(), 1) };
+    }
+    if (this.view() === 'month') {
+      return monthGridRange(this.selectedDate());
     }
     return { from: this.weekStart(), to: addCalendarDays(this.weekStart(), 7) };
   });
@@ -945,10 +1167,17 @@ export class CalendarPage {
 
   protected readonly items = computed(() => this.appointmentsResource.value()?.items ?? []);
   protected readonly managers = computed(() => this.managersResource.value() ?? []);
+  /** Active office_member rows for the selected office — not curators/admins. */
+  protected readonly officeManagers = computed(() =>
+    this.managers().filter(
+      (manager) =>
+        manager.status === 'active' &&
+        manager.role === 'office_member' &&
+        manager.officeUuids.includes(this.officeId()),
+    ),
+  );
   protected readonly visibleManagers = computed(() => {
-    const managers = this.managers().filter((manager) =>
-      manager.officeUuids.includes(this.officeId()),
-    );
+    const managers = this.officeManagers();
     const selected = this.managerId();
     return selected !== 'all' ? managers.filter((manager) => manager.id === selected) : managers;
   });
@@ -960,21 +1189,37 @@ export class CalendarPage {
   );
   protected readonly managerOptions = computed<readonly UiSelectOption[]>(() => [
     { value: 'all', label: this.i18n.t('calendar.allManagers') },
-    ...this.managers()
-      .filter((manager) => manager.officeUuids.includes(this.officeId()))
-      .map((manager) => ({
-        value: manager.id,
-        label: manager.displayName,
-        userId: manager.id,
-      })),
+    ...this.officeManagers().map((manager) => ({
+      value: manager.id,
+      label: manager.displayName,
+      userId: manager.id,
+    })),
   ]);
   protected readonly sundayAppointments = computed(() => {
     if (this.view() !== 'week') return [];
     return this.appointmentsForDay(addCalendarDays(this.weekStart(), 6));
   });
   protected readonly agendaGroups = computed(() => {
-    const days = this.view() === 'day' ? [this.selectedDate()] : this.weekDays();
-    return days.map((date) => ({ date, items: this.appointmentsForDay(date) }));
+    if (this.view() === 'day') {
+      return [{ date: this.selectedDate(), items: this.appointmentsForDay(this.selectedDate()) }];
+    }
+    if (this.view() === 'month') {
+      const monthStart = startOfCalendarMonth(this.selectedDate());
+      const nextMonth = addCalendarMonths(monthStart, 1);
+      const groups: { date: string; items: readonly Appointment[] }[] = [];
+      for (
+        let date = monthStart;
+        date < nextMonth;
+        date = addCalendarDays(date, 1)
+      ) {
+        const items = this.appointmentsForDay(date);
+        if (items.length) groups.push({ date, items });
+      }
+      return groups.length
+        ? groups
+        : [{ date: this.selectedDate(), items: [] as readonly Appointment[] }];
+    }
+    return this.weekDays().map((date) => ({ date, items: this.appointmentsForDay(date) }));
   });
   protected readonly loadError = computed(() => {
     const error = this.appointmentsResource.error() ?? this.managersResource.error();
@@ -982,12 +1227,17 @@ export class CalendarPage {
   });
   protected readonly rangeLabel = computed(() => {
     if (this.view() === 'day') return this.fullDateLabel(this.selectedDate());
+    if (this.view() === 'month') return this.monthLabel(this.selectedDate());
     const start = this.weekStart();
     const end = addCalendarDays(start, 5);
     return `${this.shortDateLabel(start)} — ${this.shortDateLabel(end)}`;
   });
 
   protected navigate(direction: number): void {
+    if (this.view() === 'month') {
+      this.selectedDate.update((date) => addCalendarMonths(date, direction));
+      return;
+    }
     this.selectedDate.update((date) =>
       addCalendarDays(date, direction * (this.view() === 'week' ? 7 : 1)),
     );
@@ -1002,6 +1252,11 @@ export class CalendarPage {
     this.view.set('day');
   }
 
+  protected openDay(date: string): void {
+    this.selectedDate.set(date);
+    this.view.set('day');
+  }
+
   protected reload(): void {
     this.appointmentsResource.reload();
     this.managersResource.reload();
@@ -1012,7 +1267,7 @@ export class CalendarPage {
     if (!office) return;
     this.openDrawer({
       office,
-      managers: this.managers(),
+      managers: this.officeManagers(),
       date,
       time,
       defaultManagerId: managerId,
@@ -1025,7 +1280,7 @@ export class CalendarPage {
     if (!office) return;
     this.openDrawer({
       office,
-      managers: this.managers(),
+      managers: this.officeManagers(),
       appointment,
       appointments: this.items(),
     });
@@ -1064,6 +1319,18 @@ export class CalendarPage {
           officeDateTimeParts(appointment.startsAt, timeZone).date === date,
       )
       .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+  }
+
+  protected visibleMonthAppointments(date: string): readonly Appointment[] {
+    return this.appointmentsForDay(date).slice(0, MONTH_VISIBLE_APPOINTMENTS);
+  }
+
+  protected monthOverflowCount(date: string): number {
+    return Math.max(0, this.appointmentsForDay(date).length - MONTH_VISIBLE_APPOINTMENTS);
+  }
+
+  protected isOutsideMonth(date: string): boolean {
+    return date.slice(0, 7) !== startOfCalendarMonth(this.selectedDate()).slice(0, 7);
   }
 
   protected appointmentsForManager(managerId: string): readonly Appointment[] {
@@ -1135,6 +1402,14 @@ export class CalendarPage {
     }).format(new Date(`${date}T12:00:00Z`));
   }
 
+  private monthLabel(date: string): string {
+    return new Intl.DateTimeFormat(this.intlLocale(), {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(`${startOfCalendarMonth(date)}T12:00:00Z`));
+  }
+
   private shortDateLabel(date: string): string {
     return new Intl.DateTimeFormat(this.intlLocale(), {
       day: 'numeric',
@@ -1152,11 +1427,6 @@ export class CalendarPage {
       this.availableOffices().find((item) => item.id === this.session.selectedOfficeId()) ??
       this.availableOffices()[0];
     return officeDateKey(new Date(), office?.timezone_name ?? 'UTC');
-  }
-
-  private mondayFor(date: string): string {
-    const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
-    return addCalendarDays(date, weekday === 0 ? -6 : 1 - weekday);
   }
 
   private rangeIncludesDate(date: string): boolean {

@@ -85,6 +85,50 @@ export function addCalendarDays(dateKey: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+export function startOfCalendarMonth(dateKey: string): string {
+  return `${dateKey.slice(0, 7)}-01`;
+}
+
+export function addCalendarMonths(dateKey: string, months: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const targetMonth = new Date(Date.UTC(year, month - 1 + months, 1, 12));
+  const lastDay = new Date(
+    Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth() + 1, 0, 12),
+  ).getUTCDate();
+  const clampedDay = Math.min(day, lastDay);
+  return new Date(
+    Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth(), clampedDay, 12),
+  )
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** Monday of the ISO-style week that contains `dateKey` (Mon–Sun). */
+export function mondayOfWeek(dateKey: string): string {
+  const weekday = new Date(`${dateKey}T12:00:00Z`).getUTCDay();
+  return addCalendarDays(dateKey, weekday === 0 ? -6 : 1 - weekday);
+}
+
+/** Half-open padded month grid range (Mon of first week → Mon after last week). */
+export function monthGridRange(dateKey: string): { readonly from: string; readonly to: string } {
+  const monthStart = startOfCalendarMonth(dateKey);
+  const nextMonthStart = addCalendarMonths(monthStart, 1);
+  const monthEnd = addCalendarDays(nextMonthStart, -1);
+  return {
+    from: mondayOfWeek(monthStart),
+    to: addCalendarDays(mondayOfWeek(monthEnd), 7),
+  };
+}
+
+export function monthGridDays(dateKey: string): readonly string[] {
+  const { from, to } = monthGridRange(dateKey);
+  const days: string[] = [];
+  for (let cursor = from; cursor < to; cursor = addCalendarDays(cursor, 1)) {
+    days.push(cursor);
+  }
+  return days;
+}
+
 export function officeDateTimeParts(
   instant: string,
   timeZone: string,

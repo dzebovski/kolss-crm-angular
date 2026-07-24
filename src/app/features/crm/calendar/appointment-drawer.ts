@@ -501,7 +501,12 @@ export class AppointmentDrawer {
 
   protected readonly managerOptions = computed<readonly UiSelectOption[]>(() =>
     this.data.managers
-      .filter((manager) => manager.officeUuids.includes(this.data.office.id))
+      .filter(
+        (manager) =>
+          manager.status === 'active' &&
+          manager.role === 'office_member' &&
+          manager.officeUuids.includes(this.data.office.id),
+      )
       .map((manager) => ({
         value: manager.id,
         label: manager.displayName,
