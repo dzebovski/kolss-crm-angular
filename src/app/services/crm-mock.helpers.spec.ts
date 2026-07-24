@@ -1,6 +1,7 @@
 import {
   callStatusTone,
   clientStatusTone,
+  commentAssigneeForLead,
   commentDueAtForLead,
   showroomDueAtForLead,
 } from './crm-mock.helpers';
@@ -45,6 +46,11 @@ describe('independent due dates', () => {
 
   it('does not resurrect a stale comment reminder when the API returns null', () => {
     expect(commentDueAtForLead({ commentReminderDueAt: null })).toBeNull();
+  });
+
+  it('returns the active comment task assignee independently', () => {
+    expect(commentAssigneeForLead({ commentReminderAssignedTo: 'emp-kyiv-1' })).toBe('emp-kyiv-1');
+    expect(commentAssigneeForLead({ commentReminderAssignedTo: null })).toBeNull();
   });
 
   it('supports the legacy callback context for showroom dates', () => {

@@ -63,6 +63,7 @@ export type LeadListRow = Lead & {
   reactivated_at?: string | null;
   latest_timeline_comment?: LatestTimelineCommentEmbed | null;
   comment_reminder_due_at?: string | null;
+  comment_reminder_assigned_to?: string | null;
   showroom_due_at?: string | null;
   callback_due_context?: CallbackDueContextEmbed | null;
   markers?: readonly LeadMarkerEmbed[] | null;
@@ -424,6 +425,7 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
         : null,
     translatedAt: event.comment_translated_at ?? null,
     newValue: event.new_value,
+    assignedToId: assignedToFromNewValue(event.new_value),
     actorId: event.actor_id ?? '',
     actorName: event.profiles?.display_name?.trim() || '',
     occurredAt: event.created_at,
@@ -460,6 +462,13 @@ function eventEditAudit(value: unknown): LeadEventEditAudit | null {
     editedById: typeof editedById === 'string' ? editedById : '',
     editedByName: typeof editedByName === 'string' ? editedByName : 'Невідомий',
   };
+}
+
+/** Reads a task assignee uuid from a lead event `new_value.assigned_to`. */
+function assignedToFromNewValue(value: unknown): string | null {
+  if (!isRecord(value)) return null;
+  const assigned = value['assigned_to'];
+  return typeof assigned === 'string' && assigned.trim() ? assigned : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -562,6 +571,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     contract,
     callbackDueAt: row.callback_due_at,
     commentReminderDueAt: row.comment_reminder_due_at ?? null,
+    commentReminderAssignedTo: row.comment_reminder_assigned_to ?? null,
     callbackDueContext,
     showroomDueAt,
     lastComment: row.last_comment,

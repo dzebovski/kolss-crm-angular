@@ -21,11 +21,12 @@ export class LeadActivitiesService {
     });
   }
 
-  addComment(leadId: string, comment: string, dueDate = ''): Promise<void> {
+  addComment(leadId: string, comment: string, dueDate = '', assignedTo = ''): Promise<void> {
     return this.commit(leadId, {
       type: 'comment',
       comment: comment.trim(),
       ...(dueDate ? { dueAt: dueAtFromDate(dueDate) } : {}),
+      ...(assignedTo ? { assignedTo } : {}),
     });
   }
 

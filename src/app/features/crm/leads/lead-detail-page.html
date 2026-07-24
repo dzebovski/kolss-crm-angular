@@ -437,6 +437,13 @@
                     [name]="eventActorName(event)"
                     size="xs"
                   />
+                  @if (event.assignedToId) {
+                    <span class="timeline-card__meta-divider" aria-hidden="true"></span>
+                    <span class="timeline-card__assignee">
+                      <app-ui-icon name="person" [size]="14" />
+                      {{ i18n.t('leadDetail.assignedTo', { manager: eventAssigneeName(event) }) }}
+                    </span>
+                  }
                 </footer>
                 @if (eventAuditText(event); as auditText) {
                   <p class="timeline-card__audit">{{ auditText }}</p>

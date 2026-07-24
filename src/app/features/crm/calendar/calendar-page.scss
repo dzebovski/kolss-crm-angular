@@ -139,9 +139,35 @@ h1 {
 }
 
 .grid-head,
+.all-day-row,
 .time-row {
   display: grid;
   grid-template-columns: 4.5rem repeat(var(--manager-count, 1), minmax(10rem, 1fr));
+}
+
+.all-day-row {
+  border-bottom: 1px solid var(--ui-border);
+  background: color-mix(in srgb, var(--ui-surface-muted) 32%, transparent);
+}
+
+.all-day-label {
+  display: grid;
+  align-content: center;
+  padding: var(--ui-space-2);
+  color: var(--ui-text-subtle);
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+.all-day-cell {
+  min-width: 0;
+  padding: 0.3rem;
+  border-right: 1px solid var(--ui-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .grid-head {

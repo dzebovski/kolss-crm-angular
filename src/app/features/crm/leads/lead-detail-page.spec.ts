@@ -665,7 +665,12 @@ describe('LeadDetailView', () => {
     const { activities, dialogOpen, fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
     dialogOpen.mockReturnValue({
-      afterClosed: () => of({ comment: 'Узгодили повторний дзвінок.', dueDate: '2026-07-25' }),
+      afterClosed: () =>
+        of({
+          comment: 'Узгодили повторний дзвінок.',
+          dueDate: '2026-07-25',
+          assignedTo: 'emp-kyiv-1',
+        }),
     });
 
     findActionButton(element, 'Додати коментар')?.click();
@@ -675,10 +680,23 @@ describe('LeadDetailView', () => {
         lead.id,
         'Узгодили повторний дзвінок.',
         '2026-07-25',
+        'emp-kyiv-1',
       ),
     );
     expect(dialogOpen.mock.calls[0]?.[1]?.data.title).toBe('Додати коментар');
     expect(dialogOpen.mock.calls[0]?.[1]?.data.allowDueDate).toBe(true);
+    expect(dialogOpen.mock.calls[0]?.[1]?.data.allowManager).toBe(true);
+    expect(dialogOpen.mock.calls[0]?.[1]?.data.managerOptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: '', label: expect.any(String) }),
+        expect.objectContaining({ value: 'emp-kyiv-1', label: 'Данило Мороз' }),
+      ]),
+    );
+    expect(
+      dialogOpen.mock.calls[0]?.[1]?.data.managerOptions.some(
+        (option: { value: string }) => option.value === 'emp-super-admin',
+      ),
+    ).toBe(false);
   });
 
   it('opens the call radial dialog and records the selected result', async () => {

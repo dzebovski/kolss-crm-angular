@@ -29,7 +29,7 @@ import {
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
 } from '../../../services/appointments.service';
-import { commentDueAtForLead } from '../../../services/crm-mock.helpers';
+import { commentAssigneeForLead, commentDueAtForLead } from '../../../services/crm-mock.helpers';
 import type { MockLead } from '../../../services/crm-mock.types';
 import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
@@ -156,10 +156,11 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
         </div>
       } @else {
         @if (view() === 'day') {
-          @if (dayReminders(selectedDate()).length) {
+          @if (dayBannerReminders(selectedDate()).length) {
             <app-calendar-day-reminders
               class="day-reminders-banner desktop-calendar"
-              [reminders]="dayReminders(selectedDate())"
+              [reminders]="dayBannerReminders(selectedDate())"
+              [showAssignee]="true"
               (leadSelected)="openLead($event)"
             />
           }
@@ -178,6 +179,21 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                 </div>
               }
             </div>
+            @if (hasDayColumnTasks(selectedDate())) {
+              <div ngGridRow class="all-day-row">
+                <div ngGridCell class="time-label all-day-label">{{ i18n.t('calendar.allDay') }}</div>
+                @for (manager of visibleManagers(); track manager.id) {
+                  <div ngGridCell class="all-day-cell">
+                    @if (dayColumnTasks(selectedDate(), manager.id).length) {
+                      <app-calendar-day-reminders
+                        [reminders]="dayColumnTasks(selectedDate(), manager.id)"
+                        (leadSelected)="openLead($event)"
+                      />
+                    }
+                  </div>
+                }
+              </div>
+            }
             @for (slot of timeSlots; track slot) {
               <div ngGridRow class="time-row">
                 <div ngGridCell class="time-label">{{ slot }}</div>
@@ -250,6 +266,7 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                   @if (dayReminders(day).length) {
                     <app-calendar-day-reminders
                       [reminders]="dayReminders(day)"
+                      [showAssignee]="true"
                       (leadSelected)="openLead($event)"
                     />
                   }
@@ -354,6 +371,7 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                     @if (dayReminders(day).length) {
                       <app-calendar-day-reminders
                         [reminders]="dayReminders(day)"
+                        [showAssignee]="true"
                         (leadSelected)="openLead($event)"
                       />
                     }
@@ -412,6 +430,7 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                 <app-calendar-day-reminders
                   class="agenda-reminders"
                   [reminders]="dayReminders(group.date)"
+                  [showAssignee]="true"
                   (leadSelected)="openLead($event)"
                 />
               }
@@ -641,7 +660,14 @@ export class CalendarPage {
     };
 
     for (const lead of leads) {
-      if (selectedManager !== 'all' && lead.assignedToId !== selectedManager) continue;
+      const assigneeId = commentAssigneeForLead(lead);
+      if (
+        selectedManager !== 'all' &&
+        lead.assignedToId !== selectedManager &&
+        assigneeId !== selectedManager
+      ) {
+        continue;
+      }
 
       if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
         push({
@@ -653,7 +679,18 @@ export class CalendarPage {
 
       const commentDueAt = commentDueAtForLead(lead);
       if (commentDueAt) {
-        push({ kind: 'comment', date: officeDateTimeParts(commentDueAt, timeZone).date, lead });
+        const date = officeDateTimeParts(commentDueAt, timeZone).date;
+        if (assigneeId) {
+          push({
+            kind: 'task',
+            date,
+            lead,
+            assigneeId,
+            assigneeName: this.employeeName(assigneeId),
+          });
+        } else {
+          push({ kind: 'comment', date, lead });
+        }
       }
     }
 
@@ -662,6 +699,38 @@ export class CalendarPage {
 
   protected dayReminders(date: string): readonly CalendarReminder[] {
     return this.remindersByDate().get(date) ?? EMPTY_REMINDERS;
+  }
+
+  /**
+   * Day-view banner reminders: everything except tasks that already appear as a
+   * chip in a visible manager column. Tasks assigned to non–office_member staff
+   * (no column) stay here so they are not lost.
+   */
+  protected dayBannerReminders(date: string): readonly CalendarReminder[] {
+    const columnIds = new Set(this.visibleManagers().map((manager) => manager.id));
+    return this.dayReminders(date).filter(
+      (reminder) =>
+        reminder.kind !== 'task' || !reminder.assigneeId || !columnIds.has(reminder.assigneeId),
+    );
+  }
+
+  /** Date-only tasks for a manager's day column all-day strip. */
+  protected dayColumnTasks(date: string, managerId: string): readonly CalendarReminder[] {
+    return this.dayReminders(date).filter(
+      (reminder) => reminder.kind === 'task' && reminder.assigneeId === managerId,
+    );
+  }
+
+  protected hasDayColumnTasks(date: string): boolean {
+    return this.visibleManagers().some((manager) => this.dayColumnTasks(date, manager.id).length > 0);
+  }
+
+  protected employeeName(id: string | null): string {
+    if (!id) return this.i18n.t('common.unassigned');
+    return (
+      this.managers().find((manager) => manager.id === id)?.displayName ??
+      this.i18n.t('common.unknown')
+    );
   }
 
   protected readonly agendaGroups = computed(() => {

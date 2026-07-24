@@ -260,11 +260,35 @@ export class LeadDetailView {
       placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
       submitLabel: this.i18n.t('leadDetail.addTimeline'),
       allowDueDate: true,
+      allowManager: true,
+      managerOptions: this.commentAssigneeOptions(lead),
     });
     if (!result) return;
     await this.runActivity(() =>
-      this.activities.addComment(lead.id, result.comment, result.dueDate ?? ''),
+      this.activities.addComment(
+        lead.id,
+        result.comment,
+        result.dueDate ?? '',
+        result.assignedTo ?? '',
+      ),
     );
+  }
+
+  /** Active, non–super_admin staff of the lead's office, offered as task assignees. */
+  protected commentAssigneeOptions(lead: MockLead): readonly UiSelectOption[] {
+    const staff = (this.employeesResource.value() ?? [])
+      .filter(
+        (employee) =>
+          employee.status === 'active' &&
+          employee.role !== 'super_admin' &&
+          employee.officeIds.includes(lead.officeCode),
+      )
+      .map((employee) => ({
+        value: employee.id,
+        label: employee.displayName,
+        userId: employee.id,
+      }));
+    return [{ value: '', label: this.i18n.t('common.unassigned') }, ...staff];
   }
 
   protected async editEvent(lead: MockLead, event: LeadEvent): Promise<void> {
@@ -788,6 +812,10 @@ export class LeadDetailView {
 
   protected eventActorName(event: LeadEvent): string {
     return event.actorName?.trim() || this.employeeName(event.actorId || null);
+  }
+
+  protected eventAssigneeName(event: LeadEvent): string {
+    return this.employeeName(event.assignedToId ?? null);
   }
 
   protected eventAuditText(event: LeadEvent): string {

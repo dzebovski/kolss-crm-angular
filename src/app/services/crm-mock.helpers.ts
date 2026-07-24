@@ -556,6 +556,13 @@ export function commentDueAtForLead(lead: { commentReminderDueAt: string | null 
   return lead.commentReminderDueAt;
 }
 
+/** Returns the assignee of the active comment task (latest comment), if any. */
+export function commentAssigneeForLead(lead: {
+  commentReminderAssignedTo: string | null;
+}): string | null {
+  return lead.commentReminderAssignedTo;
+}
+
 /** Returns the active showroom date independently of callback/comment due dates. */
 export function showroomDueAtForLead(lead: {
   callbackDueAt: string | null;

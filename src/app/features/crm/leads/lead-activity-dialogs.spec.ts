@@ -116,6 +116,59 @@ describe('lead activity dialogs', () => {
     await expect(closed).resolves.toEqual({ comment: '' });
   });
 
+  it('requires a next-action date once a manager is assigned', async () => {
+    const ref = dialog.open(TextActivityDialog, {
+      data: {
+        eyebrow: 'Нотатка менеджера',
+        title: 'Додати коментар',
+        description: 'Коментар не змінює статуси.',
+        placeholder: 'Коментар',
+        submitLabel: 'Додати',
+        allowDueDate: true,
+        allowManager: true,
+        managerOptions: [
+          { value: '', label: 'Не призначено' },
+          { value: 'emp-kyiv-1', label: 'Данило Мороз', userId: 'emp-kyiv-1' },
+        ],
+      },
+      ariaLabelledBy: 'text-activity-title',
+      enterAnimationDuration: 0,
+    });
+    const closed = firstValueFrom(ref.afterClosed());
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(overlay.querySelector('app-ui-select')).toBeTruthy();
+    expect(overlay.textContent).toContain('Призначити менеджеру');
+
+    const instance = ref.componentInstance;
+    instance['model'].set({
+      comment: 'Підготувати кошторис',
+      dueDate: '',
+      assignedTo: 'emp-kyiv-1',
+    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    expect(overlay.textContent).not.toContain('Дата наступної дії (необов’язково)');
+    expect(overlay.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+
+    instance['model'].set({
+      comment: 'Підготувати кошторис',
+      dueDate: '2026-07-25',
+      assignedTo: 'emp-kyiv-1',
+    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const submit = overlay.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(submit.disabled).toBe(false);
+    submit.click();
+
+    await expect(closed).resolves.toEqual({
+      comment: 'Підготувати кошторис',
+      dueDate: '2026-07-25',
+      assignedTo: 'emp-kyiv-1',
+    });
+  });
+
   it('has no automated accessibility violations', async () => {
     dialog.open(TextActivityDialog, {
       data: {

@@ -9,6 +9,7 @@ import { TranslatePipe } from '../../../core/i18n/translate.pipe';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
+  commentAssigneeForLead,
   commentDueAtForLead,
   clientStatusTone,
   groupLeadsForDashboard,
@@ -32,6 +33,12 @@ import {
 import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
 import { LeadDueDate } from '../leads/lead-due-date';
 import { TodayAppointmentsWidget } from './today-appointments-widget';
+
+interface ManagerTaskGroup {
+  readonly managerId: string;
+  readonly managerName: string;
+  readonly tasks: readonly MockLead[];
+}
 
 @Component({
   selector: 'app-dashboard-page',
@@ -85,6 +92,65 @@ import { TodayAppointmentsWidget } from './today-appointments-widget';
       </div>
 
       <app-today-appointments-widget />
+
+      <section class="manager-tasks" aria-labelledby="manager-tasks-title">
+        <header class="manager-tasks__head">
+          <div>
+            <h2 id="manager-tasks-title">{{ 'dashboard.tasksTitle' | translate }}</h2>
+            <p>{{ 'dashboard.tasksHint' | translate }}</p>
+          </div>
+          <span class="manager-tasks__total">{{ taskCount() }}</span>
+        </header>
+
+        @if (leadsResource.isLoading()) {
+          <div class="loading" aria-live="polite">
+            @for (row of skeletonRows; track row) {
+              <span></span>
+            }
+          </div>
+        } @else if (!taskCount()) {
+          <p class="manager-tasks__empty">{{ 'dashboard.tasksEmpty' | translate }}</p>
+        } @else {
+          <div class="manager-tasks__groups">
+            @for (group of managerTasks(); track group.managerId) {
+              <section class="manager-tasks__group">
+                <h3 class="manager-tasks__manager">
+                  <app-ui-user [userId]="group.managerId" [name]="group.managerName" size="sm" />
+                  <span class="manager-tasks__group-count">{{
+                    'dashboard.taskCount' | translate: { count: group.tasks.length }
+                  }}</span>
+                </h3>
+                <ul class="manager-tasks__list">
+                  @for (task of group.tasks; track task.id) {
+                    <li>
+                      <button
+                        type="button"
+                        class="lead-open task-open"
+                        [attr.data-lead-id]="task.id"
+                        [attr.aria-label]="i18n.t('dashboard.openLead', { name: task.name })"
+                        (click)="openLead(task)"
+                      >
+                        <span class="lead-main">
+                          <strong>{{ task.name }}</strong>
+                          <small>{{ task.phone }}</small>
+                          @if (task.latestTimelineComment; as latest) {
+                            <small class="lead-comment" [title]="latest.comment">
+                              <app-linkified-text [text]="latest.comment" />
+                            </small>
+                          }
+                        </span>
+                        @if (commentDueAtForLead(task); as due) {
+                          <app-lead-due-date class="task-due" [date]="due" kind="comment" />
+                        }
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </section>
+            }
+          </div>
+        }
+      </section>
 
       <div class="reminders">
         <div class="reminders-head">
@@ -477,6 +543,118 @@ import { TodayAppointmentsWidget } from './today-appointments-widget';
       color: var(--ui-danger);
     }
 
+    .manager-tasks {
+      border: 1px solid var(--ui-border);
+      border-radius: var(--ui-radius-lg);
+      background: var(--ui-surface-raised);
+      box-shadow: var(--ui-shadow-1);
+      overflow: hidden;
+    }
+
+    .manager-tasks__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ui-space-3);
+      padding: var(--ui-space-4) var(--ui-space-5);
+      border-bottom: 1px solid var(--ui-border);
+    }
+
+    .manager-tasks__head h2 {
+      margin: 0;
+      font-family: var(--ui-font-display);
+      font-size: 1.4rem;
+    }
+
+    .manager-tasks__head p {
+      margin: var(--ui-space-1) 0 0;
+      color: var(--ui-text-muted);
+      font-size: 0.875rem;
+    }
+
+    .manager-tasks__total {
+      min-width: 2.5rem;
+      height: 2.5rem;
+      padding-inline: var(--ui-space-2);
+      border-radius: var(--ui-radius-pill);
+      background: var(--ui-action);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 750;
+    }
+
+    .manager-tasks__groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    }
+
+    .manager-tasks__group {
+      min-width: 0;
+      padding: var(--ui-space-3) var(--ui-space-4);
+      border-top: 1px solid var(--ui-border);
+    }
+
+    .manager-tasks__group:nth-child(n + 2) {
+      border-left: 1px solid var(--ui-border);
+    }
+
+    .manager-tasks__manager {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ui-space-2);
+      margin: 0 0 var(--ui-space-2);
+      font-size: 0.9rem;
+    }
+
+    .manager-tasks__group-count {
+      color: var(--ui-text-subtle);
+      font-size: 0.72rem;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .manager-tasks__list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 2px;
+    }
+
+    .manager-tasks__list li {
+      border-radius: var(--ui-radius-md);
+      transition: background var(--ui-duration-fast) var(--ui-ease);
+    }
+
+    .manager-tasks__list li:hover,
+    .manager-tasks__list li:focus-within {
+      background: var(--ui-surface-subtle);
+    }
+
+    .task-open {
+      width: 100%;
+      align-items: flex-start;
+      padding: var(--ui-space-2) var(--ui-space-3);
+      border-radius: var(--ui-radius-md);
+    }
+
+    .task-open:focus-visible {
+      box-shadow: inset 3px 0 var(--ui-action);
+    }
+
+    .task-due {
+      flex-shrink: 0;
+    }
+
+    .manager-tasks__empty {
+      margin: 0;
+      padding: var(--ui-space-4) var(--ui-space-5);
+      color: var(--ui-text-subtle);
+      font-size: 0.875rem;
+    }
+
     @keyframes pulse {
       50% {
         opacity: 0.5;
@@ -500,6 +678,10 @@ import { TodayAppointmentsWidget } from './today-appointments-widget';
 
       .lead-meta {
         flex-wrap: wrap;
+      }
+
+      .manager-tasks__group:nth-child(n + 2) {
+        border-left: 0;
       }
     }
   `,
@@ -535,6 +717,36 @@ export class DashboardPage {
 
   protected readonly groups = computed(() =>
     groupLeadsForDashboard(this.leadsResource.value() ?? []),
+  );
+
+  /** Active leads whose latest comment is a manager task, grouped by assignee. */
+  protected readonly managerTasks = computed<readonly ManagerTaskGroup[]>(() => {
+    const leads = (this.leadsResource.value() ?? []).filter(
+      (lead) => !lead.archivedAt && commentAssigneeForLead(lead),
+    );
+    const byManager = new Map<string, MockLead[]>();
+    for (const lead of leads) {
+      const managerId = commentAssigneeForLead(lead)!;
+      const bucket = byManager.get(managerId);
+      if (bucket) bucket.push(lead);
+      else byManager.set(managerId, [lead]);
+    }
+    return [...byManager.entries()]
+      .map(([managerId, tasks]) => ({
+        managerId,
+        managerName: this.employeeName(managerId),
+        tasks: [...tasks].sort(
+          (left, right) =>
+            (commentDueAtForLead(left) ?? '').localeCompare(commentDueAtForLead(right) ?? ''),
+        ),
+      }))
+      .sort((left, right) =>
+        left.managerName.localeCompare(right.managerName, this.i18n.locale()),
+      );
+  });
+
+  protected readonly taskCount = computed(() =>
+    this.managerTasks().reduce((total, group) => total + group.tasks.length, 0),
   );
 
   protected readonly loadError = computed(() => {
@@ -604,7 +816,12 @@ export class DashboardPage {
   }
 
   protected async openLead(lead: MockLead): Promise<void> {
-    const leadIds = this.groups().flatMap((group) => group.rows.map((row) => row.id));
+    const leadIds = [
+      ...new Set([
+        ...this.groups().flatMap((group) => group.rows.map((row) => row.id)),
+        ...this.managerTasks().flatMap((group) => group.tasks.map((task) => task.id)),
+      ]),
+    ];
     if (!leadIds.length) return;
     const scrollY = window.scrollY;
     const state: LeadDetailDrawerState = { dirty: false };

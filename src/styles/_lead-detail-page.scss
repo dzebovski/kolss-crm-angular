@@ -211,6 +211,19 @@
     font-size: 0.72rem;
   }
 
+  .timeline-card__assignee {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    color: var(--ui-action);
+    font-weight: 650;
+  }
+
+  .timeline-card__assignee app-ui-icon {
+    flex: 0 0 auto;
+  }
+
   .timeline-list p {
     margin: 0.15rem 0;
     color: var(--ui-text-muted);

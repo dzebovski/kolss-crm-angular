@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
@@ -34,16 +34,20 @@ export interface TextActivityDialogData {
   readonly commentOptional?: boolean;
   readonly initialValue?: string;
   readonly allowDueDate?: boolean;
+  /** When set, render an optional manager picker (task assignee). */
+  readonly allowManager?: boolean;
+  readonly managerOptions?: readonly UiSelectOption[];
 }
 
 export interface TextActivityDialogResult {
   readonly comment: string;
   readonly dueDate?: string;
+  readonly assignedTo?: string;
 }
 
 @Component({
   selector: 'app-text-activity-dialog',
-  imports: [FormField, UiButton, UiTextarea, UiTextField],
+  imports: [FormField, UiButton, UiSelect, UiTextarea, UiTextField],
   template: `
     <form class="activity-dialog" (submit)="save(); $event.preventDefault()">
       <header class="activity-dialog__heading">
@@ -60,11 +64,22 @@ export interface TextActivityDialogResult {
         [formField]="commentForm.comment"
         [error]="commentError()"
       />
+      @if (data.allowManager && data.managerOptions?.length) {
+        <app-ui-select
+          [label]="i18n.t('activity.assignManagerLabel')"
+          [placeholder]="i18n.t('common.unassigned')"
+          [options]="data.managerOptions!"
+          [formField]="commentForm.assignedTo"
+        />
+      }
       @if (data.allowDueDate) {
         <app-ui-text-field
           type="date"
-          [label]="i18n.t('activity.dueDateOptionalLabel')"
+          [label]="
+            managerSelected() ? i18n.t('activity.dueDateLabel') : i18n.t('activity.dueDateOptionalLabel')
+          "
           [formField]="commentForm.dueDate"
+          [error]="dueDateError()"
         />
       }
       <footer class="activity-dialog__actions">
@@ -86,14 +101,23 @@ export class TextActivityDialog {
   protected readonly model = signal({
     comment: this.data.initialValue ?? '',
     dueDate: '',
+    assignedTo: '',
   });
+  protected readonly managerSelected = computed(() => !!this.model().assignedTo.trim());
   protected readonly commentForm = form(this.model, (path) => {
-    if (this.data.commentOptional) return;
-    required(path.comment, { message: this.i18n.t('activity.commentRequired') });
-    validate(path.comment, ({ value }) =>
-      value().trim()
-        ? undefined
-        : { kind: 'whitespace', message: this.i18n.t('activity.commentRequired') },
+    if (!this.data.commentOptional) {
+      required(path.comment, { message: this.i18n.t('activity.commentRequired') });
+      validate(path.comment, ({ value }) =>
+        value().trim()
+          ? undefined
+          : { kind: 'whitespace', message: this.i18n.t('activity.commentRequired') },
+      );
+    }
+    // A next-action date is required once a manager (task assignee) is chosen.
+    validate(path.dueDate, ({ value }) =>
+      this.model().assignedTo.trim() && !value().trim()
+        ? { kind: 'required', message: this.i18n.t('activity.dueDateRequiredForManager') }
+        : undefined,
     );
   });
 
@@ -102,13 +126,20 @@ export class TextActivityDialog {
     return state.touched() ? (state.errors()[0]?.message ?? '') : '';
   }
 
+  protected dueDateError(): string {
+    const state = this.commentForm.dueDate();
+    return state.touched() ? (state.errors()[0]?.message ?? '') : '';
+  }
+
   protected save(): void {
     submit(this.commentForm, async () => {
       const comment = this.model().comment.trim();
       const dueDate = this.data.allowDueDate ? this.model().dueDate.trim() : '';
+      const assignedTo = this.data.allowManager ? this.model().assignedTo.trim() : '';
       this.dialogRef.close({
         comment,
         ...(dueDate ? { dueDate } : {}),
+        ...(assignedTo ? { assignedTo } : {}),
       });
     });
   }

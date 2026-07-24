@@ -199,4 +199,36 @@ describe('DashboardPage lead workflow', () => {
     expect(page.textContent).toContain('Нове уточнення без нагадування');
     expect(page.querySelector('.comment-next-action')).toBeNull();
   });
+
+  it('groups active manager tasks by assignee', async () => {
+    const { dialogOpen, fixture } = await render(undefined, {
+      name: 'Task Lead',
+      commentReminderDueAt: '2026-07-25T12:00:00.000Z',
+      commentReminderAssignedTo: 'emp-kyiv-1',
+      latestTimelineComment: {
+        comment: 'Підготувати кошторис',
+        occurredAt: '2026-07-24T10:00:00.000Z',
+        eventType: 'comment_added',
+        category: 'comment',
+        statusCode: null,
+        newValue: {
+          callback_due_at: '2026-07-25T12:00:00.000Z',
+          assigned_to: 'emp-kyiv-1',
+        },
+      },
+    });
+    fixture.detectChanges();
+    const page = fixture.nativeElement as HTMLElement;
+
+    expect(page.querySelector('#manager-tasks-title')?.textContent).toContain('Завдання менеджерів');
+    expect(page.querySelector('.manager-tasks__total')?.textContent).toContain('1');
+    expect(page.querySelector('.manager-tasks__manager')?.textContent).toContain('Данило Мороз');
+    expect(page.querySelector('.task-open')?.textContent).toContain('Task Lead');
+    expect(page.querySelector('.task-open')?.textContent).toContain('Підготувати кошторис');
+    expect(page.querySelector('.task-due')?.textContent).toContain('Нагадування до 25.07');
+
+    page.querySelector<HTMLButtonElement>('.task-open')!.click();
+    await fixture.whenStable();
+    expect(dialogOpen).toHaveBeenCalledOnce();
+  });
 });

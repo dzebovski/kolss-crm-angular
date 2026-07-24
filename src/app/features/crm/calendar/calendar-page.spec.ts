@@ -131,6 +131,7 @@ const baseLead: MockLead = {
   contract: null,
   callbackDueAt: null,
   commentReminderDueAt: null,
+  commentReminderAssignedTo: null,
   lastComment: null,
   latestTimelineComment: null,
   lastActivityAt: '2026-07-20T00:00:00.000Z',
@@ -419,6 +420,47 @@ describe('CalendarPage', () => {
       'Comment Клієнт',
     );
     expect(banner24?.textContent).not.toContain('Callback Клієнт');
+  });
+
+  it('puts office_member tasks in the day column and keeps other assignees in the banner', async () => {
+    const memberTask: MockLead = {
+      ...baseLead,
+      id: 'lead-member-task',
+      name: 'Member Task',
+      commentReminderDueAt: '2026-07-23T09:00:00.000Z',
+      commentReminderAssignedTo: manager.id,
+    };
+    const curatorTask: MockLead = {
+      ...baseLead,
+      id: 'lead-curator-task',
+      name: 'Curator Task',
+      commentReminderDueAt: '2026-07-23T09:00:00.000Z',
+      commentReminderAssignedTo: curator.id,
+    };
+    const { fixture } = await render({}, [manager, curator, officeAdmin], [
+      memberTask,
+      curatorTask,
+    ]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const heads = Array.from(element.querySelectorAll('.manager-head strong')).map(
+      (node) => node.textContent?.trim(),
+    );
+    expect(heads).toEqual(['Олена']);
+
+    const allDay = element.querySelector('.all-day-row');
+    expect(allDay?.querySelector('.reminder-chip.is-task')?.textContent).toContain('Member Task');
+    expect(allDay?.textContent).not.toContain('Curator Task');
+
+    const banner = element.querySelector('.day-reminders-banner');
+    expect(banner?.querySelector('.reminder-chip.is-task')?.textContent).toContain('Curator Task');
+    expect(banner?.textContent).toContain('Куратор Офісу');
+    expect(banner?.textContent).not.toContain('Member Task');
   });
 
   it('narrows reminders by the selected manager filter', async () => {

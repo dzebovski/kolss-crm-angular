@@ -100,6 +100,8 @@ export interface LeadEvent {
   readonly translationSourceLanguage?: 'UK' | 'PL' | null;
   readonly translatedAt?: string | null;
   readonly newValue: unknown;
+  /** Task assignee uuid from `new_value.assigned_to`; null for non-task comments. */
+  readonly assignedToId?: string | null;
   readonly actorId: string;
   /** Display name from API `profiles.display_name` join; empty when missing. */
   readonly actorName?: string;
@@ -185,6 +187,8 @@ export interface MockLead {
   readonly contract: LeadContract | null;
   readonly callbackDueAt: string | null;
   readonly commentReminderDueAt: string | null;
+  /** Assignee uuid of the active comment task (latest comment event); null when none. */
+  readonly commentReminderAssignedTo: string | null;
   readonly callbackDueContext?: CallbackDueContext | null;
   readonly showroomDueAt?: string | null;
   readonly lastComment: string | null;
@@ -278,5 +282,10 @@ export type LeadActivityPayload =
       readonly currency?: ContractCurrency;
       readonly dueAt?: string;
     }
-  | { readonly type: 'comment'; readonly comment: string; readonly dueAt?: string }
+  | {
+      readonly type: 'comment';
+      readonly comment: string;
+      readonly dueAt?: string;
+      readonly assignedTo?: string;
+    }
   | { readonly type: 'reopen' };

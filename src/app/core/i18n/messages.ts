@@ -277,6 +277,12 @@ export const messages = {
     pl: 'Przypomnienie do komentarza: {name}',
     en: 'Comment reminder: {name}',
   },
+  'calendar.reminderTask': {
+    uk: 'Завдання: {name}',
+    pl: 'Zadanie: {name}',
+    en: 'Task: {name}',
+  },
+  'calendar.allDay': { uk: 'Завдання', pl: 'Zadania', en: 'Tasks' },
 
   'role.super_admin': { uk: 'Супер-адмін', pl: 'Super-admin', en: 'Super admin' },
   'role.curator': { uk: 'Куратор', pl: 'Kurator', en: 'Curator' },
@@ -660,6 +666,11 @@ export const messages = {
     en: 'Manager note',
   },
   'leadDetail.addComment': { uk: 'Додати коментар', pl: 'Dodaj komentarz', en: 'Add comment' },
+  'leadDetail.assignedTo': {
+    uk: 'Призначено: {manager}',
+    pl: 'Przypisano: {manager}',
+    en: 'Assigned to {manager}',
+  },
   'leadDetail.commentDescription': {
     uk: 'Коментар не змінює поточні статуси.',
     pl: 'Komentarz nie zmienia bieżących statusów.',
@@ -712,6 +723,16 @@ export const messages = {
     en: 'Next action date (optional)',
   },
   'activity.dueDateRequired': { uk: 'Оберіть дату.', pl: 'Wybierz datę.', en: 'Choose a date.' },
+  'activity.dueDateRequiredForManager': {
+    uk: 'Оберіть дату наступної дії для призначеного менеджера.',
+    pl: 'Wybierz datę następnego działania dla przypisanego menedżera.',
+    en: 'Choose a next action date for the assigned manager.',
+  },
+  'activity.assignManagerLabel': {
+    uk: 'Призначити менеджеру (необов’язково)',
+    pl: 'Przypisz menedżerowi (opcjonalnie)',
+    en: 'Assign to manager (optional)',
+  },
   'activity.dueDateShort': { uk: 'До {date}', pl: 'Do {date}', en: 'Due {date}' },
   'activity.reminderShort': {
     uk: 'Нагадування до {date}',
@@ -1076,6 +1097,26 @@ export const messages = {
     uk: 'Ліди в роботі, розділені за статусом.',
     pl: 'Leady w toku, pogrupowane według statusu.',
     en: 'Leads in progress, grouped by status.',
+  },
+  'dashboard.tasksTitle': {
+    uk: 'Завдання менеджерів',
+    pl: 'Zadania menedżerów',
+    en: 'Manager tasks',
+  },
+  'dashboard.tasksHint': {
+    uk: 'Коментарі з призначеним менеджером і датою наступної дії.',
+    pl: 'Komentarze z przypisanym menedżerem i datą następnego działania.',
+    en: 'Comments with an assigned manager and a next action date.',
+  },
+  'dashboard.tasksEmpty': {
+    uk: 'Немає активних завдань менеджерів.',
+    pl: 'Brak aktywnych zadań menedżerów.',
+    en: 'No active manager tasks.',
+  },
+  'dashboard.taskCount': {
+    uk: '{count} завдань',
+    pl: '{count} zadań',
+    en: '{count} tasks',
   },
   'dashboard.emptyGroup': { uk: 'Немає лідів', pl: 'Brak leadów', en: 'No leads' },
   'dashboard.markerSaveFailed': {

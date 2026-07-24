@@ -154,9 +154,14 @@ describe('mapLeadListRow callback due context', () => {
       mapLeadListRow({
         ...baseRow,
         comment_reminder_due_at: '2026-08-06T12:00:00.000Z',
-      }).commentReminderDueAt,
-    ).toBe('2026-08-06T12:00:00.000Z');
+        comment_reminder_assigned_to: 'emp-kyiv-1',
+      }),
+    ).toMatchObject({
+      commentReminderDueAt: '2026-08-06T12:00:00.000Z',
+      commentReminderAssignedTo: 'emp-kyiv-1',
+    });
     expect(mapLeadListRow(baseRow).commentReminderDueAt).toBeNull();
+    expect(mapLeadListRow(baseRow).commentReminderAssignedTo).toBeNull();
     expect(
       mapLeadListRow({ ...baseRow, comment_reminder_due_at: null }).commentReminderDueAt,
     ).toBeNull();
@@ -422,6 +427,20 @@ describe('mapLeadDetail events', () => {
           created_at: '2026-07-10T02:00:00Z',
           profiles: { display_name: '   ' },
         },
+        {
+          id: 'evt-task',
+          lead_id: 'lead-1',
+          actor_id: 'user-manager',
+          event_type: 'comment',
+          comment: 'Підготувати кошторис',
+          old_value: null,
+          new_value: {
+            callback_due_at: '2026-07-25T12:00:00.000Z',
+            assigned_to: 'emp-kyiv-1',
+          },
+          created_at: '2026-07-10T03:00:00Z',
+          profiles: { display_name: 'Kyiv Manager' },
+        },
       ],
     });
 
@@ -446,6 +465,12 @@ describe('mapLeadDetail events', () => {
       translatedAt: '2026-07-10T02:01:00Z',
       type: 'comment',
       actorName: '',
+      assignedToId: null,
+    });
+    expect(lead.events[3]).toMatchObject({
+      id: 'evt-task',
+      type: 'comment',
+      assignedToId: 'emp-kyiv-1',
     });
   });
 });
