@@ -544,7 +544,7 @@ describe('LeadDetailView', () => {
     ).toBeNull();
   });
 
-  it('shows lead data editing only to authorized admins of an active lead', async () => {
+  it('shows lead data editing to office users of an active lead', async () => {
     const lead = CRM_MOCK_LEADS[0]!;
     const superAdminView = await render(lead, { role: 'super_admin' });
     expect(
@@ -572,9 +572,30 @@ describe('LeadDetailView', () => {
       (wrongOfficeView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
     ).toBeNull();
 
-    const memberView = await render(lead, { role: 'office_member' });
+    const memberView = await render(lead, {
+      role: 'office_member',
+      userOffices: [{ code: lead.officeCode }],
+    });
     expect(
       (memberView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).not.toBeNull();
+
+    const curatorView = await render(lead, {
+      role: 'curator',
+      userOffices: [{ code: lead.officeCode }],
+    });
+    expect(
+      (curatorView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
+    ).not.toBeNull();
+
+    const memberWrongOfficeView = await render(lead, {
+      role: 'office_member',
+      userOffices: [{ code: 'warsaw' }],
+    });
+    expect(
+      (memberWrongOfficeView.fixture.nativeElement as HTMLElement).querySelector(
+        '.lead-details__edit',
+      ),
     ).toBeNull();
 
     const archivedView = await render(
@@ -584,6 +605,21 @@ describe('LeadDetailView', () => {
     expect(
       (archivedView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
     ).toBeNull();
+  });
+
+  it('keeps archive hidden for office members even when they can edit lead data', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[7]!,
+      clientStatus: 'closed_lost',
+    };
+    const { fixture } = await render(lead, {
+      role: 'office_member',
+      userOffices: [{ code: lead.officeCode }],
+    });
+    const element = fixture.nativeElement as HTMLElement;
+    const summary = element.querySelector('.terminal-summary') as HTMLElement | null;
+    expect(summary).not.toBeNull();
+    expect(findButton(summary!, 'Архівувати')).toBeFalsy();
   });
 
   it('reloads the lead and emits changed after lead data is saved', async () => {

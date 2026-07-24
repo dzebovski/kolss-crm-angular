@@ -10,7 +10,7 @@ import {
   presentHistoryAuditText,
 } from '../../../core/i18n/event-presenter';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
+import { canArchiveLeads, canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
   callStatusTone,
@@ -437,17 +437,19 @@ export class LeadDetailView {
     const role = this.auth.profile()?.role;
     if (!canEditLeads(role)) return false;
     if (role === 'super_admin') return true;
-    return (
-      role === 'office_admin' &&
-      (this.session.officeContext()?.userOffices ?? []).some(
-        (office) => office.code === lead.officeCode,
-      )
+    return (this.session.officeContext()?.userOffices ?? []).some(
+      (office) => office.code === lead.officeCode,
     );
   }
 
   protected canArchiveLead(lead: MockLead): boolean {
     if (lead.clientStatus !== 'closed_lost' || lead.archivedAt) return false;
-    return this.canEditLead(lead);
+    const role = this.auth.profile()?.role;
+    if (!canArchiveLeads(role)) return false;
+    if (role === 'super_admin') return true;
+    return (this.session.officeContext()?.userOffices ?? []).some(
+      (office) => office.code === lead.officeCode,
+    );
   }
 
   protected canManageArchivedLead(lead: MockLead): boolean {

@@ -23,6 +23,15 @@ export function canManageUsers(role: string | null | undefined): boolean {
 }
 
 export function canEditLeads(role: string | null | undefined): boolean {
+  return (
+    role === 'super_admin' ||
+    role === 'curator' ||
+    role === 'office_admin' ||
+    role === 'office_member'
+  );
+}
+
+export function canArchiveLeads(role: string | null | undefined): boolean {
   return role === 'super_admin' || role === 'office_admin';
 }
 

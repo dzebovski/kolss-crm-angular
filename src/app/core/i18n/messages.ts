@@ -1466,6 +1466,11 @@ export const messages = {
     pl: 'Leady własnego biura',
     en: 'Own office leads',
   },
+  'accounts.permission.editLeadData': {
+    uk: 'Редагування даних ліда',
+    pl: 'Edycja danych leada',
+    en: 'Lead data editing',
+  },
   'accounts.permission.officeTeam': {
     uk: 'Команда офісу',
     pl: 'Zespół biura',

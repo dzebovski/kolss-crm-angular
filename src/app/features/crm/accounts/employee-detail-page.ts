@@ -35,16 +35,19 @@ const CURATOR_PERMISSIONS = [
   'accounts.permission.multiOffice',
   'accounts.permission.officeFilter',
   'accounts.permission.opsOverview',
+  'accounts.permission.editLeadData',
 ] as const satisfies readonly MessageKey[];
 
 const OFFICE_ADMIN_PERMISSIONS = [
   'accounts.permission.officeLeads',
+  'accounts.permission.editLeadData',
   'accounts.permission.officeTeam',
   'accounts.permission.basicAccessAdmin',
 ] as const satisfies readonly MessageKey[];
 
 const OFFICE_MEMBER_PERMISSIONS = [
   'accounts.permission.officeLeads',
+  'accounts.permission.editLeadData',
   'accounts.permission.updateStatuses',
   'accounts.permission.commentsCalls',
 ] as const satisfies readonly MessageKey[];
