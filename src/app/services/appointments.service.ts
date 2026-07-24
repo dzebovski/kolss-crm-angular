@@ -48,6 +48,37 @@ export function officeDateKey(date: Date, timeZone: string): string {
   return `${value['year']}-${value['month']}-${value['day']}`;
 }
 
+export interface CalendarAppointmentDeepLink {
+  readonly leadId: string;
+  readonly date: string;
+  readonly officeId: string;
+}
+
+const OFFICE_LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function calendarAppointmentDeepLink(input: {
+  readonly leadId: string;
+  readonly showroomDueAt: string;
+  readonly officeId: string;
+  readonly timeZone: string;
+}): CalendarAppointmentDeepLink {
+  return {
+    leadId: input.leadId,
+    date: officeDateKey(new Date(input.showroomDueAt), input.timeZone),
+    officeId: input.officeId,
+  };
+}
+
+export function parseCalendarAppointmentQuery(params: {
+  get(name: string): string | null;
+}): CalendarAppointmentDeepLink | null {
+  const leadId = params.get('leadId');
+  const date = params.get('date');
+  const officeId = params.get('officeId');
+  if (!leadId || !officeId || !date || !OFFICE_LOCAL_DATE.test(date)) return null;
+  return { leadId, date, officeId };
+}
+
 export function addCalendarDays(dateKey: string, days: number): string {
   const [year, month, day] = dateKey.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day + days, 12));

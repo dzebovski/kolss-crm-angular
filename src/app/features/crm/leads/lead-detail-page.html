@@ -207,6 +207,16 @@
             <app-lead-due-date class="status-item__due" [date]="lead.callbackDueAt" />
           } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
             <app-lead-due-date class="status-item__due" [date]="showroomDueAt" />
+            @if (calendarAppointmentQueryParams(lead); as appointmentQuery) {
+              <a
+                class="status-item__appointment-link"
+                routerLink="/crm/calendar"
+                [queryParams]="appointmentQuery"
+              >
+                <app-ui-icon name="calendar_month" [size]="14" />
+                {{ i18n.t('leadDetail.openAppointment') }}
+              </a>
+            }
           }
           <small>
             {{

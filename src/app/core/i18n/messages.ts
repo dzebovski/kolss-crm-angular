@@ -259,6 +259,11 @@ export const messages = {
     pl: 'Otwórz harmonogram',
     en: 'Open schedule',
   },
+  'calendar.openClient': {
+    uk: 'Відкрити картку клієнта',
+    pl: 'Otwórz kartę klienta',
+    en: 'Open client card',
+  },
 
   'role.super_admin': { uk: 'Супер-адмін', pl: 'Super-admin', en: 'Super admin' },
   'role.curator': { uk: 'Куратор', pl: 'Kurator', en: 'Curator' },
@@ -565,6 +570,11 @@ export const messages = {
     uk: 'Оновлено {date}',
     pl: 'Zaktualizowano {date}',
     en: 'Updated {date}',
+  },
+  'leadDetail.openAppointment': {
+    uk: 'Відкрити в календарі',
+    pl: 'Otwórz w kalendarzu',
+    en: 'Open in calendar',
   },
   'leadDetail.lastCall': { uk: 'Останній дзвінок', pl: 'Ostatnie połączenie', en: 'Last call' },
   'leadDetail.notRecorded': {

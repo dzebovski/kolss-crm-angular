@@ -782,4 +782,21 @@ describe('LeadDetailView', () => {
       height: '100dvh',
     });
   });
+
+  it('links a scheduled showroom appointment to the calendar deep-link', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[2]!,
+      clientStatus: 'showroom_invited',
+      showroomDueAt: '2026-08-05T12:00:00.000Z',
+    };
+    const { fixture } = await render(lead);
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '.status-item__appointment-link',
+    );
+
+    expect(link?.textContent).toContain('Відкрити в календарі');
+    expect(link?.getAttribute('href')).toBe(
+      `/crm/calendar?leadId=${lead.id}&date=2026-08-05&officeId=office-${lead.officeCode}`,
+    );
+  });
 });

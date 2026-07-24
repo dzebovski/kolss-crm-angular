@@ -1,5 +1,15 @@
 import { Grid, GridCell, GridCellWidget, GridRow } from '@angular/aria/grid';
-import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  resource,
+  signal,
+  untracked,
+} from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import type { Appointment } from '../../../core/api/generated/kolss-api.types';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -8,8 +18,10 @@ import type { Office } from '../../../models/database';
 import {
   addCalendarDays,
   AppointmentsService,
+  type CalendarAppointmentDeepLink,
   officeDateKey,
   officeDateTimeParts,
+  parseCalendarAppointmentQuery,
 } from '../../../services/appointments.service';
 import { UsersService } from '../../../services/users.service';
 import { UiButton } from '../../../ui/button/ui-button';
@@ -847,6 +859,15 @@ export class CalendarPage {
   private readonly appointments = inject(AppointmentsService);
   private readonly users = inject(UsersService);
   private readonly dialogs = inject(UiDialogService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  private readonly incomingDeepLink = parseCalendarAppointmentQuery(
+    this.route.snapshot.queryParamMap,
+  );
+  private readonly pendingDeepLink = signal<CalendarAppointmentDeepLink | null>(
+    this.incomingDeepLink,
+  );
 
   protected readonly view = signal<CalendarView>('week');
   protected readonly officeId = linkedSignal(
@@ -856,11 +877,37 @@ export class CalendarPage {
     this.officeId();
     return 'all';
   });
-  protected readonly selectedDate = signal(this.initialDate());
+  protected readonly selectedDate = signal(this.incomingDeepLink?.date ?? this.initialDate());
   protected readonly timeSlots = Array.from({ length: 20 }, (_, index) => {
     const minutes = 9 * 60 + index * 30;
     return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
   });
+
+  constructor() {
+    const deepLink = this.incomingDeepLink;
+    if (deepLink && this.availableOffices().some((office) => office.id === deepLink.officeId)) {
+      this.officeId.set(deepLink.officeId);
+    }
+
+    effect(() => {
+      const pending = this.pendingDeepLink();
+      if (!pending) return;
+      if (this.appointmentsResource.isLoading()) return;
+      if (this.officeId() !== pending.officeId) return;
+      if (!this.rangeIncludesDate(pending.date)) return;
+
+      const appointment = this.items().find((item) => item.lead.id === pending.leadId);
+      untracked(() => {
+        this.pendingDeepLink.set(null);
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: {},
+          replaceUrl: true,
+        });
+        if (appointment) this.openEdit(appointment);
+      });
+    });
+  }
 
   protected readonly office = computed(
     () => this.availableOffices().find((office) => office.id === this.officeId()) ?? null,
@@ -1110,6 +1157,11 @@ export class CalendarPage {
   private mondayFor(date: string): string {
     const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
     return addCalendarDays(date, weekday === 0 ? -6 : 1 - weekday);
+  }
+
+  private rangeIncludesDate(date: string): boolean {
+    const { from, to } = this.range();
+    return date >= from && date < to;
   }
 
   private officeLabel(office: Office): string {

@@ -2,6 +2,7 @@ import { computed, inject, signal } from '@angular/core';
 import { Component } from '@angular/core';
 import { form, FormField, required, submit } from '@angular/forms/signals';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterLink } from '@angular/router';
 
 import { KolssApiError } from '../../../core/api/generated/kolss-api.client';
 import type { Appointment } from '../../../core/api/generated/kolss-api.types';
@@ -43,7 +44,7 @@ interface AppointmentFormModel {
 
 @Component({
   selector: 'app-appointment-drawer',
-  imports: [FormField, UiButton, UiIcon, UiSelect, UiTextField, UiTextarea],
+  imports: [FormField, RouterLink, UiButton, UiIcon, UiSelect, UiTextField, UiTextarea],
   template: `
     <aside class="appointment-drawer" aria-labelledby="appointment-drawer-title">
       <header class="drawer-head">
@@ -167,6 +168,17 @@ interface AppointmentFormModel {
           }
           @if (error()) {
             <p class="error" role="alert">{{ error() }}</p>
+          }
+
+          @if (selectedLead(); as lead) {
+            <a
+              class="client-link"
+              [routerLink]="['/crm/leads', lead.id]"
+              (click)="close()"
+            >
+              <app-ui-icon name="person" [size]="16" />
+              {{ i18n.t('calendar.openClient') }}
+            </a>
           }
         </div>
 
@@ -407,6 +419,23 @@ interface AppointmentFormModel {
 
     .warnings p + p {
       margin-top: var(--ui-space-2);
+    }
+
+    .client-link {
+      width: fit-content;
+      margin-top: var(--ui-space-1);
+      color: var(--ui-action);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ui-space-2);
+      font-size: 0.875rem;
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    .client-link:hover,
+    .client-link:focus-visible {
+      text-decoration: underline;
     }
 
     .status-actions {

@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import axe from 'axe-core';
 import { of } from 'rxjs';
 
@@ -103,7 +104,8 @@ const rescheduledAppointment: Appointment = {
 };
 
 describe('CalendarPage', () => {
-  async function render() {
+  async function render(queryParams: Record<string, string> = {}) {
+    TestBed.resetTestingModule();
     const selectedOfficeId = signal<string | null>(office.id);
     const list = vi.fn().mockResolvedValue({
       items: [
@@ -118,6 +120,7 @@ describe('CalendarPage', () => {
       to: '2026-07-27',
     });
     const open = vi.fn().mockReturnValue({ afterClosed: () => of(undefined) });
+    const navigate = vi.fn().mockResolvedValue(true);
     await TestBed.configureTestingModule({
       imports: [CalendarPage],
       providers: [
@@ -132,16 +135,24 @@ describe('CalendarPage', () => {
         { provide: AppointmentsService, useValue: { list } },
         { provide: UsersService, useValue: { listManagers: vi.fn().mockResolvedValue([manager]) } },
         { provide: UiDialogService, useValue: { open } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        },
+        { provide: Router, useValue: { navigate } },
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(CalendarPage);
     await fixture.whenStable();
     fixture.detectChanges();
-    return { fixture, list, open, selectedOfficeId };
+    return { fixture, list, open, selectedOfficeId, navigate };
   }
 
   it('loads the office-local week and switches to the manager day grid', async () => {
     const { fixture, list } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.detectChanges();
+    await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
 
     expect(list).toHaveBeenCalledWith(
@@ -195,15 +206,40 @@ describe('CalendarPage', () => {
     expect((await axe.run(element)).violations).toEqual([]);
   });
 
+  it('opens the drawer from lead deep-link query params and clears them', async () => {
+    const { open, navigate } = await render({
+      leadId: 'lead-1',
+      date: '2026-07-23',
+      officeId: office.id,
+    });
+    await vi.waitFor(() => expect(open).toHaveBeenCalled());
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          appointment: expect.objectContaining({ id: 'appointment-1' }),
+        }),
+      }),
+    );
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: {},
+        replaceUrl: true,
+      }),
+    );
+  });
+
   it('reloads appointments when the global office changes', async () => {
-    const { fixture, list, selectedOfficeId } = await render();
+    const { list, selectedOfficeId } = await render();
     list.mockClear();
 
     selectedOfficeId.set(warsawOffice.id);
-    await fixture.whenStable();
-
-    expect(list).toHaveBeenCalledWith(
-      expect.objectContaining({ officeId: warsawOffice.id, managerId: undefined }),
+    await vi.waitFor(() =>
+      expect(list).toHaveBeenCalledWith(
+        expect.objectContaining({ officeId: warsawOffice.id, managerId: undefined }),
+      ),
     );
   });
 });

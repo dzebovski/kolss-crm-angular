@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { provideRouter } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { SessionService } from '../../../core/session/session.service';
@@ -62,6 +63,7 @@ describe('AppointmentDrawer', () => {
     await TestBed.configureTestingModule({
       imports: [AppointmentDrawer],
       providers: [
+        provideRouter([]),
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: { close } },
         { provide: AppointmentsService, useValue: { create } },
@@ -77,6 +79,11 @@ describe('AppointmentDrawer', () => {
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Час поза графіком');
+    const clientLink = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '.client-link',
+    );
+    expect(clientLink?.textContent).toContain('Відкрити картку клієнта');
+    expect(clientLink?.getAttribute('href')).toBe(`/crm/leads/${lead.id}`);
     (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
     await fixture.whenStable();
 
@@ -140,6 +147,7 @@ describe('AppointmentDrawer', () => {
     await TestBed.configureTestingModule({
       imports: [AppointmentDrawer],
       providers: [
+        provideRouter([]),
         { provide: MAT_DIALOG_DATA, useValue: data },
         { provide: MatDialogRef, useValue: { close } },
         { provide: AppointmentsService, useValue: { update } },
@@ -158,6 +166,7 @@ describe('AppointmentDrawer', () => {
     expect(element.querySelector('.terminal-status')?.textContent).toContain('Відвідав');
     expect(element.querySelector<HTMLInputElement>('input[type="date"]')?.disabled).toBe(false);
     expect(element.textContent).toContain('Зберегти');
+    expect(element.querySelector('.client-link')?.getAttribute('href')).toBe('/crm/leads/lead-1');
 
     element.querySelector<HTMLFormElement>('form')!.requestSubmit();
     await fixture.whenStable();
@@ -169,5 +178,50 @@ describe('AppointmentDrawer', () => {
       comment: 'Візит відбувся',
     });
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ kind: 'saved' }));
+  });
+
+  it('closes the drawer when opening the client card link', async () => {
+    const close = vi.fn();
+    const lead = { ...CRM_MOCK_LEADS[0]! };
+    const data: AppointmentDrawerData = {
+      office: {
+        id: 'office-kyiv',
+        code: 'kyiv',
+        name_uk: 'Київ',
+        name_pl: 'Kijów',
+        timezone_name: 'Europe/Kyiv',
+        is_active: true,
+      },
+      managers: [],
+      lead,
+      date: '2026-07-26',
+      time: '10:00',
+    };
+    await TestBed.configureTestingModule({
+      imports: [AppointmentDrawer],
+      providers: [
+        provideRouter([]),
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: MatDialogRef, useValue: { close } },
+        { provide: AppointmentsService, useValue: { create: vi.fn() } },
+        { provide: LeadsService, useValue: { list: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: { sessionContext: () => ({ user: { id: 'manager-1' } }) },
+        },
+        { provide: SessionService, useValue: { locale: () => 'uk' } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppointmentDrawer);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
+      '.client-link',
+    )!;
+    expect(link.getAttribute('href')).toBe(`/crm/leads/${lead.id}`);
+    // Invoke the template click handler without triggering async RouterLink navigation
+    // that races TestBed teardown.
+    fixture.componentInstance['close']();
+    expect(close).toHaveBeenCalledWith();
   });
 });

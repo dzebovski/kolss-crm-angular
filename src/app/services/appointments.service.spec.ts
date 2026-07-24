@@ -5,8 +5,10 @@ import type { Appointment } from '../core/api/generated/kolss-api.types';
 import {
   addCalendarDays,
   AppointmentsService,
+  calendarAppointmentDeepLink,
   officeDateKey,
   officeDateTimeParts,
+  parseCalendarAppointmentQuery,
 } from './appointments.service';
 
 const appointment: Appointment = {
@@ -99,5 +101,35 @@ describe('appointment office-time helpers', () => {
   it('adds date-only days without browser timezone drift', () => {
     expect(addCalendarDays('2026-03-28', 1)).toBe('2026-03-29');
     expect(addCalendarDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+
+  it('builds and parses calendar appointment deep-link query params', () => {
+    expect(
+      calendarAppointmentDeepLink({
+        leadId: 'lead-1',
+        showroomDueAt: '2026-07-22T22:30:00.000Z',
+        officeId: 'office-kyiv',
+        timeZone: 'Europe/Kyiv',
+      }),
+    ).toEqual({
+      leadId: 'lead-1',
+      date: '2026-07-23',
+      officeId: 'office-kyiv',
+    });
+    expect(
+      parseCalendarAppointmentQuery({
+        get: (name) =>
+          ({ leadId: 'lead-1', date: '2026-07-23', officeId: 'office-kyiv' })[name] ?? null,
+      }),
+    ).toEqual({
+      leadId: 'lead-1',
+      date: '2026-07-23',
+      officeId: 'office-kyiv',
+    });
+    expect(
+      parseCalendarAppointmentQuery({
+        get: (name) => (name === 'leadId' ? 'lead-1' : null),
+      }),
+    ).toBeNull();
   });
 });

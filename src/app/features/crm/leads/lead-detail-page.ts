@@ -35,6 +35,8 @@ import { UsersService } from '../../../services/users.service';
 import {
   addCalendarDays,
   AppointmentsService,
+  calendarAppointmentDeepLink,
+  type CalendarAppointmentDeepLink,
   officeDateKey,
 } from '../../../services/appointments.service';
 import { UiButton } from '../../../ui/button/ui-button';
@@ -876,6 +878,23 @@ export class LeadDetailView {
   }
 
   protected readonly showroomDueAtForLead = showroomDueAtForLead;
+
+  protected calendarAppointmentQueryParams(lead: MockLead): CalendarAppointmentDeepLink | null {
+    const showroomDueAt = showroomDueAtForLead(lead);
+    if (!showroomDueAt) return null;
+    const office = (this.session.officeContext()?.filterOffices ?? []).find(
+      (item) => item.code === lead.officeCode,
+    );
+    if (!office) return null;
+    const timeZone =
+      office.timezone_name ?? (office.code === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv');
+    return calendarAppointmentDeepLink({
+      leadId: lead.id,
+      showroomDueAt,
+      officeId: office.id,
+      timeZone,
+    });
+  }
 
   protected formatMoney(value: number | null | undefined, currency: string): string {
     return this.i18n.formatMoney(value, currency);

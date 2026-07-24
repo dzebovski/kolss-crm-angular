@@ -642,6 +642,21 @@
   .status-item__copy .status-item__due {
     grid-column: 1 / -1;
   }
+  .status-item__appointment-link {
+    grid-column: 1 / -1;
+    width: fit-content;
+    color: var(--ui-action);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .status-item__appointment-link:hover,
+  .status-item__appointment-link:focus-visible {
+    text-decoration: underline;
+  }
   .status-item__copy strong {
     font-size: 0.82rem;
   }
