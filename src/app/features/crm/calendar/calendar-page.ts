@@ -207,7 +207,9 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                       >
                         <time>{{ localTime(appointment.startsAt) }}</time>
                         <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
-                        @if (appointment.status !== 'scheduled') {
+                        @if (appointment.status === 'scheduled' && appointment.warnings.length) {
+                          <app-ui-icon name="warning" [size]="15" />
+                        } @else {
                           <app-ui-icon
                             class="appointment-status-icon"
                             [class.is-no-show]="appointment.status === 'no_show'"
@@ -216,8 +218,6 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                             [size]="15"
                             [attr.aria-label]="appointmentStatusLabel(appointment)"
                           />
-                        } @else if (appointment.warnings.length) {
-                          <app-ui-icon name="warning" [size]="15" />
                         }
                         @if (appointment.comment; as comment) {
                           <small class="appointment-comment" [title]="comment">{{ comment }}</small>
@@ -253,15 +253,6 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                       (leadSelected)="openLead($event)"
                     />
                   }
-                  <button
-                    ngGridCellWidget
-                    type="button"
-                    class="week-add"
-                    (click)="openCreate(day, '10:00')"
-                  >
-                    <app-ui-icon name="add" [size]="16" />
-                    {{ i18n.t('calendar.add') }}
-                  </button>
                   @for (appointment of appointmentsForDay(day); track appointment.id) {
                     <button
                       ngGridCellWidget
@@ -277,6 +268,12 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                         <time>{{ localTime(appointment.startsAt) }}</time>
                         @if (appointment.warnings.length) {
                           <app-ui-icon name="warning" [size]="14" />
+                        } @else if (appointment.status === 'scheduled') {
+                          <app-ui-icon
+                            [name]="appointmentStatusIcon(appointment)"
+                            [size]="14"
+                            [attr.aria-label]="appointmentStatusLabel(appointment)"
+                          />
                         }
                       </span>
                       <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
@@ -300,6 +297,15 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                   } @empty {
                     <p class="empty-day">{{ i18n.t('calendar.freeDay') }}</p>
                   }
+                  <button
+                    ngGridCellWidget
+                    type="button"
+                    class="week-add"
+                    (click)="openCreate(day, '10:00')"
+                  >
+                    <app-ui-icon name="add" [size]="16" />
+                    {{ i18n.t('calendar.add') }}
+                  </button>
                 </div>
               }
             </div>
@@ -367,7 +373,9 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                       >
                         <time>{{ localTime(appointment.startsAt) }}</time>
                         <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
-                        @if (appointment.status !== 'scheduled') {
+                        @if (appointment.status === 'scheduled' && appointment.warnings.length) {
+                          <app-ui-icon name="warning" [size]="12" />
+                        } @else {
                           <app-ui-icon
                             class="appointment-status-icon"
                             [class.is-no-show]="appointment.status === 'no_show'"
@@ -376,8 +384,6 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                             [size]="12"
                             [attr.aria-label]="appointmentStatusLabel(appointment)"
                           />
-                        } @else if (appointment.warnings.length) {
-                          <app-ui-icon name="warning" [size]="12" />
                         }
                       </button>
                     }
@@ -445,6 +451,12 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                         name="warning"
                         [size]="16"
                         [attr.aria-label]="i18n.t('calendar.hasWarning')"
+                      />
+                    } @else if (appointment.status === 'scheduled') {
+                      <app-ui-icon
+                        [name]="appointmentStatusIcon(appointment)"
+                        [size]="16"
+                        [attr.aria-label]="appointmentStatusLabel(appointment)"
                       />
                     }
                     <app-ui-icon name="chevron_right" [size]="18" />
@@ -852,6 +864,8 @@ export class CalendarPage {
         return 'warning';
       case 'canceled':
         return 'close';
+      case 'scheduled':
+        return 'calendar_month';
       default:
         return 'schedule';
     }

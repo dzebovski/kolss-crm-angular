@@ -41,13 +41,15 @@ export interface CalendarReminder {
   styles: `
     :host {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      width: 100%;
       gap: 0.25rem;
       min-width: 0;
     }
 
     .reminder-chip {
-      max-width: 100%;
+      width: 100%;
+      align-self: stretch;
       min-width: 0;
       padding: 0.15rem 0.4rem;
       border: 1px solid var(--ui-border);
@@ -56,7 +58,7 @@ export interface CalendarReminder {
       background: var(--ui-surface-raised);
       color: inherit;
       cursor: pointer;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 0.25rem;
       font: inherit;
@@ -71,6 +73,8 @@ export interface CalendarReminder {
     }
 
     .reminder-name {
+      flex: 1;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
