@@ -39,6 +39,17 @@ describe('leads-page-preferences.storage', () => {
     expect(readLeadsPagePreferences()).toEqual(preferences);
   });
 
+  it('persists the in_work client status filter', () => {
+    const preferences = {
+      periodDays: 7,
+      callStatusFilter: null,
+      clientStatusFilter: 'in_work' as const,
+      managerFilter: '',
+    };
+    writeLeadsPagePreferences(preferences);
+    expect(readLeadsPagePreferences()).toEqual(preferences);
+  });
+
   it('does not restore the retired workflow filter', () => {
     localStorage.setItem(
       LEADS_PAGE_PREFERENCES_STORAGE_KEY,

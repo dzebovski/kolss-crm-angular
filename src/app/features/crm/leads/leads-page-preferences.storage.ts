@@ -1,7 +1,8 @@
 import type { CallStatus, ClientStatus } from '../../../services/crm-mock.types';
 
 export type CallStatusFilterKey = CallStatus;
-export type ClientStatusFilterKey = ClientStatus;
+/** Filter-only value `in_work` is not a persisted client_status. */
+export type ClientStatusFilterKey = ClientStatus | 'in_work';
 
 export interface LeadsPagePreferences {
   periodDays: number | null;
@@ -21,6 +22,7 @@ const ALLOWED_CALL_STATUS_FILTERS = new Set<CallStatusFilterKey>([
 ]);
 const ALLOWED_CLIENT_STATUS_FILTERS = new Set<ClientStatusFilterKey>([
   'new_lead',
+  'in_work',
   'showroom_invited',
   'calculation_in_progress',
   'thinking',

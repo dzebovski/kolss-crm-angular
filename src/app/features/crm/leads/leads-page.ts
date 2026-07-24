@@ -162,12 +162,12 @@ import {
             <span>
               @if (clientStatusFilter(); as clientStatus) {
                 <app-ui-chip
-                  [label]="clientStatusLabel(clientStatus)"
-                  [tone]="clientStatusTone(clientStatus)"
+                  [label]="clientStatusFilterLabel(clientStatus)"
+                  [tone]="clientStatusFilterTone(clientStatus)"
                   [removable]="true"
                   (removed)="clearFilter('client')"
                 >
-                  {{ clientStatusLabel(clientStatus) }}
+                  {{ clientStatusFilterLabel(clientStatus) }}
                 </app-ui-chip>
               }
             </span>
@@ -606,7 +606,6 @@ export class LeadsPage {
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
   protected readonly callStatusTone = callStatusTone;
-  protected readonly clientStatusTone = clientStatusTone;
 
   constructor() {
     effect(() => {
@@ -643,13 +642,14 @@ export class LeadsPage {
     return (
       [
         'new_lead',
+        'in_work',
         'showroom_invited',
         'calculation_in_progress',
         'thinking',
         'closed_lost',
         'contract_signed',
-      ] as const
-    ).map((status) => ({ value: status, label: this.i18n.clientStatusLabel(status) }));
+      ] as const satisfies readonly ClientStatusFilterKey[]
+    ).map((status) => ({ value: status, label: this.clientStatusFilterLabel(status) }));
   });
 
   protected readonly leadsResource = resource({
@@ -702,6 +702,20 @@ export class LeadsPage {
 
   protected clientStatusLabel(status: ClientStatus): string {
     return this.i18n.clientStatusLabel(status);
+  }
+
+  protected clientStatusFilterLabel(status: ClientStatusFilterKey): string {
+    if (status === 'in_work') {
+      return this.i18n.t('workflow.taken');
+    }
+    return this.clientStatusLabel(status);
+  }
+
+  protected clientStatusFilterTone(status: ClientStatusFilterKey) {
+    if (status === 'in_work') {
+      return 'info' as const;
+    }
+    return clientStatusTone(status);
   }
 
   protected clientStatusLabelForLead(lead: MockLead): string {

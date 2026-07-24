@@ -159,6 +159,35 @@ describe('LeadsPage', () => {
     expect(element.querySelector('.lead-count-badge')?.textContent).toContain('0 лідів');
   });
 
+  it('exposes separate new lead and in progress client status filters', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiSelect))[1]
+      ?.componentInstance as UiSelect;
+    const optionValues = clientStatusSelect.options().map((option) => option.value);
+    expect(optionValues).toEqual([
+      'new_lead',
+      'in_work',
+      'showroom_invited',
+      'calculation_in_progress',
+      'thinking',
+      'closed_lost',
+      'contract_signed',
+    ]);
+    expect(clientStatusSelect.options().find((option) => option.value === 'in_work')?.label).toBe(
+      'В роботі',
+    );
+
+    clientStatusSelect.value.set('new_lead');
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: 'new_lead' }));
+
+    clientStatusSelect.value.set('in_work');
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: 'in_work' }));
+  });
+
   it('shows a new lead as in progress after any call result is recorded', async () => {
     list.mockResolvedValueOnce([
       {
