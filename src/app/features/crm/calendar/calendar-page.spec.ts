@@ -7,6 +7,8 @@ import { of } from 'rxjs';
 import type { Appointment } from '../../../core/api/generated/kolss-api.types';
 import { SessionService } from '../../../core/session/session.service';
 import { AppointmentsService } from '../../../services/appointments.service';
+import type { MockLead } from '../../../services/crm-mock.types';
+import { LeadsService } from '../../../services/leads.service';
 import { type CrmEmployee, UsersService } from '../../../services/users.service';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
 import { CalendarPage } from './calendar-page';
@@ -103,6 +105,60 @@ const rescheduledAppointment: Appointment = {
   version: 2,
 };
 
+const baseLead: MockLead = {
+  id: 'lead-base',
+  name: 'Base',
+  phone: '+380500000000',
+  email: null,
+  leadStatus: 'in_progress',
+  workflowStatus: 'taken',
+  callStatus: null,
+  callStatusChangedAt: null,
+  clientStatus: 'new_lead',
+  clientStatusChangedAt: '2026-07-20T00:00:00.000Z',
+  officeCode: 'kyiv',
+  source: 'website',
+  sourceCreatedAt: '2026-07-18T00:00:00.000Z',
+  initialMessage: '',
+  cityRegion: '',
+  productInterest: '',
+  estimatedBudget: null,
+  assignedToId: null,
+  firstManagerId: null,
+  firstCall: null,
+  visit: null,
+  close: null,
+  contract: null,
+  callbackDueAt: null,
+  commentReminderDueAt: null,
+  lastComment: null,
+  latestTimelineComment: null,
+  lastActivityAt: '2026-07-20T00:00:00.000Z',
+  attachments: [],
+  events: [],
+  markers: [],
+};
+
+const callbackLead: MockLead = {
+  ...baseLead,
+  id: 'lead-callback',
+  name: 'Callback Клієнт',
+  phone: '+380501110001',
+  assignedToId: 'manager-1',
+  callStatus: 'callback_requested',
+  callStatusChangedAt: '2026-07-22T00:00:00.000Z',
+  callbackDueAt: '2026-07-23T09:00:00.000Z',
+};
+
+const commentLead: MockLead = {
+  ...baseLead,
+  id: 'lead-comment',
+  name: 'Comment Клієнт',
+  phone: '+380501110002',
+  assignedToId: 'manager-2',
+  commentReminderDueAt: '2026-07-24T09:00:00.000Z',
+};
+
 const inactiveManager = {
   ...manager,
   id: 'manager-inactive',
@@ -136,6 +192,7 @@ describe('CalendarPage', () => {
   async function render(
     queryParams: Record<string, string> = {},
     managers: readonly CrmEmployee[] = [manager],
+    leads: readonly MockLead[] = [callbackLead, commentLead],
   ) {
     TestBed.resetTestingModule();
     const selectedOfficeId = signal<string | null>(office.id);
@@ -151,6 +208,7 @@ describe('CalendarPage', () => {
       from: '2026-07-20',
       to: '2026-07-27',
     });
+    const listLeads = vi.fn().mockResolvedValue(leads);
     const open = vi.fn().mockReturnValue({ afterClosed: () => of(undefined) });
     const navigate = vi.fn().mockResolvedValue(true);
     await TestBed.configureTestingModule({
@@ -165,6 +223,7 @@ describe('CalendarPage', () => {
           },
         },
         { provide: AppointmentsService, useValue: { list } },
+        { provide: LeadsService, useValue: { list: listLeads } },
         { provide: UsersService, useValue: { listManagers: vi.fn().mockResolvedValue(managers) } },
         { provide: UiDialogService, useValue: { open } },
         {
@@ -177,7 +236,7 @@ describe('CalendarPage', () => {
     const fixture = TestBed.createComponent(CalendarPage);
     await fixture.whenStable();
     fixture.detectChanges();
-    return { fixture, list, open, selectedOfficeId, navigate };
+    return { fixture, list, listLeads, open, selectedOfficeId, navigate };
   }
 
   it('loads the office-local week and switches to the manager day grid', async () => {
@@ -326,6 +385,79 @@ describe('CalendarPage', () => {
       expect.objectContaining({
         queryParams: {},
         replaceUrl: true,
+      }),
+    );
+  });
+
+  it('buckets callback and comment reminders onto their office day', async () => {
+    const { fixture, listLeads } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(listLeads).toHaveBeenCalledWith(
+      expect.objectContaining({ officeId: office.id, archived: 'active' }),
+    );
+
+    const banner23 = element.querySelector('.day-reminders-banner');
+    expect(banner23).not.toBeNull();
+    expect(banner23?.querySelector('.reminder-chip.is-callback')?.textContent).toContain(
+      'Callback Клієнт',
+    );
+    expect(banner23?.textContent).not.toContain('Comment Клієнт');
+
+    fixture.componentInstance['selectedDate'].set('2026-07-24');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const banner24 = element.querySelector('.day-reminders-banner');
+    expect(banner24?.querySelector('.reminder-chip.is-comment')?.textContent).toContain(
+      'Comment Клієнт',
+    );
+    expect(banner24?.textContent).not.toContain('Callback Клієнт');
+  });
+
+  it('narrows reminders by the selected manager filter', async () => {
+    const { fixture } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('week');
+    fixture.componentInstance['managerId'].set('manager-1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.reminder-chip.is-callback')?.textContent).toContain(
+      'Callback Клієнт',
+    );
+    expect(element.textContent).not.toContain('Comment Клієнт');
+  });
+
+  it('opens the lead drawer when a reminder is clicked', async () => {
+    const { fixture, open } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('week');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const chip = element.querySelector<HTMLButtonElement>('.reminder-chip.is-callback');
+    expect(chip).not.toBeNull();
+    chip!.click();
+    await fixture.whenStable();
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          leadIds: ['lead-callback'],
+          initialLeadId: 'lead-callback',
+        }),
       }),
     );
   });

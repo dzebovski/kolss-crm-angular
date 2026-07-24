@@ -266,6 +266,17 @@ export const messages = {
     pl: 'Otwórz kartę klienta',
     en: 'Open client card',
   },
+  'calendar.rebook': { uk: 'Записати знову', pl: 'Zapisz ponownie', en: 'Book again' },
+  'calendar.reminderCallback': {
+    uk: 'Передзвонити: {name}',
+    pl: 'Oddzwoń: {name}',
+    en: 'Call back: {name}',
+  },
+  'calendar.reminderComment': {
+    uk: 'Нагадування по коментарю: {name}',
+    pl: 'Przypomnienie do komentarza: {name}',
+    en: 'Comment reminder: {name}',
+  },
 
   'role.super_admin': { uk: 'Супер-адмін', pl: 'Super-admin', en: 'Super admin' },
   'role.curator': { uk: 'Куратор', pl: 'Kurator', en: 'Curator' },

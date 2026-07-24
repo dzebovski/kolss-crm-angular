@@ -180,6 +180,94 @@ describe('AppointmentDrawer', () => {
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ kind: 'saved' }));
   });
 
+  it('offers re-booking a canceled appointment, then creates a fresh one on submit', async () => {
+    const close = vi.fn();
+    const data: AppointmentDrawerData = {
+      office: {
+        id: 'office-kyiv',
+        code: 'kyiv',
+        name_uk: 'Київ',
+        name_pl: 'Kijów',
+        timezone_name: 'Europe/Kyiv',
+        is_active: true,
+      },
+      managers: [
+        {
+          id: 'manager-1',
+          email: null,
+          displayName: 'Олена',
+          role: 'office_member',
+          officeIds: ['kyiv'],
+          officeUuids: ['office-kyiv'],
+          status: 'active',
+          createdAt: '2026-01-01T00:00:00Z',
+          lastActiveAt: '2026-07-23T00:00:00Z',
+        },
+      ],
+      appointment: {
+        id: 'appointment-canceled',
+        lead: { id: 'lead-1', name: 'Анна Коваль', phone: '+380501112233' },
+        office: {
+          id: 'office-kyiv',
+          code: 'kyiv',
+          name: 'Київ',
+          timezoneName: 'Europe/Kyiv',
+        },
+        responsibleManager: { id: 'manager-1', displayName: 'Олена' },
+        startsAt: '2026-07-23T07:00:00.000Z',
+        endsAt: '2026-07-23T08:00:00.000Z',
+        status: 'canceled',
+        comment: 'Клієнт скасував',
+        version: 3,
+        hasConflict: false,
+        isOutsideWorkingHours: false,
+        warnings: [],
+        createdAt: '2026-07-20T12:00:00.000Z',
+        updatedAt: '2026-07-23T08:00:00.000Z',
+      },
+    };
+    const create = vi.fn().mockResolvedValue({ ...data.appointment, id: 'appointment-new' });
+    const update = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [AppointmentDrawer],
+      providers: [
+        provideRouter([]),
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: MatDialogRef, useValue: { close } },
+        { provide: AppointmentsService, useValue: { create, update } },
+        { provide: LeadsService, useValue: { list: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: { sessionContext: () => ({ user: { id: 'manager-1' } }) },
+        },
+        { provide: SessionService, useValue: { locale: () => 'uk' } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppointmentDrawer);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.terminal-status.is-canceled')).not.toBeNull();
+    const rebookButton = element.querySelector<HTMLButtonElement>('.rebook-button button');
+    expect(rebookButton).not.toBeNull();
+
+    rebookButton!.click();
+    await fixture.whenStable();
+
+    // Re-book mode: terminal pill and its re-book button are gone.
+    expect(element.querySelector('.terminal-status')).toBeNull();
+    expect(element.querySelector('.rebook-button')).toBeNull();
+
+    element.querySelector<HTMLFormElement>('form')!.requestSubmit();
+    await fixture.whenStable();
+
+    expect(update).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ leadId: 'lead-1', responsibleManagerId: 'manager-1' }),
+    );
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ kind: 'saved' }));
+  });
+
   it('closes the drawer when opening the client card link', async () => {
     const close = vi.fn();
     const lead = { ...CRM_MOCK_LEADS[0]! };

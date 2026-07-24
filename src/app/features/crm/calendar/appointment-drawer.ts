@@ -51,9 +51,13 @@ interface AppointmentFormModel {
         <div>
           <p>{{ data.office.name_uk }} · {{ data.office.timezone_name ?? 'UTC' }}</p>
           <h2 id="appointment-drawer-title">
-            {{ data.appointment ? i18n.t('calendar.editTitle') : i18n.t('calendar.createTitle') }}
+            {{
+              data.appointment && !rebook()
+                ? i18n.t('calendar.editTitle')
+                : i18n.t('calendar.createTitle')
+            }}
           </h2>
-          @if (data.appointment && isTerminal) {
+          @if (data.appointment && isTerminal && !rebook()) {
             <span
               class="terminal-status"
               [class.is-no-show]="data.appointment.status === 'no_show'"
@@ -62,6 +66,16 @@ interface AppointmentFormModel {
               <app-ui-icon name="check_circle" [size]="15" />
               {{ appointmentStatusLabel(data.appointment.status) }}
             </span>
+            @if (data.appointment.status === 'canceled') {
+              <app-ui-button
+                class="rebook-button"
+                size="small"
+                variant="secondary"
+                (pressed)="startRebook()"
+              >
+                {{ i18n.t('calendar.rebook') }}
+              </app-ui-button>
+            }
           }
         </div>
         <button
@@ -286,6 +300,11 @@ interface AppointmentFormModel {
       color: var(--ui-danger);
     }
 
+    .rebook-button {
+      margin-top: var(--ui-space-2);
+      margin-left: var(--ui-space-2);
+    }
+
     h2 {
       margin: 0;
       font: 700 1.35rem/1.2 var(--ui-font-display);
@@ -473,6 +492,7 @@ export class AppointmentDrawer {
   private readonly auth = inject(AuthService);
 
   protected readonly error = signal('');
+  protected readonly rebook = signal(false);
   protected readonly searchingLeads = signal(false);
   protected readonly leadSearch = signal('');
   protected readonly leadResults = signal<readonly MockLead[]>([]);
@@ -591,6 +611,12 @@ export class AppointmentDrawer {
     this.leadSearch.set('');
   }
 
+  protected startRebook(): void {
+    this.rebook.set(true);
+    this.error.set('');
+    this.model.update((value) => ({ ...value, time: '10:00', comment: '' }));
+  }
+
   protected async save(event: Event): Promise<void> {
     event.preventDefault();
     this.error.set('');
@@ -598,25 +624,26 @@ export class AppointmentDrawer {
       const lead = this.selectedLead();
       if (!lead) return;
       const value = this.model();
+      const isCreate = !this.data.appointment || this.rebook();
       try {
-        const appointment = this.data.appointment
-          ? await this.appointments.update(
-              this.data.appointment.id,
-              this.data.appointment.version,
+        const appointment = isCreate
+          ? await this.appointments.create({
+              leadId: lead.id,
+              startsAtLocal: `${value.date}T${value.time}`,
+              durationMinutes: Number(value.duration),
+              responsibleManagerId: value.managerId,
+              comment: value.comment.trim(),
+            })
+          : await this.appointments.update(
+              this.data.appointment!.id,
+              this.data.appointment!.version,
               {
                 startsAtLocal: `${value.date}T${value.time}`,
                 durationMinutes: Number(value.duration),
                 responsibleManagerId: value.managerId,
                 comment: value.comment.trim(),
               },
-            )
-          : await this.appointments.create({
-              leadId: lead.id,
-              startsAtLocal: `${value.date}T${value.time}`,
-              durationMinutes: Number(value.duration),
-              responsibleManagerId: value.managerId,
-              comment: value.comment.trim(),
-            });
+            );
         this.dialogRef.close({ kind: 'saved', appointment });
       } catch (error) {
         this.handleError(error);

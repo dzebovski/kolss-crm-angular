@@ -118,6 +118,15 @@ h1 {
   }
 }
 
+.day-reminders-banner {
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  box-shadow: var(--ui-shadow-1);
+  gap: var(--ui-space-2);
+}
+
 .day-grid,
 .week-grid,
 .month-grid {
@@ -566,6 +575,10 @@ h1 {
     h2 {
       margin: 0 0 var(--ui-space-3);
       font: 700 1rem/1.2 var(--ui-font-display);
+    }
+
+    .agenda-reminders {
+      margin-bottom: var(--ui-space-3);
     }
   }
 

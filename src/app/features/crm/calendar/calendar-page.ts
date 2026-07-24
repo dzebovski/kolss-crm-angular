@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import type { Appointment } from '../../../core/api/generated/kolss-api.types';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -28,20 +29,40 @@ import {
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
 } from '../../../services/appointments.service';
+import { commentDueAtForLead } from '../../../services/crm-mock.helpers';
+import type { MockLead } from '../../../services/crm-mock.types';
+import { LeadsService } from '../../../services/leads.service';
 import { UsersService } from '../../../services/users.service';
 import { UiButton } from '../../../ui/button/ui-button';
 import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
 import { UiIcon, type UiIconName } from '../../../ui/icon/ui-icon';
 import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import {
+  LeadDetailDrawer,
+  type LeadDetailDrawerData,
+  type LeadDetailDrawerResult,
+  type LeadDetailDrawerState,
+} from '../leads/lead-detail-drawer';
 import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
+import { CalendarDayReminders, type CalendarReminder } from './calendar-day-reminders';
 
 type CalendarView = 'day' | 'week' | 'month';
 
 const MONTH_VISIBLE_APPOINTMENTS = 3;
+const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
 
 @Component({
   selector: 'app-calendar-page',
-  imports: [Grid, GridCell, GridCellWidget, GridRow, UiButton, UiIcon, UiSelect],
+  imports: [
+    Grid,
+    GridCell,
+    GridCellWidget,
+    GridRow,
+    UiButton,
+    UiIcon,
+    UiSelect,
+    CalendarDayReminders,
+  ],
   template: `
     <section class="calendar-page" aria-labelledby="calendar-title">
       <header class="page-header">
@@ -135,6 +156,13 @@ const MONTH_VISIBLE_APPOINTMENTS = 3;
         </div>
       } @else {
         @if (view() === 'day') {
+          @if (dayReminders(selectedDate()).length) {
+            <app-calendar-day-reminders
+              class="day-reminders-banner desktop-calendar"
+              [reminders]="dayReminders(selectedDate())"
+              (leadSelected)="openLead($event)"
+            />
+          }
           <div
             ngGrid
             focusMode="roving"
@@ -219,6 +247,12 @@ const MONTH_VISIBLE_APPOINTMENTS = 3;
             <div ngGridRow class="week-columns">
               @for (day of weekDays(); track day) {
                 <div ngGridCell class="week-day">
+                  @if (dayReminders(day).length) {
+                    <app-calendar-day-reminders
+                      [reminders]="dayReminders(day)"
+                      (leadSelected)="openLead($event)"
+                    />
+                  }
                   <button
                     ngGridCellWidget
                     type="button"
@@ -311,6 +345,12 @@ const MONTH_VISIBLE_APPOINTMENTS = 3;
                         <app-ui-icon name="add" [size]="14" />
                       </button>
                     </div>
+                    @if (dayReminders(day).length) {
+                      <app-calendar-day-reminders
+                        [reminders]="dayReminders(day)"
+                        (leadSelected)="openLead($event)"
+                      />
+                    }
                     @for (
                       appointment of visibleMonthAppointments(day);
                       track appointment.id
@@ -362,6 +402,13 @@ const MONTH_VISIBLE_APPOINTMENTS = 3;
           @for (group of agendaGroups(); track group.date) {
             <section>
               <h2>{{ fullDateLabel(group.date) }}</h2>
+              @if (dayReminders(group.date).length) {
+                <app-calendar-day-reminders
+                  class="agenda-reminders"
+                  [reminders]="dayReminders(group.date)"
+                  (leadSelected)="openLead($event)"
+                />
+              }
               @for (appointment of group.items; track appointment.id) {
                 <button
                   type="button"
@@ -421,6 +468,7 @@ export class CalendarPage {
   protected readonly i18n = inject(I18nService);
   private readonly session = inject(SessionService);
   private readonly appointments = inject(AppointmentsService);
+  private readonly leads = inject(LeadsService);
   private readonly users = inject(UsersService);
   private readonly dialogs = inject(UiDialogService);
   private readonly route = inject(ActivatedRoute);
@@ -520,6 +568,14 @@ export class CalendarPage {
     },
   });
 
+  protected readonly leadsResource = resource({
+    params: () => ({ officeId: this.officeId() }),
+    loader: ({ params }) => {
+      if (!params.officeId) return Promise.resolve([] as readonly MockLead[]);
+      return this.leads.list({ officeId: params.officeId, archived: 'active' });
+    },
+  });
+
   protected readonly items = computed(() => this.appointmentsResource.value()?.items ?? []);
   protected readonly managers = computed(() => this.managersResource.value() ?? []);
   /** Active office_member rows for the selected office — not curators/admins. */
@@ -554,6 +610,48 @@ export class CalendarPage {
     if (this.view() !== 'week') return [];
     return this.appointmentsForDay(addCalendarDays(this.weekStart(), 6));
   });
+  /**
+   * Date-only lead reminders (blue callbacks, orange comment follow-ups) bucketed
+   * by office day. Showroom due dates are excluded — they render as appointment
+   * cards. Honors the toolbar manager filter; office is already scoped by the
+   * loaded resource.
+   */
+  private readonly remindersByDate = computed(() => {
+    const leads = this.leadsResource.value() ?? [];
+    const timeZone = this.office()?.timezone_name ?? 'UTC';
+    const selectedManager = this.managerId();
+    const byDate = new Map<string, CalendarReminder[]>();
+
+    const push = (reminder: CalendarReminder) => {
+      const bucket = byDate.get(reminder.date);
+      if (bucket) bucket.push(reminder);
+      else byDate.set(reminder.date, [reminder]);
+    };
+
+    for (const lead of leads) {
+      if (selectedManager !== 'all' && lead.assignedToId !== selectedManager) continue;
+
+      if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
+        push({
+          kind: 'callback',
+          date: officeDateTimeParts(lead.callbackDueAt, timeZone).date,
+          lead,
+        });
+      }
+
+      const commentDueAt = commentDueAtForLead(lead);
+      if (commentDueAt) {
+        push({ kind: 'comment', date: officeDateTimeParts(commentDueAt, timeZone).date, lead });
+      }
+    }
+
+    return byDate;
+  });
+
+  protected dayReminders(date: string): readonly CalendarReminder[] {
+    return this.remindersByDate().get(date) ?? EMPTY_REMINDERS;
+  }
+
   protected readonly agendaGroups = computed(() => {
     if (this.view() === 'day') {
       return [{ date: this.selectedDate(), items: this.appointmentsForDay(this.selectedDate()) }];
@@ -615,6 +713,7 @@ export class CalendarPage {
   protected reload(): void {
     this.appointmentsResource.reload();
     this.managersResource.reload();
+    this.leadsResource.reload();
   }
 
   protected openCreate(date = this.selectedDate(), time = '10:00', managerId?: string): void {
@@ -639,6 +738,31 @@ export class CalendarPage {
       appointment,
       appointments: this.items(),
     });
+  }
+
+  protected async openLead(lead: MockLead): Promise<void> {
+    const state: LeadDetailDrawerState = { dirty: false };
+    const result = await firstValueFrom(
+      this.dialogs
+        .open<LeadDetailDrawer, LeadDetailDrawerData, LeadDetailDrawerResult>(LeadDetailDrawer, {
+          data: { leadIds: [lead.id], initialLeadId: lead.id, state },
+          panelClass: 'lead-detail-drawer-panel',
+          backdropClass: 'lead-detail-drawer-backdrop',
+          position: { top: '0', right: '0' },
+          width: 'min(74rem, calc(100vw - 3rem))',
+          height: '100dvh',
+          maxWidth: '100vw',
+          ariaLabelledBy: 'lead-drawer-title',
+          autoFocus: 'dialog',
+          enterAnimationDuration: 180,
+          exitAnimationDuration: 140,
+        })
+        .afterClosed(),
+    );
+    if (result?.dirty || state.dirty) {
+      this.leadsResource.reload();
+      this.appointmentsResource.reload();
+    }
   }
 
   protected appointmentsForSlot(
