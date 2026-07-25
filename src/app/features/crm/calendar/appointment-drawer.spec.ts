@@ -77,6 +77,7 @@ describe('AppointmentDrawer', () => {
     }).compileComponents();
     const fixture = TestBed.createComponent(AppointmentDrawer);
     fixture.detectChanges();
+    await fixture.whenStable();
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Час поза графіком');
     const clientLink = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(

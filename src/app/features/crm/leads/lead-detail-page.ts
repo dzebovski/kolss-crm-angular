@@ -806,12 +806,12 @@ export class LeadDetailView {
   }
 
   protected eventTitle(event: LeadEvent): string {
-    return presentEventTitleFromLeadEvent(event, this.i18n.locale());
+    return presentEventTitleFromLeadEvent(event, this.i18n.activeBundle());
   }
 
   protected eventBody(event: LeadEvent): string {
     if (this.eventStatusLabel(event)) return event.comment?.trim() ?? '';
-    return presentEventBodyFromLeadEvent(event, this.i18n.locale());
+    return presentEventBodyFromLeadEvent(event, this.i18n.activeBundle());
   }
 
   protected eventStatusLabel(event: LeadEvent): string {
@@ -851,7 +851,7 @@ export class LeadDetailView {
   }
 
   protected eventAuditText(event: LeadEvent): string {
-    return presentHistoryAuditText(event, this.i18n.locale(), (value) =>
+    return presentHistoryAuditText(event, this.i18n.activeBundle(), (value) =>
       this.formatDateTime(value),
     );
   }

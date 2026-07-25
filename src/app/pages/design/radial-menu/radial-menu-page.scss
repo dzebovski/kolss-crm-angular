@@ -2,6 +2,24 @@
   display: block;
 }
 
+/*
+ * Duplicated from design-page.scss: the root element here also carries the
+ * shared `.design-page` base class (see radial-menu-page.html), but that
+ * class now lives in DesignPage's own scoped stylesheet and cannot reach
+ * across the component boundary. Kept in sync manually — small and stable.
+ */
+.design-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(var(--ui-surface-canvas), var(--ui-surface-canvas)) padding-box,
+    var(--ui-surface-canvas);
+  color: var(--ui-text);
+}
+
+.design-page main {
+  overflow: clip;
+}
+
 .radial-lab-page {
   background:
     radial-gradient(

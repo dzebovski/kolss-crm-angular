@@ -52,8 +52,20 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "12kB"
+                  "maximumWarning": "12kB",
+                  "maximumError": "26kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "design-page",
+                  "maximumWarning": "110kB",
+                  "maximumError": "160kB"
+                },
+                {
+                  "type": "bundle",
+                  "name": "messages-uk",
+                  "maximumWarning": "100kB",
+                  "maximumError": "140kB"
                 }
               ],
               "outputHashing": "all"

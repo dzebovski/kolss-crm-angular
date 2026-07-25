@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import type { LocaleCode } from '@domain/i18n.types';
 import {
   isLegacySystemComment,
   isUserCommentEventType,
   presentEventBody,
   presentEventTitle,
 } from './event-presenter';
+import { messagesEn } from './messages/messages.en';
+import { messagesPl } from './messages/messages.pl';
+import { messagesUk } from './messages/messages.uk';
 
 describe('event-presenter', () => {
   it('renders manager comment as-is for user events', () => {
@@ -16,14 +18,14 @@ describe('event-presenter', () => {
         comment: 'Клієнт обрав іншого постачальника',
         new_value: null,
       },
-      'pl',
+      messagesPl,
     );
     expect(body).toBe('Клієнт обрав іншого постачальника');
   });
 
   it('translates event title by locale without changing comment body', () => {
-    const locales: LocaleCode[] = ['uk', 'pl', 'en'];
-    const titles = locales.map((locale) => presentEventTitle('taken', locale));
+    const bundles = [messagesUk, messagesPl, messagesEn];
+    const titles = bundles.map((bundle) => presentEventTitle('taken', bundle));
     expect(titles[0]).toContain('взято');
     expect(titles[1]).toContain('przej');
     expect(titles[2]).toContain('taken');
@@ -34,7 +36,7 @@ describe('event-presenter', () => {
         comment: 'Менеджерський коментар',
         new_value: { result: 'reached' },
       },
-      'en',
+      messagesEn,
     );
     expect(body).toBe('Менеджерський коментар');
   });
@@ -47,7 +49,7 @@ describe('event-presenter', () => {
         comment: 'Лід взято в роботу',
         new_value: null,
       },
-      'uk',
+      messagesUk,
     );
     expect(body).toBe('');
   });
@@ -65,7 +67,7 @@ describe('event-presenter', () => {
           comment: 'Лід створено вручну.',
           new_value: { source: 'legacy_channel' },
         },
-        'uk',
+        messagesUk,
       ),
     ).not.toThrow();
 
@@ -75,7 +77,7 @@ describe('event-presenter', () => {
         comment: 'Лід створено вручну.',
         new_value: { source: 'legacy_channel' },
       },
-      'uk',
+      messagesUk,
     );
     expect(body).toContain('legacy_channel');
   });

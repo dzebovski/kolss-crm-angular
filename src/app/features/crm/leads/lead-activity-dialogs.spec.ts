@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import axe from 'axe-core';
 import { firstValueFrom } from 'rxjs';
 
+import { I18nService } from '@core/i18n/i18n.service';
 import { SessionService } from '@core/session/session.service';
 import { DueDateDialog, TextActivityDialog } from './lead-activity-dialogs';
 
@@ -11,10 +12,13 @@ describe('lead activity dialogs', () => {
   let dialog: MatDialog;
   let overlay: HTMLElement;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     TestBed.configureTestingModule({
       providers: [{ provide: SessionService, useValue: { locale: () => 'uk' } }],
     });
+    // Dialog templates call i18n.t() directly; wait for the uk bundle so
+    // labels render instead of the "not loaded yet" '' fallback.
+    await TestBed.inject(I18nService).ensureLoaded('uk');
     dialog = TestBed.inject(MatDialog);
     overlay = TestBed.inject(OverlayContainer).getContainerElement();
   });

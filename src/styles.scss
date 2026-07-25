@@ -1,8 +1,5 @@
 @use '@angular/material' as mat;
-@use './styles/design-catalog';
 @use './styles/radial-menu-overlay';
-@use './styles/radial-menu-page';
-@use './styles/lead-detail-page';
 @use './styles/lead-detail-drawer';
 
 html {
@@ -156,6 +153,22 @@ a {
 /* Outside component encapsulation — used by CDK Connected Overlay panes. */
 .ui-select__overlay-pane {
   z-index: var(--ui-z-overlay);
+}
+
+/*
+ * `.ui-dialog-panel` is the shared confirm-dialog panelClass (UiDialogService),
+ * used app-wide (leads, appointments, design demos) — not lazy-route-specific,
+ * so it stays in the initial bundle rather than a component style.
+ */
+.ui-dialog-panel .mat-mdc-dialog-surface {
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-shadow-3);
+  overflow: visible;
+}
+
+.ui-dialog-panel .mat-mdc-dialog-content {
+  overflow: visible;
+  max-height: calc(100dvh - 6rem);
 }
 
 ::selection {

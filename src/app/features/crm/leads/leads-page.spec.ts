@@ -9,6 +9,7 @@ import type { Lead } from '@domain/lead.types';
 import { LeadsService, type LeadsListFilters } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiSelect } from '@ui/form/ui-select';
+import { UiTextField } from '@ui/form/ui-text-field';
 import { LeadsPage } from './leads-page';
 
 describe('LeadsPage', () => {
@@ -364,5 +365,43 @@ describe('LeadsPage', () => {
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.lead-row')?.click();
     expect(navigate).toHaveBeenCalledWith(['/crm/leads', 'lead-1003']);
+  });
+
+  it('debounces rapid search input into a single leadsResource request', async () => {
+    vi.useFakeTimers();
+    try {
+      const fixture = TestBed.createComponent(LeadsPage);
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0);
+      await fixture.whenStable();
+      list.mockClear();
+
+      const searchField = fixture.debugElement.query(By.directive(UiTextField))
+        ?.componentInstance as UiTextField;
+
+      searchField.value.set('a');
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(100);
+
+      searchField.value.set('ab');
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(100);
+
+      searchField.value.set('abc');
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(100);
+
+      // Each keystroke landed under the 300ms debounce window, so no search
+      // request has fired yet for any intermediate value.
+      expect(list).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(300);
+      await fixture.whenStable();
+
+      expect(list).toHaveBeenCalledTimes(1);
+      expect(list).toHaveBeenCalledWith(expect.objectContaining({ search: 'abc' }));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

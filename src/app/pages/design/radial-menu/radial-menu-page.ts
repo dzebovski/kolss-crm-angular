@@ -41,6 +41,7 @@ function isDefined<T>(value: T | undefined): value is T {
   selector: 'app-radial-menu-page',
   imports: [DesignHeader, UiButton, UiIcon, RadialDemoLauncher],
   templateUrl: './radial-menu-page.html',
+  styleUrl: './radial-menu-page.scss',
 })
 export class RadialMenuPage {
   private readonly dialog = inject(UiDialogService);

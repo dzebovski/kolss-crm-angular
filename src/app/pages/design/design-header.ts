@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { UiIcon } from '@ui/icon/ui-icon';
@@ -6,6 +6,12 @@ import { UiIcon } from '@ui/icon/ui-icon';
 @Component({
   selector: 'app-design-header',
   imports: [RouterLink, RouterLinkActive, UiIcon],
+  // ViewEncapsulation.None: styles must reach content projected via
+  // <ng-content /> that is authored by the consuming page (DesignPage,
+  // RadialMenuPage), which emulated encapsulation cannot scope to. See
+  // design-header.scss for details.
+  encapsulation: ViewEncapsulation.None,
+  styleUrl: './design-header.scss',
   template: `
     <header class="design-header">
       <a class="design-brand" routerLink="/design" aria-label="KOLSS Design home">

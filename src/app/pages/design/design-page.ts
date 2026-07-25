@@ -60,6 +60,7 @@ interface AccountRow {
     UiDataTable,
   ],
   templateUrl: './design-page.html',
+  styleUrl: './design-page.scss',
 })
 export class DesignPage {
   private readonly dialog = inject(UiDialogService);

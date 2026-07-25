@@ -590,6 +590,8 @@ export class LeadsPage {
 
   private readonly initialPreferences = readLeadsPagePreferences();
   protected readonly query = signal('');
+  /** `query`, 300ms after the last keystroke — what leadsResource actually searches by. */
+  protected readonly debouncedQuery = signal('');
   protected readonly showArchived = signal(false);
   protected readonly periodDays = signal<number | null>(this.initialPreferences.periodDays);
   protected readonly callStatusFilter = signal<CallStatusFilterKey | ''>(
@@ -611,6 +613,12 @@ export class LeadsPage {
         clientStatusFilter: this.clientStatusFilter() || null,
         managerFilter: this.managerFilter(),
       });
+    });
+
+    effect((onCleanup) => {
+      const value = this.query();
+      const timer = setTimeout(() => this.debouncedQuery.set(value), 300);
+      onCleanup(() => clearTimeout(timer));
     });
   }
 
@@ -651,7 +659,7 @@ export class LeadsPage {
   protected readonly leadsResource = resource({
     params: () => ({
       officeId: this.session.selectedOfficeId(),
-      search: this.query().trim(),
+      search: this.debouncedQuery().trim(),
       archived: this.showArchived() ? ('only' as const) : ('active' as const),
       days: this.periodDays(),
       callStatus: this.callStatusFilter() || null,
