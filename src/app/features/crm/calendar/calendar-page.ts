@@ -14,6 +14,8 @@ import { firstValueFrom } from 'rxjs';
 
 import type { Appointment } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
+import { OFFICE_CONFIG } from '@core/office/office.config';
+import { isOfficeMemberRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import type { Office } from '@models/database';
 import {
@@ -124,7 +126,11 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
             <button type="button" [class.is-active]="view() === 'week'" (click)="view.set('week')">
               {{ i18n.t('calendar.week') }}
             </button>
-            <button type="button" [class.is-active]="view() === 'month'" (click)="view.set('month')">
+            <button
+              type="button"
+              [class.is-active]="view() === 'month'"
+              (click)="view.set('month')"
+            >
               {{ i18n.t('calendar.month') }}
             </button>
           </div>
@@ -181,7 +187,9 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
             </div>
             @if (hasDayColumnTasks(selectedDate())) {
               <div ngGridRow class="all-day-row">
-                <div ngGridCell class="time-label all-day-label">{{ i18n.t('calendar.allDay') }}</div>
+                <div ngGridCell class="time-label all-day-label">
+                  {{ i18n.t('calendar.allDay') }}
+                </div>
                 @for (manager of visibleManagers(); track manager.id) {
                   <div ngGridCell class="all-day-cell">
                     @if (dayColumnTasks(selectedDate(), manager.id).length) {
@@ -375,10 +383,7 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
                         (leadSelected)="openLead($event)"
                       />
                     }
-                    @for (
-                      appointment of visibleMonthAppointments(day);
-                      track appointment.id
-                    ) {
+                    @for (appointment of visibleMonthAppointments(day); track appointment.id) {
                       <button
                         ngGridCellWidget
                         type="button"
@@ -614,7 +619,7 @@ export class CalendarPage {
     this.managers().filter(
       (manager) =>
         manager.status === 'active' &&
-        manager.role === 'office_member' &&
+        isOfficeMemberRole(manager.role) &&
         manager.officeUuids.includes(this.officeId()),
     ),
   );
@@ -722,7 +727,9 @@ export class CalendarPage {
   }
 
   protected hasDayColumnTasks(date: string): boolean {
-    return this.visibleManagers().some((manager) => this.dayColumnTasks(date, manager.id).length > 0);
+    return this.visibleManagers().some(
+      (manager) => this.dayColumnTasks(date, manager.id).length > 0,
+    );
   }
 
   protected employeeName(id: string | null): string {
@@ -741,11 +748,7 @@ export class CalendarPage {
       const monthStart = startOfCalendarMonth(this.selectedDate());
       const nextMonth = addCalendarMonths(monthStart, 1);
       const groups: { date: string; items: readonly Appointment[] }[] = [];
-      for (
-        let date = monthStart;
-        date < nextMonth;
-        date = addCalendarDays(date, 1)
-      ) {
+      for (let date = monthStart; date < nextMonth; date = addCalendarDays(date, 1)) {
         const items = this.appointmentsForDay(date);
         if (items.length) groups.push({ date, items });
       }
@@ -1001,7 +1004,7 @@ export class CalendarPage {
       ? office.name_pl
       : this.i18n.locale() === 'uk'
         ? office.name_uk
-        : office.code === 'warsaw'
+        : office.code === OFFICE_CONFIG.warsaw.id
           ? 'Warsaw'
           : 'Kyiv';
   }

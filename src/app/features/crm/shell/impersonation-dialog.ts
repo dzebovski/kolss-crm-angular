@@ -2,6 +2,8 @@ import { Component, computed, inject, output, signal } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { OFFICE_CONFIG } from '@core/office/office.config';
+import { ROLE_CURATOR, ROLE_OFFICE_ADMIN, ROLE_OFFICE_MEMBER } from '@core/roles/roles';
 import type { UserRole } from '@models/database';
 import type { OfficeId } from '@domain/office.types';
 import { UsersService, type CrmEmployee } from '@services/users.service';
@@ -44,7 +46,9 @@ import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
       />
 
       <div class="modal-actions">
-        <app-ui-button variant="ghost" (pressed)="dismiss()">{{ 'common.cancel' | translate }}</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="dismiss()">{{
+          'common.cancel' | translate
+        }}</app-ui-button>
         <app-ui-button
           [loading]="loading() || submitting()"
           [disabled]="loading() || submitting()"
@@ -103,15 +107,15 @@ export class ImpersonationDialog {
 
   protected readonly officeOptions = computed<readonly UiSelectOption[]>(() => [
     { value: 'all', label: this.i18n.t('office.all') },
-    { value: 'kyiv', label: this.i18n.t('office.kyiv') },
-    { value: 'warsaw', label: this.i18n.t('office.warsaw') },
+    { value: OFFICE_CONFIG.kyiv.id, label: this.i18n.t(OFFICE_CONFIG.kyiv.nameKey) },
+    { value: OFFICE_CONFIG.warsaw.id, label: this.i18n.t(OFFICE_CONFIG.warsaw.nameKey) },
   ]);
 
   protected readonly roleOptions = computed<readonly UiSelectOption[]>(() => [
     { value: 'all', label: this.i18n.t('role.all') },
-    { value: 'office_admin', label: this.i18n.t('role.office_admin') },
-    { value: 'office_member', label: this.i18n.t('role.office_member') },
-    { value: 'curator', label: this.i18n.t('role.curator') },
+    { value: ROLE_OFFICE_ADMIN, label: this.i18n.roleLabel(ROLE_OFFICE_ADMIN) },
+    { value: ROLE_OFFICE_MEMBER, label: this.i18n.roleLabel(ROLE_OFFICE_MEMBER) },
+    { value: ROLE_CURATOR, label: this.i18n.roleLabel(ROLE_CURATOR) },
   ]);
 
   protected readonly filteredManagers = computed(() => {

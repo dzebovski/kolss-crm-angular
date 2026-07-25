@@ -38,6 +38,18 @@ describe('LeadDetailDrawer', () => {
               user: { id: 'drawer-user', email: 'drawer@kolss.test' },
               profile: { role: 'office_member' },
             }),
+            me: () => ({
+              user: { id: 'drawer-user', email: 'drawer@kolss.test' },
+              profile: { role: 'office_member' },
+              offices: [],
+              userOffices: [],
+              permissions: {
+                canManageUsers: false,
+                canEditLeadFields: true,
+                canArchiveLeads: false,
+                canRestoreLeads: false,
+              },
+            }),
           },
         },
         {
@@ -45,6 +57,7 @@ describe('LeadDetailDrawer', () => {
           useValue: {
             locale: () => 'uk',
             officeContext: () => ({
+              isSuperAdmin: false,
               userOffices: leads.map((lead) => ({ code: lead.officeCode })),
               filterOffices: leads.map((lead) => ({
                 id: `office-${lead.officeCode}`,

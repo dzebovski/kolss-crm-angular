@@ -8,6 +8,7 @@ import { KolssApiError } from '@core/api/generated/kolss-api.client';
 import type { Appointment } from '@core/api/generated/kolss-api.types';
 import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
+import { isOfficeMemberRole } from '@core/roles/roles';
 import type { Office } from '@models/database';
 import type { Lead } from '@domain/lead.types';
 import { AppointmentsService, officeDateTimeParts } from '@services/appointments.service';
@@ -185,11 +186,7 @@ interface AppointmentFormModel {
           }
 
           @if (selectedLead(); as lead) {
-            <a
-              class="client-link"
-              [routerLink]="['/crm/leads', lead.id]"
-              (click)="close()"
-            >
+            <a class="client-link" [routerLink]="['/crm/leads', lead.id]" (click)="close()">
               <app-ui-icon name="person" [size]="16" />
               {{ i18n.t('calendar.openClient') }}
             </a>
@@ -524,7 +521,7 @@ export class AppointmentDrawer {
       .filter(
         (manager) =>
           manager.status === 'active' &&
-          manager.role === 'office_member' &&
+          isOfficeMemberRole(manager.role) &&
           manager.officeUuids.includes(this.data.office.id),
       )
       .map((manager) => ({

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
-import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
 import type { LeadEventTranslationResponse } from '@core/api/generated/kolss-api.types';
 import { AuthService } from '@core/auth/auth.service';
 import type { LeadMarker, LeadMarkerKind, LeadSource, Lead } from '@domain/lead.types';
@@ -79,7 +79,7 @@ export class LeadsService {
       const result = await this.api.lead(leadId);
       return mapLeadDetail(result.lead, result.relations);
     } catch (error) {
-      if (error instanceof Error && /not found/i.test(error.message)) return null;
+      if (error instanceof KolssApiError && error.status === 404) return null;
       throw error;
     }
   }
@@ -93,13 +93,19 @@ export class LeadsService {
     return mapLeadListRow(row);
   }
 
+  /**
+   * `version` must come from the lead the caller already has loaded (it is
+   * used as the `If-Match` optimistic-concurrency token). Fetching it here
+   * via an extra GET would both waste a request and reopen the exact
+   * read-modify-write race optimistic concurrency exists to prevent.
+   */
   async updateLeadDetails(
     leadId: string,
+    version: number,
     payload: LeadDetailsUpdate,
     editedFields: readonly string[],
   ): Promise<void> {
-    const current = await this.api.lead(leadId);
-    await this.api.updateLead(leadId, current.lead.version ?? 1, {
+    await this.api.updateLead(leadId, version, {
       ...payload,
       editedFields: [...editedFields],
     });

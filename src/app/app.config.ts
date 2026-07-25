@@ -1,6 +1,16 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { NavigationError, provideRouter, withNavigationErrorHandler } from '@angular/router';
+import {
+  NavigationError,
+  provideRouter,
+  withComponentInputBinding,
+  withNavigationErrorHandler,
+} from '@angular/router';
 
 import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
@@ -12,6 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(
       routes,
+      withComponentInputBinding(),
       withNavigationErrorHandler((error: NavigationError) => {
         tryReloadForStaleChunk(error.error ?? error);
       }),

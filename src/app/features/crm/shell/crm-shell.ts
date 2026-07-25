@@ -5,7 +5,8 @@ import { AuthService } from '@core/auth/auth.service';
 import { ImpersonationService } from '@core/auth/impersonation.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { isSuperAdminRole } from '@core/roles/roles';
+import { isOfficeId } from '@core/office/office.config';
+import { isSuperAdminRole, ROLE_OFFICE_MEMBER } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import type { LocaleCode } from '@domain/i18n.types';
 import type { OfficeFilter } from '@domain/office.types';
@@ -415,7 +416,7 @@ export class CrmShell {
     this.auth.sessionContext()?.user.email ??
     this.i18n.t('common.user');
   readonly userId = () => this.auth.profile()?.id ?? null;
-  readonly roleName = () => this.i18n.roleLabel(this.auth.profile()?.role ?? 'office_member');
+  readonly roleName = () => this.i18n.roleLabel(this.auth.profile()?.role ?? ROLE_OFFICE_MEMBER);
   readonly canManageAccounts = () => this.session.officeContext()?.isSuperAdmin ?? false;
   readonly showOfficeFilter = this.session.showOfficeFilter;
   readonly officeFilter = this.session.officeFilter;
@@ -427,7 +428,7 @@ export class CrmShell {
       { value: 'all', label: this.i18n.t('office.all') },
     ];
     for (const office of offices) {
-      if (office.code === 'kyiv' || office.code === 'warsaw') {
+      if (isOfficeId(office.code)) {
         items.push({
           value: office.code,
           label: this.i18n.officeFilterLabel(office.code),

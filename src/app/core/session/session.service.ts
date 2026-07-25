@@ -1,7 +1,8 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 
 import type { Office, UserOfficeContext } from '@models/database';
-import { hasOfficeLeadFilter, isSuperAdminRole } from '@core/roles/roles';
+import { isOfficeId, OFFICE_CONFIG } from '@core/office/office.config';
+import { hasOfficeLeadFilter, isSuperAdminRole, ROLE_SUPER_ADMIN } from '@core/roles/roles';
 import { AuthService } from '@core/auth/auth.service';
 import { readViewAsMode, writeViewAsMode, type ViewAsMode } from './view-as';
 import type { LocaleCode } from '@domain/i18n.types';
@@ -100,17 +101,17 @@ export class SessionService {
   private computeDefaultLocale(): LocaleCode {
     if (isSuperAdminRole(this.auth.profile()?.role)) return 'en';
     const codes = this.userOfficesSignal().map((office) => office.code);
-    if (codes.includes('warsaw')) return 'pl';
-    if (codes.includes('kyiv')) return 'uk';
+    if (codes.includes(OFFICE_CONFIG.warsaw.id)) return OFFICE_CONFIG.warsaw.defaultLocale;
+    if (codes.includes(OFFICE_CONFIG.kyiv.id)) return OFFICE_CONFIG.kyiv.defaultLocale;
     return 'en';
   }
 
   setOfficeFilter(filter: OfficeFilter): void {
     this.officeFilterSignal.set(filter);
-    if (filter === 'kyiv' || filter === 'warsaw') {
+    if (isOfficeId(filter)) {
       this.setViewAs(filter);
     } else if (this.officeContext()?.isSuperAdmin) {
-      this.setViewAs('super_admin');
+      this.setViewAs(ROLE_SUPER_ADMIN);
     }
   }
 
@@ -128,11 +129,11 @@ export class SessionService {
 
   private applyViewAsFilter(): void {
     const mode = this.viewAsSignal();
-    if (mode === 'kyiv' || mode === 'warsaw') {
+    if (isOfficeId(mode)) {
       this.officeFilterSignal.set(mode);
       return;
     }
-    if (this.officeFilterSignal() !== 'kyiv' && this.officeFilterSignal() !== 'warsaw') {
+    if (!isOfficeId(this.officeFilterSignal())) {
       return;
     }
     this.officeFilterSignal.set('all');

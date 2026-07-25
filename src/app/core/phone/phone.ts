@@ -1,4 +1,7 @@
-export type PhoneOfficeCode = 'kyiv' | 'warsaw' | string;
+import { isOfficeId, OFFICE_CONFIG } from '@core/office/office.config';
+import type { OfficeId } from '@domain/office.types';
+
+export type PhoneOfficeCode = OfficeId | string;
 
 /**
  * Normalizes a phone for storage. Returns null when empty or not a valid
@@ -13,11 +16,7 @@ export function normalizePhoneForOffice(
   const digits = raw.replace(/^p:/i, '').replace(/\D/g, '');
   if (!digits) return null;
 
-  if (officeCode === 'warsaw') {
-    return formatPolishPhone(digits, true);
-  }
-
-  return formatUkrainianPhone(digits, true);
+  return formatForOfficeCode(digits, officeCode);
 }
 
 /**
@@ -36,23 +35,23 @@ export function formatPhoneDisplay(
   if (!digits) return trimmed;
 
   const code = officeCode ?? detectOfficeCodeFromDigits(digits);
-  const formatted =
-    code === 'warsaw'
-      ? formatPolishPhone(digits, true)
-      : formatUkrainianPhone(digits, true);
-
-  return formatted ?? trimmed;
+  return formatForOfficeCode(digits, code) ?? trimmed;
 }
 
-function detectOfficeCodeFromDigits(digits: string): PhoneOfficeCode {
+function formatForOfficeCode(digits: string, code: PhoneOfficeCode): string | null {
+  const format = isOfficeId(code) ? OFFICE_CONFIG[code].phoneFormat : 'ua';
+  return format === 'pl' ? formatPolishPhone(digits, true) : formatUkrainianPhone(digits, true);
+}
+
+function detectOfficeCodeFromDigits(digits: string): OfficeId {
   if (digits.startsWith('48') && !digits.startsWith('380') && !digits.startsWith('38')) {
-    return 'warsaw';
+    return OFFICE_CONFIG.warsaw.id;
   }
   // National PL mobiles are 9 digits without country code; UA national are 10 with leading 0.
   if (digits.length === 9 && !digits.startsWith('0')) {
-    return 'warsaw';
+    return OFFICE_CONFIG.warsaw.id;
   }
-  return 'kyiv';
+  return OFFICE_CONFIG.kyiv.id;
 }
 
 function formatUkrainianPhone(digits: string, strict: boolean): string | null {

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
-import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
 import type { AdminUserRow } from '@core/api/generated/kolss-api.types';
 import type { UserRole } from '@models/database';
 
@@ -37,7 +37,7 @@ export class AdminUsersService {
     try {
       return await this.api.user<AdminUserRow>(userId);
     } catch (error) {
-      if (error instanceof Error && /not found/i.test(error.message)) return null;
+      if (error instanceof KolssApiError && error.status === 404) return null;
       throw error;
     }
   }

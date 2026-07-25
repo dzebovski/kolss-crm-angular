@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, InjectionToken, output, signal } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
+import { OFFICE_CONFIG } from '@core/office/office.config';
 import { normalizePhoneForOffice } from '@core/phone/phone';
 import { SessionService } from '@core/session/session.service';
 import type { LeadSource } from '@domain/lead.types';
@@ -132,7 +133,9 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
       </div>
 
       <div class="modal-actions">
-        <app-ui-button variant="ghost" (pressed)="dismiss()">{{ i18n.t('common.cancel') }}</app-ui-button>
+        <app-ui-button variant="ghost" (pressed)="dismiss()">{{
+          i18n.t('common.cancel')
+        }}</app-ui-button>
         <app-ui-button [loading]="submitting()" [disabled]="submitting()" (pressed)="submit()">
           {{ i18n.t('common.create') }}
         </app-ui-button>
@@ -290,7 +293,7 @@ export class CreateLeadDialog {
     const sourceTime = this.sourceTime().trim();
     const officeCode =
       (this.session.officeContext()?.filterOffices ?? []).find((office) => office.id === officeId)
-        ?.code ?? 'kyiv';
+        ?.code ?? OFFICE_CONFIG.kyiv.id;
     const phone = normalizePhoneForOffice(phoneRaw, officeCode);
 
     let valid = true;

@@ -10,7 +10,9 @@ import {
   presentHistoryAuditText,
 } from '@core/i18n/event-presenter';
 import { I18nService } from '@core/i18n/i18n.service';
-import { canArchiveLeads, canEditLeads, isSuperAdminRole } from '@core/roles/roles';
+import { officeTimeZone } from '@core/office/office.config';
+import * as leadPolicy from '@core/policy/lead.policy';
+import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import {
   activeRemindersForLead,
@@ -162,11 +164,20 @@ export class LeadDetailView {
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
   protected readonly timelineEvents = computed(() => this.lead()?.events ?? []);
-  protected canMutateEvent(event: LeadEvent): boolean {
-    if (isSuperAdminRole(this.auth.profile()?.role)) return true;
-    const userId = this.auth.sessionContext()?.user.id;
-    return Boolean(userId && event.actorId && event.actorId === userId);
+
+  private leadPolicyContext(): leadPolicy.LeadPolicyContext {
+    return {
+      permissions: this.auth.me()?.permissions,
+      isSuperAdmin: this.session.officeContext()?.isSuperAdmin ?? false,
+      userOffices: this.session.officeContext()?.userOffices ?? [],
+      userId: this.auth.sessionContext()?.user.id ?? null,
+    };
   }
+
+  protected canMutateEvent(event: LeadEvent): boolean {
+    return leadPolicy.canMutateEvent(this.leadPolicyContext(), event);
+  }
+
   protected readonly activeReminders = computed(() => {
     const lead = this.lead();
     return lead ? activeRemindersForLead(lead) : [];
@@ -212,7 +223,7 @@ export class LeadDetailView {
         description: this.i18n.t('leadDetail.reachedDescription'),
         placeholder: this.i18n.t('leadDetail.reachedPlaceholder'),
         submitLabel: this.i18n.t('leadDetail.saveCall'),
-        commentOptional: isSuperAdminRole(this.auth.profile()?.role),
+        commentOptional: this.session.officeContext()?.isSuperAdmin ?? false,
       });
       if (result === undefined) return;
       comment = result.comment;
@@ -285,7 +296,7 @@ export class LeadDetailView {
       .filter(
         (employee) =>
           employee.status === 'active' &&
-          employee.role !== 'super_admin' &&
+          !isSuperAdminRole(employee.role) &&
           employee.officeIds.includes(lead.officeCode),
       )
       .map((employee) => ({
@@ -490,27 +501,15 @@ export class LeadDetailView {
   }
 
   protected canEditLead(lead: Lead): boolean {
-    if (lead.archivedAt) return false;
-    const role = this.auth.profile()?.role;
-    if (!canEditLeads(role)) return false;
-    if (role === 'super_admin') return true;
-    return (this.session.officeContext()?.userOffices ?? []).some(
-      (office) => office.code === lead.officeCode,
-    );
+    return leadPolicy.canEditLead(this.leadPolicyContext(), lead);
   }
 
   protected canArchiveLead(lead: Lead): boolean {
-    if (lead.clientStatus !== 'closed_lost' || lead.archivedAt) return false;
-    const role = this.auth.profile()?.role;
-    if (!canArchiveLeads(role)) return false;
-    if (role === 'super_admin') return true;
-    return (this.session.officeContext()?.userOffices ?? []).some(
-      (office) => office.code === lead.officeCode,
-    );
+    return leadPolicy.canArchiveLead(this.leadPolicyContext(), lead);
   }
 
   protected canManageArchivedLead(lead: Lead): boolean {
-    return !!lead.archivedAt && isSuperAdminRole(this.auth.profile()?.role);
+    return leadPolicy.canManageArchivedLead(this.leadPolicyContext(), lead);
   }
 
   protected async confirmArchiveLead(lead: Lead): Promise<void> {
@@ -623,7 +622,7 @@ export class LeadDetailView {
       .filter(
         (employee) =>
           employee.status === 'active' &&
-          employee.role !== 'super_admin' &&
+          !isSuperAdminRole(employee.role) &&
           employee.officeIds.includes(lead.officeCode),
       )
       .map((employee) => ({
@@ -667,6 +666,7 @@ export class LeadDetailView {
     try {
       await this.leadsService.updateLeadDetails(
         lead.id,
+        lead.version ?? 1,
         {
           name: lead.name,
           phone: lead.phone,
@@ -732,8 +732,7 @@ export class LeadDetailView {
       this.actionError.set(this.i18n.t('calendar.officeUnavailable'));
       return;
     }
-    const timeZone =
-      office.timezone_name ?? (office.code === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv');
+    const timeZone = office.timezone_name ?? officeTimeZone(office.code);
     const showroomDueAt = showroomDueAtForLead(lead);
     const date = showroomDueAt
       ? officeDateKey(new Date(showroomDueAt), timeZone)
@@ -949,8 +948,7 @@ export class LeadDetailView {
       (item) => item.code === lead.officeCode,
     );
     if (!office) return null;
-    const timeZone =
-      office.timezone_name ?? (office.code === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv');
+    const timeZone = office.timezone_name ?? officeTimeZone(office.code);
     return calendarAppointmentDeepLink({
       leadId: lead.id,
       showroomDueAt,

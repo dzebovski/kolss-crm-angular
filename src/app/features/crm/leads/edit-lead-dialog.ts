@@ -235,7 +235,12 @@ export class EditLeadDialog {
       }
 
       try {
-        await this.leadsService.updateLeadDetails(lead.id, payload, changedFields);
+        await this.leadsService.updateLeadDetails(
+          lead.id,
+          lead.version ?? 1,
+          payload,
+          changedFields,
+        );
         this.saved.emit();
       } catch (error) {
         this.error.set(

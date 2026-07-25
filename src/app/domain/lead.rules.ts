@@ -13,6 +13,7 @@ import type {
 } from './lead.types';
 import type { OfficeFilter, OfficeId } from './office.types';
 
+import { OFFICE_CONFIG } from '@core/office/office.config';
 import { getActiveLocale } from '@core/i18n/locale-storage';
 import {
   formatDateForLocale,
@@ -256,7 +257,7 @@ export function sumContractsByCurrency(rows: readonly Lead[]): readonly Contract
 }
 
 export function defaultCurrencyForOffice(office: OfficeId): ContractCurrency {
-  return office === 'warsaw' ? 'PLN' : 'UAH';
+  return OFFICE_CONFIG[office].currency;
 }
 
 export function isContractCurrency(value: unknown): value is ContractCurrency {

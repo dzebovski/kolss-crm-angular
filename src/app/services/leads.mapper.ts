@@ -1,4 +1,5 @@
 import type { Lead as LeadRow, Office } from '@models/database';
+import { OFFICE_CONFIG, isOfficeId } from '@core/office/office.config';
 import { formatPhoneDisplay } from '@core/phone/phone';
 import type {
   CallStatusActor,
@@ -159,7 +160,7 @@ function joinOne<T>(value: T | T[] | null | undefined): T | null {
 function officeCodeFromRow(row: LeadListRow): OfficeId {
   const office = joinOne(row.offices);
   const code = office?.code;
-  return code === 'warsaw' ? 'warsaw' : 'kyiv';
+  return isOfficeId(code) ? code : OFFICE_CONFIG.kyiv.id;
 }
 
 function mapSource(

@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import axe from 'axe-core';
 import { of } from 'rxjs';
 
+import type { MeResponse } from '@core/api/generated/kolss-api.types';
 import { AuthService } from '@core/auth/auth.service';
 import { SessionService } from '@core/session/session.service';
 import type { UserRole } from '@models/database';
@@ -77,6 +78,16 @@ describe('LeadDetailView', () => {
               user: { id: userId, email: 'test@kolss.test' },
               profile: { role },
             }),
+            me: () => ({
+              user: { id: userId, email: 'test@kolss.test' },
+              profile: { role },
+              offices: [],
+              userOffices: [],
+              permissions: permissionsForRole(
+                role,
+                (options.userOffices ?? [{ code: lead.officeCode }]).length > 0,
+              ),
+            }),
           },
         },
         {
@@ -102,6 +113,7 @@ describe('LeadDetailView', () => {
           useValue: {
             locale: () => 'uk',
             officeContext: () => ({
+              isSuperAdmin: role === 'super_admin',
               userOffices: options.userOffices ?? [{ code: lead.officeCode }],
               filterOffices: [
                 {
@@ -146,6 +158,17 @@ describe('LeadDetailView', () => {
     return Array.from(element.querySelectorAll<HTMLButtonElement>('.lead-actions button')).find(
       (button) => button.textContent?.includes(label),
     );
+  }
+
+  /** Mirrors the platform API's `/v1/me` permission derivation (context.go). */
+  function permissionsForRole(role: UserRole, hasOffice = true): MeResponse['permissions'] {
+    const isSuperAdmin = role === 'super_admin';
+    return {
+      canManageUsers: isSuperAdmin,
+      canEditLeadFields: isSuperAdmin || hasOffice,
+      canArchiveLeads: isSuperAdmin || role === 'office_admin',
+      canRestoreLeads: isSuperAdmin,
+    };
   }
 
   it('renders the summary, status strip, actions and full-width timeline in workflow order', async () => {
@@ -738,6 +761,7 @@ describe('LeadDetailView', () => {
 
     expect(updateLeadDetails).toHaveBeenCalledWith(
       lead.id,
+      1,
       expect.objectContaining({ assignedToId: 'emp-kyiv-1' }),
       ['manager'],
     );

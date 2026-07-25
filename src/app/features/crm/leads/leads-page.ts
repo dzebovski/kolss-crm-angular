@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import {
   callStatusTone,
@@ -670,7 +671,7 @@ export class LeadsPage {
       .filter(
         (employee) =>
           employee.status === 'active' &&
-          employee.role !== 'super_admin' &&
+          !isSuperAdminRole(employee.role) &&
           (officeFilter === 'all' || employee.officeIds.includes(officeFilter)),
       )
       .map((employee) => ({
@@ -778,7 +779,7 @@ export class LeadsPage {
   }
 
   protected isSuperAdmin(): boolean {
-    return this.auth.profile()?.role === 'super_admin';
+    return isSuperAdminRole(this.auth.profile()?.role);
   }
 
   protected async openLead(lead: Lead): Promise<void> {

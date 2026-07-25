@@ -1,18 +1,21 @@
-import { Component, computed, inject, resource, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Component, computed, inject, input, resource, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { SessionService } from '@core/session/session.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { ASSIGNABLE_ROLES } from '@core/roles/roles';
+import {
+  ASSIGNABLE_ROLES,
+  DEFAULT_ROLE,
+  isSuperAdminRole,
+  ROLE_CURATOR,
+  ROLE_OFFICE_ADMIN,
+  ROLE_SUPER_ADMIN,
+} from '@core/roles/roles';
 import type { MessageKey } from '@core/i18n/messages';
 import type { UserRole } from '@models/database';
-import {
-  callStatusTone,
-  clientStatusTone,
-  formatDateTime,
-} from '@domain/lead.rules';
+import { callStatusTone, clientStatusTone, formatDateTime } from '@domain/lead.rules';
 import { LeadsService } from '@services/leads.service';
 import { UsersService, type CrmEmployee } from '@services/users.service';
 import { UiAlert } from '@ui/feedback/ui-alert';
@@ -112,7 +115,7 @@ const OFFICE_MEMBER_PERMISSIONS = [
             <app-ui-button variant="secondary" (pressed)="startEditing(employee)">
               {{ 'common.edit' | translate }}
             </app-ui-button>
-            @if (employee.status === 'active' && employee.role !== 'super_admin') {
+            @if (employee.status === 'active' && !isSuperAdminEmployee(employee)) {
               <app-ui-button variant="danger" (pressed)="deactivate(employee)">
                 {{ 'accounts.detail.deactivate' | translate }}
               </app-ui-button>
@@ -121,7 +124,7 @@ const OFFICE_MEMBER_PERMISSIONS = [
               <app-ui-button variant="secondary" (pressed)="reactivate(employee)">
                 {{ 'accounts.detail.reactivate' | translate }}
               </app-ui-button>
-              @if (employee.role !== 'super_admin') {
+              @if (!isSuperAdminEmployee(employee)) {
                 <app-ui-button variant="danger" (pressed)="deletePermanently(employee)">
                   {{ 'accounts.detail.deleteForever' | translate }}
                 </app-ui-button>
@@ -504,7 +507,6 @@ const OFFICE_MEMBER_PERMISSIONS = [
   `,
 })
 export class EmployeeDetailPage {
-  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly usersService = inject(UsersService);
   private readonly leadsService = inject(LeadsService);
@@ -512,7 +514,7 @@ export class EmployeeDetailPage {
   private readonly dialog = inject(UiDialogService);
   protected readonly i18n = inject(I18nService);
 
-  protected readonly employeeId = this.route.snapshot.paramMap.get('employeeId') ?? '';
+  readonly employeeId = input.required<string>();
   protected readonly editing = signal(false);
   protected readonly saving = signal(false);
   protected readonly actionError = signal('');
@@ -521,15 +523,15 @@ export class EmployeeDetailPage {
   protected readonly editDisplayName = signal('');
   protected readonly editPassword = signal('');
   protected readonly editPasswordConfirm = signal('');
-  protected readonly editRole = signal<UserRole>('office_member');
+  protected readonly editRole = signal<UserRole>(DEFAULT_ROLE);
   protected readonly selectedOfficeIds = signal<string[]>([]);
 
   protected readonly employeeResource = resource({
-    params: () => ({ employeeId: this.employeeId }),
+    params: () => ({ employeeId: this.employeeId() }),
     loader: ({ params }) => this.usersService.getEmployee(params.employeeId),
   });
   protected readonly assignedLeadsResource = resource({
-    params: () => ({ employeeId: this.employeeId }),
+    params: () => ({ employeeId: this.employeeId() }),
     loader: ({ params }) => this.leadsService.listAssignedTo(params.employeeId),
   });
 
@@ -556,13 +558,17 @@ export class EmployeeDetailPage {
     return employee.officeIds.map((officeId) => this.officeLabel(officeId)).join(', ');
   }
 
+  protected isSuperAdminEmployee(employee: CrmEmployee): boolean {
+    return isSuperAdminRole(employee.role);
+  }
+
   protected permissions(employee: CrmEmployee): readonly string[] {
     const keys =
-      employee.role === 'super_admin'
+      employee.role === ROLE_SUPER_ADMIN
         ? SUPER_ADMIN_PERMISSIONS
-        : employee.role === 'curator'
+        : employee.role === ROLE_CURATOR
           ? CURATOR_PERMISSIONS
-          : employee.role === 'office_admin'
+          : employee.role === ROLE_OFFICE_ADMIN
             ? OFFICE_ADMIN_PERMISSIONS
             : OFFICE_MEMBER_PERMISSIONS;
     return keys.map((key) => this.i18n.t(key));
@@ -621,14 +627,16 @@ export class EmployeeDetailPage {
 
   protected async deactivate(employee: CrmEmployee): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.dialog.confirm({
-        title: this.i18n.t('accounts.detail.deactivateTitle'),
-        description: this.i18n.t('accounts.detail.deactivateDesc', {
-          name: employee.displayName,
-        }),
-        confirmLabel: this.i18n.t('common.continue'),
-        danger: true,
-      }).afterClosed(),
+      this.dialog
+        .confirm({
+          title: this.i18n.t('accounts.detail.deactivateTitle'),
+          description: this.i18n.t('accounts.detail.deactivateDesc', {
+            name: employee.displayName,
+          }),
+          confirmLabel: this.i18n.t('common.continue'),
+          danger: true,
+        })
+        .afterClosed(),
     );
     if (!confirmed || !employee.email) return;
 
@@ -649,13 +657,15 @@ export class EmployeeDetailPage {
 
   protected async reactivate(employee: CrmEmployee): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.dialog.confirm({
-        title: this.i18n.t('accounts.detail.reactivateTitle'),
-        description: this.i18n.t('accounts.detail.reactivateDesc', {
-          name: employee.displayName,
-        }),
-        confirmLabel: this.i18n.t('accounts.detail.reactivate'),
-      }).afterClosed(),
+      this.dialog
+        .confirm({
+          title: this.i18n.t('accounts.detail.reactivateTitle'),
+          description: this.i18n.t('accounts.detail.reactivateDesc', {
+            name: employee.displayName,
+          }),
+          confirmLabel: this.i18n.t('accounts.detail.reactivate'),
+        })
+        .afterClosed(),
     );
     if (!confirmed) return;
 
@@ -673,21 +683,20 @@ export class EmployeeDetailPage {
 
   protected async deletePermanently(employee: CrmEmployee): Promise<void> {
     const confirmed = await firstValueFrom(
-      this.dialog.confirm({
-        title: this.i18n.t('accounts.detail.deleteTitle'),
-        description: this.i18n.t('accounts.detail.deleteDesc', {
-          name: employee.displayName,
-        }),
-        confirmLabel: this.i18n.t('common.delete'),
-        danger: true,
-      }).afterClosed(),
+      this.dialog
+        .confirm({
+          title: this.i18n.t('accounts.detail.deleteTitle'),
+          description: this.i18n.t('accounts.detail.deleteDesc', {
+            name: employee.displayName,
+          }),
+          confirmLabel: this.i18n.t('common.delete'),
+          danger: true,
+        })
+        .afterClosed(),
     );
     if (!confirmed || !employee.email) return;
 
-    const email = window.prompt(
-      this.i18n.t('accounts.detail.confirmEmailDelete'),
-      employee.email,
-    );
+    const email = window.prompt(this.i18n.t('accounts.detail.confirmEmailDelete'), employee.email);
     if (!email) return;
 
     this.actionError.set('');

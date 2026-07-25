@@ -1,44 +1,34 @@
 import type { UserRole } from '@models/database';
 
-export const ROLE_LABELS: Record<UserRole, string> = {
-  super_admin: 'Супер-адмін',
-  curator: 'Куратор',
-  office_admin: 'Адмін офісу',
-  office_member: 'Менеджер',
-};
+/**
+ * Single source of truth for the four role literals; import these instead of
+ * retyping them. Declared with `satisfies` (not `: UserRole`) so each constant
+ * keeps its own literal type — callers like `ViewAsMode` (`typeof
+ * ROLE_SUPER_ADMIN`) rely on that.
+ */
+export const ROLE_SUPER_ADMIN = 'super_admin' satisfies UserRole;
+export const ROLE_CURATOR = 'curator' satisfies UserRole;
+export const ROLE_OFFICE_ADMIN = 'office_admin' satisfies UserRole;
+export const ROLE_OFFICE_MEMBER = 'office_member' satisfies UserRole;
+
+/** Default role preselected in new-employee forms. */
+export const DEFAULT_ROLE = ROLE_OFFICE_MEMBER satisfies UserRole;
 
 export const ASSIGNABLE_ROLES: readonly UserRole[] = [
-  'curator',
-  'office_admin',
-  'office_member',
+  ROLE_CURATOR,
+  ROLE_OFFICE_ADMIN,
+  ROLE_OFFICE_MEMBER,
 ];
 
-export function roleLabel(role: UserRole | string | null | undefined): string {
-  if (!role) return '—';
-  return ROLE_LABELS[role as UserRole] ?? role;
+export function hasOfficeLeadFilter(role: UserRole | null | undefined): boolean {
+  return role === ROLE_SUPER_ADMIN || role === ROLE_CURATOR;
 }
 
-export function canManageUsers(role: string | null | undefined): boolean {
-  return role === 'super_admin';
+export function isSuperAdminRole(role: UserRole | null | undefined): boolean {
+  return role === ROLE_SUPER_ADMIN;
 }
 
-export function canEditLeads(role: string | null | undefined): boolean {
-  return (
-    role === 'super_admin' ||
-    role === 'curator' ||
-    role === 'office_admin' ||
-    role === 'office_member'
-  );
-}
-
-export function canArchiveLeads(role: string | null | undefined): boolean {
-  return role === 'super_admin' || role === 'office_admin';
-}
-
-export function hasOfficeLeadFilter(role: string | null | undefined): boolean {
-  return role === 'super_admin' || role === 'curator';
-}
-
-export function isSuperAdminRole(role: string | null | undefined): boolean {
-  return role === 'super_admin';
+/** Field managers assignable to appointments/leads — excludes curators, admins and super admins. */
+export function isOfficeMemberRole(role: UserRole | null | undefined): boolean {
+  return role === ROLE_OFFICE_MEMBER;
 }

@@ -4,7 +4,16 @@ import { Router } from '@angular/router';
 import { SessionService } from '@core/session/session.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { ASSIGNABLE_ROLES } from '@core/roles/roles';
+import { OFFICE_CONFIG } from '@core/office/office.config';
+import {
+  ASSIGNABLE_ROLES,
+  DEFAULT_ROLE,
+  isSuperAdminRole,
+  ROLE_CURATOR,
+  ROLE_OFFICE_ADMIN,
+  ROLE_OFFICE_MEMBER,
+  ROLE_SUPER_ADMIN,
+} from '@core/roles/roles';
 import type { UserRole } from '@models/database';
 import { formatDateTime } from '@domain/lead.rules';
 import type { OfficeFilter } from '@domain/office.types';
@@ -63,11 +72,7 @@ import { UiTextField } from '@ui/form/ui-text-field';
               autocomplete="email"
               [(value)]="createEmail"
             />
-            <app-ui-text-field
-              label="Імʼя"
-              autocomplete="name"
-              [(value)]="createDisplayName"
-            />
+            <app-ui-text-field label="Імʼя" autocomplete="name" [(value)]="createDisplayName" />
             <app-ui-text-field
               label="Пароль"
               type="password"
@@ -117,8 +122,16 @@ import { UiTextField } from '@ui/form/ui-text-field';
           placeholder="Імʼя, email або ID"
           [(value)]="query"
         />
-        <app-ui-select [label]="'common.office' | translate" [options]="officeOptions()" [(value)]="officeFilter" />
-        <app-ui-select [label]="'common.role' | translate" [options]="roleOptions()" [(value)]="roleFilter" />
+        <app-ui-select
+          [label]="'common.office' | translate"
+          [options]="officeOptions()"
+          [(value)]="officeFilter"
+        />
+        <app-ui-select
+          [label]="'common.role' | translate"
+          [options]="roleOptions()"
+          [(value)]="roleFilter"
+        />
       </div>
 
       @if (employeesResource.isLoading()) {
@@ -148,11 +161,7 @@ import { UiTextField } from '@ui/form/ui-text-field';
               @for (employee of filteredEmployees(); track employee.id) {
                 <tr>
                   <td class="cell-employee">
-                    <app-ui-user
-                      [userId]="employee.id"
-                      [name]="employee.displayName"
-                      size="sm"
-                    />
+                    <app-ui-user [userId]="employee.id" [name]="employee.displayName" size="sm" />
                     <small>{{ employee.id }}</small>
                   </td>
                   <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
@@ -187,10 +196,7 @@ import { UiTextField } from '@ui/form/ui-text-field';
       } @else {
         <div class="accounts-sections">
           @for (section of employeeSections(); track section.id) {
-            <section
-              class="accounts-table-panel"
-              [attr.aria-labelledby]="section.id"
-            >
+            <section class="accounts-table-panel" [attr.aria-labelledby]="section.id">
               <header class="section-header">
                 <h2 [id]="section.id">{{ section.title }}</h2>
                 <span>{{ section.employees.length }}</span>
@@ -284,11 +290,7 @@ import { UiTextField } from '@ui/form/ui-text-field';
               @for (employee of filteredInactiveEmployees(); track employee.id) {
                 <tr>
                   <td class="cell-employee">
-                    <app-ui-user
-                      [userId]="employee.id"
-                      [name]="employee.displayName"
-                      size="sm"
-                    />
+                    <app-ui-user [userId]="employee.id" [name]="employee.displayName" size="sm" />
                     <small>{{ employee.id }}</small>
                   </td>
                   <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
@@ -582,22 +584,22 @@ export class AccountsPage {
   protected readonly createDisplayName = signal('');
   protected readonly createPassword = signal('');
   protected readonly createPasswordConfirm = signal('');
-  protected readonly createRole = signal<UserRole>('office_member');
+  protected readonly createRole = signal<UserRole>(DEFAULT_ROLE);
   protected readonly selectedOfficeIds = signal<string[]>([]);
 
   protected readonly formatDateTime = formatDateTime;
   protected roleLabel = (role: string) => this.i18n.roleLabel(role);
   protected readonly officeOptions = computed((): readonly UiSelectOption[] => [
     { value: 'all', label: this.i18n.t('office.all') },
-    { value: 'kyiv', label: this.i18n.t('office.kyiv') },
-    { value: 'warsaw', label: this.i18n.t('office.warsaw') },
+    { value: OFFICE_CONFIG.kyiv.id, label: this.i18n.t(OFFICE_CONFIG.kyiv.nameKey) },
+    { value: OFFICE_CONFIG.warsaw.id, label: this.i18n.t(OFFICE_CONFIG.warsaw.nameKey) },
   ]);
   protected readonly roleOptions = computed((): readonly UiSelectOption[] => [
     { value: 'all', label: this.i18n.t('role.all') },
-    { value: 'super_admin', label: this.i18n.roleLabel('super_admin') },
-    { value: 'curator', label: this.i18n.roleLabel('curator') },
-    { value: 'office_admin', label: this.i18n.roleLabel('office_admin') },
-    { value: 'office_member', label: this.i18n.roleLabel('office_member') },
+    { value: ROLE_SUPER_ADMIN, label: this.i18n.roleLabel(ROLE_SUPER_ADMIN) },
+    { value: ROLE_CURATOR, label: this.i18n.roleLabel(ROLE_CURATOR) },
+    { value: ROLE_OFFICE_ADMIN, label: this.i18n.roleLabel(ROLE_OFFICE_ADMIN) },
+    { value: ROLE_OFFICE_MEMBER, label: this.i18n.roleLabel(ROLE_OFFICE_MEMBER) },
   ]);
   protected readonly assignableRoleOptions = computed((): readonly UiSelectOption[] =>
     ASSIGNABLE_ROLES.map((role) => ({ value: role, label: this.i18n.roleLabel(role) })),
@@ -638,30 +640,31 @@ export class AccountsPage {
 
   protected readonly hasActiveFilters = computed(
     () =>
-      this.query().trim() !== '' ||
-      this.officeFilter() !== 'all' ||
-      this.roleFilter() !== 'all',
+      this.query().trim() !== '' || this.officeFilter() !== 'all' || this.roleFilter() !== 'all',
   );
 
   protected readonly superAdmins = computed(() =>
-    this.employees().filter((employee) => employee.role === 'super_admin'),
+    this.employees().filter((employee) => isSuperAdminRole(employee.role)),
   );
 
   protected readonly officeAdmins = computed(() =>
     this.employees().filter(
-      (employee) => employee.role === 'office_admin' || employee.role === 'curator',
+      (employee) => employee.role === ROLE_OFFICE_ADMIN || employee.role === ROLE_CURATOR,
     ),
   );
 
   protected readonly kyivManagers = computed(() =>
     this.employees().filter(
-      (employee) => employee.role === 'office_member' && employee.officeIds.includes('kyiv'),
+      (employee) =>
+        employee.role === ROLE_OFFICE_MEMBER && employee.officeIds.includes(OFFICE_CONFIG.kyiv.id),
     ),
   );
 
   protected readonly warsawManagers = computed(() =>
     this.employees().filter(
-      (employee) => employee.role === 'office_member' && employee.officeIds.includes('warsaw'),
+      (employee) =>
+        employee.role === ROLE_OFFICE_MEMBER &&
+        employee.officeIds.includes(OFFICE_CONFIG.warsaw.id),
     ),
   );
 
@@ -688,9 +691,7 @@ export class AccountsPage {
     },
   ]);
 
-  protected readonly filteredEmployees = computed(() =>
-    this.filterEmployees(this.employees()),
-  );
+  protected readonly filteredEmployees = computed(() => this.filterEmployees(this.employees()));
 
   protected readonly filteredInactiveEmployees = computed(() =>
     this.filterEmployees(this.inactiveEmployees()),
@@ -744,7 +745,7 @@ export class AccountsPage {
     this.createDisplayName.set('');
     this.createPassword.set('');
     this.createPasswordConfirm.set('');
-    this.createRole.set('office_member');
+    this.createRole.set(DEFAULT_ROLE);
     this.selectedOfficeIds.set([]);
     this.actionError.set('');
   }

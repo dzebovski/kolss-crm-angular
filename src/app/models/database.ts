@@ -44,8 +44,6 @@ export interface UserOfficeContext {
   canUseOfficeFilter: boolean;
 }
 
-export type ViewAsMode = 'super_admin' | 'kyiv' | 'warsaw';
-
 export interface LeadStatus {
   code: string;
   label_uk: string;

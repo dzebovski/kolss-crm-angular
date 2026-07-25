@@ -2,6 +2,8 @@ import { inject, Injectable } from '@angular/core';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import { AuthService } from '@core/auth/auth.service';
+import { isOfficeId } from '@core/office/office.config';
+import { isSuperAdminRole } from '@core/roles/roles';
 import type { UserRole } from '@models/database';
 import {
   AdminUsersService,
@@ -34,7 +36,7 @@ export class UsersService {
   }
 
   async listEmployees(): Promise<readonly CrmEmployee[]> {
-    if (this.auth.profile()?.role !== 'super_admin') {
+    if (!isSuperAdminRole(this.auth.profile()?.role)) {
       return this.listManagers();
     }
     return (await this.adminUsers.listUsers(true)).map((row) => this.mapAdminUser(row));
@@ -70,9 +72,7 @@ export class UsersService {
   }
 
   private mapAdminUser(row: AdminUserRow): CrmEmployee {
-    const officeIds = row.offices
-      .map((office) => office.code)
-      .filter((code): code is OfficeId => code === 'kyiv' || code === 'warsaw');
+    const officeIds = row.offices.map((office) => office.code).filter(isOfficeId);
     return {
       id: row.id,
       email: row.email || null,

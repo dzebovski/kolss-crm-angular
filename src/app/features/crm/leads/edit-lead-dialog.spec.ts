@@ -74,6 +74,7 @@ describe('EditLeadDialog', () => {
 
     expect(updateLeadDetails).toHaveBeenCalledWith(
       lead.id,
+      1,
       {
         name: lead.name,
         phone: '+48 883 000 111',
@@ -87,6 +88,21 @@ describe('EditLeadDialog', () => {
       ['phone', 'email', 'cityRegion', 'product', 'budget', 'initialMessage'],
     );
     expect(saved).toHaveBeenCalledOnce();
+  });
+
+  it('sends the already-loaded lead version as the If-Match token, without an extra fetch', async () => {
+    const lead: Lead = { ...FIXTURE_LEADS[7]!, version: 7 };
+    const { fixture, updateLeadDetails } = await render(lead);
+
+    fixture.componentInstance['model'].update((value) => ({ ...value, name: 'Nowe imię' }));
+    await fixture.componentInstance['save']();
+
+    expect(updateLeadDetails).toHaveBeenCalledWith(
+      lead.id,
+      7,
+      expect.objectContaining({ name: 'Nowe imię' }),
+      ['name'],
+    );
   });
 
   it('dismisses without an API call when no values changed', async () => {
