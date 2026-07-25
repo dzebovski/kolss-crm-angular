@@ -54,3 +54,12 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+
+## Testing (Vitest + jsdom)
+
+- Use `TestBed.configureTestingModule` with `imports: [ComponentUnderTest]` for standalone components
+- Call `await fixture.whenStable()` before asserting on async/signal-driven DOM updates
+- Prefer testing behavior and rendered output over implementation details
+- Use `fixture.nativeElement` or `fixture.debugElement` for DOM assertions
+- Keep tests focused — one behavior per `it()` block
+- Run tests with `npm test`
