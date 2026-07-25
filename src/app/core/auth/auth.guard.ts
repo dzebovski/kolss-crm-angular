@@ -57,7 +57,7 @@ export const guestGuard: CanActivateFn = async (route) => {
   return true;
 };
 
-function waitForAuthReady(auth: AuthService): Promise<void> {
+export function waitForAuthReady(auth: AuthService): Promise<void> {
   return new Promise((resolve) => {
     const interval = setInterval(() => {
       if (!auth.loading()) {

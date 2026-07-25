@@ -3,6 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { canManageUsers } from '../roles/roles';
 import { AuthService } from './auth.service';
+import { waitForAuthReady } from './auth.guard';
 
 export function roleGuard(requiredCheck: (role: string | null | undefined) => boolean): CanActivateFn {
   return async () => {
@@ -11,6 +12,10 @@ export function roleGuard(requiredCheck: (role: string | null | undefined) => bo
 
     if (!auth.initialized()) {
       await auth.initialize();
+    }
+
+    if (auth.loading()) {
+      await waitForAuthReady(auth);
     }
 
     const role = auth.profile()?.role;

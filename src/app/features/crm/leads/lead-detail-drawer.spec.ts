@@ -30,8 +30,33 @@ describe('LeadDetailDrawer', () => {
           },
         },
         { provide: MatDialogRef, useValue: { close } },
-        { provide: AuthService, useValue: { profile: () => ({ role: 'office_member' }) } },
-        { provide: SessionService, useValue: { locale: () => 'uk' } },
+        {
+          provide: AuthService,
+          useValue: {
+            profile: () => ({ role: 'office_member' }),
+            sessionContext: () => ({
+              user: { id: 'drawer-user', email: 'drawer@kolss.test' },
+              profile: { role: 'office_member' },
+            }),
+          },
+        },
+        {
+          provide: SessionService,
+          useValue: {
+            locale: () => 'uk',
+            officeContext: () => ({
+              userOffices: leads.map((lead) => ({ code: lead.officeCode })),
+              filterOffices: leads.map((lead) => ({
+                id: `office-${lead.officeCode}`,
+                code: lead.officeCode,
+                name_uk: lead.officeCode === 'warsaw' ? 'Варшава' : 'Київ',
+                name_pl: lead.officeCode === 'warsaw' ? 'Warszawa' : 'Kijów',
+                timezone_name: lead.officeCode === 'warsaw' ? 'Europe/Warsaw' : 'Europe/Kyiv',
+                is_active: true,
+              })),
+            }),
+          },
+        },
         {
           provide: LeadsService,
           useValue: {

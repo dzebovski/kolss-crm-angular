@@ -19,12 +19,14 @@ export const routes: Routes = [
   {
     path: 'design/radial-menu',
     title: 'Radial Menu | KOLSS',
+    canActivate: [superAdminGuard],
     loadComponent: () =>
       import('./pages/design/radial-menu/radial-menu-page').then((page) => page.RadialMenuPage),
   },
   {
     path: 'design',
     title: 'Design system | KOLSS',
+    canActivate: [superAdminGuard],
     loadComponent: () => import('./pages/design/design-page').then((page) => page.DesignPage),
   },
   {
