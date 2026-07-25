@@ -34,7 +34,8 @@ describe('LeadActivitiesService', () => {
     ]);
   });
 
-  it('sends the selected date for a waiting client', async () => {
+  it('sends optional comment and due date for thinking, and date for showroom', async () => {
+    await service.setClientStatus('lead-1', 'thinking');
     await service.setClientStatus(
       'lead-1',
       'thinking',
@@ -42,9 +43,9 @@ describe('LeadActivitiesService', () => {
       '  Попросив час на рішення  ',
     );
     await service.setClientStatus('lead-1', 'showroom_invited', '2026-08-03');
-    await service.setClientStatus('lead-1', 'showroom_invited');
 
     expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
+      { type: 'client_status', status: 'thinking' },
       {
         type: 'client_status',
         status: 'thinking',
@@ -56,7 +57,6 @@ describe('LeadActivitiesService', () => {
         status: 'showroom_invited',
         dueAt: '2026-08-03T12:00:00.000Z',
       },
-      { type: 'client_status', status: 'showroom_invited' },
     ]);
   });
 
