@@ -12,7 +12,7 @@ import {
   callStatusTone,
   clientStatusTone,
   formatDateTime,
-} from '@services/crm-mock.helpers';
+} from '@domain/lead.rules';
 import { LeadsService } from '@services/leads.service';
 import { UsersService, type CrmEmployee } from '@services/users.service';
 import { UiAlert } from '@ui/feedback/ui-alert';

@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
-import type { LocaleCode } from '@services/crm-mock.types';
+import type { LocaleCode } from '@domain/i18n.types';
 import { SessionService } from '@core/session/session.service';
 import {
   compareForLocale,

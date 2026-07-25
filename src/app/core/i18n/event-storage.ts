@@ -1,4 +1,4 @@
-import type { LeadSource } from '@services/crm-mock.types';
+import type { LeadSource } from '@domain/lead.types';
 import type { LeadFieldKey } from './field-keys';
 
 export type FirstCallResultCode = 'reached' | 'no_answer' | 'cannot_talk' | 'bad_lead';

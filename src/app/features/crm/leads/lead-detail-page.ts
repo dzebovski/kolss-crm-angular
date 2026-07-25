@@ -24,14 +24,8 @@ import {
   showroomDueAtForLead,
   type LeadActiveReminder,
   type LeadReminderKind,
-} from '@services/crm-mock.helpers';
-import type {
-  CallStatus,
-  ClientStatus,
-  LeadEvent,
-  LeadMarkerKind,
-  MockLead,
-} from '@services/crm-mock.types';
+} from '@domain/lead.rules';
+import type { CallStatus, ClientStatus, LeadEvent, LeadMarkerKind, Lead } from '@domain/lead.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
@@ -183,7 +177,7 @@ export class LeadDetailView {
   protected readonly clientToneForLead = clientStatusToneForLead;
   protected readonly isTerminal = leadIsTerminal;
 
-  protected async openCallMenu(lead: MockLead): Promise<void> {
+  protected async openCallMenu(lead: Lead): Promise<void> {
     const status = await firstValueFrom(
       this.dialog
         .open<RadialActionDialog, RadialActionDialogData<CallStatus>, CallStatus>(
@@ -231,7 +225,7 @@ export class LeadDetailView {
     await this.runActivity(() => this.activities.recordCall(lead.id, status, comment));
   }
 
-  protected async openClientStatusMenu(lead: MockLead): Promise<void> {
+  protected async openClientStatusMenu(lead: Lead): Promise<void> {
     const status = await firstValueFrom(
       this.dialog
         .open<
@@ -263,7 +257,7 @@ export class LeadDetailView {
     await this.selectClientStatus(lead, status);
   }
 
-  protected async openComment(lead: MockLead): Promise<void> {
+  protected async openComment(lead: Lead): Promise<void> {
     const result = await this.openTextDialog({
       eyebrow: this.i18n.t('leadDetail.noteEyebrow'),
       title: this.i18n.t('leadDetail.addComment'),
@@ -286,7 +280,7 @@ export class LeadDetailView {
   }
 
   /** Active, non–super_admin staff of the lead's office, offered as task assignees. */
-  protected commentAssigneeOptions(lead: MockLead): readonly UiSelectOption[] {
+  protected commentAssigneeOptions(lead: Lead): readonly UiSelectOption[] {
     const staff = (this.employeesResource.value() ?? [])
       .filter(
         (employee) =>
@@ -302,7 +296,7 @@ export class LeadDetailView {
     return [{ value: '', label: this.i18n.t('common.unassigned') }, ...staff];
   }
 
-  protected async editEvent(lead: MockLead, event: LeadEvent): Promise<void> {
+  protected async editEvent(lead: Lead, event: LeadEvent): Promise<void> {
     if (!this.canMutateEvent(event)) return;
     const result = await this.openTextDialog({
       eyebrow: this.i18n.t('leadDetail.history'),
@@ -333,7 +327,7 @@ export class LeadDetailView {
     return this.translationErrors()[eventId] ?? '';
   }
 
-  protected async translateEvent(lead: MockLead, event: LeadEvent): Promise<void> {
+  protected async translateEvent(lead: Lead, event: LeadEvent): Promise<void> {
     if (this.isEventTranslationPending(event.id) || !event.comment?.trim() || event.translationEn) {
       return;
     }
@@ -389,7 +383,7 @@ export class LeadDetailView {
     }
   }
 
-  protected async clearReminder(lead: MockLead, reminder: LeadActiveReminder): Promise<void> {
+  protected async clearReminder(lead: Lead, reminder: LeadActiveReminder): Promise<void> {
     if (lead.archivedAt || this.isTerminal(lead)) return;
     await this.runActivity(() => this.activities.clearReminder(lead.id, reminder.kind));
   }
@@ -399,14 +393,14 @@ export class LeadDetailView {
     this.deleteEventTarget.set(null);
   }
 
-  protected async confirmDeleteEvent(lead: MockLead): Promise<void> {
+  protected async confirmDeleteEvent(lead: Lead): Promise<void> {
     const target = this.deleteEventTarget();
     if (!target || !this.canMutateEvent(target)) return;
     await this.runActivity(() => this.leadsService.deleteHistoryEvent(lead.id, target.id));
     this.deleteEventTarget.set(null);
   }
 
-  private async selectClientStatus(lead: MockLead, status: SelectableClientStatus): Promise<void> {
+  private async selectClientStatus(lead: Lead, status: SelectableClientStatus): Promise<void> {
     if (status === lead.clientStatus && status !== 'showroom_invited') return;
     if (status === 'closed_lost') {
       const result = await firstValueFrom(
@@ -470,11 +464,11 @@ export class LeadDetailView {
     await this.runActivity(() => this.activities.setClientStatus(lead.id, status));
   }
 
-  protected async reopenLead(lead: MockLead): Promise<void> {
+  protected async reopenLead(lead: Lead): Promise<void> {
     await this.runActivity(() => this.activities.reopen(lead.id));
   }
 
-  protected openLeadEditDialog(lead: MockLead): void {
+  protected openLeadEditDialog(lead: Lead): void {
     if (!this.canEditLead(lead)) return;
     this.actionError.set('');
     this.editLeadDialogOpen.set(true);
@@ -495,7 +489,7 @@ export class LeadDetailView {
     }
   }
 
-  protected canEditLead(lead: MockLead): boolean {
+  protected canEditLead(lead: Lead): boolean {
     if (lead.archivedAt) return false;
     const role = this.auth.profile()?.role;
     if (!canEditLeads(role)) return false;
@@ -505,7 +499,7 @@ export class LeadDetailView {
     );
   }
 
-  protected canArchiveLead(lead: MockLead): boolean {
+  protected canArchiveLead(lead: Lead): boolean {
     if (lead.clientStatus !== 'closed_lost' || lead.archivedAt) return false;
     const role = this.auth.profile()?.role;
     if (!canArchiveLeads(role)) return false;
@@ -515,11 +509,11 @@ export class LeadDetailView {
     );
   }
 
-  protected canManageArchivedLead(lead: MockLead): boolean {
+  protected canManageArchivedLead(lead: Lead): boolean {
     return !!lead.archivedAt && isSuperAdminRole(this.auth.profile()?.role);
   }
 
-  protected async confirmArchiveLead(lead: MockLead): Promise<void> {
+  protected async confirmArchiveLead(lead: Lead): Promise<void> {
     if (!this.canArchiveLead(lead) || this.deletingLead()) return;
 
     const confirmed = await firstValueFrom(
@@ -549,7 +543,7 @@ export class LeadDetailView {
     }
   }
 
-  protected async restoreLead(lead: MockLead): Promise<void> {
+  protected async restoreLead(lead: Lead): Promise<void> {
     if (!this.canManageArchivedLead(lead) || this.actionPending()) return;
     this.actionPending.set(true);
     this.actionError.set('');
@@ -565,7 +559,7 @@ export class LeadDetailView {
     }
   }
 
-  protected async confirmDeleteLead(lead: MockLead): Promise<void> {
+  protected async confirmDeleteLead(lead: Lead): Promise<void> {
     if (!this.canManageArchivedLead(lead) || this.deletingLead()) return;
 
     const confirmed = await firstValueFrom(
@@ -595,7 +589,7 @@ export class LeadDetailView {
     }
   }
 
-  protected async toggleMarker(lead: MockLead, kind: LeadMarkerKind): Promise<void> {
+  protected async toggleMarker(lead: Lead, kind: LeadMarkerKind): Promise<void> {
     if (lead.archivedAt || this.markerPending()) return;
     this.markerError.set('');
     this.markerPending.set(kind);
@@ -616,15 +610,15 @@ export class LeadDetailView {
     }
   }
 
-  protected canAssignManager(lead: MockLead): boolean {
+  protected canAssignManager(lead: Lead): boolean {
     return !lead.archivedAt && isSuperAdminRole(this.auth.profile()?.role);
   }
 
-  protected managerActionLabel(lead: MockLead): string {
+  protected managerActionLabel(lead: Lead): string {
     return this.i18n.t(lead.assignedToId ? 'lead.replaceManager' : 'lead.assignManager');
   }
 
-  protected managerOptions(lead: MockLead): readonly UiSelectOption[] {
+  protected managerOptions(lead: Lead): readonly UiSelectOption[] {
     const managers = (this.employeesResource.value() ?? [])
       .filter(
         (employee) =>
@@ -641,7 +635,7 @@ export class LeadDetailView {
     return [{ value: NO_MANAGER_VALUE, label: this.i18n.t('common.unassigned') }, ...managers];
   }
 
-  protected openAssignManagerDialog(lead: MockLead): void {
+  protected openAssignManagerDialog(lead: Lead): void {
     if (!this.canAssignManager(lead)) return;
     this.managerError.set('');
     this.assignManagerId.set(lead.assignedToId ?? NO_MANAGER_VALUE);
@@ -654,7 +648,7 @@ export class LeadDetailView {
     this.assignManagerDialogOpen.set(false);
   }
 
-  protected async submitAssignManager(lead: MockLead): Promise<void> {
+  protected async submitAssignManager(lead: Lead): Promise<void> {
     if (this.managerPending()) return;
     this.managerError.set('');
     if (!this.canAssignManager(lead)) {
@@ -730,7 +724,7 @@ export class LeadDetailView {
     );
   }
 
-  private async openLeadAppointment(lead: MockLead): Promise<void> {
+  private async openLeadAppointment(lead: Lead): Promise<void> {
     const office = (this.session.officeContext()?.filterOffices ?? []).find(
       (item) => item.code === lead.officeCode,
     );
@@ -894,14 +888,14 @@ export class LeadDetailView {
     return this.i18n.clientStatusLabel(status);
   }
 
-  protected clientStatusLabelForLead(lead: MockLead): string {
+  protected clientStatusLabelForLead(lead: Lead): string {
     if (leadIsInWork(lead)) {
       return this.i18n.t('workflow.taken');
     }
     return this.clientStatusLabel(lead.clientStatus);
   }
 
-  protected sourceLabel(lead: MockLead): string {
+  protected sourceLabel(lead: Lead): string {
     return this.i18n.sourceLabel(lead.source);
   }
 
@@ -913,7 +907,7 @@ export class LeadDetailView {
     return this.i18n.closeReasonLabel(code);
   }
 
-  protected closeSummaryLine(lead: MockLead): string {
+  protected closeSummaryLine(lead: Lead): string {
     if (!lead.close) return '';
     const parts = [
       this.clientStatusLabel('closed_lost'),
@@ -923,7 +917,7 @@ export class LeadDetailView {
     return parts.join(' - ');
   }
 
-  protected defaultCurrency(lead: MockLead): string {
+  protected defaultCurrency(lead: Lead): string {
     return defaultCurrencyForOffice(lead.officeCode);
   }
 
@@ -948,7 +942,7 @@ export class LeadDetailView {
 
   protected readonly showroomDueAtForLead = showroomDueAtForLead;
 
-  protected calendarAppointmentQueryParams(lead: MockLead): CalendarAppointmentDeepLink | null {
+  protected calendarAppointmentQueryParams(lead: Lead): CalendarAppointmentDeepLink | null {
     const showroomDueAt = showroomDueAtForLead(lead);
     if (!showroomDueAt) return null;
     const office = (this.session.officeContext()?.filterOffices ?? []).find(

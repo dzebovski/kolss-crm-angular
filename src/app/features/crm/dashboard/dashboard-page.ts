@@ -14,8 +14,8 @@ import {
   clientStatusTone,
   groupLeadsForDashboard,
   showroomDueAtForLead,
-} from '@services/crm-mock.helpers';
-import type { LeadMarkerKind, MockLead } from '@services/crm-mock.types';
+} from '@domain/lead.rules';
+import type { LeadMarkerKind, Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
@@ -37,7 +37,7 @@ import { TodayAppointmentsWidget } from './today-appointments-widget';
 interface ManagerTaskGroup {
   readonly managerId: string;
   readonly managerName: string;
-  readonly tasks: readonly MockLead[];
+  readonly tasks: readonly Lead[];
 }
 
 @Component({
@@ -724,7 +724,7 @@ export class DashboardPage {
     const leads = (this.leadsResource.value() ?? []).filter(
       (lead) => !lead.archivedAt && commentAssigneeForLead(lead),
     );
-    const byManager = new Map<string, MockLead[]>();
+    const byManager = new Map<string, Lead[]>();
     for (const lead of leads) {
       const managerId = commentAssigneeForLead(lead)!;
       const bucket = byManager.get(managerId);
@@ -758,7 +758,7 @@ export class DashboardPage {
     return this.i18n.t(`dashboard.group.${key}` as MessageKey);
   }
 
-  protected callStatusLabel(status: MockLead['callStatus']): string {
+  protected callStatusLabel(status: Lead['callStatus']): string {
     return status ? this.i18n.callStatusLabel(status) : '';
   }
 
@@ -793,7 +793,7 @@ export class DashboardPage {
     return key.startsWith(prefix) ? (key.slice(prefix.length) as LeadMarkerKind) : null;
   }
 
-  protected async toggleMarker(lead: MockLead, kind: LeadMarkerKind): Promise<void> {
+  protected async toggleMarker(lead: Lead, kind: LeadMarkerKind): Promise<void> {
     if (this.markerPendingKey()) return;
     this.markerError.set('');
     this.markerPendingKey.set(`${lead.id}:${kind}`);
@@ -815,7 +815,7 @@ export class DashboardPage {
     }
   }
 
-  protected async openLead(lead: MockLead): Promise<void> {
+  protected async openLead(lead: Lead): Promise<void> {
     const leadIds = [
       ...new Set([
         ...this.groups().flatMap((group) => group.rows.map((row) => row.id)),

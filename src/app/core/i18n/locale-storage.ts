@@ -1,4 +1,4 @@
-import type { LocaleCode } from '@services/crm-mock.types';
+import type { LocaleCode } from '@domain/i18n.types';
 
 const STORAGE_KEY = 'kolss.locale';
 

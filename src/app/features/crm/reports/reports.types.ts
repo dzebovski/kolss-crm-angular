@@ -1,4 +1,4 @@
-import type { CallStatus, ClientStatus, ContractCurrency } from '@services/crm-mock.types';
+import type { CallStatus, ClientStatus, ContractCurrency } from '@domain/lead.types';
 
 export type ReportPeriodMode = 'all' | 'month' | 'custom';
 

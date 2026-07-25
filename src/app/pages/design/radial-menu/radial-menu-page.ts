@@ -13,14 +13,14 @@ import {
   CallAction,
   CallActionResult,
   CallOutcome,
-  MockLeadState,
+  RadialDemoLeadState,
   RadialDemoVariant,
   RadialDemoVariantId,
 } from '@ui/radial/radial-menu.types';
 import { DesignHeader } from '../design-header';
 import { RadialDemoLauncher } from './radial-demo-launcher';
 
-const INITIAL_LEAD_STATE: MockLeadState = {
+const INITIAL_LEAD_STATE: RadialDemoLeadState = {
   status: 'new',
   comment: '',
 };
@@ -47,7 +47,7 @@ export class RadialMenuPage {
 
   protected readonly actions = CALL_ACTIONS;
   protected readonly demoVariants = RADIAL_DEMO_VARIANTS;
-  protected readonly leadState = signal<MockLeadState>(INITIAL_LEAD_STATE);
+  protected readonly leadState = signal<RadialDemoLeadState>(INITIAL_LEAD_STATE);
   protected readonly demoSelections = signal<
     Readonly<Partial<Record<RadialDemoVariantId, string>>>
   >({});

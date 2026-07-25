@@ -1,7 +1,7 @@
 import { Component, inject, input, output } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
-import type { MockLead } from '@services/crm-mock.types';
+import type { Lead } from '@domain/lead.types';
 import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 
 export type CalendarReminderKind = 'callback' | 'comment' | 'task';
@@ -10,7 +10,7 @@ export interface CalendarReminder {
   readonly kind: CalendarReminderKind;
   /** Office-local day bucket (YYYY-MM-DD) the reminder is due on. */
   readonly date: string;
-  readonly lead: MockLead;
+  readonly lead: Lead;
   /** Task assignee uuid (kind === 'task'). */
   readonly assigneeId?: string | null;
   /** Task assignee display name (kind === 'task'). */
@@ -137,7 +137,7 @@ export class CalendarDayReminders {
   readonly reminders = input.required<readonly CalendarReminder[]>();
   /** Show the task assignee name alongside the lead (used outside per-manager columns). */
   readonly showAssignee = input(false);
-  readonly leadSelected = output<MockLead>();
+  readonly leadSelected = output<Lead>();
 
   protected iconFor(reminder: CalendarReminder): UiIconName {
     if (reminder.kind === 'callback') return 'phone_in_talk';

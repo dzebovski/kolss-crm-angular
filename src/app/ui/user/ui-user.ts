@@ -1,7 +1,7 @@
 import { Component, computed, input, signal } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 
-import { employeeInitials } from '@services/crm-mock.helpers';
+import { employeeInitials } from '@domain/lead.rules';
 import { getAvatarUrl } from './user-avatar';
 
 export type UiUserSize = 'xs' | 'sm' | 'md' | 'lg';

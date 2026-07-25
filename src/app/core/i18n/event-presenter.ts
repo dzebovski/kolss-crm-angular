@@ -1,5 +1,5 @@
-import type { LeadEvent, LeadEventEditAudit } from '@services/crm-mock.types';
-import type { LocaleCode } from '@services/crm-mock.types';
+import type { LeadEvent, LeadEventEditAudit } from '@domain/lead.types';
+import type { LocaleCode } from '@domain/i18n.types';
 import { normalizeFieldKey } from './field-keys';
 import type { RawLeadEventRow } from './event-storage';
 import { leadFieldKeyFromLegacyUkrainian } from './event-storage';

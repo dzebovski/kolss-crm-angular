@@ -1,16 +1,18 @@
-import type { CrmOffice, MockEmployee, MockLead } from './crm-mock.types';
+import type { CrmOffice } from '@domain/office.types';
+import type { Employee } from '@domain/user.types';
+import type { Lead } from '@domain/lead.types';
 
-export const CRM_MOCK_NOW = '2026-07-07T09:00:00.000Z';
-export const CRM_MOCK_ACTOR_ID = 'emp-super-admin';
+export const FIXTURE_NOW = '2026-07-07T09:00:00.000Z';
+export const FIXTURE_ACTOR_ID = 'emp-super-admin';
 
-export const CRM_MOCK_OFFICES: readonly CrmOffice[] = [
+export const FIXTURE_OFFICES: readonly CrmOffice[] = [
   { id: 'kyiv', code: 'kyiv', nameUk: 'Київ', namePl: 'Kijów' },
   { id: 'warsaw', code: 'warsaw', nameUk: 'Варшава', namePl: 'Warszawa' },
 ];
 
-export const CRM_MOCK_EMPLOYEES: readonly MockEmployee[] = [
+export const FIXTURE_EMPLOYEES: readonly Employee[] = [
   {
-    id: CRM_MOCK_ACTOR_ID,
+    id: FIXTURE_ACTOR_ID,
     displayName: 'Олена Коваль',
     email: 'olena.koval@kolss.com',
     role: 'super_admin',
@@ -110,7 +112,7 @@ export const CRM_MOCK_EMPLOYEES: readonly MockEmployee[] = [
   },
 ];
 
-export const CRM_MOCK_LEADS: readonly MockLead[] = [
+export const FIXTURE_LEADS: readonly Lead[] = [
   {
     id: 'lead-1001',
     name: 'Марина Гончар',
@@ -150,7 +152,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Клієнт залишив заявку на сайті.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-07-06T11:24:00.000Z',
       },
     ],
@@ -194,7 +196,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Форма з контактом і коротким описом гардеробної.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-07-05T09:05:00.000Z',
       },
       {
@@ -319,7 +321,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Клієнтка описала кухню з островом.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-06-28T12:18:00.000Z',
       },
       {
@@ -380,7 +382,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Лід з форми по гардеробній кімнаті.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-06-20T08:33:00.000Z',
       },
       {
@@ -524,7 +526,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Клієнтка вказала бюджет і бажаний термін.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-06-05T10:21:00.000Z',
       },
       {
@@ -586,7 +588,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Клієнт шукав бюджетне рішення.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-05-29T17:05:00.000Z',
       },
       {
@@ -644,7 +646,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Клієнтка залишила телефон і email.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2026-04-18T13:45:00.000Z',
       },
       {
@@ -697,7 +699,7 @@ export const CRM_MOCK_LEADS: readonly MockLead[] = [
         rawType: 'created',
         comment: 'Клієнт просить консультацію англійською.',
         newValue: null,
-        actorId: CRM_MOCK_ACTOR_ID,
+        actorId: FIXTURE_ACTOR_ID,
         occurredAt: '2025-12-16T16:15:00.000Z',
       },
     ],

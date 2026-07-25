@@ -3,7 +3,7 @@ import { form, FormField, required, submit, validate } from '@angular/forms/sign
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
 import { I18nService } from '@core/i18n/i18n.service';
-import type { ContractCurrency } from '@services/crm-mock.types';
+import type { ContractCurrency } from '@domain/lead.types';
 import { UiButton } from '@ui/button/ui-button';
 import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { UiTextField } from '@ui/form/ui-text-field';

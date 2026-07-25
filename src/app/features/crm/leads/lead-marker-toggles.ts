@@ -1,6 +1,6 @@
 import { Component, input, output } from '@angular/core';
 
-import type { LeadMarker, LeadMarkerKind } from '@services/crm-mock.types';
+import type { LeadMarker, LeadMarkerKind } from '@domain/lead.types';
 
 const MARKER_COPY: Readonly<
   Record<LeadMarkerKind, { emoji: string; label: string; activeLabel: string }>

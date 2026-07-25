@@ -2,14 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import axe from 'axe-core';
 
 import { SessionService } from '@core/session/session.service';
-import { CRM_MOCK_LEADS } from '@services/crm-mock.data';
-import type { MockLead } from '@services/crm-mock.types';
+import { FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
+import type { Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { EditLeadDialog } from './edit-lead-dialog';
 
 describe('EditLeadDialog', () => {
   async function render(
-    lead: MockLead = CRM_MOCK_LEADS[0]!,
+    lead: Lead = FIXTURE_LEADS[0]!,
     updateLeadDetails: ReturnType<typeof vi.fn> = vi.fn(async () => undefined),
   ) {
     TestBed.resetTestingModule();
@@ -41,7 +41,7 @@ describe('EditLeadDialog', () => {
   }
 
   it('prefills all editable lead fields without exposing manager editing', async () => {
-    const lead = CRM_MOCK_LEADS[0]!;
+    const lead = FIXTURE_LEADS[0]!;
     const { fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
 
@@ -56,7 +56,7 @@ describe('EditLeadDialog', () => {
   });
 
   it('normalizes values, preserves the manager and sends stable audit field keys', async () => {
-    const lead = CRM_MOCK_LEADS[7]!;
+    const lead = FIXTURE_LEADS[7]!;
     const { fixture, updateLeadDetails } = await render(lead);
     const saved = vi.fn();
     fixture.componentInstance.saved.subscribe(saved);
@@ -129,7 +129,7 @@ describe('EditLeadDialog', () => {
           rejectUpdate = reject;
         }),
     );
-    const { fixture } = await render(CRM_MOCK_LEADS[0]!, updateLeadDetails);
+    const { fixture } = await render(FIXTURE_LEADS[0]!, updateLeadDetails);
     fixture.componentInstance['model'].update((value) => ({ ...value, name: 'Нове імʼя' }));
 
     const firstSave = fixture.componentInstance['save']();

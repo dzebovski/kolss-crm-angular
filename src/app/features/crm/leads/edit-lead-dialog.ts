@@ -4,7 +4,7 @@ import { form, FormField, required, submit, validate } from '@angular/forms/sign
 import type { LeadFieldKey } from '@core/i18n/field-keys';
 import { I18nService } from '@core/i18n/i18n.service';
 import { normalizePhoneForOffice } from '@core/phone/phone';
-import type { MockLead } from '@services/crm-mock.types';
+import type { Lead } from '@domain/lead.types';
 import { type LeadDetailsUpdate, LeadsService } from '@services/leads.service';
 import { UiButton } from '@ui/button/ui-button';
 import { UiModal } from '@ui/dialog/ui-modal';
@@ -163,7 +163,7 @@ export class EditLeadDialog {
   private readonly leadsService = inject(LeadsService);
   protected readonly i18n = inject(I18nService);
 
-  readonly lead = input.required<MockLead>();
+  readonly lead = input.required<Lead>();
   readonly dismissed = output<void>();
   readonly saved = output<void>();
 
@@ -245,7 +245,7 @@ export class EditLeadDialog {
     });
   }
 
-  private initialModel(lead: MockLead): EditLeadFormModel {
+  private initialModel(lead: Lead): EditLeadFormModel {
     return {
       name: lead.name === 'Без імені' ? '' : lead.name,
       phone: lead.phone === '—' ? '' : lead.phone,
@@ -257,7 +257,7 @@ export class EditLeadDialog {
     };
   }
 
-  private changedFields(lead: MockLead, payload: LeadDetailsUpdate): readonly LeadFieldKey[] {
+  private changedFields(lead: Lead, payload: LeadDetailsUpdate): readonly LeadFieldKey[] {
     const fields: LeadFieldKey[] = [];
     if ((lead.name === 'Без імені' ? '' : lead.name) !== payload.name) fields.push('name');
     if ((lead.phone === '—' ? '' : lead.phone) !== payload.phone) fields.push('phone');

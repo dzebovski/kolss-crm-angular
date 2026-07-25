@@ -4,8 +4,8 @@ import { By } from '@angular/platform-browser';
 
 import { AuthService } from '@core/auth/auth.service';
 import { SessionService } from '@core/session/session.service';
-import { CRM_MOCK_LEADS } from '@services/crm-mock.data';
-import type { MockLead } from '@services/crm-mock.types';
+import { FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
+import type { Lead } from '@domain/lead.types';
 import { LeadsService, type LeadsListFilters } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiSelect } from '@ui/form/ui-select';
@@ -13,11 +13,11 @@ import { LeadsPage } from './leads-page';
 
 describe('LeadsPage', () => {
   const storedValues = new Map<string, string>();
-  const list = vi.fn(async (filters: LeadsListFilters): Promise<readonly MockLead[]> => {
+  const list = vi.fn(async (filters: LeadsListFilters): Promise<readonly Lead[]> => {
     void filters;
     return [
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callStatus: 'reached',
         clientStatus: 'calculation_in_progress',
         latestTimelineComment: {
@@ -101,7 +101,7 @@ describe('LeadsPage', () => {
   it('shows the call author below the status independently from the assigned manager', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         assignedToId: 'emp-kyiv-1',
         callStatus: 'reached',
         callStatusActor: {
@@ -123,7 +123,7 @@ describe('LeadsPage', () => {
   it('does not render an author line when the current call author is unknown', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callStatus: 'reached',
         callStatusActor: null,
       },
@@ -139,7 +139,7 @@ describe('LeadsPage', () => {
   });
 
   it('shows and updates the count for the current filters', async () => {
-    list.mockResolvedValueOnce([CRM_MOCK_LEADS[1]!, CRM_MOCK_LEADS[2]!]).mockResolvedValueOnce([]);
+    list.mockResolvedValueOnce([FIXTURE_LEADS[1]!, FIXTURE_LEADS[2]!]).mockResolvedValueOnce([]);
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
 
@@ -191,7 +191,7 @@ describe('LeadsPage', () => {
   it('shows a new lead as in progress after any call result is recorded', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         clientStatus: 'new_lead',
         callStatus: 'no_answer',
       },
@@ -209,7 +209,7 @@ describe('LeadsPage', () => {
   it('keeps the new lead status before the first call action', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         clientStatus: 'new_lead',
         callStatus: null,
       },
@@ -227,7 +227,7 @@ describe('LeadsPage', () => {
   it('shows the selected date next to callback and waiting statuses', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callStatus: 'callback_requested',
         clientStatus: 'thinking',
         callbackDueAt: '2026-07-25T12:00:00.000Z',
@@ -252,7 +252,7 @@ describe('LeadsPage', () => {
   it('shows showroom and comment dates at the same time', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callStatus: 'reached',
         clientStatus: 'showroom_invited',
         callbackDueAt: '2026-07-22T12:00:00.000Z',
@@ -287,7 +287,7 @@ describe('LeadsPage', () => {
   it('hides an old comment reminder after a newer comment without a date', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callbackDueAt: '2026-07-22T12:00:00.000Z',
         callbackDueContext: { category: 'comment', statusCode: null },
         commentReminderDueAt: null,
@@ -315,7 +315,7 @@ describe('LeadsPage', () => {
   it('keeps a comment reminder visible after a later dated status', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callStatus: 'callback_requested',
         callbackDueAt: '2026-07-25T12:00:00.000Z',
         commentReminderDueAt: '2026-07-22T12:00:00.000Z',
@@ -340,7 +340,7 @@ describe('LeadsPage', () => {
   it('shows a showroom date under the client status, not as a comment reminder', async () => {
     list.mockResolvedValueOnce([
       {
-        ...CRM_MOCK_LEADS[2]!,
+        ...FIXTURE_LEADS[2]!,
         callStatus: 'reached',
         clientStatus: 'showroom_invited',
         callbackDueAt: '2026-08-03T12:00:00.000Z',

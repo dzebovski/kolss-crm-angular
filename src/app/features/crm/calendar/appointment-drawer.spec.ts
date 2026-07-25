@@ -4,14 +4,14 @@ import { provideRouter } from '@angular/router';
 
 import { AuthService } from '@core/auth/auth.service';
 import { SessionService } from '@core/session/session.service';
-import { CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import { FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
 import { AppointmentsService } from '@services/appointments.service';
 import { LeadsService } from '@services/leads.service';
 import { AppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 
 describe('AppointmentDrawer', () => {
   it('shows a non-blocking out-of-hours warning and creates the appointment', async () => {
-    const lead = { ...CRM_MOCK_LEADS[0]!, assignedToId: 'manager-1' };
+    const lead = { ...FIXTURE_LEADS[0]!, assignedToId: 'manager-1' };
     const create = vi.fn().mockResolvedValue({
       id: 'appointment-1',
       lead: { id: lead.id, name: lead.name, phone: lead.phone },
@@ -270,7 +270,7 @@ describe('AppointmentDrawer', () => {
 
   it('closes the drawer when opening the client card link', async () => {
     const close = vi.fn();
-    const lead = { ...CRM_MOCK_LEADS[0]! };
+    const lead = { ...FIXTURE_LEADS[0]! };
     const data: AppointmentDrawerData = {
       office: {
         id: 'office-kyiv',

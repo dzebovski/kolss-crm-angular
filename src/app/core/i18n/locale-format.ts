@@ -1,4 +1,4 @@
-import type { LocaleCode } from '@services/crm-mock.types';
+import type { LocaleCode } from '@domain/i18n.types';
 import { localeToBcp47 } from './locale-storage';
 
 export function formatDateForLocale(value: string | null | undefined, locale: LocaleCode): string {

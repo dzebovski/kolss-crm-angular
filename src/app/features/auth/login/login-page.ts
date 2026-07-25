@@ -7,7 +7,7 @@ import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { safeCrmReturnTo } from '@core/navigation/safe-return-to';
 import { SessionService } from '@core/session/session.service';
-import type { LocaleCode } from '@services/crm-mock.types';
+import type { LocaleCode } from '@domain/i18n.types';
 import { UiAlert } from '@ui/feedback/ui-alert';
 import { UiButton } from '@ui/button/ui-button';
 import { UiTextField } from '@ui/form/ui-text-field';

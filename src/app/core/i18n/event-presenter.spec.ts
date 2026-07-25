@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { LocaleCode } from '@services/crm-mock.types';
+import type { LocaleCode } from '@domain/i18n.types';
 import {
   isLegacySystemComment,
   isUserCommentEventType,

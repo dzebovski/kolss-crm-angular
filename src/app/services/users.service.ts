@@ -9,7 +9,7 @@ import {
   type CreateUserPayload,
   type UpdateUserPayload,
 } from './admin-users.service';
-import type { OfficeId } from './crm-mock.types';
+import type { OfficeId } from '@domain/office.types';
 
 export interface CrmEmployee {
   readonly id: string;

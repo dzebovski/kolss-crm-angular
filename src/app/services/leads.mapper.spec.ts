@@ -4,7 +4,7 @@ import {
   mapLeadListRow,
   type LeadListRow,
 } from './leads.mapper';
-import type { LeadSource } from './crm-mock.types';
+import type { LeadSource } from '@domain/lead.types';
 
 const baseRow: LeadListRow = {
   id: 'lead-1',

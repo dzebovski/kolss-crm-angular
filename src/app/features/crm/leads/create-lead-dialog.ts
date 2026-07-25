@@ -3,7 +3,7 @@ import { Component, computed, effect, inject, InjectionToken, output, signal } f
 import { I18nService } from '@core/i18n/i18n.service';
 import { normalizePhoneForOffice } from '@core/phone/phone';
 import { SessionService } from '@core/session/session.service';
-import type { LeadSource } from '@services/crm-mock.types';
+import type { LeadSource } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UiButton } from '@ui/button/ui-button';
 import { UiModal } from '@ui/dialog/ui-modal';

@@ -5,7 +5,7 @@ import axe from 'axe-core';
 
 import { AuthService } from '@core/auth/auth.service';
 import { SessionService } from '@core/session/session.service';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import { FIXTURE_EMPLOYEES, FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
@@ -16,7 +16,7 @@ describe('LeadDetailDrawer', () => {
   async function render() {
     const state: LeadDetailDrawerState = { dirty: false };
     const close = vi.fn();
-    const leads = CRM_MOCK_LEADS.slice(0, 2);
+    const leads = FIXTURE_LEADS.slice(0, 2);
     await TestBed.configureTestingModule({
       imports: [LeadDetailDrawer],
       providers: [
@@ -79,7 +79,7 @@ describe('LeadDetailDrawer', () => {
         },
         {
           provide: UsersService,
-          useValue: { listManagers: async () => CRM_MOCK_EMPLOYEES },
+          useValue: { listManagers: async () => FIXTURE_EMPLOYEES },
         },
         { provide: UiDialogService, useValue: { open: vi.fn() } },
       ],

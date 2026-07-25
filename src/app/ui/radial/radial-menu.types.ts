@@ -6,7 +6,7 @@ export type RadialActionTone = UiBadgeTone;
 export type RadialButtonAppearance = 'plain' | 'tone';
 export type RadialDirection = 'clockwise' | 'counterclockwise';
 export type RadialDemoVariantId = 'plain-actions' | 'five-actions' | 'seven-actions';
-export type MockLeadStatus = 'new' | CallOutcome;
+export type RadialDemoLeadStatus = 'new' | CallOutcome;
 
 export interface RadialAction<TId extends string = string> {
   readonly id: TId;
@@ -40,8 +40,8 @@ export interface RadialDemoVariant {
   readonly layout?: RadialLayoutConfig;
 }
 
-export interface MockLeadState {
-  readonly status: MockLeadStatus;
+export interface RadialDemoLeadState {
+  readonly status: RadialDemoLeadStatus;
   readonly comment: string;
 }
 

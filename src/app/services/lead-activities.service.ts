@@ -6,7 +6,7 @@ import type {
   ClientStatus,
   ContractCurrency,
   LeadActivityPayload,
-} from './crm-mock.types';
+} from '@domain/lead.types';
 
 @Injectable({ providedIn: 'root' })
 export class LeadActivitiesService {

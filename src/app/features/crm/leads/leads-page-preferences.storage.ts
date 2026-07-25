@@ -1,4 +1,4 @@
-import type { CallStatus, ClientStatus } from '@services/crm-mock.types';
+import type { CallStatus, ClientStatus } from '@domain/lead.types';
 
 export type CallStatusFilterKey = CallStatus;
 /** Filter-only value `in_work` is not a persisted client_status. */

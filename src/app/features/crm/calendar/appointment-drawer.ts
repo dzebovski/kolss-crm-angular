@@ -9,7 +9,7 @@ import type { Appointment } from '@core/api/generated/kolss-api.types';
 import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import type { Office } from '@models/database';
-import type { MockLead } from '@services/crm-mock.types';
+import type { Lead } from '@domain/lead.types';
 import { AppointmentsService, officeDateTimeParts } from '@services/appointments.service';
 import { LeadsService } from '@services/leads.service';
 import type { CrmEmployee } from '@services/users.service';
@@ -24,7 +24,7 @@ export interface AppointmentDrawerData {
   readonly office: Office;
   readonly managers: readonly CrmEmployee[];
   readonly appointment?: Appointment;
-  readonly lead?: MockLead;
+  readonly lead?: Lead;
   readonly date?: string;
   readonly time?: string;
   readonly defaultManagerId?: string;
@@ -495,8 +495,8 @@ export class AppointmentDrawer {
   protected readonly rebook = signal(false);
   protected readonly searchingLeads = signal(false);
   protected readonly leadSearch = signal('');
-  protected readonly leadResults = signal<readonly MockLead[]>([]);
-  protected readonly selectedLead = signal<MockLead | null>(
+  protected readonly leadResults = signal<readonly Lead[]>([]);
+  protected readonly selectedLead = signal<Lead | null>(
     this.data.lead ?? this.leadFromAppointment(this.data.appointment),
   );
   protected readonly isTerminal =
@@ -597,7 +597,7 @@ export class AppointmentDrawer {
     }
   }
 
-  protected selectLead(lead: MockLead): void {
+  protected selectLead(lead: Lead): void {
     this.selectedLead.set(lead);
     this.leadResults.set([]);
     this.leadSearch.set('');
@@ -729,16 +729,16 @@ export class AppointmentDrawer {
     };
   }
 
-  private leadFromAppointment(appointment?: Appointment): MockLead | null {
+  private leadFromAppointment(appointment?: Appointment): Lead | null {
     if (!appointment) return null;
     return {
       id: appointment.lead.id,
       name: appointment.lead.name,
       phone: appointment.lead.phone,
-      officeCode: appointment.office.code as MockLead['officeCode'],
+      officeCode: appointment.office.code as Lead['officeCode'],
       assignedToId: appointment.responsibleManager?.id ?? null,
       clientStatus: 'showroom_invited',
-    } as MockLead;
+    } as Lead;
   }
 }
 

@@ -7,7 +7,7 @@ import { of } from 'rxjs';
 import type { Appointment } from '@core/api/generated/kolss-api.types';
 import { SessionService } from '@core/session/session.service';
 import { AppointmentsService } from '@services/appointments.service';
-import type { MockLead } from '@services/crm-mock.types';
+import type { Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { type CrmEmployee, UsersService } from '@services/users.service';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
@@ -105,7 +105,7 @@ const rescheduledAppointment: Appointment = {
   version: 2,
 };
 
-const baseLead: MockLead = {
+const baseLead: Lead = {
   id: 'lead-base',
   name: 'Base',
   phone: '+380500000000',
@@ -140,7 +140,7 @@ const baseLead: MockLead = {
   markers: [],
 };
 
-const callbackLead: MockLead = {
+const callbackLead: Lead = {
   ...baseLead,
   id: 'lead-callback',
   name: 'Callback Клієнт',
@@ -151,7 +151,7 @@ const callbackLead: MockLead = {
   callbackDueAt: '2026-07-23T09:00:00.000Z',
 };
 
-const commentLead: MockLead = {
+const commentLead: Lead = {
   ...baseLead,
   id: 'lead-comment',
   name: 'Comment Клієнт',
@@ -193,7 +193,7 @@ describe('CalendarPage', () => {
   async function render(
     queryParams: Record<string, string> = {},
     managers: readonly CrmEmployee[] = [manager],
-    leads: readonly MockLead[] = [callbackLead, commentLead],
+    leads: readonly Lead[] = [callbackLead, commentLead],
   ) {
     TestBed.resetTestingModule();
     const selectedOfficeId = signal<string | null>(office.id);
@@ -423,14 +423,14 @@ describe('CalendarPage', () => {
   });
 
   it('puts office_member tasks in the day column and keeps other assignees in the banner', async () => {
-    const memberTask: MockLead = {
+    const memberTask: Lead = {
       ...baseLead,
       id: 'lead-member-task',
       name: 'Member Task',
       commentReminderDueAt: '2026-07-23T09:00:00.000Z',
       commentReminderAssignedTo: manager.id,
     };
-    const curatorTask: MockLead = {
+    const curatorTask: Lead = {
       ...baseLead,
       id: 'lead-curator-task',
       name: 'Curator Task',

@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
-import type { ClientStatus } from '@services/crm-mock.types';
+import type { ClientStatus } from '@domain/lead.types';
 import { ReportLeadBlock } from './report-lead-block';
 import type { ManagerLeadReport, ReportStatusGroup } from './reports.types';
 

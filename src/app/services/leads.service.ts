@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type { LeadEventTranslationResponse } from '@core/api/generated/kolss-api.types';
 import { AuthService } from '@core/auth/auth.service';
-import type { LeadMarker, LeadMarkerKind, LeadSource, MockLead } from './crm-mock.types';
+import type { LeadMarker, LeadMarkerKind, LeadSource, Lead } from '@domain/lead.types';
 import { mapLeadDetail, mapLeadListRow, mapLeadMarker, type LeadListRow } from './leads.mapper';
 
 export interface LeadsListFilters {
@@ -51,7 +51,7 @@ export class LeadsService {
   private readonly api = inject(KolssApiClient);
   private readonly auth = inject(AuthService);
 
-  async list(filters: LeadsListFilters = {}): Promise<readonly MockLead[]> {
+  async list(filters: LeadsListFilters = {}): Promise<readonly Lead[]> {
     const requested = Math.max(1, filters.limit ?? 500);
     const rows: LeadListRow[] = [];
     let cursor = '';
@@ -74,7 +74,7 @@ export class LeadsService {
     return rows.slice(0, requested).map(mapLeadListRow);
   }
 
-  async getById(leadId: string): Promise<MockLead | null> {
+  async getById(leadId: string): Promise<Lead | null> {
     try {
       const result = await this.api.lead(leadId);
       return mapLeadDetail(result.lead, result.relations);
@@ -84,11 +84,11 @@ export class LeadsService {
     }
   }
 
-  async listAssignedTo(userId: string, limit = 50): Promise<readonly MockLead[]> {
+  async listAssignedTo(userId: string, limit = 50): Promise<readonly Lead[]> {
     return this.list({ assignedTo: userId, limit });
   }
 
-  async createLead(payload: CreateLeadPayload): Promise<MockLead> {
+  async createLead(payload: CreateLeadPayload): Promise<Lead> {
     const row = await this.api.createLead<LeadListRow>(payload);
     return mapLeadListRow(row);
   }

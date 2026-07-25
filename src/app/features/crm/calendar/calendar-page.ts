@@ -29,8 +29,8 @@ import {
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
 } from '@services/appointments.service';
-import { commentAssigneeForLead, commentDueAtForLead } from '@services/crm-mock.helpers';
-import type { MockLead } from '@services/crm-mock.types';
+import { commentAssigneeForLead, commentDueAtForLead } from '@domain/lead.rules';
+import type { Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
@@ -602,7 +602,7 @@ export class CalendarPage {
   protected readonly leadsResource = resource({
     params: () => ({ officeId: this.officeId() }),
     loader: ({ params }) => {
-      if (!params.officeId) return Promise.resolve([] as readonly MockLead[]);
+      if (!params.officeId) return Promise.resolve([] as readonly Lead[]);
       return this.leads.list({ officeId: params.officeId, archived: 'active' });
     },
   });
@@ -821,7 +821,7 @@ export class CalendarPage {
     });
   }
 
-  protected async openLead(lead: MockLead): Promise<void> {
+  protected async openLead(lead: Lead): Promise<void> {
     const state: LeadDetailDrawerState = { dirty: false };
     const result = await firstValueFrom(
       this.dialogs

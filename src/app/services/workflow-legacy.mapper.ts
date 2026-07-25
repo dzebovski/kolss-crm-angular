@@ -1,4 +1,4 @@
-import type { LeadWorkflowStatus } from './crm-mock.types';
+import type { LeadWorkflowStatus } from '@domain/lead.types';
 
 /** Maps legacy production workflow codes to the simplified CRM model. */
 const LEGACY_TO_SIMPLIFIED: Record<string, LeadWorkflowStatus> = {

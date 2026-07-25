@@ -1,4 +1,4 @@
-import type { Lead, Office } from '@models/database';
+import type { Lead as LeadRow, Office } from '@models/database';
 import { formatPhoneDisplay } from '@core/phone/phone';
 import type {
   CallStatusActor,
@@ -8,6 +8,7 @@ import type {
   ClientStatus,
   ContractCurrency,
   FirstCall,
+  Lead,
   LeadClose,
   LeadContract,
   LeadEvent,
@@ -19,11 +20,10 @@ import type {
   LatestTimelineComment,
   LeadSource,
   LeadWorkflowStatus,
-  MockLead,
-  OfficeId,
   ShowroomVisit,
-} from './crm-mock.types';
-import { isContractCurrency, resolveCloseUserComment } from './crm-mock.helpers';
+} from '@domain/lead.types';
+import type { OfficeId } from '@domain/office.types';
+import { isContractCurrency, resolveCloseUserComment } from '@domain/lead.rules';
 import { toSimplifiedWorkflowStatus } from './workflow-legacy.mapper';
 
 export const LEAD_LIST_SELECT = `
@@ -52,7 +52,7 @@ export interface ContractEmbed {
   readonly signed_at: string;
 }
 
-export type LeadListRow = Lead & {
+export type LeadListRow = LeadRow & {
   offices?: Office | Office[] | null;
   profiles?:
     | { id: string; display_name: string | null }
@@ -475,7 +475,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-export function mapLeadListRow(row: LeadListRow): MockLead {
+export function mapLeadListRow(row: LeadListRow): Lead {
   const attempt = row.first_contact_attempt;
   const contactAttempts: ContactAttemptRow[] = attempt
     ? [
@@ -498,7 +498,7 @@ export function mapLeadListRow(row: LeadListRow): MockLead {
   });
 }
 
-export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations): MockLead {
+export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations): Lead {
   const workflowStatus = toSimplifiedWorkflowStatus(row.workflow_status);
   const clientStatus = mapClientStatus(row.client_status);
   const officeCode = officeCodeFromRow(row);
@@ -652,7 +652,7 @@ function mapLatestTimelineComment(
   };
 }
 
-function mapLeadStatus(status: string): MockLead['leadStatus'] {
+function mapLeadStatus(status: string): Lead['leadStatus'] {
   if (status === 'converted') return 'converted';
   if (status === 'failed') return 'failed';
   if (status === 'in_progress') return 'in_progress';

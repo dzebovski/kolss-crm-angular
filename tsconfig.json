@@ -20,7 +20,9 @@
       "@features/*": ["./src/app/features/*"],
       "@services/*": ["./src/app/services/*"],
       "@models/*": ["./src/app/models/*"],
-      "@env/*": ["./src/environments/*"]
+      "@domain/*": ["./src/app/domain/*"],
+      "@env/*": ["./src/environments/*"],
+      "@testing/*": ["./src/testing/*"]
     }
   },
   "angularCompilerOptions": {

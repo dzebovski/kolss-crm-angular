@@ -13,13 +13,8 @@ import {
   groupLeadsByYearMonth,
   leadIsInWork,
   showroomDueAtForLead,
-} from '@services/crm-mock.helpers';
-import type {
-  CallStatus,
-  ClientStatus,
-  LeadEventCategory,
-  MockLead,
-} from '@services/crm-mock.types';
+} from '@domain/lead.rules';
+import type { CallStatus, ClientStatus, LeadEventCategory, Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
@@ -718,14 +713,14 @@ export class LeadsPage {
     return clientStatusTone(status);
   }
 
-  protected clientStatusLabelForLead(lead: MockLead): string {
+  protected clientStatusLabelForLead(lead: Lead): string {
     if (leadIsInWork(lead)) {
       return this.i18n.t('workflow.taken');
     }
     return this.clientStatusLabel(lead.clientStatus);
   }
 
-  protected clientStatusToneForLead(lead: MockLead) {
+  protected clientStatusToneForLead(lead: Lead) {
     return clientStatusToneForLead(lead);
   }
 
@@ -786,7 +781,7 @@ export class LeadsPage {
     return this.auth.profile()?.role === 'super_admin';
   }
 
-  protected async openLead(lead: MockLead): Promise<void> {
+  protected async openLead(lead: Lead): Promise<void> {
     await this.router.navigate(['/crm/leads', lead.id]);
   }
 

@@ -1,9 +1,4 @@
-import type { UserRole } from '@models/database';
-
-export type OfficeId = 'kyiv' | 'warsaw';
-export type OfficeFilter = 'all' | OfficeId;
-export type LocaleCode = 'uk' | 'pl' | 'en';
-export type EmployeeStatus = 'active' | 'inactive';
+import type { OfficeId } from './office.types';
 
 export type LeadStatus = 'new' | 'in_progress' | 'converted' | 'failed';
 
@@ -63,25 +58,6 @@ export type LeadEventType =
 
 /** `loss_reasons.code` from Supabase; mock labels cover CRM defaults. */
 export type CloseReason = string;
-
-export interface CrmOffice {
-  readonly id: OfficeId;
-  readonly code: OfficeId;
-  readonly nameUk: string;
-  readonly namePl: string;
-}
-
-export interface MockEmployee {
-  readonly id: string;
-  readonly displayName: string;
-  readonly email: string;
-  readonly role: UserRole;
-  readonly officeIds: readonly OfficeId[];
-  readonly status: EmployeeStatus;
-  readonly locale: LocaleCode;
-  readonly createdAt: string;
-  readonly lastActiveAt: string;
-}
 
 export interface LeadAttachment {
   readonly id: string;
@@ -157,7 +133,7 @@ export interface CallStatusActor {
   readonly actorName: string;
 }
 
-export interface MockLead {
+export interface Lead {
   readonly id: string;
   readonly version?: number;
   readonly archivedAt?: string | null;
@@ -221,36 +197,13 @@ export interface ContractCurrencyTotal {
 export interface LeadMonthGroup {
   readonly key: string;
   readonly label: string;
-  readonly rows: readonly MockLead[];
+  readonly rows: readonly Lead[];
   readonly contractTotals: readonly ContractCurrencyTotal[];
 }
 
 export interface LeadYearGroup {
   readonly year: number;
   readonly months: readonly LeadMonthGroup[];
-}
-
-export interface FunnelStage {
-  readonly key: string;
-  readonly label: string;
-  readonly count: number;
-  readonly percentOfTotal: number;
-  readonly conversionFromPrevious: number;
-  readonly conversionBaseLabel: string | null;
-  readonly tone: 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand';
-}
-
-export interface ManagerTakenRow {
-  readonly managerId: string;
-  readonly managerName: string;
-  readonly takenCount: number;
-}
-
-export interface ManagerOfficeReport {
-  readonly officeCode: OfficeId;
-  readonly officeLabel: string;
-  readonly managers: readonly ManagerTakenRow[];
-  readonly unassignedCount: number;
 }
 
 export interface CloseLeadPayload {

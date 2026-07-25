@@ -3,7 +3,7 @@ import { Component, computed, inject, output, signal } from '@angular/core';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import type { UserRole } from '@models/database';
-import type { OfficeId } from '@services/crm-mock.types';
+import type { OfficeId } from '@domain/office.types';
 import { UsersService, type CrmEmployee } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
 import { UiModal } from '@ui/dialog/ui-modal';

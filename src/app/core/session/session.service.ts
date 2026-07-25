@@ -4,7 +4,8 @@ import type { Office, UserOfficeContext } from '@models/database';
 import { hasOfficeLeadFilter, isSuperAdminRole } from '@core/roles/roles';
 import { AuthService } from '@core/auth/auth.service';
 import { readViewAsMode, writeViewAsMode, type ViewAsMode } from './view-as';
-import type { LocaleCode, OfficeFilter } from '@services/crm-mock.types';
+import type { LocaleCode } from '@domain/i18n.types';
+import type { OfficeFilter } from '@domain/office.types';
 import { applyActiveLocale, readStoredLocale, setActiveLocale } from '@core/i18n/locale-storage';
 
 @Injectable({ providedIn: 'root' })

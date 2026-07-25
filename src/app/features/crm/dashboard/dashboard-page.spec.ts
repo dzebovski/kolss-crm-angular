@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import { SessionService } from '@core/session/session.service';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import { FIXTURE_EMPLOYEES, FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
@@ -14,9 +14,9 @@ import { DashboardPage } from './dashboard-page';
 describe('DashboardPage lead workflow', () => {
   async function render(
     drawerResult?: { dirty: boolean },
-    leadOverrides: Partial<(typeof CRM_MOCK_LEADS)[number]> = {},
+    leadOverrides: Partial<(typeof FIXTURE_LEADS)[number]> = {},
   ) {
-    const lead = { ...CRM_MOCK_LEADS[0]!, ...leadOverrides, markers: [] };
+    const lead = { ...FIXTURE_LEADS[0]!, ...leadOverrides, markers: [] };
     const setMarker = vi.fn().mockResolvedValue({
       kind: 'reviewed',
       actorId: 'user-1',
@@ -57,7 +57,7 @@ describe('DashboardPage lead workflow', () => {
         },
         {
           provide: UsersService,
-          useValue: { listManagers: vi.fn().mockResolvedValue(CRM_MOCK_EMPLOYEES) },
+          useValue: { listManagers: vi.fn().mockResolvedValue(FIXTURE_EMPLOYEES) },
         },
         { provide: UiDialogService, useValue: { open: dialogOpen } },
       ],
@@ -92,7 +92,7 @@ describe('DashboardPage lead workflow', () => {
     reviewed!.click();
     await fixture.whenStable();
 
-    expect(setMarker).toHaveBeenCalledWith(CRM_MOCK_LEADS[0]!.id, 'reviewed');
+    expect(setMarker).toHaveBeenCalledWith(FIXTURE_LEADS[0]!.id, 'reviewed');
     expect(dialogOpen).not.toHaveBeenCalled();
     expect(reviewed!.getAttribute('aria-pressed')).toBe('true');
   });

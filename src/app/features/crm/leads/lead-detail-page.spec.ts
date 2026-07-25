@@ -7,8 +7,8 @@ import { of } from 'rxjs';
 import { AuthService } from '@core/auth/auth.service';
 import { SessionService } from '@core/session/session.service';
 import type { UserRole } from '@models/database';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '@services/crm-mock.data';
-import type { LeadEvent, MockLead } from '@services/crm-mock.types';
+import { FIXTURE_EMPLOYEES, FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
+import type { LeadEvent, Lead } from '@domain/lead.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
@@ -19,11 +19,11 @@ import { LeadDetailView } from './lead-detail-page';
 
 describe('LeadDetailView', () => {
   async function render(
-    lead: MockLead,
+    lead: Lead,
     options: {
       role?: UserRole;
       userId?: string;
-      managers?: typeof CRM_MOCK_EMPLOYEES;
+      managers?: typeof FIXTURE_EMPLOYEES;
       updateLeadDetails?: ReturnType<typeof vi.fn>;
       translateHistoryEvent?: ReturnType<typeof vi.fn>;
       userOffices?: { code: string }[];
@@ -94,7 +94,7 @@ describe('LeadDetailView', () => {
         { provide: AppointmentsService, useValue: { list: appointmentsList } },
         {
           provide: UsersService,
-          useValue: { listManagers: async () => options.managers ?? CRM_MOCK_EMPLOYEES },
+          useValue: { listManagers: async () => options.managers ?? FIXTURE_EMPLOYEES },
         },
         { provide: UiDialogService, useValue: { open: dialogOpen, confirm: dialogConfirm } },
         {
@@ -149,8 +149,8 @@ describe('LeadDetailView', () => {
   }
 
   it('renders the summary, status strip, actions and full-width timeline in workflow order', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       email: 'oleksandr@example.com',
       callStatus: 'reached',
       clientStatus: 'calculation_in_progress',
@@ -246,7 +246,7 @@ describe('LeadDetailView', () => {
         statusCode: null,
       },
     ];
-    const lead: MockLead = { ...CRM_MOCK_LEADS[2]!, events };
+    const lead: Lead = { ...FIXTURE_LEADS[2]!, events };
     const { fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
     const cards = Array.from(element.querySelectorAll<HTMLElement>('.timeline-card'));
@@ -316,7 +316,7 @@ describe('LeadDetailView', () => {
         statusCode: 'reached',
       },
     ];
-    const lead: MockLead = { ...CRM_MOCK_LEADS[2]!, events };
+    const lead: Lead = { ...FIXTURE_LEADS[2]!, events };
     const { fixture } = await render(lead, { role: 'office_member', userId: 'emp-kyiv-1' });
     const cards = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.timeline-card'),
@@ -354,7 +354,7 @@ describe('LeadDetailView', () => {
         statusCode: 'reached',
       },
     ];
-    const lead: MockLead = { ...CRM_MOCK_LEADS[2]!, events };
+    const lead: Lead = { ...FIXTURE_LEADS[2]!, events };
     const { fixture } = await render(lead, { role: 'super_admin', userId: 'emp-super-admin' });
     const cards = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.timeline-card'),
@@ -403,7 +403,7 @@ describe('LeadDetailView', () => {
         statusCode: 'showroom_invited',
       },
     ];
-    const { fixture } = await render({ ...CRM_MOCK_LEADS[2]!, events });
+    const { fixture } = await render({ ...FIXTURE_LEADS[2]!, events });
     const dueDates = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.timeline-card__due'),
     );
@@ -433,7 +433,7 @@ describe('LeadDetailView', () => {
       category: 'comment',
       statusCode: null,
     };
-    const lead = { ...CRM_MOCK_LEADS[2]!, events: [event] };
+    const lead = { ...FIXTURE_LEADS[2]!, events: [event] };
     const { fixture } = await render(lead);
     const card = (fixture.nativeElement as HTMLElement).querySelector('.timeline-card')!;
 
@@ -456,7 +456,7 @@ describe('LeadDetailView', () => {
       statusCode: 'calculation_in_progress',
     };
     const translateHistoryEvent = vi.fn().mockRejectedValue(new Error('provider unavailable'));
-    const lead = { ...CRM_MOCK_LEADS[2]!, events: [event] };
+    const lead = { ...FIXTURE_LEADS[2]!, events: [event] };
     const { fixture } = await render(lead, { translateHistoryEvent });
     const element = fixture.nativeElement as HTMLElement;
 
@@ -471,7 +471,7 @@ describe('LeadDetailView', () => {
   });
 
   it('has no automated accessibility violations in the timeline', async () => {
-    const { fixture } = await render(CRM_MOCK_LEADS[2]!);
+    const { fixture } = await render(FIXTURE_LEADS[2]!);
     const timeline = (fixture.nativeElement as HTMLElement).querySelector(
       '.timeline-panel',
     ) as HTMLElement;
@@ -480,8 +480,8 @@ describe('LeadDetailView', () => {
   });
 
   it('blocks ordinary actions for a terminal lead and offers reopen and archive', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       clientStatus: 'closed_lost',
     };
     const { activities, fixture } = await render(lead, { role: 'super_admin' });
@@ -509,8 +509,8 @@ describe('LeadDetailView', () => {
   });
 
   it('hides archive for a successful contract lead', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[6]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[6]!,
       clientStatus: 'contract_signed',
       archivedAt: null,
     };
@@ -527,8 +527,8 @@ describe('LeadDetailView', () => {
   });
 
   it('offers restore and permanent delete for an archived lead to super admins', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       archivedAt: '2026-07-17T12:30:00.000Z',
     };
     const { fixture } = await render(lead, { role: 'super_admin' });
@@ -542,8 +542,8 @@ describe('LeadDetailView', () => {
   });
 
   it('keeps archived lead actions hidden for non-super-admins', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       archivedAt: '2026-07-17T12:30:00.000Z',
     };
     const { fixture } = await render(lead, { role: 'office_member' });
@@ -554,8 +554,8 @@ describe('LeadDetailView', () => {
   });
 
   it('archives a closed lead after confirmation', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       clientStatus: 'closed_lost',
     };
     const { archiveLead, dialogConfirm, fixture } = await render(lead, { role: 'super_admin' });
@@ -567,8 +567,8 @@ describe('LeadDetailView', () => {
   });
 
   it('restores an archived lead for a super admin', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       archivedAt: '2026-07-17T12:30:00.000Z',
     };
     const { fixture, restoreLead } = await render(lead, { role: 'super_admin' });
@@ -579,8 +579,8 @@ describe('LeadDetailView', () => {
   });
 
   it('deletes an archived lead permanently after confirmation', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       archivedAt: '2026-07-17T12:30:00.000Z',
     };
     const { deleteLeadPermanently, dialogConfirm, fixture } = await render(lead, {
@@ -594,8 +594,8 @@ describe('LeadDetailView', () => {
   });
 
   it('shows archive to office admins of the lead office', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       clientStatus: 'closed_lost',
     };
     const { fixture } = await render(lead, {
@@ -609,7 +609,7 @@ describe('LeadDetailView', () => {
   });
 
   it('shows manager editing only to a super admin and filters options by office', async () => {
-    const lead = CRM_MOCK_LEADS[0]!;
+    const lead = FIXTURE_LEADS[0]!;
     const { fixture } = await render(lead, { role: 'super_admin' });
     const element = fixture.nativeElement as HTMLElement;
 
@@ -629,7 +629,7 @@ describe('LeadDetailView', () => {
   });
 
   it('shows lead data editing to office users of an active lead', async () => {
-    const lead = CRM_MOCK_LEADS[0]!;
+    const lead = FIXTURE_LEADS[0]!;
     const superAdminView = await render(lead, { role: 'super_admin' });
     expect(
       (superAdminView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
@@ -643,7 +643,7 @@ describe('LeadDetailView', () => {
       (officeAdminView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
     ).not.toBeNull();
 
-    const closedLeadView = await render(CRM_MOCK_LEADS[7]!, { role: 'super_admin' });
+    const closedLeadView = await render(FIXTURE_LEADS[7]!, { role: 'super_admin' });
     expect(
       (closedLeadView.fixture.nativeElement as HTMLElement).querySelector('.lead-details__edit'),
     ).not.toBeNull();
@@ -692,8 +692,8 @@ describe('LeadDetailView', () => {
   });
 
   it('keeps archive hidden for office members even when they can edit lead data', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[7]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[7]!,
       clientStatus: 'closed_lost',
     };
     const { fixture } = await render(lead, {
@@ -707,7 +707,7 @@ describe('LeadDetailView', () => {
   });
 
   it('reloads the lead and emits changed after lead data is saved', async () => {
-    const lead = CRM_MOCK_LEADS[0]!;
+    const lead = FIXTURE_LEADS[0]!;
     const { fixture, getById } = await render(lead, { role: 'super_admin' });
     const changed = vi.fn();
     fixture.componentInstance.changed.subscribe(changed);
@@ -725,7 +725,7 @@ describe('LeadDetailView', () => {
   });
 
   it('assigns a manager through the existing lead details update contract', async () => {
-    const lead: MockLead = { ...CRM_MOCK_LEADS[0]!, assignedToId: null };
+    const lead: Lead = { ...FIXTURE_LEADS[0]!, assignedToId: null };
     const updateLeadDetails = vi.fn(async () => undefined);
     const { fixture } = await render(lead, {
       role: 'super_admin',
@@ -745,7 +745,7 @@ describe('LeadDetailView', () => {
   });
 
   it('opens the comment dialog and adds the submitted note', async () => {
-    const lead = CRM_MOCK_LEADS[2]!;
+    const lead = FIXTURE_LEADS[2]!;
     const { activities, dialogOpen, fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
     dialogOpen.mockReturnValue({
@@ -784,7 +784,7 @@ describe('LeadDetailView', () => {
   });
 
   it('opens the call radial dialog and records the selected result', async () => {
-    const lead = CRM_MOCK_LEADS[2]!;
+    const lead = FIXTURE_LEADS[2]!;
     const { activities, dialogOpen, fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
     dialogOpen.mockReturnValue({ afterClosed: () => of('no_answer') });
@@ -805,7 +805,7 @@ describe('LeadDetailView', () => {
   });
 
   it('asks for a date when callback is selected and records it', async () => {
-    const lead = CRM_MOCK_LEADS[2]!;
+    const lead = FIXTURE_LEADS[2]!;
     const { activities, dialogOpen, fixture } = await render(lead);
     dialogOpen
       .mockReturnValueOnce({ afterClosed: () => of('callback_requested') })
@@ -828,8 +828,8 @@ describe('LeadDetailView', () => {
   });
 
   it('opens client statuses in the radial dialog and applies the selection', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       clientStatus: 'calculation_in_progress',
     };
     const { activities, dialogOpen, fixture } = await render(lead);
@@ -891,8 +891,8 @@ describe('LeadDetailView', () => {
   });
 
   it('allows reselecting showroom and prefills its optional date', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       clientStatus: 'showroom_invited',
       callbackDueAt: '2026-08-03T12:00:00.000Z',
       callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
@@ -922,8 +922,8 @@ describe('LeadDetailView', () => {
   });
 
   it('links a scheduled showroom appointment to the calendar deep-link', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       clientStatus: 'showroom_invited',
       showroomDueAt: '2026-08-05T12:00:00.000Z',
     };
@@ -939,8 +939,8 @@ describe('LeadDetailView', () => {
   });
 
   it('shows callback, thinking, and comment reminders above current state', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       callStatus: 'callback_requested',
       clientStatus: 'thinking',
       callbackDueAt: '2026-07-25T12:00:00.000Z',
@@ -968,14 +968,14 @@ describe('LeadDetailView', () => {
   });
 
   it('shows a showroom invitation reminder that can be cleared', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       clientStatus: 'showroom_invited',
       showroomDueAt: '2026-08-05T12:00:00.000Z',
       callbackDueAt: null,
       commentReminderDueAt: null,
     };
-    const cleared: MockLead = { ...lead, showroomDueAt: null };
+    const cleared: Lead = { ...lead, showroomDueAt: null };
     const { activities, fixture, getById } = await render(lead);
     getById.mockResolvedValueOnce(cleared);
 
@@ -996,14 +996,14 @@ describe('LeadDetailView', () => {
   });
 
   it('clears a reminder date without leaving the strip when other reminders remain', async () => {
-    const lead: MockLead = {
-      ...CRM_MOCK_LEADS[2]!,
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
       callStatus: 'callback_requested',
       clientStatus: 'thinking',
       callbackDueAt: '2026-07-25T12:00:00.000Z',
       commentReminderDueAt: '2026-07-26T09:00:00.000Z',
     };
-    const cleared: MockLead = {
+    const cleared: Lead = {
       ...lead,
       callbackDueAt: null,
       commentReminderDueAt: '2026-07-26T09:00:00.000Z',
