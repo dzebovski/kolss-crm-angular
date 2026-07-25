@@ -1,4 +1,5 @@
 import {
+  activeRemindersForLead,
   callStatusTone,
   clientStatusTone,
   commentAssigneeForLead,
@@ -60,5 +61,33 @@ describe('independent due dates', () => {
         callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
       }),
     ).toBe(base.callbackDueAt);
+  });
+});
+
+describe('activeRemindersForLead', () => {
+  it('lists callback, thinking, and comment reminders with due dates', () => {
+    expect(
+      activeRemindersForLead({
+        callStatus: 'callback_requested',
+        clientStatus: 'thinking',
+        callbackDueAt: '2026-07-25T12:00:00.000Z',
+        commentReminderDueAt: '2026-07-26T12:00:00.000Z',
+      }),
+    ).toEqual([
+      { kind: 'callback', dueAt: '2026-07-25T12:00:00.000Z' },
+      { kind: 'thinking', dueAt: '2026-07-25T12:00:00.000Z' },
+      { kind: 'comment', dueAt: '2026-07-26T12:00:00.000Z' },
+    ]);
+  });
+
+  it('omits reminders without a due date', () => {
+    expect(
+      activeRemindersForLead({
+        callStatus: 'callback_requested',
+        clientStatus: 'thinking',
+        callbackDueAt: null,
+        commentReminderDueAt: null,
+      }),
+    ).toEqual([]);
   });
 });

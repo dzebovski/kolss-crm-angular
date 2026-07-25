@@ -13,6 +13,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { canArchiveLeads, canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
 import { SessionService } from '../../../core/session/session.service';
 import {
+  activeRemindersForLead,
   callStatusTone,
   callbackDueAtFromNewValue,
   clientStatusTone,
@@ -21,6 +22,8 @@ import {
   leadIsInWork,
   leadIsTerminal,
   showroomDueAtForLead,
+  type LeadActiveReminder,
+  type LeadReminderKind,
 } from '../../../services/crm-mock.helpers';
 import type {
   CallStatus,
@@ -166,6 +169,10 @@ export class LeadDetailView {
   });
   protected readonly timelineEvents = computed(() => this.lead()?.events ?? []);
   protected readonly canEditTimeline = computed(() => isSuperAdminRole(this.auth.profile()?.role));
+  protected readonly activeReminders = computed(() => {
+    const lead = this.lead();
+    return lead ? activeRemindersForLead(lead) : [];
+  });
 
   protected readonly callTone = callStatusTone;
   protected readonly clientTone = clientStatusTone;
@@ -353,6 +360,30 @@ export class LeadDetailView {
       delete next[eventId];
       return next;
     });
+  }
+
+  protected reminderLabel(kind: LeadReminderKind): string {
+    return this.i18n.t(`leadDetail.reminder.${kind}` as 'leadDetail.reminder.callback');
+  }
+
+  protected reminderDueKind(kind: LeadReminderKind): LeadDueDateKind {
+    return kind === 'comment' ? 'comment' : 'status';
+  }
+
+  protected reminderIcon(kind: LeadReminderKind): 'phone_in_talk' | 'schedule' | 'campaign' {
+    switch (kind) {
+      case 'callback':
+        return 'phone_in_talk';
+      case 'thinking':
+        return 'schedule';
+      case 'comment':
+        return 'campaign';
+    }
+  }
+
+  protected async clearReminder(lead: MockLead, reminder: LeadActiveReminder): Promise<void> {
+    if (lead.archivedAt || this.isTerminal(lead)) return;
+    await this.runActivity(() => this.activities.clearReminder(lead.id, reminder.kind));
   }
 
   protected cancelDeleteEvent(): void {

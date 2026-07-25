@@ -398,6 +398,11 @@ export const messages = {
     en: 'Client status changed',
   },
   'event.comment_added': { uk: 'Коментар', pl: 'Komentarz', en: 'Comment' },
+  'event.reminder_cleared': {
+    uk: 'Нагадування скинуто',
+    pl: 'Wyczyszczono przypomnienie',
+    en: 'Reminder cleared',
+  },
   'event.lead_reopened': {
     uk: 'Заявку перевідкрито',
     pl: 'Zgłoszenie otwarto ponownie',
@@ -584,6 +589,15 @@ export const messages = {
     en: 'Delete entry',
   },
   'leadDetail.currentState': { uk: 'Поточний стан', pl: 'Bieżący stan', en: 'Current state' },
+  'leadDetail.reminders': { uk: 'Нагадування', pl: 'Przypomnienia', en: 'Reminders' },
+  'leadDetail.reminder.callback': { uk: 'Callback', pl: 'Callback', en: 'Callback' },
+  'leadDetail.reminder.thinking': { uk: 'Думає', pl: 'Myśli', en: 'Thinking' },
+  'leadDetail.reminder.comment': { uk: 'Коментар', pl: 'Komentarz', en: 'Comment' },
+  'leadDetail.clearReminder': {
+    uk: 'Скинути нагадування',
+    pl: 'Wyczyść przypomnienie',
+    en: 'Clear reminder',
+  },
   'leadDetail.clientStatus': { uk: 'Статус клієнта', pl: 'Status klienta', en: 'Client status' },
   'leadDetail.updated': {
     uk: 'Оновлено {date}',

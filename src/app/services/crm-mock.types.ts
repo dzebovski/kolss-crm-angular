@@ -288,4 +288,8 @@ export type LeadActivityPayload =
       readonly dueAt?: string;
       readonly assignedTo?: string;
     }
+  | {
+      readonly type: 'clear_reminder';
+      readonly kind: 'callback' | 'thinking' | 'comment';
+    }
   | { readonly type: 'reopen' };

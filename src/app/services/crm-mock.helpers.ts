@@ -556,6 +556,36 @@ export function commentDueAtForLead(lead: { commentReminderDueAt: string | null 
   return lead.commentReminderDueAt;
 }
 
+export type LeadReminderKind = 'callback' | 'thinking' | 'comment';
+
+export interface LeadActiveReminder {
+  readonly kind: LeadReminderKind;
+  readonly dueAt: string;
+}
+
+/**
+ * Active due-dated reminders shown at the top of the lead card.
+ * Callback and thinking share leads.callbackDueAt; comment uses the derived field.
+ */
+export function activeRemindersForLead(lead: {
+  callStatus: string | null;
+  clientStatus: string;
+  callbackDueAt: string | null;
+  commentReminderDueAt: string | null;
+}): readonly LeadActiveReminder[] {
+  const reminders: LeadActiveReminder[] = [];
+  if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
+    reminders.push({ kind: 'callback', dueAt: lead.callbackDueAt });
+  }
+  if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
+    reminders.push({ kind: 'thinking', dueAt: lead.callbackDueAt });
+  }
+  if (lead.commentReminderDueAt) {
+    reminders.push({ kind: 'comment', dueAt: lead.commentReminderDueAt });
+  }
+  return reminders;
+}
+
 /** Returns the assignee of the active comment task (latest comment), if any. */
 export function commentAssigneeForLead(lead: {
   commentReminderAssignedTo: string | null;

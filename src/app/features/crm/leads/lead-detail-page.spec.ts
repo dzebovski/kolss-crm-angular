@@ -48,6 +48,7 @@ describe('LeadDetailView', () => {
       closeLead: vi.fn(),
       signContract: vi.fn(),
       reopen: vi.fn(),
+      clearReminder: vi.fn(async () => undefined),
     };
     const dialogOpen = vi.fn();
     const dialogConfirm = vi.fn();
@@ -852,5 +853,66 @@ describe('LeadDetailView', () => {
     expect(link?.getAttribute('href')).toBe(
       `/crm/calendar?leadId=${lead.id}&date=2026-08-05&officeId=office-${lead.officeCode}`,
     );
+  });
+
+  it('shows callback, thinking, and comment reminders above current state', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[2]!,
+      callStatus: 'callback_requested',
+      clientStatus: 'thinking',
+      callbackDueAt: '2026-07-25T12:00:00.000Z',
+      commentReminderDueAt: '2026-07-26T09:00:00.000Z',
+    };
+    const { fixture } = await render(lead);
+    const element = fixture.nativeElement as HTMLElement;
+    const strip = element.querySelector('.reminders-strip');
+    const rows = Array.from(element.querySelectorAll<HTMLElement>('.reminder-row'));
+
+    expect(strip).not.toBeNull();
+    expect(strip?.compareDocumentPosition(element.querySelector('.status-strip')!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(rows.map((row) => row.getAttribute('data-kind'))).toEqual([
+      'callback',
+      'thinking',
+      'comment',
+    ]);
+    expect(rows[0]?.textContent).toContain('Callback');
+    expect(rows[1]?.textContent).toContain('Думає');
+    expect(rows[2]?.textContent).toContain('Коментар');
+    expect(element.querySelector('.status-item--call .status-item__due')).toBeNull();
+    expect(element.querySelector('.status-item--client .status-item__due')).toBeNull();
+  });
+
+  it('clears a reminder date without leaving the strip when other reminders remain', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[2]!,
+      callStatus: 'callback_requested',
+      clientStatus: 'thinking',
+      callbackDueAt: '2026-07-25T12:00:00.000Z',
+      commentReminderDueAt: '2026-07-26T09:00:00.000Z',
+    };
+    const cleared: MockLead = {
+      ...lead,
+      callbackDueAt: null,
+      commentReminderDueAt: '2026-07-26T09:00:00.000Z',
+    };
+    const { activities, fixture, getById } = await render(lead);
+    getById.mockResolvedValueOnce(cleared);
+
+    const clearButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.reminder-row[data-kind="callback"] .reminder-row__clear',
+    );
+    clearButton?.click();
+    await vi.waitFor(() => expect(activities.clearReminder).toHaveBeenCalledOnce());
+    expect(activities.clearReminder).toHaveBeenCalledWith(lead.id, 'callback');
+    await vi.waitFor(() =>
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('.reminder-row[data-kind="callback"]'),
+      ).toBeNull(),
+    );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.reminder-row[data-kind="comment"]'),
+    ).not.toBeNull();
   });
 });

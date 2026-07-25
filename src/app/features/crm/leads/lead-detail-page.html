@@ -165,6 +165,46 @@
       <div class="action-error" role="alert">{{ actionError() }}</div>
     }
 
+    @if (activeReminders(); as reminders) {
+      @if (reminders.length) {
+        <section class="reminders-strip" aria-labelledby="lead-reminders-title">
+          <header class="reminders-strip__intro">
+            <h2 id="lead-reminders-title">{{ i18n.t('leadDetail.reminders') }}</h2>
+          </header>
+          <ul class="reminders-strip__list">
+            @for (reminder of reminders; track reminder.kind) {
+              <li class="reminder-row" [attr.data-kind]="reminder.kind">
+                <div class="reminder-row__icon" aria-hidden="true">
+                  <app-ui-icon [name]="reminderIcon(reminder.kind)" [size]="18" [filled]="true" />
+                </div>
+                <div class="reminder-row__copy">
+                  <app-ui-badge [tone]="reminder.kind === 'comment' ? 'warning' : 'brand'">
+                    {{ reminderLabel(reminder.kind) }}
+                  </app-ui-badge>
+                  <app-lead-due-date
+                    class="reminder-row__due"
+                    [date]="reminder.dueAt"
+                    [kind]="reminderDueKind(reminder.kind)"
+                  />
+                </div>
+                @if (!isTerminal(lead) && !lead.archivedAt) {
+                  <button
+                    type="button"
+                    class="reminder-row__clear"
+                    [disabled]="actionPending()"
+                    [attr.aria-label]="i18n.t('leadDetail.clearReminder')"
+                    (click)="clearReminder(lead, reminder)"
+                  >
+                    <app-ui-icon name="close" [size]="16" />
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+
     <section class="status-strip" aria-labelledby="current-status-title">
       <header class="status-strip__intro">
         <span aria-hidden="true">01</span>
@@ -181,9 +221,6 @@
             <app-ui-badge [tone]="callTone(callStatus)">
               {{ callStatusLabel(callStatus) }}
             </app-ui-badge>
-            @if (callStatus === 'callback_requested' && lead.callbackDueAt) {
-              <app-lead-due-date class="status-item__due" [date]="lead.callbackDueAt" />
-            }
             @if (lead.callStatusChangedAt) {
               <small>{{ formatDateTime(lead.callStatusChangedAt) }}</small>
             }
@@ -203,9 +240,7 @@
           <app-ui-badge [tone]="clientToneForLead(lead)">
             {{ clientStatusLabelForLead(lead) }}
           </app-ui-badge>
-          @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
-            <app-lead-due-date class="status-item__due" [date]="lead.callbackDueAt" />
-          } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
+          @if (lead.clientStatus !== 'thinking' && showroomDueAtForLead(lead); as showroomDueAt) {
             <app-lead-due-date class="status-item__due" [date]="showroomDueAt" />
             @if (calendarAppointmentQueryParams(lead); as appointmentQuery) {
               <a

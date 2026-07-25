@@ -585,6 +585,116 @@
     align-items: stretch;
     overflow: hidden;
   }
+  .reminders-strip {
+    position: relative;
+    border: 1px solid color-mix(in srgb, var(--ui-border) 78%, transparent);
+    border-radius: 1rem;
+    background: color-mix(in srgb, white 91%, transparent);
+    box-shadow: var(--ui-shadow-1);
+    display: grid;
+    grid-template-columns: minmax(9rem, 0.45fr) minmax(0, 1fr);
+    align-items: stretch;
+    overflow: hidden;
+  }
+  .reminders-strip::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 0.2rem;
+    background: color-mix(in srgb, var(--ui-warning) 72%, var(--ui-brand-gradient));
+  }
+  .reminders-strip__intro {
+    padding: 0.65rem clamp(0.85rem, 2vw, 1.15rem);
+    background: color-mix(in srgb, var(--ui-warning-soft) 55%, white);
+    display: grid;
+    align-content: center;
+  }
+  .reminders-strip__intro h2 {
+    margin: 0;
+    font-family: var(--ui-font-display), sans-serif;
+    font-size: 0.96rem;
+    letter-spacing: -0.025em;
+  }
+  .reminders-strip__list {
+    margin: 0;
+    padding: 0.45rem clamp(0.75rem, 2vw, 1rem);
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    border-left: 1px solid var(--ui-border);
+  }
+  .reminder-row {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.45rem 0.35rem 0.4rem;
+    border: 1px solid color-mix(in srgb, var(--ui-border) 70%, transparent);
+    border-radius: 0.72rem;
+    background: color-mix(in srgb, var(--ui-surface-subtle) 70%, white);
+  }
+  .reminder-row[data-kind='callback'] {
+    border-color: color-mix(in srgb, var(--ui-info) 30%, var(--ui-border));
+    background: color-mix(in srgb, var(--ui-info) 8%, white);
+  }
+  .reminder-row[data-kind='thinking'] {
+    border-color: color-mix(in srgb, var(--ui-brand) 28%, var(--ui-border));
+    background: color-mix(in srgb, var(--ui-brand) 7%, white);
+  }
+  .reminder-row[data-kind='comment'] {
+    border-color: color-mix(in srgb, var(--ui-warning) 32%, var(--ui-border));
+    background: color-mix(in srgb, var(--ui-warning) 10%, white);
+  }
+  .reminder-row__icon {
+    width: 1.85rem;
+    height: 1.85rem;
+    border-radius: 0.55rem;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, white 70%, transparent);
+    color: var(--ui-info);
+  }
+  .reminder-row[data-kind='thinking'] .reminder-row__icon {
+    color: var(--ui-brand);
+  }
+  .reminder-row[data-kind='comment'] .reminder-row__icon {
+    color: var(--ui-warning);
+  }
+  .reminder-row__copy {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.55rem;
+  }
+  .reminder-row__due {
+    margin-top: 0;
+  }
+  .reminder-row__clear {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: 0.5rem;
+    padding: 0;
+    background: transparent;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .reminder-row__clear:hover:not(:disabled),
+  .reminder-row__clear:focus-visible {
+    background: color-mix(in srgb, var(--ui-danger) 10%, white);
+    color: var(--ui-danger);
+    outline: none;
+  }
+  .reminder-row__clear:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
   .status-strip::before {
     content: '';
     position: absolute;
@@ -883,6 +993,7 @@
     border-radius: 1rem;
   }
   .lead-summary,
+  .reminders-strip,
   .status-strip,
   .lead-actions,
   .terminal-note,
@@ -890,6 +1001,9 @@
   .terminal-summary,
   .timeline-panel {
     animation: lead-enter 420ms var(--ui-ease) both;
+  }
+  .reminders-strip {
+    animation-delay: 25ms;
   }
   .status-strip {
     animation-delay: 45ms;
@@ -957,6 +1071,15 @@
     }
     .status-strip {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .reminders-strip {
+      grid-template-columns: 1fr;
+    }
+    .reminders-strip__intro {
+      border-bottom: 1px solid var(--ui-border);
+    }
+    .reminders-strip__list {
+      border-left: 0;
     }
     .status-strip__intro {
       grid-column: 1 / -1;
@@ -1072,6 +1195,7 @@
     .lead-state__pulse,
     .lead-summary__orb,
     .lead-summary,
+    .reminders-strip,
     .status-strip,
     .lead-actions,
     .terminal-note,

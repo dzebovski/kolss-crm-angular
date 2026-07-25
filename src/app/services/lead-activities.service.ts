@@ -76,6 +76,13 @@ export class LeadActivitiesService {
     return this.commit(leadId, { type: 'reopen' });
   }
 
+  clearReminder(
+    leadId: string,
+    kind: Extract<LeadActivityPayload, { type: 'clear_reminder' }>['kind'],
+  ): Promise<void> {
+    return this.commit(leadId, { type: 'clear_reminder', kind });
+  }
+
   private async commit(leadId: string, payload: LeadActivityPayload): Promise<void> {
     await this.api.leadActivity(leadId, payload);
   }
