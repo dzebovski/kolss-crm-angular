@@ -1,0 +1,272 @@
+<section class="accounts-page" aria-labelledby="accounts-title">
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">Access management</p>
+      <h1 id="accounts-title">{{ 'accounts.title' | translate }}</h1>
+      <p>{{ 'accounts.subtitle' | translate }}</p>
+    </div>
+    <app-ui-button (pressed)="toggleCreatePanel()">
+      <app-ui-icon [name]="showCreatePanel() ? 'close' : 'add'" [size]="17" />
+      {{ showCreatePanel() ? ('common.cancel' | translate) : ('accounts.create' | translate) }}
+    </app-ui-button>
+  </header>
+
+  @if (loadError()) {
+    <app-ui-alert tone="danger" [title]="'accounts.loadError' | translate">
+      {{ loadError() }}
+    </app-ui-alert>
+  }
+
+  @if (actionError()) {
+    <app-ui-alert tone="danger" [title]="'common.error' | translate">
+      {{ actionError() }}
+    </app-ui-alert>
+  }
+
+  @if (notice()) {
+    <div class="notice" role="status">
+      <app-ui-icon name="info" [size]="18" />
+      {{ notice() }}
+    </div>
+  }
+
+  @if (showCreatePanel()) {
+    <section class="create-panel" aria-labelledby="create-account-title">
+      <h2 id="create-account-title">Новий акаунт</h2>
+      <div class="create-form">
+        <app-ui-text-field
+          label="Email"
+          type="email"
+          autocomplete="email"
+          [(value)]="createEmail"
+        />
+        <app-ui-text-field label="Імʼя" autocomplete="name" [(value)]="createDisplayName" />
+        <app-ui-text-field
+          label="Пароль"
+          type="password"
+          autocomplete="new-password"
+          [(value)]="createPassword"
+        />
+        <app-ui-text-field
+          label="Підтвердження пароля"
+          type="password"
+          autocomplete="new-password"
+          [(value)]="createPasswordConfirm"
+        />
+        <app-ui-select label="Роль" [options]="assignableRoleOptions()" [(value)]="createRole" />
+        <fieldset class="office-fieldset">
+          <legend>Офіси</legend>
+          @for (office of availableOffices(); track office.id) {
+            <label class="office-check">
+              <input
+                type="checkbox"
+                [checked]="isOfficeSelected(office.id)"
+                (change)="toggleOffice(office.id)"
+              />
+              {{ officeLabel(office.code) }}
+            </label>
+          }
+        </fieldset>
+      </div>
+      <div class="create-actions">
+        <app-ui-button variant="secondary" (pressed)="resetCreateForm()"> Очистити </app-ui-button>
+        <app-ui-button [disabled]="creating()" (pressed)="submitCreate()">
+          {{ creating() ? 'Створення…' : 'Створити' }}
+        </app-ui-button>
+      </div>
+    </section>
+  }
+
+  <div class="filters">
+    <app-ui-text-field
+      label="Пошук"
+      type="search"
+      placeholder="Імʼя, email або ID"
+      [(value)]="query"
+    />
+    <app-ui-select
+      [label]="'common.office' | translate"
+      [options]="officeOptions()"
+      [(value)]="officeFilter"
+    />
+    <app-ui-select
+      [label]="'common.role' | translate"
+      [options]="roleOptions()"
+      [(value)]="roleFilter"
+    />
+  </div>
+
+  @if (employeesResource.isLoading()) {
+    <section class="accounts-table-panel" aria-label="Список співробітників">
+      <p class="loading-cell">Завантаження…</p>
+    </section>
+  } @else if (hasActiveFilters()) {
+    <section class="accounts-table-panel" aria-label="Список співробітників">
+      <table class="accounts-table">
+        <colgroup>
+          <col class="col-employee" />
+          <col class="col-email" />
+          <col class="col-role" />
+          <col class="col-office" />
+          <col class="col-status" />
+          <col class="col-activity" />
+          <col class="col-actions" />
+        </colgroup>
+        <thead>
+          <tr>
+            @for (column of tableColumns(); track column) {
+              <th>{{ column }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (employee of filteredEmployees(); track employee.id) {
+            <tr>
+              <td class="cell-employee">
+                <app-ui-user [userId]="employee.id" [name]="employee.displayName" size="sm" />
+                <small>{{ employee.id }}</small>
+              </td>
+              <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
+              <td>{{ roleLabel(employee.role) }}</td>
+              <td class="cell-truncate">{{ officeLabels(employee) }}</td>
+              <td>
+                <app-ui-badge [tone]="statusTone(employee)">
+                  {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+                </app-ui-badge>
+              </td>
+              <td class="cell-activity">{{ formatDateTime(employee.lastActiveAt) }}</td>
+              <td class="cell-actions">
+                <app-ui-button variant="secondary" size="small" (pressed)="openEmployee(employee)">
+                  {{ 'common.profile' | translate }}
+                </app-ui-button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty-cell">Немає співробітників за поточними фільтрами.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  } @else {
+    <div class="accounts-sections">
+      @for (section of employeeSections(); track section.id) {
+        <section class="accounts-table-panel" [attr.aria-labelledby]="section.id">
+          <header class="section-header">
+            <h2 [id]="section.id">{{ section.title }}</h2>
+            <span>{{ section.employees.length }}</span>
+          </header>
+          <table class="accounts-table">
+            <colgroup>
+              <col class="col-employee" />
+              <col class="col-email" />
+              <col class="col-role" />
+              <col class="col-office" />
+              <col class="col-status" />
+              <col class="col-activity" />
+              <col class="col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                @for (column of tableColumns(); track column) {
+                  <th>{{ column }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (employee of section.employees; track employee.id) {
+                <tr>
+                  <td class="cell-employee">
+                    <app-ui-user [userId]="employee.id" [name]="employee.displayName" size="sm" />
+                    <small>{{ employee.id }}</small>
+                  </td>
+                  <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
+                  <td>{{ roleLabel(employee.role) }}</td>
+                  <td class="cell-truncate">{{ officeLabels(employee) }}</td>
+                  <td>
+                    <app-ui-badge [tone]="statusTone(employee)">
+                      {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+                    </app-ui-badge>
+                  </td>
+                  <td class="cell-activity">{{ formatDateTime(employee.lastActiveAt) }}</td>
+                  <td class="cell-actions">
+                    <app-ui-button
+                      variant="secondary"
+                      size="small"
+                      (pressed)="openEmployee(employee)"
+                    >
+                      {{ 'common.profile' | translate }}
+                    </app-ui-button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="empty-cell">Немає співробітників.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+    </div>
+  }
+
+  @if (!employeesResource.isLoading()) {
+    <section
+      class="accounts-table-panel accounts-table-panel--inactive"
+      aria-labelledby="accounts-inactive"
+    >
+      <header class="section-header">
+        <h2 id="accounts-inactive">Деактивовані акаунти</h2>
+        <span>{{ filteredInactiveEmployees().length }}</span>
+      </header>
+      <table class="accounts-table">
+        <colgroup>
+          <col class="col-employee" />
+          <col class="col-email" />
+          <col class="col-role" />
+          <col class="col-office" />
+          <col class="col-status" />
+          <col class="col-activity" />
+          <col class="col-actions" />
+        </colgroup>
+        <thead>
+          <tr>
+            @for (column of tableColumns(); track column) {
+              <th>{{ column }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (employee of filteredInactiveEmployees(); track employee.id) {
+            <tr>
+              <td class="cell-employee">
+                <app-ui-user [userId]="employee.id" [name]="employee.displayName" size="sm" />
+                <small>{{ employee.id }}</small>
+              </td>
+              <td class="cell-truncate">{{ employee.email ?? '—' }}</td>
+              <td>{{ roleLabel(employee.role) }}</td>
+              <td class="cell-truncate">{{ officeLabels(employee) }}</td>
+              <td>
+                <app-ui-badge [tone]="statusTone(employee)">
+                  {{ employee.status === 'active' ? 'Активний' : 'Неактивний' }}
+                </app-ui-badge>
+              </td>
+              <td class="cell-activity">{{ formatDateTime(employee.lastActiveAt) }}</td>
+              <td class="cell-actions">
+                <app-ui-button variant="secondary" size="small" (pressed)="openEmployee(employee)">
+                  {{ 'common.profile' | translate }}
+                </app-ui-button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty-cell">Немає деактивованих акаунтів.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</section>

@@ -1,0 +1,419 @@
+<section class="calendar-page" aria-labelledby="calendar-title">
+  <header class="page-header">
+    <div>
+      <p>{{ i18n.t('calendar.kicker') }}</p>
+      <h1 id="calendar-title">{{ i18n.t('calendar.title') }}</h1>
+    </div>
+    <app-ui-button (pressed)="openCreate()">
+      <app-ui-icon name="add" [size]="18" />
+      {{ i18n.t('calendar.newAppointment') }}
+    </app-ui-button>
+  </header>
+
+  <div class="toolbar" role="toolbar" [attr.aria-label]="i18n.t('calendar.controls')">
+    <div class="date-navigation">
+      <button
+        type="button"
+        class="icon-button"
+        [attr.aria-label]="i18n.t('calendar.previous')"
+        (click)="navigate(-1)"
+      >
+        <app-ui-icon name="chevron_left" [size]="22" />
+      </button>
+      <button type="button" class="today-button" (click)="goToday()">
+        {{ i18n.t('calendar.today') }}
+      </button>
+      <button
+        type="button"
+        class="icon-button"
+        [attr.aria-label]="i18n.t('calendar.next')"
+        (click)="navigate(1)"
+      >
+        <app-ui-icon name="chevron_right" [size]="22" />
+      </button>
+      <strong>{{ rangeLabel() }}</strong>
+    </div>
+
+    <div class="toolbar-filters">
+      @if (officeOptions().length > 1) {
+        <app-ui-select
+          class="compact-select"
+          [label]="i18n.t('common.office')"
+          [options]="officeOptions()"
+          [value]="officeId()"
+          (valueChange)="officeId.set($event)"
+        />
+      }
+      <app-ui-select
+        class="compact-select"
+        [label]="i18n.t('common.manager')"
+        [options]="managerOptions()"
+        [value]="managerId()"
+        (valueChange)="managerId.set($event)"
+      />
+      <div class="view-switch" [attr.aria-label]="i18n.t('calendar.view')">
+        <button type="button" [class.is-active]="view() === 'day'" (click)="view.set('day')">
+          {{ i18n.t('calendar.day') }}
+        </button>
+        <button type="button" [class.is-active]="view() === 'week'" (click)="view.set('week')">
+          {{ i18n.t('calendar.week') }}
+        </button>
+        <button type="button" [class.is-active]="view() === 'month'" (click)="view.set('month')">
+          {{ i18n.t('calendar.month') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (view() === 'week' && sundayAppointments().length) {
+    <button type="button" class="sunday-banner" (click)="openSunday()">
+      <app-ui-icon name="info" [size]="18" />
+      <span>
+        {{ i18n.t('calendar.sundayBanner', { count: sundayAppointments().length }) }}
+      </span>
+      <app-ui-icon name="chevron_right" [size]="18" />
+    </button>
+  }
+
+  @if (appointmentsResource.isLoading() || managersResource.isLoading()) {
+    <div class="calendar-skeleton" aria-live="polite">
+      <span></span><span></span><span></span><span></span>
+    </div>
+  } @else if (loadError()) {
+    <div class="state-card" role="alert">
+      <app-ui-icon name="error" [size]="24" />
+      <strong>{{ i18n.t('calendar.loadFailed') }}</strong>
+      <p>{{ loadError() }}</p>
+      <app-ui-button variant="secondary" (pressed)="reload()">
+        {{ i18n.t('calendar.retry') }}
+      </app-ui-button>
+    </div>
+  } @else {
+    @if (view() === 'day') {
+      @if (dayBannerReminders(selectedDate()).length) {
+        <app-calendar-day-reminders
+          class="day-reminders-banner desktop-calendar"
+          [reminders]="dayBannerReminders(selectedDate())"
+          [showAssignee]="true"
+          (leadSelected)="openLead($event)"
+        />
+      }
+      <div
+        ngGrid
+        focusMode="roving"
+        class="day-grid desktop-calendar"
+        [attr.aria-label]="rangeLabel()"
+      >
+        <div ngGridRow class="grid-head">
+          <div ngGridCell class="time-head">{{ office()?.timezone_name }}</div>
+          @for (manager of visibleManagers(); track manager.id) {
+            <div ngGridCell class="manager-head">
+              <strong>{{ manager.displayName }}</strong>
+              <small>{{ appointmentsForManager(manager.id).length }}</small>
+            </div>
+          }
+        </div>
+        @if (hasDayColumnTasks(selectedDate())) {
+          <div ngGridRow class="all-day-row">
+            <div ngGridCell class="time-label all-day-label">
+              {{ i18n.t('calendar.allDay') }}
+            </div>
+            @for (manager of visibleManagers(); track manager.id) {
+              <div ngGridCell class="all-day-cell">
+                @if (dayColumnTasks(selectedDate(), manager.id).length) {
+                  <app-calendar-day-reminders
+                    [reminders]="dayColumnTasks(selectedDate(), manager.id)"
+                    (leadSelected)="openLead($event)"
+                  />
+                }
+              </div>
+            }
+          </div>
+        }
+        @for (slot of timeSlots; track slot) {
+          <div ngGridRow class="time-row">
+            <div ngGridCell class="time-label">{{ slot }}</div>
+            @for (manager of visibleManagers(); track manager.id) {
+              <div ngGridCell class="slot-cell">
+                <button
+                  ngGridCellWidget
+                  type="button"
+                  class="slot-add"
+                  [attr.aria-label]="slotLabel(selectedDate(), slot, manager.displayName)"
+                  (click)="openCreate(selectedDate(), slot, manager.id)"
+                ></button>
+                @for (
+                  appointment of appointmentsForSlot(selectedDate(), slot, manager.id);
+                  track appointment.id
+                ) {
+                  <button
+                    ngGridCellWidget
+                    type="button"
+                    class="appointment-card"
+                    [class.has-warning]="appointment.warnings.length"
+                    [class.is-visited]="appointment.status === 'visited'"
+                    [class.is-no-show]="appointment.status === 'no_show'"
+                    [class.is-canceled]="appointment.status === 'canceled'"
+                    [style.height.px]="appointmentHeight(appointment)"
+                    (click)="openEdit(appointment)"
+                  >
+                    <time>{{ localTime(appointment.startsAt) }}</time>
+                    <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                    @if (appointment.status === 'scheduled' && appointment.warnings.length) {
+                      <app-ui-icon name="warning" [size]="15" />
+                    } @else {
+                      <app-ui-icon
+                        class="appointment-status-icon"
+                        [class.is-no-show]="appointment.status === 'no_show'"
+                        [class.is-canceled]="appointment.status === 'canceled'"
+                        [name]="appointmentStatusIcon(appointment)"
+                        [size]="15"
+                        [attr.aria-label]="appointmentStatusLabel(appointment)"
+                      />
+                    }
+                    @if (appointment.comment; as comment) {
+                      <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else if (view() === 'week') {
+      <div
+        ngGrid
+        focusMode="roving"
+        class="week-grid desktop-calendar"
+        [attr.aria-label]="rangeLabel()"
+      >
+        <div ngGridRow class="week-head">
+          @for (day of weekDays(); track day) {
+            <div ngGridCell [class.is-today]="day === todayKey()">
+              <span>{{ weekdayLabel(day) }}</span>
+              <strong>{{ dayNumber(day) }}</strong>
+            </div>
+          }
+        </div>
+        <div ngGridRow class="week-columns">
+          @for (day of weekDays(); track day) {
+            <div ngGridCell class="week-day">
+              @if (dayReminders(day).length) {
+                <app-calendar-day-reminders
+                  [reminders]="dayReminders(day)"
+                  [showAssignee]="true"
+                  (leadSelected)="openLead($event)"
+                />
+              }
+              @for (appointment of appointmentsForDay(day); track appointment.id) {
+                <button
+                  ngGridCellWidget
+                  type="button"
+                  class="week-card"
+                  [class.has-warning]="appointment.warnings.length"
+                  [class.is-visited]="appointment.status === 'visited'"
+                  [class.is-no-show]="appointment.status === 'no_show'"
+                  [class.is-canceled]="appointment.status === 'canceled'"
+                  (click)="openEdit(appointment)"
+                >
+                  <span>
+                    <time>{{ localTime(appointment.startsAt) }}</time>
+                    @if (appointment.warnings.length) {
+                      <app-ui-icon name="warning" [size]="14" />
+                    } @else if (appointment.status === 'scheduled') {
+                      <app-ui-icon
+                        [name]="appointmentStatusIcon(appointment)"
+                        [size]="14"
+                        [attr.aria-label]="appointmentStatusLabel(appointment)"
+                      />
+                    }
+                  </span>
+                  <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                  @if (appointment.status !== 'scheduled') {
+                    <small
+                      class="appointment-status"
+                      [class.is-no-show]="appointment.status === 'no_show'"
+                      [class.is-canceled]="appointment.status === 'canceled'"
+                    >
+                      <app-ui-icon [name]="appointmentStatusIcon(appointment)" [size]="14" />
+                      {{ appointmentStatusLabel(appointment) }}
+                    </small>
+                  }
+                  <small>{{
+                    appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
+                  }}</small>
+                  @if (appointment.comment; as comment) {
+                    <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                  }
+                </button>
+              } @empty {
+                <p class="empty-day">{{ i18n.t('calendar.freeDay') }}</p>
+              }
+              <button
+                ngGridCellWidget
+                type="button"
+                class="week-add"
+                (click)="openCreate(day, '10:00')"
+              >
+                <app-ui-icon name="add" [size]="16" />
+                {{ i18n.t('calendar.add') }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <div
+        ngGrid
+        focusMode="roving"
+        class="month-grid desktop-calendar"
+        [attr.aria-label]="rangeLabel()"
+      >
+        <div ngGridRow class="month-head">
+          @for (day of monthWeekdayHeaders(); track day) {
+            <div ngGridCell>{{ weekdayLabel(day) }}</div>
+          }
+        </div>
+        @for (week of monthWeeks(); track week[0]) {
+          <div ngGridRow class="month-week">
+            @for (day of week; track day) {
+              <div
+                ngGridCell
+                class="month-day"
+                [class.is-today]="day === todayKey()"
+                [class.is-outside]="isOutsideMonth(day)"
+              >
+                <div class="month-day-header">
+                  <button
+                    ngGridCellWidget
+                    type="button"
+                    class="month-day-number"
+                    [attr.aria-label]="fullDateLabel(day)"
+                    (click)="openDay(day)"
+                  >
+                    {{ dayNumber(day) }}
+                  </button>
+                  <button
+                    ngGridCellWidget
+                    type="button"
+                    class="month-add"
+                    [attr.aria-label]="i18n.t('calendar.add')"
+                    (click)="openCreate(day, '10:00')"
+                  >
+                    <app-ui-icon name="add" [size]="14" />
+                  </button>
+                </div>
+                @if (dayReminders(day).length) {
+                  <app-calendar-day-reminders
+                    [reminders]="dayReminders(day)"
+                    [showAssignee]="true"
+                    (leadSelected)="openLead($event)"
+                  />
+                }
+                @for (appointment of visibleMonthAppointments(day); track appointment.id) {
+                  <button
+                    ngGridCellWidget
+                    type="button"
+                    class="month-card"
+                    [class.has-warning]="appointment.warnings.length"
+                    [class.is-visited]="appointment.status === 'visited'"
+                    [class.is-no-show]="appointment.status === 'no_show'"
+                    [class.is-canceled]="appointment.status === 'canceled'"
+                    (click)="openEdit(appointment)"
+                  >
+                    <time>{{ localTime(appointment.startsAt) }}</time>
+                    <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                    @if (appointment.status === 'scheduled' && appointment.warnings.length) {
+                      <app-ui-icon name="warning" [size]="12" />
+                    } @else {
+                      <app-ui-icon
+                        class="appointment-status-icon"
+                        [class.is-no-show]="appointment.status === 'no_show'"
+                        [class.is-canceled]="appointment.status === 'canceled'"
+                        [name]="appointmentStatusIcon(appointment)"
+                        [size]="12"
+                        [attr.aria-label]="appointmentStatusLabel(appointment)"
+                      />
+                    }
+                  </button>
+                }
+                @if (monthOverflowCount(day); as overflow) {
+                  <button ngGridCellWidget type="button" class="month-more" (click)="openDay(day)">
+                    {{ i18n.t('calendar.moreCount', { count: overflow }) }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="mobile-agenda">
+      @for (group of agendaGroups(); track group.date) {
+        <section>
+          <h2>{{ fullDateLabel(group.date) }}</h2>
+          @if (dayReminders(group.date).length) {
+            <app-calendar-day-reminders
+              class="agenda-reminders"
+              [reminders]="dayReminders(group.date)"
+              [showAssignee]="true"
+              (leadSelected)="openLead($event)"
+            />
+          }
+          @for (appointment of group.items; track appointment.id) {
+            <button
+              type="button"
+              class="agenda-card"
+              [class.has-warning]="appointment.warnings.length"
+              [class.is-visited]="appointment.status === 'visited'"
+              [class.is-no-show]="appointment.status === 'no_show'"
+              [class.is-canceled]="appointment.status === 'canceled'"
+              (click)="openEdit(appointment)"
+            >
+              <time>{{ localTime(appointment.startsAt) }}</time>
+              <span>
+                <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                <small>{{
+                  appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')
+                }}</small>
+                @if (appointment.comment; as comment) {
+                  <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                }
+                @if (appointment.status !== 'scheduled') {
+                  <small
+                    class="appointment-status"
+                    [class.is-no-show]="appointment.status === 'no_show'"
+                    [class.is-canceled]="appointment.status === 'canceled'"
+                  >
+                    {{ appointmentStatusLabel(appointment) }}
+                  </small>
+                }
+              </span>
+              <span class="agenda-trailing">
+                @if (appointment.warnings.length) {
+                  <app-ui-icon
+                    class="warning"
+                    name="warning"
+                    [size]="16"
+                    [attr.aria-label]="i18n.t('calendar.hasWarning')"
+                  />
+                } @else if (appointment.status === 'scheduled') {
+                  <app-ui-icon
+                    [name]="appointmentStatusIcon(appointment)"
+                    [size]="16"
+                    [attr.aria-label]="appointmentStatusLabel(appointment)"
+                  />
+                }
+                <app-ui-icon name="chevron_right" [size]="18" />
+              </span>
+            </button>
+          } @empty {
+            <p class="agenda-empty">{{ i18n.t('calendar.noAppointments') }}</p>
+          }
+        </section>
+      }
+    </div>
+  }
+</section>

@@ -27,12 +27,14 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Keep components small and focused on a single responsibility
 - Use `input()` and `output()` functions instead of decorators
 - Use `computed()` for derived state
-- Prefer inline templates for small components
+- Prefer inline templates for small components; once a template or stylesheet grows past ~80 lines, move it to its own `.html`/`.scss` file
+- When using external templates/styles, use paths relative to the component TS file (`./x.html`, never absolute or alias paths)
+- Keep a component's TypeScript file within ~300 lines; beyond that, split out a sub-component or a presenter instead of growing the class further
 - Prefer Signal Forms (`@angular/forms/signals`) for new forms. They are stable in Angular v22+ and provide signal-based state, type-safe field access, and schema-based validation
 - When not using Signal Forms, prefer Reactive forms instead of Template-driven ones
 - Do NOT use `ngClass`, use `class` bindings instead
 - Do NOT use `ngStyle`, use `style` bindings instead
-- When using external templates/styles, use paths relative to the component TS file.
+- Read route parameters via `withComponentInputBinding()` and `input()`, not `route.snapshot`
 
 ## State Management
 
@@ -47,6 +49,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
 - Use the async pipe to handle observables
 - Do not assume globals like (`new Date()`) are available.
+- Global CSS (`styles.scss`) is only for what renders outside the component tree (e.g. CDK overlay panes); every other style belongs on its owning component
 
 ## Services
 
@@ -54,6 +57,12 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+- Distinguish API errors by `KolssApiError.status`/`.code`, never by matching on the error message text
+
+## Architecture Boundaries
+
+- No string literals for roles or office codes outside `@core/roles` and `@core/office`; permission decisions go through `@core/policy` — capability comes from the server's `permissions` in `/v1/me`, never re-derived from role on the client
+- Domain types and rules live in `@domain/*`; test fixtures live only in `@testing/*` and production code must not import them
 
 ## Testing (Vitest + jsdom)
 

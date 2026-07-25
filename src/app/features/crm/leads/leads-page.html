@@ -1,0 +1,272 @@
+<section class="crm-page" aria-labelledby="leads-title">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">CRM</p>
+      <div class="title-row">
+        <h1 id="leads-title">{{ 'leads.title' | translate }}</h1>
+        @if (leadsResource.hasValue()) {
+          <span class="lead-count muted" aria-live="polite">
+            {{ 'leads.filteredCountPrefix' | translate }}
+            <app-ui-badge class="lead-count-badge" tone="brand">
+              <app-ui-icon name="person" [size]="14" [style.margin-right.rem]="0.25" />
+              {{ 'leads.count' | translate: { count: leads().length } }}
+            </app-ui-badge>
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="page-actions">
+      <app-ui-button (pressed)="openCreateDialog()">
+        <app-ui-icon name="add" [size]="17" />
+        {{ 'lead.create' | translate }}
+      </app-ui-button>
+      <app-ui-button variant="secondary" (pressed)="leadsResource.reload()">
+        <app-ui-icon name="history" [size]="17" />
+        {{ 'leads.refresh' | translate }}
+      </app-ui-button>
+      @if (isSuperAdmin()) {
+        <app-ui-button variant="secondary" (pressed)="toggleArchived()">
+          <app-ui-icon name="archive" [size]="17" />
+          {{
+            showArchived() ? ('leads.showActive' | translate) : ('leads.showArchived' | translate)
+          }}
+        </app-ui-button>
+      }
+    </div>
+  </header>
+
+  <div class="period-row">
+    <div class="period-switcher" role="group" [attr.aria-label]="'reports.period' | translate">
+      @for (period of periods(); track period.days ?? 'all') {
+        <button
+          type="button"
+          [class.is-active]="periodDays() === period.days"
+          [attr.aria-pressed]="periodDays() === period.days"
+          (click)="periodDays.set(period.days)"
+        >
+          {{ period.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="filters-stack">
+    <div class="filters" aria-label="{{ 'leads.filterAria' | translate }}">
+      <app-ui-text-field
+        class="filter-search"
+        [label]="'common.search' | translate"
+        type="search"
+        [placeholder]="'leads.searchPlaceholder' | translate"
+        [(value)]="query"
+      />
+
+      <app-ui-select
+        [label]="'leads.filter.callStatus' | translate"
+        [placeholder]="'leads.filter.all' | translate"
+        [options]="callStatusOptions()"
+        [(value)]="callStatusFilter"
+      />
+
+      <app-ui-select
+        [label]="'leads.filter.clientStatus' | translate"
+        [placeholder]="'leads.filter.all' | translate"
+        [options]="clientStatusOptions()"
+        [(value)]="clientStatusFilter"
+      />
+
+      <app-ui-select
+        [label]="'leads.filter.byManager' | translate"
+        [placeholder]="'leads.filter.all' | translate"
+        [options]="managerOptions()"
+        [(value)]="managerFilter"
+      />
+    </div>
+
+    @if (callStatusFilter() || clientStatusFilter() || managerFilter()) {
+      <div class="filter-chips" aria-live="polite">
+        <span></span>
+        <span>
+          @if (callStatusFilter(); as callStatus) {
+            <app-ui-chip
+              [label]="callStatusLabel(callStatus)"
+              [tone]="callStatusTone(callStatus)"
+              [removable]="true"
+              (removed)="clearFilter('call')"
+            >
+              {{ callStatusLabel(callStatus) }}
+            </app-ui-chip>
+          }
+        </span>
+        <span>
+          @if (clientStatusFilter(); as clientStatus) {
+            <app-ui-chip
+              [label]="clientStatusFilterLabel(clientStatus)"
+              [tone]="clientStatusFilterTone(clientStatus)"
+              [removable]="true"
+              (removed)="clearFilter('client')"
+            >
+              {{ clientStatusFilterLabel(clientStatus) }}
+            </app-ui-chip>
+          }
+        </span>
+        <span>
+          @if (managerFilter(); as managerId) {
+            <app-ui-chip
+              [label]="employeeName(managerId)"
+              [removable]="true"
+              (removed)="clearFilter('manager')"
+            >
+              {{ employeeName(managerId) }}
+            </app-ui-chip>
+          }
+        </span>
+      </div>
+    }
+  </div>
+
+  @if (loadError()) {
+    <app-ui-alert tone="danger" [title]="'leads.loadError' | translate">
+      {{ loadError() }}
+    </app-ui-alert>
+  }
+
+  @if (leadsResource.isLoading()) {
+    <div class="table-state" aria-live="polite">
+      @for (row of skeletonRows; track row) {
+        <span></span>
+      }
+    </div>
+  } @else if (!leads().length) {
+    <article class="empty-state">
+      <app-ui-icon name="inbox" [size]="30" />
+      <h2>{{ 'leads.emptyTitle' | translate }}</h2>
+      <p>{{ 'leads.emptyHint' | translate }}</p>
+    </article>
+  } @else {
+    <div class="table-panel">
+      <table [attr.aria-label]="'leads.tableAria' | translate">
+        <colgroup>
+          <col class="col-date" />
+          <col class="col-client" />
+          <col class="col-manager" />
+          <col class="col-call" />
+          <col class="col-status" />
+          <col class="col-comment" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">{{ 'common.date' | translate }}</th>
+            <th scope="col">{{ 'leads.colClient' | translate }}</th>
+            <th scope="col">{{ 'common.manager' | translate }}</th>
+            <th scope="col">{{ 'leads.colCall' | translate }}</th>
+            <th scope="col">{{ 'common.status' | translate }}</th>
+            <th scope="col">{{ 'leads.colComment' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (group of groupedLeads(); track group.key) {
+            <tr class="month-row">
+              <th scope="rowgroup" colspan="6">
+                <span>{{ group.label }}</span>
+                <small>{{ 'leads.count' | translate: { count: group.rows.length } }}</small>
+                @if (group.contractTotals.length) {
+                  <span class="month-total">
+                    @for (total of group.contractTotals; track total.currency) {
+                      <span>{{ formatMoney(total.total, total.currency) }}</span>
+                    }
+                  </span>
+                }
+              </th>
+            </tr>
+
+            @for (lead of group.rows; track lead.id) {
+              <tr
+                class="lead-row"
+                tabindex="0"
+                role="link"
+                [attr.aria-label]="'leads.openAria' | translate: { name: lead.name }"
+                (click)="openLead(lead)"
+                (keydown.enter)="openLead(lead)"
+              >
+                <td class="date-cell">
+                  <strong>{{ formatDayMonth(lead.sourceCreatedAt) }}</strong>
+                  <small>{{ formatTime(lead.sourceCreatedAt) }}</small>
+                </td>
+                <td class="client-cell">
+                  <strong>{{ lead.name }}</strong>
+                  <small>{{ lead.phone }}</small>
+                </td>
+                <td>
+                  @if (hasActiveManager(lead.assignedToId)) {
+                    <app-ui-user
+                      [userId]="lead.assignedToId!"
+                      [name]="employeeName(lead.assignedToId)"
+                      size="sm"
+                    />
+                  } @else {
+                    <span class="muted">{{ 'common.unassigned' | translate }}</span>
+                  }
+                </td>
+                <td>
+                  @if (lead.callStatus; as status) {
+                    <app-ui-badge [tone]="callStatusTone(status)">
+                      {{ callStatusLabel(status) }}
+                    </app-ui-badge>
+                    @if (lead.callStatusActor; as actor) {
+                      <small
+                        class="call-status-actor"
+                        [title]="actor.actorName"
+                        [style.margin-top.rem]="0.25"
+                      >
+                        {{ actor.actorName }}
+                      </small>
+                    }
+                    @if (status === 'callback_requested' && lead.callbackDueAt) {
+                      <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
+                    }
+                  } @else {
+                    <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>
+                  }
+                </td>
+                <td>
+                  <app-ui-badge [tone]="clientStatusToneForLead(lead)">
+                    {{ clientStatusLabelForLead(lead) }}
+                  </app-ui-badge>
+                  @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
+                    <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
+                  } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
+                    <app-lead-due-date class="status-due" [date]="showroomDueAt" />
+                  }
+                </td>
+                <td class="comment-cell">
+                  @if (lead.latestTimelineComment; as latest) {
+                    <span [title]="latest.comment">
+                      <app-linkified-text [text]="latest.comment" />
+                    </span>
+                    @if (commentContext(latest.category, latest.statusCode); as context) {
+                      <small>{{ context }}</small>
+                    }
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                  @if (commentDueAtForLead(lead); as commentDueAt) {
+                    <app-lead-due-date
+                      class="comment-next-action"
+                      [date]="commentDueAt"
+                      kind="comment"
+                    />
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (createDialogOpen()) {
+  <app-create-lead-dialog (dismissed)="closeCreateDialog()" (created)="onLeadCreated($event)" />
+}

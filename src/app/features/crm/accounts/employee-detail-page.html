@@ -1,0 +1,200 @@
+@if (employee(); as employee) {
+  <section class="employee-page" [attr.aria-labelledby]="'employee-' + employee.id">
+    <a class="back-link" routerLink="/crm/accounts">
+      <app-ui-icon name="arrow_back" [size]="17" />
+      {{ 'accounts.detail.back' | translate }}
+    </a>
+
+    @if (actionError()) {
+      <app-ui-alert tone="danger" [title]="'common.error' | translate">
+        {{ actionError() }}
+      </app-ui-alert>
+    }
+
+    @if (notice()) {
+      <div class="notice" role="status">{{ notice() }}</div>
+    }
+
+    <header class="employee-header">
+      <app-ui-user
+        class="employee-avatar"
+        [userId]="employee.id"
+        [name]="employee.displayName"
+        size="lg"
+        [showName]="false"
+        [ariaLabel]="employee.displayName"
+      />
+      <div>
+        <p class="page-kicker">{{ roleLabel(employee.role) }}</p>
+        <h1 [id]="'employee-' + employee.id">{{ employee.displayName }}</h1>
+        <p>{{ employee.email ?? ('accounts.detail.emailUnavailable' | translate) }}</p>
+        <small>ID: {{ employee.id }}</small>
+      </div>
+      <app-ui-badge [tone]="employee.status === 'active' ? 'success' : 'warning'">
+        {{
+          employee.status === 'active'
+            ? ('common.active' | translate)
+            : ('common.inactive' | translate)
+        }}
+      </app-ui-badge>
+    </header>
+
+    <div class="actions-bar">
+      @if (!editing()) {
+        <app-ui-button variant="secondary" (pressed)="startEditing(employee)">
+          {{ 'common.edit' | translate }}
+        </app-ui-button>
+        @if (employee.status === 'active' && !isSuperAdminEmployee(employee)) {
+          <app-ui-button variant="danger" (pressed)="deactivate(employee)">
+            {{ 'accounts.detail.deactivate' | translate }}
+          </app-ui-button>
+        }
+        @if (employee.status === 'inactive') {
+          <app-ui-button variant="secondary" (pressed)="reactivate(employee)">
+            {{ 'accounts.detail.reactivate' | translate }}
+          </app-ui-button>
+          @if (!isSuperAdminEmployee(employee)) {
+            <app-ui-button variant="danger" (pressed)="deletePermanently(employee)">
+              {{ 'accounts.detail.deleteForever' | translate }}
+            </app-ui-button>
+          }
+        }
+      } @else {
+        <app-ui-button variant="secondary" (pressed)="cancelEditing()">
+          {{ 'common.cancel' | translate }}
+        </app-ui-button>
+        <app-ui-button [disabled]="saving()" (pressed)="saveEdit(employee)">
+          {{ saving() ? ('common.saving' | translate) : ('common.save' | translate) }}
+        </app-ui-button>
+      }
+    </div>
+
+    @if (editing()) {
+      <section class="profile-panel edit-panel" aria-labelledby="edit-title">
+        <h2 id="edit-title">{{ 'accounts.detail.editTitle' | translate }}</h2>
+        <div class="edit-form">
+          <app-ui-text-field
+            [label]="'common.email' | translate"
+            type="email"
+            [(value)]="editEmail"
+          />
+          <app-ui-text-field [label]="'common.name' | translate" [(value)]="editDisplayName" />
+          <app-ui-text-field
+            [label]="'accounts.detail.newPasswordOptional' | translate"
+            type="password"
+            [(value)]="editPassword"
+          />
+          <app-ui-text-field
+            [label]="'accounts.detail.passwordConfirm' | translate"
+            type="password"
+            [(value)]="editPasswordConfirm"
+          />
+          <app-ui-select
+            [label]="'common.role' | translate"
+            [options]="assignableRoleOptions()"
+            [(value)]="editRole"
+          />
+          <fieldset class="office-fieldset">
+            <legend>{{ 'common.offices' | translate }}</legend>
+            @for (office of availableOffices(); track office.id) {
+              <label class="office-check">
+                <input
+                  type="checkbox"
+                  [checked]="isOfficeSelected(office.id)"
+                  (change)="toggleOffice(office.id)"
+                />
+                {{ officeLabel(office.code) }}
+              </label>
+            }
+          </fieldset>
+        </div>
+      </section>
+    }
+
+    <div class="employee-layout">
+      <section class="profile-panel" aria-labelledby="profile-title">
+        <h2 id="profile-title">{{ 'accounts.detail.profileAccess' | translate }}</h2>
+        <dl>
+          <div>
+            <dt>{{ 'common.office' | translate }}</dt>
+            <dd>{{ officeLabels(employee) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'accounts.detail.created' | translate }}</dt>
+            <dd>{{ formatDateTime(employee.createdAt) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'accounts.lastActivity' | translate }}</dt>
+            <dd>{{ formatDateTime(employee.lastActiveAt) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="profile-panel" aria-labelledby="permissions-title">
+        <h2 id="permissions-title">{{ 'accounts.detail.permissions' | translate }}</h2>
+        <ul class="permissions">
+          @for (permission of permissions(employee); track permission) {
+            <li>
+              <app-ui-icon name="check_circle" [size]="18" [filled]="true" />
+              {{ permission }}
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
+
+    <section class="leads-panel" aria-labelledby="employee-leads-title">
+      <header>
+        <h2 id="employee-leads-title">{{ 'accounts.detail.relatedLeads' | translate }}</h2>
+        <span>{{
+          'accounts.detail.recordsCount' | translate: { count: assignedLeads().length }
+        }}</span>
+      </header>
+
+      @if (assignedLeads().length) {
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'calendar.client' | translate }}</th>
+              <th>{{ 'common.status' | translate }}</th>
+              <th>{{ 'common.office' | translate }}</th>
+              <th>{{ 'accounts.lastActivity' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (lead of assignedLeads(); track lead.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/crm/leads', lead.id]">{{ lead.name }}</a>
+                  <small>{{ lead.phone }}</small>
+                </td>
+                <td>
+                  <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
+                    {{ i18n.clientStatusLabel(lead.clientStatus) }}
+                  </app-ui-badge>
+                  @if (lead.callStatus; as callStatus) {
+                    <small class="lead-call-status">
+                      <app-ui-badge [tone]="callStatusTone(callStatus)">
+                        {{ i18n.callStatusLabel(callStatus) }}
+                      </app-ui-badge>
+                    </small>
+                  }
+                </td>
+                <td>{{ officeLabel(lead.officeCode) }}</td>
+                <td>{{ formatDateTime(lead.lastActivityAt) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="empty">{{ 'accounts.detail.noAssignedLeads' | translate }}</p>
+      }
+    </section>
+  </section>
+} @else if (!employeeResource.isLoading()) {
+  <section class="missing-state">
+    <app-ui-icon name="inbox" [size]="30" />
+    <h1>{{ 'accounts.detail.notFound' | translate }}</h1>
+    <a routerLink="/crm/accounts">{{ 'accounts.detail.returnToAccounts' | translate }}</a>
+  </section>
+}

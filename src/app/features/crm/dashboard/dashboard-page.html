@@ -1,0 +1,212 @@
+<section class="dashboard-page" aria-labelledby="dashboard-title">
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">{{ 'dashboard.kicker' | translate }}</p>
+      <h1 id="dashboard-title">{{ 'dashboard.title' | translate }}</h1>
+      <p>{{ 'dashboard.subtitle' | translate }}</p>
+    </div>
+    <app-ui-button routerLink="/crm/leads">
+      <app-ui-icon name="view_kanban" [size]="17" />
+      {{ 'dashboard.openLeads' | translate }}
+    </app-ui-button>
+  </header>
+
+  <div class="dashboard-grid">
+    <article>
+      <span>{{ 'dashboard.metric.leads' | translate }}</span>
+      <strong>{{ overview()?.totalLeads ?? 0 }}</strong>
+      <app-ui-badge tone="brand">{{ 'dashboard.badge.live' | translate }}</app-ui-badge>
+    </article>
+    <article>
+      <span>{{ 'dashboard.metric.active' | translate }}</span>
+      <strong>{{ overview()?.activeLeads ?? 0 }}</strong>
+      <app-ui-badge tone="info">{{ 'dashboard.badge.statuses' | translate }}</app-ui-badge>
+    </article>
+    <article>
+      <span>{{ 'dashboard.metric.successful' | translate }}</span>
+      <strong>{{ overview()?.successfulLeads ?? 0 }}</strong>
+      <app-ui-badge tone="success">{{ 'dashboard.badge.contract' | translate }}</app-ui-badge>
+    </article>
+    <article>
+      <span>{{ 'dashboard.metric.employees' | translate }}</span>
+      <strong>{{ overview()?.employees ?? 0 }}</strong>
+      <app-ui-badge tone="neutral">{{ 'dashboard.badge.profiles' | translate }}</app-ui-badge>
+    </article>
+  </div>
+
+  <app-today-appointments-widget />
+
+  <section class="manager-tasks" aria-labelledby="manager-tasks-title">
+    <header class="manager-tasks__head">
+      <div>
+        <h2 id="manager-tasks-title">{{ 'dashboard.tasksTitle' | translate }}</h2>
+        <p>{{ 'dashboard.tasksHint' | translate }}</p>
+      </div>
+      <span class="manager-tasks__total">{{ taskCount() }}</span>
+    </header>
+
+    @if (leadsResource.isLoading()) {
+      <div class="loading" aria-live="polite">
+        @for (row of skeletonRows; track row) {
+          <span></span>
+        }
+      </div>
+    } @else if (!taskCount()) {
+      <p class="manager-tasks__empty">{{ 'dashboard.tasksEmpty' | translate }}</p>
+    } @else {
+      <div class="manager-tasks__groups">
+        @for (group of managerTasks(); track group.managerId) {
+          <section class="manager-tasks__group">
+            <h3 class="manager-tasks__manager">
+              <app-ui-user [userId]="group.managerId" [name]="group.managerName" size="sm" />
+              <span class="manager-tasks__group-count">{{
+                'dashboard.taskCount' | translate: { count: group.tasks.length }
+              }}</span>
+            </h3>
+            <ul class="manager-tasks__list">
+              @for (task of group.tasks; track task.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="lead-open task-open"
+                    [attr.data-lead-id]="task.id"
+                    [attr.aria-label]="i18n.t('dashboard.openLead', { name: task.name })"
+                    (click)="openLead(task)"
+                  >
+                    <span class="lead-main">
+                      <strong>{{ task.name }}</strong>
+                      <small>{{ task.phone }}</small>
+                      @if (task.latestTimelineComment; as latest) {
+                        <small class="lead-comment" [title]="latest.comment">
+                          <app-linkified-text [text]="latest.comment" />
+                        </small>
+                      }
+                    </span>
+                    @if (commentDueAtForLead(task); as due) {
+                      <app-lead-due-date class="task-due" [date]="due" kind="comment" />
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
+    }
+  </section>
+
+  <div class="reminders">
+    <div class="reminders-head">
+      <h2>{{ 'dashboard.remindersTitle' | translate }}</h2>
+      <p>{{ 'dashboard.remindersHint' | translate }}</p>
+    </div>
+
+    @if (leadsResource.isLoading()) {
+      <div class="loading" aria-live="polite">
+        @for (row of skeletonRows; track row) {
+          <span></span>
+        }
+      </div>
+    } @else if (loadError()) {
+      <p class="load-error" role="alert">{{ loadError() }}</p>
+    } @else {
+      @if (markerError()) {
+        <p class="load-error" role="alert">{{ markerError() }}</p>
+      }
+      <div class="groups">
+        @for (group of groups(); track group.key; let isFirst = $first) {
+          <details [class]="'group group-' + group.key" [open]="isFirst">
+            <summary>
+              <span class="group-title">
+                <app-ui-icon [name]="group.icon" [size]="18" />
+                {{ groupTitle(group.key) }}
+              </span>
+              <app-ui-badge [tone]="group.tone">{{ group.rows.length }}</app-ui-badge>
+              <app-ui-icon class="chevron" name="keyboard_arrow_down" [size]="20" />
+            </summary>
+
+            @if (group.rows.length) {
+              <ul class="lead-list">
+                @for (lead of group.rows; track lead.id) {
+                  <li class="lead-row">
+                    <button
+                      type="button"
+                      class="lead-open"
+                      [attr.data-lead-id]="lead.id"
+                      [attr.aria-label]="i18n.t('dashboard.openLead', { name: lead.name })"
+                      (click)="openLead(lead)"
+                    >
+                      <span class="lead-main">
+                        <strong>{{ lead.name }}</strong>
+                        <small>{{ lead.phone }}</small>
+                        @if (lead.latestTimelineComment; as latest) {
+                          <small class="lead-comment" [title]="latest.comment">
+                            {{ formatDayMonth(latest.occurredAt) }} ·
+                            <app-linkified-text [text]="latest.comment" />
+                          </small>
+                        }
+                        @if (commentDueAtForLead(lead); as commentDueAt) {
+                          <app-lead-due-date
+                            class="comment-next-action"
+                            [date]="commentDueAt"
+                            kind="comment"
+                          />
+                        }
+                      </span>
+                      <span class="lead-meta">
+                        @if (hasActiveManager(lead.assignedToId)) {
+                          <app-ui-user
+                            [userId]="lead.assignedToId!"
+                            [name]="employeeName(lead.assignedToId)"
+                            size="sm"
+                          />
+                        } @else {
+                          <span class="muted">{{ 'common.unassigned' | translate }}</span>
+                        }
+                        @if (lead.callStatus; as status) {
+                          <span class="lead-status">
+                            <app-ui-badge [tone]="callStatusTone(status)">
+                              {{ callStatusLabel(status) }}
+                            </app-ui-badge>
+                            @if (status === 'callback_requested' && lead.callbackDueAt) {
+                              <app-lead-due-date [date]="lead.callbackDueAt" />
+                            }
+                          </span>
+                        }
+                        @if (lead.clientStatus === 'thinking') {
+                          <span class="lead-status">
+                            <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
+                              {{ i18n.clientStatusLabel(lead.clientStatus) }}
+                            </app-ui-badge>
+                            @if (lead.callbackDueAt) {
+                              <app-lead-due-date [date]="lead.callbackDueAt" />
+                            }
+                          </span>
+                        } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
+                          <span class="lead-status">
+                            <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
+                              {{ i18n.clientStatusLabel(lead.clientStatus) }}
+                            </app-ui-badge>
+                            <app-lead-due-date [date]="showroomDueAt" />
+                          </span>
+                        }
+                        <time class="created-date">{{ formatDayMonth(lead.sourceCreatedAt) }}</time>
+                      </span>
+                    </button>
+                    <app-lead-marker-toggles
+                      [markers]="lead.markers"
+                      [pending]="pendingMarker(lead.id)"
+                      (toggled)="toggleMarker(lead, $event)"
+                    />
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="group-empty">{{ 'dashboard.emptyGroup' | translate }}</p>
+            }
+          </details>
+        }
+      </div>
+    }
+  </div>
+</section>
