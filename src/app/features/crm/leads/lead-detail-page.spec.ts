@@ -22,6 +22,7 @@ describe('LeadDetailView', () => {
     lead: MockLead,
     options: {
       role?: UserRole;
+      userId?: string;
       managers?: typeof CRM_MOCK_EMPLOYEES;
       updateLeadDetails?: ReturnType<typeof vi.fn>;
       translateHistoryEvent?: ReturnType<typeof vi.fn>;
@@ -58,6 +59,8 @@ describe('LeadDetailView', () => {
       from: '2026-08-03',
       to: '2026-08-04',
     }));
+    const role = options.role ?? 'office_member';
+    const userId = options.userId ?? 'emp-kyiv-1';
     await TestBed.configureTestingModule({
       imports: [LeadDetailView],
       providers: [
@@ -68,7 +71,13 @@ describe('LeadDetailView', () => {
         },
         {
           provide: AuthService,
-          useValue: { profile: () => ({ role: options.role ?? 'office_member' }) },
+          useValue: {
+            profile: () => ({ role }),
+            sessionContext: () => ({
+              user: { id: userId, email: 'test@kolss.test' },
+              profile: { role },
+            }),
+          },
         },
         {
           provide: LeadsService,
@@ -278,6 +287,80 @@ describe('LeadDetailView', () => {
     expect(firstTimelineUser.size()).toBe('xs');
     expect(fallbackTimelineUser.userId()).toBeNull();
     expect(fallbackTimelineUser.name()).toBe('Не призначено');
+  });
+
+  it('shows edit and delete actions only on own timeline events for managers', async () => {
+    const events: readonly LeadEvent[] = [
+      {
+        id: 'own-comment',
+        type: 'comment_added',
+        rawType: 'comment_added',
+        comment: 'Мій коментар',
+        newValue: null,
+        actorId: 'emp-kyiv-1',
+        actorName: 'Данило Мороз',
+        occurredAt: '2026-07-16T09:15:00.000Z',
+        category: 'comment',
+        statusCode: null,
+      },
+      {
+        id: 'other-status',
+        type: 'call_status_changed',
+        rawType: 'call_status_changed',
+        comment: 'Чужий статус',
+        newValue: { call_status: 'reached' },
+        actorId: 'emp-kyiv-2',
+        actorName: 'Софія Литвин',
+        occurredAt: '2026-07-16T08:30:00.000Z',
+        category: 'call_status',
+        statusCode: 'reached',
+      },
+    ];
+    const lead: MockLead = { ...CRM_MOCK_LEADS[2]!, events };
+    const { fixture } = await render(lead, { role: 'office_member', userId: 'emp-kyiv-1' });
+    const cards = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.timeline-card'),
+    );
+    expect(cards[0]!.querySelector('.timeline-card__actions')).toBeTruthy();
+    expect(cards[0]!.querySelector('button[aria-label="Редагувати"]')).toBeTruthy();
+    expect(cards[0]!.querySelector('button[aria-label="Видалити"]')).toBeTruthy();
+    expect(cards[1]!.querySelector('.timeline-card__actions')).toBeNull();
+  });
+
+  it('shows edit and delete actions on every timeline event for super admin', async () => {
+    const events: readonly LeadEvent[] = [
+      {
+        id: 'own-comment',
+        type: 'comment_added',
+        rawType: 'comment_added',
+        comment: 'Мій коментар',
+        newValue: null,
+        actorId: 'emp-kyiv-1',
+        actorName: 'Данило Мороз',
+        occurredAt: '2026-07-16T09:15:00.000Z',
+        category: 'comment',
+        statusCode: null,
+      },
+      {
+        id: 'other-status',
+        type: 'call_status_changed',
+        rawType: 'call_status_changed',
+        comment: 'Чужий статус',
+        newValue: { call_status: 'reached' },
+        actorId: 'emp-kyiv-2',
+        actorName: 'Софія Литвин',
+        occurredAt: '2026-07-16T08:30:00.000Z',
+        category: 'call_status',
+        statusCode: 'reached',
+      },
+    ];
+    const lead: MockLead = { ...CRM_MOCK_LEADS[2]!, events };
+    const { fixture } = await render(lead, { role: 'super_admin', userId: 'emp-super-admin' });
+    const cards = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.timeline-card'),
+    );
+    expect(cards[0]!.querySelector('.timeline-card__actions')).toBeTruthy();
+    expect(cards[1]!.querySelector('.timeline-card__actions')).toBeTruthy();
   });
 
   it('renders callback, thinking and showroom dates consistently in the timeline', async () => {
@@ -882,6 +965,34 @@ describe('LeadDetailView', () => {
     expect(rows[2]?.textContent).toContain('Коментар');
     expect(element.querySelector('.status-item--call .status-item__due')).toBeNull();
     expect(element.querySelector('.status-item--client .status-item__due')).toBeNull();
+  });
+
+  it('shows a showroom invitation reminder that can be cleared', async () => {
+    const lead: MockLead = {
+      ...CRM_MOCK_LEADS[2]!,
+      clientStatus: 'showroom_invited',
+      showroomDueAt: '2026-08-05T12:00:00.000Z',
+      callbackDueAt: null,
+      commentReminderDueAt: null,
+    };
+    const cleared: MockLead = { ...lead, showroomDueAt: null };
+    const { activities, fixture, getById } = await render(lead);
+    getById.mockResolvedValueOnce(cleared);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const row = element.querySelector<HTMLElement>('.reminder-row[data-kind="showroom"]');
+    expect(row?.textContent).toContain('Запрошення в шоурум');
+    expect(element.querySelector('.status-item--client .status-item__due')).toBeNull();
+    expect(element.querySelector('.status-item__appointment-link')).not.toBeNull();
+
+    row?.querySelector<HTMLButtonElement>('.reminder-row__clear')?.click();
+    await vi.waitFor(() => expect(activities.clearReminder).toHaveBeenCalledOnce());
+    expect(activities.clearReminder).toHaveBeenCalledWith(lead.id, 'showroom');
+    await vi.waitFor(() =>
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('.reminder-row[data-kind="showroom"]'),
+      ).toBeNull(),
+    );
   });
 
   it('clears a reminder date without leaving the strip when other reminders remain', async () => {

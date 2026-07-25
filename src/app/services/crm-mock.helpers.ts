@@ -556,7 +556,7 @@ export function commentDueAtForLead(lead: { commentReminderDueAt: string | null 
   return lead.commentReminderDueAt;
 }
 
-export type LeadReminderKind = 'callback' | 'thinking' | 'comment';
+export type LeadReminderKind = 'callback' | 'thinking' | 'comment' | 'showroom';
 
 export interface LeadActiveReminder {
   readonly kind: LeadReminderKind;
@@ -565,13 +565,16 @@ export interface LeadActiveReminder {
 
 /**
  * Active due-dated reminders shown at the top of the lead card.
- * Callback and thinking share leads.callbackDueAt; comment uses the derived field.
+ * Callback and thinking share leads.callbackDueAt; comment uses the derived
+ * field; showroom uses the scheduled visit date.
  */
 export function activeRemindersForLead(lead: {
   callStatus: string | null;
   clientStatus: string;
   callbackDueAt: string | null;
   commentReminderDueAt: string | null;
+  callbackDueContext?: { category: string; statusCode: string | null } | null;
+  showroomDueAt?: string | null;
 }): readonly LeadActiveReminder[] {
   const reminders: LeadActiveReminder[] = [];
   if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
@@ -579,6 +582,10 @@ export function activeRemindersForLead(lead: {
   }
   if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
     reminders.push({ kind: 'thinking', dueAt: lead.callbackDueAt });
+  }
+  const showroomDueAt = showroomDueAtForLead(lead);
+  if (showroomDueAt) {
+    reminders.push({ kind: 'showroom', dueAt: showroomDueAt });
   }
   if (lead.commentReminderDueAt) {
     reminders.push({ kind: 'comment', dueAt: lead.commentReminderDueAt });

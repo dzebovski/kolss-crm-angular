@@ -168,7 +168,11 @@ export class LeadDetailView {
     return error instanceof Error ? error.message : error ? String(error) : '';
   });
   protected readonly timelineEvents = computed(() => this.lead()?.events ?? []);
-  protected readonly canEditTimeline = computed(() => isSuperAdminRole(this.auth.profile()?.role));
+  protected canMutateEvent(event: LeadEvent): boolean {
+    if (isSuperAdminRole(this.auth.profile()?.role)) return true;
+    const userId = this.auth.sessionContext()?.user.id;
+    return Boolean(userId && event.actorId && event.actorId === userId);
+  }
   protected readonly activeReminders = computed(() => {
     const lead = this.lead();
     return lead ? activeRemindersForLead(lead) : [];
@@ -299,7 +303,7 @@ export class LeadDetailView {
   }
 
   protected async editEvent(lead: MockLead, event: LeadEvent): Promise<void> {
-    if (!this.canEditTimeline()) return;
+    if (!this.canMutateEvent(event)) return;
     const result = await this.openTextDialog({
       eyebrow: this.i18n.t('leadDetail.history'),
       title: this.i18n.t('lead.editHistory'),
@@ -317,7 +321,7 @@ export class LeadDetailView {
   }
 
   protected askDeleteEvent(event: LeadEvent): void {
-    if (!this.canEditTimeline()) return;
+    if (!this.canMutateEvent(event)) return;
     this.deleteEventTarget.set(event);
   }
 
@@ -370,7 +374,9 @@ export class LeadDetailView {
     return kind === 'comment' ? 'comment' : 'status';
   }
 
-  protected reminderIcon(kind: LeadReminderKind): 'phone_in_talk' | 'schedule' | 'campaign' {
+  protected reminderIcon(
+    kind: LeadReminderKind,
+  ): 'phone_in_talk' | 'schedule' | 'campaign' | 'calendar_month' {
     switch (kind) {
       case 'callback':
         return 'phone_in_talk';
@@ -378,6 +384,8 @@ export class LeadDetailView {
         return 'schedule';
       case 'comment':
         return 'campaign';
+      case 'showroom':
+        return 'calendar_month';
     }
   }
 
@@ -393,7 +401,7 @@ export class LeadDetailView {
 
   protected async confirmDeleteEvent(lead: MockLead): Promise<void> {
     const target = this.deleteEventTarget();
-    if (!target || !this.canEditTimeline()) return;
+    if (!target || !this.canMutateEvent(target)) return;
     await this.runActivity(() => this.leadsService.deleteHistoryEvent(lead.id, target.id));
     this.deleteEventTarget.set(null);
   }

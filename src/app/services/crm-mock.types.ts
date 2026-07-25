@@ -290,6 +290,6 @@ export type LeadActivityPayload =
     }
   | {
       readonly type: 'clear_reminder';
-      readonly kind: 'callback' | 'thinking' | 'comment';
+      readonly kind: 'callback' | 'thinking' | 'comment' | 'showroom';
     }
   | { readonly type: 'reopen' };

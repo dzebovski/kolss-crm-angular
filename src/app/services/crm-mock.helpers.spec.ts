@@ -65,17 +65,19 @@ describe('independent due dates', () => {
 });
 
 describe('activeRemindersForLead', () => {
-  it('lists callback, thinking, and comment reminders with due dates', () => {
+  it('lists callback, thinking, showroom, and comment reminders with due dates', () => {
     expect(
       activeRemindersForLead({
         callStatus: 'callback_requested',
         clientStatus: 'thinking',
         callbackDueAt: '2026-07-25T12:00:00.000Z',
         commentReminderDueAt: '2026-07-26T12:00:00.000Z',
+        showroomDueAt: '2026-08-05T12:00:00.000Z',
       }),
     ).toEqual([
       { kind: 'callback', dueAt: '2026-07-25T12:00:00.000Z' },
       { kind: 'thinking', dueAt: '2026-07-25T12:00:00.000Z' },
+      { kind: 'showroom', dueAt: '2026-08-05T12:00:00.000Z' },
       { kind: 'comment', dueAt: '2026-07-26T12:00:00.000Z' },
     ]);
   });
@@ -87,6 +89,7 @@ describe('activeRemindersForLead', () => {
         clientStatus: 'thinking',
         callbackDueAt: null,
         commentReminderDueAt: null,
+        showroomDueAt: null,
       }),
     ).toEqual([]);
   });

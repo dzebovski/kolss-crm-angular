@@ -648,6 +648,10 @@
     border-color: color-mix(in srgb, var(--ui-warning) 32%, var(--ui-border));
     background: color-mix(in srgb, var(--ui-warning) 10%, white);
   }
+  .reminder-row[data-kind='showroom'] {
+    border-color: color-mix(in srgb, var(--ui-info) 32%, var(--ui-border));
+    background: color-mix(in srgb, var(--ui-info) 9%, white);
+  }
   .reminder-row__icon {
     width: 1.85rem;
     height: 1.85rem;
@@ -662,6 +666,9 @@
   }
   .reminder-row[data-kind='comment'] .reminder-row__icon {
     color: var(--ui-warning);
+  }
+  .reminder-row[data-kind='showroom'] .reminder-row__icon {
+    color: var(--ui-info);
   }
   .reminder-row__copy {
     min-width: 0;

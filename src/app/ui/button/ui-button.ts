@@ -16,6 +16,8 @@ export type UiButtonSize = 'small' | 'medium' | 'large';
       [class.ui-button--large]="size() === 'large'"
       [class.ui-button--block]="block()"
       [attr.type]="type()"
+      [attr.title]="title() || null"
+      [attr.aria-label]="ariaLabel() || null"
       [attr.aria-busy]="loading()"
       [disabled]="disabled() || loading()"
       (click)="pressed.emit()"
@@ -136,5 +138,7 @@ export class UiButton {
   readonly disabled = input(false);
   readonly loading = input(false);
   readonly block = input(false);
+  readonly title = input('');
+  readonly ariaLabel = input('');
   readonly pressed = output<void>();
 }

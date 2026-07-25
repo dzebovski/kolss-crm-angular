@@ -240,18 +240,15 @@
           <app-ui-badge [tone]="clientToneForLead(lead)">
             {{ clientStatusLabelForLead(lead) }}
           </app-ui-badge>
-          @if (lead.clientStatus !== 'thinking' && showroomDueAtForLead(lead); as showroomDueAt) {
-            <app-lead-due-date class="status-item__due" [date]="showroomDueAt" />
-            @if (calendarAppointmentQueryParams(lead); as appointmentQuery) {
-              <a
-                class="status-item__appointment-link"
-                routerLink="/crm/calendar"
-                [queryParams]="appointmentQuery"
-              >
-                <app-ui-icon name="calendar_month" [size]="14" />
-                {{ i18n.t('leadDetail.openAppointment') }}
-              </a>
-            }
+          @if (showroomDueAtForLead(lead) && calendarAppointmentQueryParams(lead); as appointmentQuery) {
+            <a
+              class="status-item__appointment-link"
+              routerLink="/crm/calendar"
+              [queryParams]="appointmentQuery"
+            >
+              <app-ui-icon name="calendar_month" [size]="14" />
+              {{ i18n.t('leadDetail.openAppointment') }}
+            </a>
           }
           <small>
             {{
@@ -396,13 +393,13 @@
               <article class="timeline-card">
                 <header class="timeline-card__header">
                   <strong>{{ eventTitle(event) }}</strong>
-                  @if (canEditTimeline()) {
+                  @if (canMutateEvent(event)) {
                     <div class="timeline-card__actions">
                       <app-ui-button
                         variant="ghost"
                         size="small"
-                        [attr.title]="i18n.t('common.edit')"
-                        [attr.aria-label]="i18n.t('common.edit')"
+                        [title]="i18n.t('common.edit')"
+                        [ariaLabel]="i18n.t('common.edit')"
                         [disabled]="actionPending()"
                         (pressed)="editEvent(lead, event)"
                       >
@@ -411,8 +408,8 @@
                       <app-ui-button
                         variant="ghost"
                         size="small"
-                        [attr.title]="i18n.t('common.delete')"
-                        [attr.aria-label]="i18n.t('common.delete')"
+                        [title]="i18n.t('common.delete')"
+                        [ariaLabel]="i18n.t('common.delete')"
                         [disabled]="actionPending()"
                         (pressed)="askDeleteEvent(event)"
                       >

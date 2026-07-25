@@ -97,10 +97,12 @@ describe('LeadActivitiesService', () => {
     await service.clearReminder('lead-1', 'callback');
     await service.clearReminder('lead-1', 'thinking');
     await service.clearReminder('lead-1', 'comment');
+    await service.clearReminder('lead-1', 'showroom');
     expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
       { type: 'clear_reminder', kind: 'callback' },
       { type: 'clear_reminder', kind: 'thinking' },
       { type: 'clear_reminder', kind: 'comment' },
+      { type: 'clear_reminder', kind: 'showroom' },
     ]);
   });
 });

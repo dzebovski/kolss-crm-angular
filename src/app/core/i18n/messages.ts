@@ -593,6 +593,11 @@ export const messages = {
   'leadDetail.reminder.callback': { uk: 'Callback', pl: 'Callback', en: 'Callback' },
   'leadDetail.reminder.thinking': { uk: 'Думає', pl: 'Myśli', en: 'Thinking' },
   'leadDetail.reminder.comment': { uk: 'Коментар', pl: 'Komentarz', en: 'Comment' },
+  'leadDetail.reminder.showroom': {
+    uk: 'Запрошення в шоурум',
+    pl: 'Zaproszenie do salonu',
+    en: 'Showroom invitation',
+  },
   'leadDetail.clearReminder': {
     uk: 'Скинути нагадування',
     pl: 'Wyczyść przypomnienie',
