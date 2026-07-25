@@ -2,11 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { SessionService } from '../../../core/session/session.service';
-import { CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import { AppointmentsService } from '../../../services/appointments.service';
-import { LeadsService } from '../../../services/leads.service';
+import { AuthService } from '@core/auth/auth.service';
+import { SessionService } from '@core/session/session.service';
+import { CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import { AppointmentsService } from '@services/appointments.service';
+import { LeadsService } from '@services/leads.service';
 import { AppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 
 describe('AppointmentDrawer', () => {

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { SessionService } from '../../../core/session/session.service';
+import { SessionService } from '@core/session/session.service';
 import { LeadDueDate } from './lead-due-date';
 
 describe('LeadDueDate', () => {

@@ -1,15 +1,15 @@
 import { Component, computed, effect, inject, InjectionToken, output, signal } from '@angular/core';
 
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { normalizePhoneForOffice } from '../../../core/phone/phone';
-import { SessionService } from '../../../core/session/session.service';
-import type { LeadSource } from '../../../services/crm-mock.types';
-import { LeadsService } from '../../../services/leads.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiModal } from '../../../ui/dialog/ui-modal';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiTextField } from '../../../ui/form/ui-text-field';
-import { UiTextarea } from '../../../ui/form/ui-textarea';
+import { I18nService } from '@core/i18n/i18n.service';
+import { normalizePhoneForOffice } from '@core/phone/phone';
+import { SessionService } from '@core/session/session.service';
+import type { LeadSource } from '@services/crm-mock.types';
+import { LeadsService } from '@services/leads.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiModal } from '@ui/dialog/ui-modal';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiTextField } from '@ui/form/ui-text-field';
+import { UiTextarea } from '@ui/form/ui-textarea';
 
 const OFFICE_TIME_ZONES: Readonly<Record<string, string>> = {
   kyiv: 'Europe/Kyiv',

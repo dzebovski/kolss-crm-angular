@@ -2,16 +2,16 @@ import { Component, computed, inject, input, output, resource, signal } from '@a
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { KolssApiError } from '../../../core/api/generated/kolss-api.client';
+import { AuthService } from '@core/auth/auth.service';
+import { KolssApiError } from '@core/api/generated/kolss-api.client';
 import {
   presentEventBodyFromLeadEvent,
   presentEventTitleFromLeadEvent,
   presentHistoryAuditText,
-} from '../../../core/i18n/event-presenter';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { canArchiveLeads, canEditLeads, isSuperAdminRole } from '../../../core/roles/roles';
-import { SessionService } from '../../../core/session/session.service';
+} from '@core/i18n/event-presenter';
+import { I18nService } from '@core/i18n/i18n.service';
+import { canArchiveLeads, canEditLeads, isSuperAdminRole } from '@core/roles/roles';
+import { SessionService } from '@core/session/session.service';
 import {
   activeRemindersForLead,
   callStatusTone,
@@ -24,41 +24,41 @@ import {
   showroomDueAtForLead,
   type LeadActiveReminder,
   type LeadReminderKind,
-} from '../../../services/crm-mock.helpers';
+} from '@services/crm-mock.helpers';
 import type {
   CallStatus,
   ClientStatus,
   LeadEvent,
   LeadMarkerKind,
   MockLead,
-} from '../../../services/crm-mock.types';
-import { LeadActivitiesService } from '../../../services/lead-activities.service';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
+} from '@services/crm-mock.types';
+import { LeadActivitiesService } from '@services/lead-activities.service';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
 import {
   addCalendarDays,
   AppointmentsService,
   calendarAppointmentDeepLink,
   type CalendarAppointmentDeepLink,
   officeDateKey,
-} from '../../../services/appointments.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiModal } from '../../../ui/dialog/ui-modal';
-import { UiBadge, type UiBadgeTone } from '../../../ui/feedback/ui-badge';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { LinkifiedText } from '../../../ui/text/linkified-text';
-import { UiUser } from '../../../ui/user/ui-user';
+} from '@services/appointments.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiModal } from '@ui/dialog/ui-modal';
+import { UiBadge, type UiBadgeTone } from '@ui/feedback/ui-badge';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { LinkifiedText } from '@ui/text/linkified-text';
+import { UiUser } from '@ui/user/ui-user';
 import { LeadDueDate, type LeadDueDateKind } from './lead-due-date';
 import { LeadMarkerToggles } from './lead-marker-toggles';
-import { RadialActionDialog } from '../../../pages/design/radial-menu/radial-action-dialog';
-import type { RadialActionDialogData } from '../../../pages/design/radial-menu/radial-action-dialog';
+import { RadialActionDialog } from '@ui/radial/radial-action-dialog';
+import type { RadialActionDialogData } from '@ui/radial/radial-action-dialog';
 import {
   CALL_RADIAL_LAYOUT,
   type RadialAction,
   type RadialLayoutConfig,
-} from '../../../pages/design/radial-menu/radial-menu.types';
+} from '@ui/radial/radial-menu.types';
 import {
   CloseStatusDialog,
   type CloseStatusResult,
@@ -76,7 +76,7 @@ import {
   AppointmentDrawer,
   type AppointmentDrawerData,
   type AppointmentDrawerResult,
-} from '../calendar/appointment-drawer';
+} from '@features/crm/calendar/appointment-drawer';
 
 const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label' | 'tone'>[] = [
   { id: 'reached', icon: 'check_circle' },

@@ -2,10 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
-import { SessionService } from '../../../core/session/session.service';
-import { AppointmentsService } from '../../../services/appointments.service';
-import { UsersService } from '../../../services/users.service';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import { SessionService } from '@core/session/session.service';
+import { AppointmentsService } from '@services/appointments.service';
+import { UsersService } from '@services/users.service';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
 import { TodayAppointmentsWidget } from './today-appointments-widget';
 
 describe('TodayAppointmentsWidget', () => {

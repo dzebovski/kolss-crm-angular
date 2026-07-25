@@ -4,21 +4,21 @@ import { form, FormField, required, submit } from '@angular/forms/signals';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 
-import { KolssApiError } from '../../../core/api/generated/kolss-api.client';
-import type { Appointment } from '../../../core/api/generated/kolss-api.types';
-import { AuthService } from '../../../core/auth/auth.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import type { Office } from '../../../models/database';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { AppointmentsService, officeDateTimeParts } from '../../../services/appointments.service';
-import { LeadsService } from '../../../services/leads.service';
-import type { CrmEmployee } from '../../../services/users.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiTextField } from '../../../ui/form/ui-text-field';
-import { UiTextarea } from '../../../ui/form/ui-textarea';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import { KolssApiError } from '@core/api/generated/kolss-api.client';
+import type { Appointment } from '@core/api/generated/kolss-api.types';
+import { AuthService } from '@core/auth/auth.service';
+import { I18nService } from '@core/i18n/i18n.service';
+import type { Office } from '@models/database';
+import type { MockLead } from '@services/crm-mock.types';
+import { AppointmentsService, officeDateTimeParts } from '@services/appointments.service';
+import { LeadsService } from '@services/leads.service';
+import type { CrmEmployee } from '@services/users.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiTextField } from '@ui/form/ui-text-field';
+import { UiTextarea } from '@ui/form/ui-textarea';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
 
 export interface AppointmentDrawerData {
   readonly office: Office;

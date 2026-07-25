@@ -1,4 +1,4 @@
-import type { UserRole } from '../../models/database';
+import type { UserRole } from '@models/database';
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: 'Супер-адмін',

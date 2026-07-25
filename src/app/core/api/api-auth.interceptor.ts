@@ -2,9 +2,9 @@ import { HttpErrorResponse, HttpInterceptorFn, HttpRequest } from '@angular/comm
 import { inject } from '@angular/core';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
-import { ImpersonationService } from '../auth/impersonation.service';
-import { SupabaseService } from '../supabase/supabase.service';
+import { environment } from '@env/environment';
+import { ImpersonationService } from '@core/auth/impersonation.service';
+import { SupabaseService } from '@core/supabase/supabase.service';
 
 const IMPERSONATE_HEADER = 'X-Impersonate-User-Id';
 

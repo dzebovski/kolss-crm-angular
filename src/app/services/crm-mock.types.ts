@@ -1,4 +1,4 @@
-import type { UserRole } from '../models/database';
+import type { UserRole } from '@models/database';
 
 export type OfficeId = 'kyiv' | 'warsaw';
 export type OfficeFilter = 'all' | OfficeId;

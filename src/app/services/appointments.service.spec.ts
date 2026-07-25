@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
-import type { Appointment } from '../core/api/generated/kolss-api.types';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import type { Appointment } from '@core/api/generated/kolss-api.types';
 import {
   addCalendarDays,
   addCalendarMonths,

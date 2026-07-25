@@ -1,11 +1,11 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { SessionService } from '../../../core/session/session.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiAlert } from '../../../ui/feedback/ui-alert';
-import { UiTextField } from '../../../ui/form/ui-text-field';
+import { I18nService } from '@core/i18n/i18n.service';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { SessionService } from '@core/session/session.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiAlert } from '@ui/feedback/ui-alert';
+import { UiTextField } from '@ui/form/ui-text-field';
 import { ManagerReportSection } from './manager-report-section';
 import { ReportSummary } from './report-summary';
 import { ReportsService } from './reports.service';

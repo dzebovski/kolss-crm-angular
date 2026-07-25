@@ -7,8 +7,8 @@ import {
 } from '@angular/cdk/overlay';
 import { Component, computed, input, model, output, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { UiIcon } from '../icon/ui-icon';
-import { UiUser } from '../user/ui-user';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { UiUser } from '@ui/user/ui-user';
 
 export interface UiSelectOption {
   readonly value: string;

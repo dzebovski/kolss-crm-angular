@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import axe from 'axe-core';
 
-import { SessionService } from '../../../core/session/session.service';
-import { CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { LeadsService } from '../../../services/leads.service';
+import { SessionService } from '@core/session/session.service';
+import { CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import type { MockLead } from '@services/crm-mock.types';
+import { LeadsService } from '@services/leads.service';
 import { EditLeadDialog } from './edit-lead-dialog';
 
 describe('EditLeadDialog', () => {

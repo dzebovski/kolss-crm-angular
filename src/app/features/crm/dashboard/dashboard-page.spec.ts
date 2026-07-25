@@ -3,12 +3,12 @@ import { provideRouter, Router } from '@angular/router';
 import axe from 'axe-core';
 import { of } from 'rxjs';
 
-import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
-import { SessionService } from '../../../core/session/session.service';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { SessionService } from '@core/session/session.service';
+import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
 import { DashboardPage } from './dashboard-page';
 
 describe('DashboardPage lead workflow', () => {

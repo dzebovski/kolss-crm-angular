@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { UiIcon, UiIconName } from '../icon/ui-icon';
+import { UiIcon, UiIconName } from '@ui/icon/ui-icon';
 import { UiButtonVariant } from './ui-button';
 
 @Component({

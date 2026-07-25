@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import { LeadActivitiesService } from './lead-activities.service';
 
 describe('LeadActivitiesService', () => {

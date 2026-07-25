@@ -2,11 +2,11 @@ import { Component, computed, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import type { MessageKey } from '../../../core/i18n/messages';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { SessionService } from '../../../core/session/session.service';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { I18nService } from '@core/i18n/i18n.service';
+import type { MessageKey } from '@core/i18n/messages';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { SessionService } from '@core/session/session.service';
 import {
   callStatusTone,
   commentAssigneeForLead,
@@ -14,24 +14,24 @@ import {
   clientStatusTone,
   groupLeadsForDashboard,
   showroomDueAtForLead,
-} from '../../../services/crm-mock.helpers';
-import type { LeadMarkerKind, MockLead } from '../../../services/crm-mock.types';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiBadge } from '../../../ui/feedback/ui-badge';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { LinkifiedText } from '../../../ui/text/linkified-text';
-import { UiUser } from '../../../ui/user/ui-user';
+} from '@services/crm-mock.helpers';
+import type { LeadMarkerKind, MockLead } from '@services/crm-mock.types';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiBadge } from '@ui/feedback/ui-badge';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { LinkifiedText } from '@ui/text/linkified-text';
+import { UiUser } from '@ui/user/ui-user';
 import {
   LeadDetailDrawer,
   type LeadDetailDrawerData,
   type LeadDetailDrawerResult,
   type LeadDetailDrawerState,
-} from '../leads/lead-detail-drawer';
-import { LeadMarkerToggles } from '../leads/lead-marker-toggles';
-import { LeadDueDate } from '../leads/lead-due-date';
+} from '@features/crm/leads/lead-detail-drawer';
+import { LeadMarkerToggles } from '@features/crm/leads/lead-marker-toggles';
+import { LeadDueDate } from '@features/crm/leads/lead-due-date';
 import { TodayAppointmentsWidget } from './today-appointments-widget';
 
 interface ManagerTaskGroup {

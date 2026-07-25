@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { UiIcon, UiIconName } from '../icon/ui-icon';
+import { UiIcon, UiIconName } from '@ui/icon/ui-icon';
 
 export type UiAlertTone = 'info' | 'success' | 'warning' | 'danger';
 

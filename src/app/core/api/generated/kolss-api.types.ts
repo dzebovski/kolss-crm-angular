@@ -1,11 +1,11 @@
-import type { Office, Profile } from '../../../models/database';
+import type { Office, Profile } from '@models/database';
 import type {
   ContactAttemptRow,
   ContractRow,
   LeadEventRow,
   LeadListRow,
   ShowroomVisitRow,
-} from '../../../services/leads.mapper';
+} from '@services/leads.mapper';
 
 export const API_CONTRACT_VERSION = '2.6.0' as const;
 

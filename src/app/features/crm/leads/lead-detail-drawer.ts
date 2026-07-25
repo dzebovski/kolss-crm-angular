@@ -1,7 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
-import { UiIconButton } from '../../../ui/button/ui-icon-button';
+import { UiIconButton } from '@ui/button/ui-icon-button';
 import { LeadDetailView } from './lead-detail-page';
 
 export interface LeadDetailDrawerData {

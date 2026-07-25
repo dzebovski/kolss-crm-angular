@@ -3,9 +3,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
-import { ImpersonationService } from '../auth/impersonation.service';
-import { SupabaseService } from '../supabase/supabase.service';
+import { environment } from '@env/environment';
+import { ImpersonationService } from '@core/auth/impersonation.service';
+import { SupabaseService } from '@core/supabase/supabase.service';
 import { apiAuthInterceptor } from './api-auth.interceptor';
 
 describe('apiAuthInterceptor', () => {

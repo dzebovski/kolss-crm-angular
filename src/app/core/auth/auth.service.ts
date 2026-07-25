@@ -2,10 +2,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import type { Session } from '@supabase/supabase-js';
 
-import type { Profile, SessionContext } from '../../models/database';
-import { KolssApiClient } from '../api/generated/kolss-api.client';
-import type { MeResponse } from '../api/generated/kolss-api.types';
-import { SupabaseService } from '../supabase/supabase.service';
+import type { Profile, SessionContext } from '@models/database';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import type { MeResponse } from '@core/api/generated/kolss-api.types';
+import { SupabaseService } from '@core/supabase/supabase.service';
 import { ImpersonationService } from './impersonation.service';
 
 function isInvalidImpersonationError(error: unknown): boolean {

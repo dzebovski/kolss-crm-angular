@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
-import { AuthService } from '../core/auth/auth.service';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { AuthService } from '@core/auth/auth.service';
 import { AdminUsersService } from './admin-users.service';
 import { UsersService } from './users.service';
 

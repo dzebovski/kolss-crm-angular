@@ -1,5 +1,5 @@
-import { UiIconName } from '../../../ui/icon/ui-icon';
-import type { UiBadgeTone } from '../../../ui/feedback/ui-badge';
+import { UiIconName } from '@ui/icon/ui-icon';
+import type { UiBadgeTone } from '@ui/feedback/ui-badge';
 
 export type CallOutcome = 'success' | 'no_answer' | 'call_back';
 export type RadialActionTone = UiBadgeTone;

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
-import { AuthService } from '../core/auth/auth.service';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { AuthService } from '@core/auth/auth.service';
 import { LeadsService } from './leads.service';
 import type { LeadListRow } from './leads.mapper';
 

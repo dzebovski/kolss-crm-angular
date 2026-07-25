@@ -2,13 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { SessionService } from '../../../core/session/session.service';
-import { CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { LeadsService, type LeadsListFilters } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { UiSelect } from '../../../ui/form/ui-select';
+import { AuthService } from '@core/auth/auth.service';
+import { SessionService } from '@core/session/session.service';
+import { CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import type { MockLead } from '@services/crm-mock.types';
+import { LeadsService, type LeadsListFilters } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { UiSelect } from '@ui/form/ui-select';
 import { LeadsPage } from './leads-page';
 
 describe('LeadsPage', () => {

@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 
-import { setActiveLocale } from '../../../core/i18n/locale-storage';
-import { SessionService } from '../../../core/session/session.service';
-import { LeadsService } from '../../../services/leads.service';
+import { setActiveLocale } from '@core/i18n/locale-storage';
+import { SessionService } from '@core/session/session.service';
+import { LeadsService } from '@services/leads.service';
 import { CREATE_LEAD_NOW, CreateLeadDialog } from './create-lead-dialog';
 
 describe('CreateLeadDialog', () => {

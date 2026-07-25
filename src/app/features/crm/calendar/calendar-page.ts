@@ -12,10 +12,10 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import type { Appointment } from '../../../core/api/generated/kolss-api.types';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { SessionService } from '../../../core/session/session.service';
-import type { Office } from '../../../models/database';
+import type { Appointment } from '@core/api/generated/kolss-api.types';
+import { I18nService } from '@core/i18n/i18n.service';
+import { SessionService } from '@core/session/session.service';
+import type { Office } from '@models/database';
 import {
   addCalendarDays,
   addCalendarMonths,
@@ -28,21 +28,21 @@ import {
   officeDateTimeParts,
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
-} from '../../../services/appointments.service';
-import { commentAssigneeForLead, commentDueAtForLead } from '../../../services/crm-mock.helpers';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiIcon, type UiIconName } from '../../../ui/icon/ui-icon';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+} from '@services/appointments.service';
+import { commentAssigneeForLead, commentDueAtForLead } from '@services/crm-mock.helpers';
+import type { MockLead } from '@services/crm-mock.types';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
 import {
   LeadDetailDrawer,
   type LeadDetailDrawerData,
   type LeadDetailDrawerResult,
   type LeadDetailDrawerState,
-} from '../leads/lead-detail-drawer';
+} from '@features/crm/leads/lead-detail-drawer';
 import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 import { CalendarDayReminders, type CalendarReminder } from './calendar-day-reminders';
 

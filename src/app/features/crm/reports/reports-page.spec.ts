@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import axe from 'axe-core';
 import { vi } from 'vitest';
 
-import { KolssApiClient } from '../../../core/api/generated/kolss-api.client';
-import { SessionService } from '../../../core/session/session.service';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { SessionService } from '@core/session/session.service';
 import type { LeadReportResponse } from './reports.types';
 import { ReportsPage } from './reports-page';
 

@@ -1,21 +1,21 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { SessionService } from '../../../core/session/session.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { ASSIGNABLE_ROLES } from '../../../core/roles/roles';
-import type { UserRole } from '../../../models/database';
-import { formatDateTime } from '../../../services/crm-mock.helpers';
-import { UsersService, type CrmEmployee } from '../../../services/users.service';
-import type { OfficeFilter } from '../../../services/crm-mock.types';
-import { UiAlert } from '../../../ui/feedback/ui-alert';
-import { UiBadge, type UiBadgeTone } from '../../../ui/feedback/ui-badge';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { UiUser } from '../../../ui/user/ui-user';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiTextField } from '../../../ui/form/ui-text-field';
+import { SessionService } from '@core/session/session.service';
+import { I18nService } from '@core/i18n/i18n.service';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { ASSIGNABLE_ROLES } from '@core/roles/roles';
+import type { UserRole } from '@models/database';
+import { formatDateTime } from '@services/crm-mock.helpers';
+import { UsersService, type CrmEmployee } from '@services/users.service';
+import type { OfficeFilter } from '@services/crm-mock.types';
+import { UiAlert } from '@ui/feedback/ui-alert';
+import { UiBadge, type UiBadgeTone } from '@ui/feedback/ui-badge';
+import { UiButton } from '@ui/button/ui-button';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { UiUser } from '@ui/user/ui-user';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiTextField } from '@ui/form/ui-text-field';
 
 @Component({
   selector: 'app-accounts-page',

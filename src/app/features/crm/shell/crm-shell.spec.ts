@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { ImpersonationService } from '../../../core/auth/impersonation.service';
-import { SessionService } from '../../../core/session/session.service';
+import { AuthService } from '@core/auth/auth.service';
+import { ImpersonationService } from '@core/auth/impersonation.service';
+import { SessionService } from '@core/session/session.service';
 import { CrmShell } from './crm-shell';
 
 describe('CrmShell', () => {

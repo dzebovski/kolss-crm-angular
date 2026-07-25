@@ -1,13 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Observable, filter, map, of, switchMap } from 'rxjs';
 
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { DesignHeader } from '../design-header';
-import { CallCommentDialog, CallCommentDialogData } from './call-comment-dialog';
-import { RadialActionDialog, RadialActionDialogData } from './radial-action-dialog';
-import { RadialDemoLauncher } from './radial-demo-launcher';
+import { UiButton } from '@ui/button/ui-button';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { CallCommentDialog, CallCommentDialogData } from '@ui/radial/call-comment-dialog';
+import { RadialActionDialog, RadialActionDialogData } from '@ui/radial/radial-action-dialog';
 import {
   CALL_ACTIONS,
   CALL_RADIAL_LAYOUT,
@@ -18,7 +16,9 @@ import {
   MockLeadState,
   RadialDemoVariant,
   RadialDemoVariantId,
-} from './radial-menu.types';
+} from '@ui/radial/radial-menu.types';
+import { DesignHeader } from '../design-header';
+import { RadialDemoLauncher } from './radial-demo-launcher';
 
 const INITIAL_LEAD_STATE: MockLeadState = {
   status: 'new',

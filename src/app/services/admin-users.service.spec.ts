@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import { AdminUsersService } from './admin-users.service';
 
 describe('AdminUsersService', () => {

@@ -1,22 +1,22 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { SessionService } from '../../../core/session/session.service';
-import type { Appointment } from '../../../core/api/generated/kolss-api.types';
-import type { Office } from '../../../models/database';
+import { I18nService } from '@core/i18n/i18n.service';
+import { SessionService } from '@core/session/session.service';
+import type { Appointment } from '@core/api/generated/kolss-api.types';
+import type { Office } from '@models/database';
 import {
   addCalendarDays,
   AppointmentsService,
   officeDateKey,
   officeDateTimeParts,
-} from '../../../services/appointments.service';
-import type { CrmEmployee } from '../../../services/users.service';
-import { UsersService } from '../../../services/users.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { openAppointmentDrawer } from '../calendar/appointment-drawer';
+} from '@services/appointments.service';
+import type { CrmEmployee } from '@services/users.service';
+import { UsersService } from '@services/users.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { openAppointmentDrawer } from '@features/crm/calendar/appointment-drawer';
 
 interface OfficeAppointmentGroup {
   readonly office: Office;

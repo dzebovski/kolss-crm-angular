@@ -1,6 +1,6 @@
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
 import { Component, input, output } from '@angular/core';
-import { UiIcon, UiIconName } from '../icon/ui-icon';
+import { UiIcon, UiIconName } from '@ui/icon/ui-icon';
 
 export interface UiMenuItem {
   readonly value: string;

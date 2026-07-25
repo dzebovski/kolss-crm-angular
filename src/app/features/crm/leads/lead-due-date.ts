@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { UiIcon } from '../../../ui/icon/ui-icon';
+import { I18nService } from '@core/i18n/i18n.service';
+import { UiIcon } from '@ui/icon/ui-icon';
 
 export type LeadDueDateKind = 'status' | 'comment';
 

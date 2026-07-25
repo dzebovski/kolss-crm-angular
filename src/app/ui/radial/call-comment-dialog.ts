@@ -2,9 +2,9 @@ import { Component, inject, signal } from '@angular/core';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiTextarea } from '../../../ui/form/ui-textarea';
-import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiButton } from '@ui/button/ui-button';
+import { UiTextarea } from '@ui/form/ui-textarea';
+import { UiIcon } from '@ui/icon/ui-icon';
 import { CallAction } from './radial-menu.types';
 
 export interface CallCommentDialogData {

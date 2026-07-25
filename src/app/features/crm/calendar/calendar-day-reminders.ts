@@ -1,8 +1,8 @@
 import { Component, inject, input, output } from '@angular/core';
 
-import { I18nService } from '../../../core/i18n/i18n.service';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { UiIcon, type UiIconName } from '../../../ui/icon/ui-icon';
+import { I18nService } from '@core/i18n/i18n.service';
+import type { MockLead } from '@services/crm-mock.types';
+import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 
 export type CalendarReminderKind = 'callback' | 'comment' | 'task';
 

@@ -1,8 +1,8 @@
 import { Component, inject, input } from '@angular/core';
 
-import { I18nService } from '../../../core/i18n/i18n.service';
-import type { ClientStatus } from '../../../services/crm-mock.types';
-import { LinkifiedText } from '../../../ui/text/linkified-text';
+import { I18nService } from '@core/i18n/i18n.service';
+import type { ClientStatus } from '@services/crm-mock.types';
+import { LinkifiedText } from '@ui/text/linkified-text';
 import type { ReportLead } from './reports.types';
 
 @Component({

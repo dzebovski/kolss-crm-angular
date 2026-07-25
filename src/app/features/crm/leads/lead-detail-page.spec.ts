@@ -4,17 +4,17 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import axe from 'axe-core';
 import { of } from 'rxjs';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { SessionService } from '../../../core/session/session.service';
-import type { UserRole } from '../../../models/database';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import type { LeadEvent, MockLead } from '../../../services/crm-mock.types';
-import { LeadActivitiesService } from '../../../services/lead-activities.service';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { AppointmentsService } from '../../../services/appointments.service';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiUser } from '../../../ui/user/ui-user';
+import { AuthService } from '@core/auth/auth.service';
+import { SessionService } from '@core/session/session.service';
+import type { UserRole } from '@models/database';
+import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import type { LeadEvent, MockLead } from '@services/crm-mock.types';
+import { LeadActivitiesService } from '@services/lead-activities.service';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { AppointmentsService } from '@services/appointments.service';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiUser } from '@ui/user/ui-user';
 import { LeadDetailView } from './lead-detail-page';
 
 describe('LeadDetailView', () => {

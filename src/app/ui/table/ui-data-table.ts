@@ -1,7 +1,7 @@
 import { Component, computed, input, model, signal } from '@angular/core';
-import { UiBadge, UiBadgeTone } from '../feedback/ui-badge';
-import { UiIcon, UiIconName } from '../icon/ui-icon';
-import { UiPagination } from '../pagination/ui-pagination';
+import { UiBadge, UiBadgeTone } from '@ui/feedback/ui-badge';
+import { UiIcon, UiIconName } from '@ui/icon/ui-icon';
+import { UiPagination } from '@ui/pagination/ui-pagination';
 
 export interface UiTableColumn<T> {
   readonly key: keyof T & string;

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { UsersService } from '../../../services/users.service';
+import { UsersService } from '@services/users.service';
 import { ImpersonationDialog } from './impersonation-dialog';
 
 describe('ImpersonationDialog', () => {

@@ -2,27 +2,27 @@ import { Component, computed, inject, resource, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { SessionService } from '../../../core/session/session.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { ASSIGNABLE_ROLES } from '../../../core/roles/roles';
-import type { MessageKey } from '../../../core/i18n/messages';
-import type { UserRole } from '../../../models/database';
+import { SessionService } from '@core/session/session.service';
+import { I18nService } from '@core/i18n/i18n.service';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { ASSIGNABLE_ROLES } from '@core/roles/roles';
+import type { MessageKey } from '@core/i18n/messages';
+import type { UserRole } from '@models/database';
 import {
   callStatusTone,
   clientStatusTone,
   formatDateTime,
-} from '../../../services/crm-mock.helpers';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService, type CrmEmployee } from '../../../services/users.service';
-import { UiAlert } from '../../../ui/feedback/ui-alert';
-import { UiBadge } from '../../../ui/feedback/ui-badge';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { UiUser } from '../../../ui/user/ui-user';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiTextField } from '../../../ui/form/ui-text-field';
+} from '@services/crm-mock.helpers';
+import { LeadsService } from '@services/leads.service';
+import { UsersService, type CrmEmployee } from '@services/users.service';
+import { UiAlert } from '@ui/feedback/ui-alert';
+import { UiBadge } from '@ui/feedback/ui-badge';
+import { UiButton } from '@ui/button/ui-button';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { UiUser } from '@ui/user/ui-user';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiTextField } from '@ui/form/ui-text-field';
 
 const SUPER_ADMIN_PERMISSIONS = [
   'accounts.permission.allOffices',

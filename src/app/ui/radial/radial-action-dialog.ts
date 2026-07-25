@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
-import { UiIcon } from '../../../ui/icon/ui-icon';
+import { UiIcon } from '@ui/icon/ui-icon';
 import { computeRadialLayout } from './radial-menu.geometry';
 import { RadialAction, RadialLayoutConfig } from './radial-menu.types';
 

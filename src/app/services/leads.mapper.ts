@@ -1,5 +1,5 @@
-import type { Lead, Office } from '../models/database';
-import { formatPhoneDisplay } from '../core/phone/phone';
+import type { Lead, Office } from '@models/database';
+import { formatPhoneDisplay } from '@core/phone/phone';
 import type {
   CallStatusActor,
   CloseReason,

@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
-import type { LeadEventTranslationResponse } from '../core/api/generated/kolss-api.types';
-import { AuthService } from '../core/auth/auth.service';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import type { LeadEventTranslationResponse } from '@core/api/generated/kolss-api.types';
+import { AuthService } from '@core/auth/auth.service';
 import type { LeadMarker, LeadMarkerKind, LeadSource, MockLead } from './crm-mock.types';
 import { mapLeadDetail, mapLeadListRow, mapLeadMarker, type LeadListRow } from './leads.mapper';
 

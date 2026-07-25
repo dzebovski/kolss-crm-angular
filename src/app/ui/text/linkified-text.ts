@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { linkifySegments } from '../../core/text/linkify';
+import { linkifySegments } from '@core/text/linkify';
 
 @Component({
   selector: 'app-linkified-text',

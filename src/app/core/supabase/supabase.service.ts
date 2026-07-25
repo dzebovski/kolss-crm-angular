@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { environment } from '../../../environments/environment';
+import { environment } from '@env/environment';
 
 const FALLBACK_SUPABASE_URL = 'http://127.0.0.1:54321';
 const FALLBACK_SUPABASE_ANON_KEY = 'prototype-anon-key';

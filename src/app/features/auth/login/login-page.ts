@@ -2,16 +2,16 @@ import { Component, inject, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { safeCrmReturnTo } from '../../../core/navigation/safe-return-to';
-import { SessionService } from '../../../core/session/session.service';
-import type { LocaleCode } from '../../../services/crm-mock.types';
-import { UiAlert } from '../../../ui/feedback/ui-alert';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiTextField } from '../../../ui/form/ui-text-field';
-import { UiIcon } from '../../../ui/icon/ui-icon';
+import { AuthService } from '@core/auth/auth.service';
+import { I18nService } from '@core/i18n/i18n.service';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { safeCrmReturnTo } from '@core/navigation/safe-return-to';
+import { SessionService } from '@core/session/session.service';
+import type { LocaleCode } from '@services/crm-mock.types';
+import { UiAlert } from '@ui/feedback/ui-alert';
+import { UiButton } from '@ui/button/ui-button';
+import { UiTextField } from '@ui/form/ui-text-field';
+import { UiIcon } from '@ui/icon/ui-icon';
 
 @Component({
   selector: 'app-login-page',

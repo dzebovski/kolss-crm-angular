@@ -1,6 +1,6 @@
 import { Component, input, output } from '@angular/core';
 
-import { UiIcon } from '../icon/ui-icon';
+import { UiIcon } from '@ui/icon/ui-icon';
 import type { UiBadgeTone } from './ui-badge';
 
 @Component({

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-import { UiIcon } from '../../ui/icon/ui-icon';
+import { UiIcon } from '@ui/icon/ui-icon';
 
 @Component({
   selector: 'app-design-header',

@@ -4,13 +4,13 @@ import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import axe from 'axe-core';
 import { of } from 'rxjs';
 
-import type { Appointment } from '../../../core/api/generated/kolss-api.types';
-import { SessionService } from '../../../core/session/session.service';
-import { AppointmentsService } from '../../../services/appointments.service';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { LeadsService } from '../../../services/leads.service';
-import { type CrmEmployee, UsersService } from '../../../services/users.service';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import type { Appointment } from '@core/api/generated/kolss-api.types';
+import { SessionService } from '@core/session/session.service';
+import { AppointmentsService } from '@services/appointments.service';
+import type { MockLead } from '@services/crm-mock.types';
+import { LeadsService } from '@services/leads.service';
+import { type CrmEmployee, UsersService } from '@services/users.service';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
 import { CalendarPage } from './calendar-page';
 
 const office = {

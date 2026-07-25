@@ -1,10 +1,10 @@
 import { Component, computed, effect, inject, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { SessionService } from '../../../core/session/session.service';
+import { AuthService } from '@core/auth/auth.service';
+import { I18nService } from '@core/i18n/i18n.service';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { SessionService } from '@core/session/session.service';
 import {
   callStatusTone,
   commentDueAtForLead,
@@ -13,24 +13,24 @@ import {
   groupLeadsByYearMonth,
   leadIsInWork,
   showroomDueAtForLead,
-} from '../../../services/crm-mock.helpers';
+} from '@services/crm-mock.helpers';
 import type {
   CallStatus,
   ClientStatus,
   LeadEventCategory,
   MockLead,
-} from '../../../services/crm-mock.types';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiAlert } from '../../../ui/feedback/ui-alert';
-import { UiBadge } from '../../../ui/feedback/ui-badge';
-import { UiChip } from '../../../ui/feedback/ui-chip';
-import { UiSelect, type UiSelectOption } from '../../../ui/form/ui-select';
-import { UiTextField } from '../../../ui/form/ui-text-field';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { LinkifiedText } from '../../../ui/text/linkified-text';
-import { UiUser } from '../../../ui/user/ui-user';
+} from '@services/crm-mock.types';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiAlert } from '@ui/feedback/ui-alert';
+import { UiBadge } from '@ui/feedback/ui-badge';
+import { UiChip } from '@ui/feedback/ui-chip';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiTextField } from '@ui/form/ui-text-field';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { LinkifiedText } from '@ui/text/linkified-text';
+import { UiUser } from '@ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
 import { LeadDueDate } from './lead-due-date';
 import {

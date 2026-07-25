@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { SessionService } from '../../../core/session/session.service';
-import { UsersService } from '../../../services/users.service';
+import { SessionService } from '@core/session/session.service';
+import { UsersService } from '@services/users.service';
 import { AccountsPage } from './accounts-page';
 
 describe('AccountsPage', () => {

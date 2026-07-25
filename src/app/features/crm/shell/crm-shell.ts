@@ -1,16 +1,16 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { ImpersonationService } from '../../../core/auth/impersonation.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { TranslatePipe } from '../../../core/i18n/translate.pipe';
-import { isSuperAdminRole } from '../../../core/roles/roles';
-import { SessionService } from '../../../core/session/session.service';
-import type { LocaleCode, OfficeFilter } from '../../../services/crm-mock.types';
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { UiMenu, type UiMenuItem } from '../../../ui/menu/ui-menu';
-import { UiUser } from '../../../ui/user/ui-user';
+import { AuthService } from '@core/auth/auth.service';
+import { ImpersonationService } from '@core/auth/impersonation.service';
+import { I18nService } from '@core/i18n/i18n.service';
+import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { isSuperAdminRole } from '@core/roles/roles';
+import { SessionService } from '@core/session/session.service';
+import type { LocaleCode, OfficeFilter } from '@services/crm-mock.types';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { UiMenu, type UiMenuItem } from '@ui/menu/ui-menu';
+import { UiUser } from '@ui/user/ui-user';
 import { ImpersonationDialog } from './impersonation-dialog';
 
 @Component({

@@ -1,4 +1,4 @@
-import type { LocaleCode } from '../../services/crm-mock.types';
+import type { LocaleCode } from '@services/crm-mock.types';
 
 export const messages = {
   'common.save': { uk: 'Зберегти', pl: 'Zapisz', en: 'Save' },

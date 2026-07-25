@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type {
   CallStatus,
   ClientStatus,

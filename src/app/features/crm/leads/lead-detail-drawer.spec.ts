@@ -3,13 +3,13 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { provideRouter } from '@angular/router';
 import axe from 'axe-core';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { SessionService } from '../../../core/session/session.service';
-import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '../../../services/crm-mock.data';
-import { LeadActivitiesService } from '../../../services/lead-activities.service';
-import { LeadsService } from '../../../services/leads.service';
-import { UsersService } from '../../../services/users.service';
-import { UiDialogService } from '../../../ui/dialog/ui-dialog';
+import { AuthService } from '@core/auth/auth.service';
+import { SessionService } from '@core/session/session.service';
+import { CRM_MOCK_EMPLOYEES, CRM_MOCK_LEADS } from '@services/crm-mock.data';
+import { LeadActivitiesService } from '@services/lead-activities.service';
+import { LeadsService } from '@services/leads.service';
+import { UsersService } from '@services/users.service';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
 import { LeadDetailDrawer, type LeadDetailDrawerState } from './lead-detail-drawer';
 
 describe('LeadDetailDrawer', () => {

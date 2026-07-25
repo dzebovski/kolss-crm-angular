@@ -1,15 +1,15 @@
 import { Component, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 
-import type { LeadFieldKey } from '../../../core/i18n/field-keys';
-import { I18nService } from '../../../core/i18n/i18n.service';
-import { normalizePhoneForOffice } from '../../../core/phone/phone';
-import type { MockLead } from '../../../services/crm-mock.types';
-import { type LeadDetailsUpdate, LeadsService } from '../../../services/leads.service';
-import { UiButton } from '../../../ui/button/ui-button';
-import { UiModal } from '../../../ui/dialog/ui-modal';
-import { UiTextField } from '../../../ui/form/ui-text-field';
-import { UiTextarea } from '../../../ui/form/ui-textarea';
+import type { LeadFieldKey } from '@core/i18n/field-keys';
+import { I18nService } from '@core/i18n/i18n.service';
+import { normalizePhoneForOffice } from '@core/phone/phone';
+import type { MockLead } from '@services/crm-mock.types';
+import { type LeadDetailsUpdate, LeadsService } from '@services/leads.service';
+import { UiButton } from '@ui/button/ui-button';
+import { UiModal } from '@ui/dialog/ui-modal';
+import { UiTextField } from '@ui/form/ui-text-field';
+import { UiTextarea } from '@ui/form/ui-textarea';
 
 interface EditLeadFormModel {
   readonly name: string;

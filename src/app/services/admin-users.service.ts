@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
-import type { AdminUserRow } from '../core/api/generated/kolss-api.types';
-import type { UserRole } from '../models/database';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import type { AdminUserRow } from '@core/api/generated/kolss-api.types';
+import type { UserRole } from '@models/database';
 
 export type { AdminUserRow };
 

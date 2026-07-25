@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { environment } from '@env/environment';
 import type {
   AppointmentListResponse,
   AppointmentMutationResponse,

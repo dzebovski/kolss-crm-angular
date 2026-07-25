@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
-import type { LocaleCode } from '../../services/crm-mock.types';
-import { SessionService } from '../session/session.service';
+import type { LocaleCode } from '@services/crm-mock.types';
+import { SessionService } from '@core/session/session.service';
 import { I18nService } from './i18n.service';
 
 describe('I18nService', () => {

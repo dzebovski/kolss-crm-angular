@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 
-import { KolssApiClient } from '../core/api/generated/kolss-api.client';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type {
   Appointment,
   AppointmentListResponse,
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
-} from '../core/api/generated/kolss-api.types';
+} from '@core/api/generated/kolss-api.types';
 
 export interface AppointmentRange {
   readonly officeId: string;

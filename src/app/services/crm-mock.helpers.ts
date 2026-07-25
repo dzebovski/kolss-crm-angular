@@ -1,5 +1,5 @@
-import type { UiBadgeTone } from '../ui/feedback/ui-badge';
-import type { UiIconName } from '../ui/icon/ui-icon';
+import type { UiBadgeTone } from '@ui/feedback/ui-badge';
+import type { UiIconName } from '@ui/icon/ui-icon';
 import { CRM_MOCK_NOW } from './crm-mock.data';
 import type {
   CloseLeadPayload,
@@ -20,13 +20,13 @@ import type {
   SuccessfulLeadPayload,
 } from './crm-mock.types';
 
-import { getActiveLocale } from '../core/i18n/locale-storage';
+import { getActiveLocale } from '@core/i18n/locale-storage';
 import {
   formatDateForLocale,
   formatDateTimeForLocale,
   formatMoneyForLocale,
   formatMonthYearForLocale,
-} from '../core/i18n/locale-format';
+} from '@core/i18n/locale-format';
 
 export const OFFICE_FILTER_LABELS: Record<OfficeFilter, string> = {
   all: 'Усі офіси',

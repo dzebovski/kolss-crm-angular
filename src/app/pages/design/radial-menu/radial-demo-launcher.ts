@@ -1,7 +1,7 @@
 import { Component, input, output } from '@angular/core';
 
-import { UiIcon } from '../../../ui/icon/ui-icon';
-import { RadialDemoVariant } from './radial-menu.types';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { RadialDemoVariant } from '@ui/radial/radial-menu.types';
 
 @Component({
   selector: 'app-radial-demo-launcher',

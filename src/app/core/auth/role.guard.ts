@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { canManageUsers } from '../roles/roles';
+import { canManageUsers } from '@core/roles/roles';
 import { AuthService } from './auth.service';
 import { waitForAuthReady } from './auth.guard';
 

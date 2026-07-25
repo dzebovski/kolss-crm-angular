@@ -4,7 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import axe from 'axe-core';
 import { firstValueFrom } from 'rxjs';
 
-import { SessionService } from '../../../core/session/session.service';
+import { SessionService } from '@core/session/session.service';
 import { DueDateDialog, TextActivityDialog } from './lead-activity-dialogs';
 
 describe('lead activity dialogs', () => {

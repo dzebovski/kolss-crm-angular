@@ -2,9 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import type { Session } from '@supabase/supabase-js';
 
-import { KolssApiClient } from '../api/generated/kolss-api.client';
-import type { MeResponse } from '../api/generated/kolss-api.types';
-import { SupabaseService } from '../supabase/supabase.service';
+import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import type { MeResponse } from '@core/api/generated/kolss-api.types';
+import { SupabaseService } from '@core/supabase/supabase.service';
 import { AuthService } from './auth.service';
 import { ImpersonationService } from './impersonation.service';
 
