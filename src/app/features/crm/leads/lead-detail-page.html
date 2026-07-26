@@ -34,460 +34,46 @@
       <div class="action-error" role="alert">{{ markerError() }}</div>
     }
 
-    <section class="lead-summary" [attr.aria-label]="'Заявка ' + lead.name">
-      <div class="lead-summary__grid" aria-hidden="true"></div>
-      <div class="lead-summary__orb" aria-hidden="true"></div>
+    <app-lead-summary-panel
+      [lead]="lead"
+      [employeeName]="employeeNameFn"
+      [canAssignManager]="canAssignManager(lead)"
+      [canEditLead]="canEditLead(lead)"
+      [pending]="actionPending()"
+      [managerPending]="managerPending()"
+      [error]="actionError()"
+      [activeReminders]="activeReminders()"
+      [calendarAppointmentQuery]="calendarAppointmentQueryParams(lead)"
+      (editLeadRequested)="openLeadEditDialog(lead)"
+      (assignManagerRequested)="openAssignManagerDialog(lead)"
+      (clearReminderRequested)="clearReminder(lead, $event)"
+    />
 
-      <header class="lead-summary__rail">
-        <dl class="lead-facts">
-          <div>
-            <dt>{{ i18n.t('common.date') }}</dt>
-            <dd>
-              <time [attr.datetime]="lead.sourceCreatedAt">
-                {{ formatDateTime(lead.sourceCreatedAt) }}
-              </time>
-            </dd>
-          </div>
-          <div>
-            <dt>{{ i18n.t('leads.colSource') }}</dt>
-            <dd>{{ sourceLabel(lead) }}</dd>
-            <dd class="lead-facts__secondary">
-              <small>{{ officeName(lead.officeCode) }}</small>
-            </dd>
-          </div>
-          <div>
-            <dt>{{ i18n.t('leadDetail.city') }}</dt>
-            <dd>{{ lead.cityRegion || '—' }}</dd>
-          </div>
-          <div class="manager-card">
-            <dt>{{ i18n.t('common.manager') }}</dt>
-            <dd>
-              <div class="manager-card__person">
-                @if (lead.assignedToId) {
-                  <app-ui-user
-                    [userId]="lead.assignedToId"
-                    [name]="employeeName(lead.assignedToId)"
-                    size="md"
-                  />
-                } @else {
-                  <p>
-                    <app-ui-icon name="person" [size]="17" />
-                    {{ i18n.t('leadDetail.autoAssign') }}
-                  </p>
-                }
-              </div>
-              <div class="manager-card__actions">
-                @if (canAssignManager(lead)) {
-                  <app-ui-button
-                    class="manager-card__edit"
-                    variant="ghost"
-                    size="small"
-                    [attr.title]="managerActionLabel(lead)"
-                    [disabled]="actionPending() || managerPending()"
-                    (pressed)="openAssignManagerDialog(lead)"
-                  >
-                    <app-ui-icon name="edit" [size]="16" />
-                    <span class="manager-card__edit-label">{{ managerActionLabel(lead) }}</span>
-                  </app-ui-button>
-                }
-              </div>
-            </dd>
-          </div>
-        </dl>
-      </header>
+    <app-lead-actions-panel
+      [lead]="lead"
+      [employees]="employeesResource.value() ?? []"
+      [pending]="actionPending()"
+      [deletingLead]="deletingLead()"
+      [canArchiveLead]="canArchiveLead(lead)"
+      [canManageArchivedLead]="canManageArchivedLead(lead)"
+      [runActivity]="runActivityFn"
+      (reopenRequested)="reopenLead(lead)"
+      (restoreRequested)="restoreLead(lead)"
+      (archiveRequested)="confirmArchiveLead(lead)"
+      (deletePermanentlyRequested)="confirmDeleteLead(lead)"
+      (showroomInviteRequested)="openLeadAppointment(lead)"
+    />
 
-      <div class="lead-summary__body">
-        <div class="lead-identity">
-          <span class="lead-identity__eyebrow">
-            <i aria-hidden="true"></i>{{ i18n.t('leadDetail.client') }}
-          </span>
-          <h1 [id]="'lead-title-' + lead.id">{{ lead.name }}</h1>
-          <a class="lead-identity__phone" [href]="'tel:' + lead.phone">
-            <app-ui-icon name="phone_in_talk" [size]="19" [filled]="true" />
-            {{ lead.phone }}
-          </a>
-        </div>
-
-        <section class="lead-details" aria-labelledby="client-data-title">
-          <header>
-            <span>02</span>
-            <h2 id="client-data-title">{{ i18n.t('leadDetail.contactRequest') }}</h2>
-            @if (canEditLead(lead)) {
-              <app-ui-button
-                class="lead-details__edit"
-                variant="ghost"
-                size="small"
-                [attr.title]="i18n.t('lead.editLeadTitle')"
-                [attr.aria-label]="i18n.t('lead.editLeadTitle')"
-                [disabled]="actionPending()"
-                (pressed)="openLeadEditDialog(lead)"
-              >
-                <app-ui-icon name="edit" [size]="15" />
-                {{ i18n.t('lead.editLeadTitle') }}
-              </app-ui-button>
-            }
-          </header>
-          <dl class="client-data">
-            <div>
-              <dt>{{ i18n.t('leadDetail.email') }}</dt>
-              <dd>{{ lead.email || '—' }}</dd>
-            </div>
-            <div>
-              <dt>{{ i18n.t('leadDetail.product') }}</dt>
-              <dd>{{ lead.productInterest || '—' }}</dd>
-            </div>
-            <div>
-              <dt>{{ i18n.t('leadDetail.budget') }}</dt>
-              <dd>
-                {{
-                  lead.estimatedBudget === null
-                    ? '—'
-                    : formatMoney(lead.estimatedBudget, defaultCurrency(lead))
-                }}
-              </dd>
-            </div>
-            <div class="client-data__message">
-              <dt>{{ i18n.t('leadDetail.clientMessage') }}</dt>
-              <dd>
-                @if (lead.initialMessage; as message) {
-                  <app-linkified-text [text]="message" />
-                } @else {
-                  —
-                }
-              </dd>
-            </div>
-          </dl>
-        </section>
-      </div>
-    </section>
-
-    @if (actionError()) {
-      <div class="action-error" role="alert">{{ actionError() }}</div>
-    }
-
-    @if (activeReminders(); as reminders) {
-      @if (reminders.length) {
-        <section class="reminders-strip" aria-labelledby="lead-reminders-title">
-          <header class="reminders-strip__intro">
-            <h2 id="lead-reminders-title">{{ i18n.t('leadDetail.reminders') }}</h2>
-          </header>
-          <ul class="reminders-strip__list">
-            @for (reminder of reminders; track reminder.kind) {
-              <li class="reminder-row" [attr.data-kind]="reminder.kind">
-                <div class="reminder-row__icon" aria-hidden="true">
-                  <app-ui-icon [name]="reminderIcon(reminder.kind)" [size]="18" [filled]="true" />
-                </div>
-                <div class="reminder-row__copy">
-                  <app-ui-badge [tone]="reminder.kind === 'comment' ? 'warning' : 'brand'">
-                    {{ reminderLabel(reminder.kind) }}
-                  </app-ui-badge>
-                  <app-lead-due-date
-                    class="reminder-row__due"
-                    [date]="reminder.dueAt"
-                    [kind]="reminderDueKind(reminder.kind)"
-                  />
-                </div>
-                @if (!isTerminal(lead) && !lead.archivedAt) {
-                  <button
-                    type="button"
-                    class="reminder-row__clear"
-                    [disabled]="actionPending()"
-                    [attr.aria-label]="i18n.t('leadDetail.clearReminder')"
-                    (click)="clearReminder(lead, reminder)"
-                  >
-                    <app-ui-icon name="close" [size]="16" />
-                  </button>
-                }
-              </li>
-            }
-          </ul>
-        </section>
-      }
-    }
-
-    <section class="status-strip" aria-labelledby="current-status-title">
-      <header class="status-strip__intro">
-        <span aria-hidden="true">01</span>
-        <h2 id="current-status-title">{{ i18n.t('leadDetail.currentState') }}</h2>
-      </header>
-
-      <article class="status-item status-item--call">
-        <div class="status-item__icon" aria-hidden="true">
-          <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
-        </div>
-        <div class="status-item__copy">
-          <span>{{ i18n.t('leads.filter.callStatus') }}</span>
-          @if (lead.callStatus; as callStatus) {
-            <app-ui-badge [tone]="callTone(callStatus)">
-              {{ callStatusLabel(callStatus) }}
-            </app-ui-badge>
-            @if (lead.callStatusChangedAt) {
-              <small>{{ formatDateTime(lead.callStatusChangedAt) }}</small>
-            }
-          } @else {
-            <strong>{{ i18n.t('leadDetail.notRecorded') }}</strong>
-            <small>—</small>
-          }
-        </div>
-      </article>
-
-      <article class="status-item status-item--client" [attr.data-status]="lead.clientStatus">
-        <div class="status-item__icon" aria-hidden="true">
-          <app-ui-icon name="automation" [size]="20" [filled]="true" />
-        </div>
-        <div class="status-item__copy">
-          <span>{{ i18n.t('leads.filter.clientStatus') }}</span>
-          <app-ui-badge [tone]="clientToneForLead(lead)">
-            {{ clientStatusLabelForLead(lead) }}
-          </app-ui-badge>
-          @if (showroomDueAtForLead(lead) && calendarAppointmentQueryParams(lead); as appointmentQuery) {
-            <a
-              class="status-item__appointment-link"
-              routerLink="/crm/calendar"
-              [queryParams]="appointmentQuery"
-            >
-              <app-ui-icon name="calendar_month" [size]="14" />
-              {{ i18n.t('leadDetail.openAppointment') }}
-            </a>
-          }
-          <small>
-            {{
-              i18n.t('leadDetail.updated', {
-                date: formatDateTime(lead.clientStatusChangedAt),
-              })
-            }}
-          </small>
-        </div>
-      </article>
-    </section>
-
-    @if (!isTerminal(lead) && !lead.archivedAt) {
-      <section class="lead-actions" aria-label="Дії з клієнтом">
-        <app-ui-button
-          class="lead-action lead-action--comment"
-          variant="secondary"
-          size="large"
-          [block]="true"
-          [disabled]="actionPending()"
-          (pressed)="openComment(lead)"
-        >
-          <app-ui-icon name="campaign" [size]="19" />
-          {{ i18n.t('leadDetail.addComment') }}
-        </app-ui-button>
-        <app-ui-button
-          class="lead-action lead-action--call"
-          variant="secondary"
-          size="large"
-          [block]="true"
-          [loading]="actionPending()"
-          (pressed)="openCallMenu(lead)"
-        >
-          <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
-          {{ i18n.t('leadDetail.call') }}
-          <span class="lead-action__arrow" aria-hidden="true">↗</span>
-        </app-ui-button>
-        <app-ui-button
-          class="lead-action lead-action--status"
-          variant="secondary"
-          size="large"
-          [block]="true"
-          [disabled]="actionPending()"
-          (pressed)="openClientStatusMenu(lead)"
-        >
-          <app-ui-icon name="view_kanban" [size]="19" />
-          {{ i18n.t('leadDetail.clientStatus') }}
-        </app-ui-button>
-      </section>
-    } @else if (lead.archivedAt) {
-      <div class="terminal-archived">
-        <p class="terminal-note">
-          <app-ui-icon name="archive" [size]="18" />
-          {{ i18n.t('leadDetail.archivedReadonly') }}
-        </p>
-        @if (canManageArchivedLead(lead)) {
-          <div class="terminal-archived__actions">
-            <app-ui-button
-              variant="secondary"
-              size="small"
-              [loading]="actionPending()"
-              (pressed)="restoreLead(lead)"
-            >
-              <app-ui-icon name="arrow_upward" [size]="16" />
-              {{ i18n.t('lead.restore') }}
-            </app-ui-button>
-            <app-ui-button
-              variant="danger"
-              size="small"
-              [loading]="deletingLead()"
-              (pressed)="confirmDeleteLead(lead)"
-            >
-              <app-ui-icon name="delete" [size]="16" />
-              {{ i18n.t('lead.deletePermanently') }}
-            </app-ui-button>
-          </div>
-        }
-      </div>
-    } @else {
-      <div class="terminal-note">
-        <span class="terminal-note__copy">
-          <app-ui-icon name="info" [size]="18" />
-          {{ i18n.t('leadDetail.terminalReadonly') }}
-        </span>
-        <app-ui-button
-          class="terminal-note__action"
-          size="small"
-          [loading]="actionPending()"
-          (pressed)="reopenLead(lead)"
-        >
-          <app-ui-icon name="inbox" [size]="16" />
-          {{ i18n.t('leadDetail.reopen') }}
-        </app-ui-button>
-      </div>
-    }
-
-    @if (lead.contract) {
-      <aside class="terminal-summary terminal-summary--success">
-        <div class="terminal-summary__copy">
-          <span>Договір №{{ lead.contract.contractNumber }}</span>
-          <strong>{{ formatMoney(lead.contract.amount, lead.contract.currency) }}</strong>
-        </div>
-      </aside>
-    } @else if (lead.close) {
-      <aside class="terminal-summary">
-        <div class="terminal-summary__copy">
-          <strong>{{ closeSummaryLine(lead) }}</strong>
-        </div>
-        @if (canArchiveLead(lead)) {
-          <div class="terminal-summary__actions">
-            <app-ui-button
-              variant="secondary"
-              size="small"
-              [loading]="deletingLead()"
-              (pressed)="confirmArchiveLead(lead)"
-            >
-              <app-ui-icon name="archive" [size]="16" />
-              {{ i18n.t('lead.archiveShort') }}
-            </app-ui-button>
-          </div>
-        }
-      </aside>
-    }
-
-    <section class="timeline-panel" aria-labelledby="timeline-title">
-      <header class="panel-heading">
-        <div>
-          <span>{{ i18n.t('leadDetail.history') }}</span>
-          <h2 id="timeline-title">{{ i18n.t('leadDetail.timeline') }}</h2>
-        </div>
-        <b>{{ timelineEvents().length }}</b>
-      </header>
-      @if (timelineEvents().length) {
-        <ol class="timeline-list">
-          @for (event of timelineEvents(); track event.id) {
-            <li>
-              <span
-                class="timeline-dot"
-                [attr.data-category]="event.category ?? 'legacy'"
-                aria-hidden="true"
-              ></span>
-              <article class="timeline-card">
-                <header class="timeline-card__header">
-                  <strong>{{ eventTitle(event) }}</strong>
-                  @if (canMutateEvent(event)) {
-                    <div class="timeline-card__actions">
-                      <app-ui-button
-                        variant="ghost"
-                        size="small"
-                        [title]="i18n.t('common.edit')"
-                        [ariaLabel]="i18n.t('common.edit')"
-                        [disabled]="actionPending()"
-                        (pressed)="editEvent(lead, event)"
-                      >
-                        <app-ui-icon name="edit" [size]="15" />
-                      </app-ui-button>
-                      <app-ui-button
-                        variant="ghost"
-                        size="small"
-                        [title]="i18n.t('common.delete')"
-                        [ariaLabel]="i18n.t('common.delete')"
-                        [disabled]="actionPending()"
-                        (pressed)="askDeleteEvent(event)"
-                      >
-                        <app-ui-icon name="delete" [size]="15" />
-                      </app-ui-button>
-                    </div>
-                  }
-                </header>
-                @if (eventStatusLabel(event); as statusLabel) {
-                  <app-ui-badge class="timeline-card__status" [tone]="eventStatusTone(event)">
-                    {{ statusLabel }}
-                  </app-ui-badge>
-                }
-                @if (eventBody(event); as body) {
-                  <p><app-linkified-text [text]="body" /></p>
-                }
-                @if (eventDueDate(event); as due) {
-                  <app-lead-due-date
-                    class="timeline-card__due"
-                    [date]="due.date"
-                    [kind]="due.kind"
-                  />
-                }
-                @if (event.comment?.trim()) {
-                  @if (event.translationEn; as translation) {
-                    <div class="timeline-card__translation">
-                      <span>{{ i18n.t('leadDetail.englishTranslation') }}</span>
-                      <p><app-linkified-text [text]="translation" /></p>
-                    </div>
-                  } @else {
-                    <app-ui-button
-                      class="timeline-card__translate"
-                      variant="ghost"
-                      size="small"
-                      [loading]="isEventTranslationPending(event.id)"
-                      [disabled]="isEventTranslationPending(event.id)"
-                      (pressed)="translateEvent(lead, event)"
-                    >
-                      {{
-                        isEventTranslationPending(event.id)
-                          ? i18n.t('leadDetail.translating')
-                          : i18n.t('leadDetail.translateToEnglish')
-                      }}
-                    </app-ui-button>
-                  }
-                  @if (translationError(event.id); as error) {
-                    <p class="timeline-card__translation-error" role="alert">{{ error }}</p>
-                  }
-                }
-                <footer class="timeline-card__meta">
-                  <time [attr.datetime]="event.occurredAt">
-                    {{ formatDateTime(event.occurredAt) }}
-                  </time>
-                  <span class="timeline-card__meta-divider" aria-hidden="true"></span>
-                  <app-ui-user
-                    [userId]="event.actorId || null"
-                    [name]="eventActorName(event)"
-                    size="xs"
-                  />
-                  @if (event.assignedToId) {
-                    <span class="timeline-card__meta-divider" aria-hidden="true"></span>
-                    <span class="timeline-card__assignee">
-                      <app-ui-icon name="person" [size]="14" />
-                      {{ i18n.t('leadDetail.assignedTo', { manager: eventAssigneeName(event) }) }}
-                    </span>
-                  }
-                </footer>
-                @if (eventAuditText(event); as auditText) {
-                  <p class="timeline-card__audit">{{ auditText }}</p>
-                }
-              </article>
-            </li>
-          }
-        </ol>
-      } @else {
-        <p class="timeline-empty">{{ i18n.t('leadDetail.timelineEmpty') }}</p>
-      }
-    </section>
+    <app-lead-timeline
+      [events]="timelineEvents()"
+      [canMutate]="canMutateEventFn"
+      [employeeName]="employeeNameFn"
+      [pending]="actionPending()"
+      [error]="actionError()"
+      [translateEvent]="translateEventFor(lead)"
+      (editRequested)="editEvent(lead, $event)"
+      (deleteConfirmed)="deleteTimelineEvent(lead, $event)"
+    />
 
     @if (editLeadDialogOpen()) {
       <app-edit-lead-dialog
@@ -525,34 +111,6 @@
           </app-ui-button>
           <app-ui-button [loading]="managerPending()" (pressed)="submitAssignManager(lead)">
             {{ i18n.t('common.save') }}
-          </app-ui-button>
-        </div>
-      </app-ui-modal>
-    }
-
-    @if (deleteEventTarget(); as target) {
-      <app-ui-modal labelledBy="delete-event-dialog-title" (dismissed)="cancelDeleteEvent()">
-        <div class="manager-dialog-copy">
-          <h2 id="delete-event-dialog-title">{{ i18n.t('leadDetail.deleteEventTitle') }}</h2>
-          <p>{{ i18n.t('leadDetail.deleteEventConfirm') }}</p>
-        </div>
-        @if (actionError()) {
-          <div class="manager-dialog-error" role="alert">{{ actionError() }}</div>
-        }
-        <div class="manager-dialog-actions">
-          <app-ui-button
-            variant="ghost"
-            [disabled]="actionPending()"
-            (pressed)="cancelDeleteEvent()"
-          >
-            {{ i18n.t('common.cancel') }}
-          </app-ui-button>
-          <app-ui-button
-            variant="danger"
-            [loading]="actionPending()"
-            (pressed)="confirmDeleteEvent(lead)"
-          >
-            {{ i18n.t('leadDetail.deleteEventConfirmButton') }}
           </app-ui-button>
         </div>
       </app-ui-modal>

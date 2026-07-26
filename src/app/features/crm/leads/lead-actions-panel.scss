@@ -1,0 +1,167 @@
+:host {
+  display: contents;
+}
+
+:host {
+  .terminal-summary p {
+    margin: 0.4rem 0 0;
+    color: var(--ui-text-muted);
+    font-size: 0.8rem;
+  }
+
+  .lead-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(0.55rem, 1.4vw, 0.8rem);
+  }
+  .lead-action {
+    --ui-control-height: 2.75rem;
+    width: 100%;
+  }
+  .lead-action--comment .ui-button {
+    border-color: color-mix(in srgb, var(--ui-warning) 25%, var(--ui-border));
+    background: var(--ui-warning-soft);
+    color: var(--ui-warning);
+    box-shadow: 0 5px 16px color-mix(in srgb, var(--ui-warning) 10%, transparent);
+  }
+  .lead-action--comment .ui-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ui-warning) 10%, white);
+  }
+  .lead-action--call {
+    color: var(--ui-info);
+  }
+  .lead-action--call .ui-button {
+    border-color: color-mix(in srgb, var(--ui-info) 24%, var(--ui-border));
+    background: var(--ui-info-soft);
+    box-shadow: 0 5px 16px color-mix(in srgb, var(--ui-info) 10%, transparent);
+  }
+  .lead-action--call .ui-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ui-info) 10%, white);
+  }
+  .lead-action--status .ui-button {
+    background: white;
+  }
+  .lead-action__arrow {
+    margin-left: auto;
+    color: var(--ui-info);
+    font-size: 1rem;
+  }
+  .terminal-note {
+    min-height: 3rem;
+    margin: 0;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--ui-border);
+    border-radius: 1rem;
+    background: var(--ui-surface-subtle);
+    color: var(--ui-text-muted);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+  .terminal-note__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .terminal-note__action {
+    flex: 0 0 auto;
+  }
+  .terminal-archived {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .terminal-archived__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .terminal-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid color-mix(in srgb, var(--ui-danger) 20%, var(--ui-border));
+    border-left: 0.25rem solid var(--ui-danger);
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--ui-danger) 6%, white);
+  }
+  .terminal-summary__copy {
+    min-width: 0;
+  }
+  .terminal-summary__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .terminal-summary--success {
+    border-color: color-mix(in srgb, var(--ui-success) 24%, var(--ui-border));
+    border-left-color: var(--ui-success);
+    background: color-mix(in srgb, var(--ui-success) 6%, white);
+  }
+  .terminal-summary--success .terminal-summary__copy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+  }
+
+  .lead-actions,
+  .terminal-note,
+  .terminal-archived,
+  .terminal-summary {
+    animation: lead-enter 420ms var(--ui-ease) both;
+    animation-delay: 85ms;
+  }
+
+  @keyframes lead-enter {
+    from {
+      opacity: 0;
+      transform: translateY(0.65rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 48rem) {
+    .lead-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .lead-action--status {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .lead-actions {
+      grid-template-columns: 1fr;
+    }
+    .lead-action--status {
+      grid-column: auto;
+    }
+    .terminal-summary {
+      grid-template-columns: 1fr;
+    }
+    .terminal-note {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .terminal-note__action {
+      align-self: flex-end;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lead-actions,
+    .terminal-note,
+    .terminal-archived,
+    .terminal-summary {
+      animation: none;
+    }
+  }
+}

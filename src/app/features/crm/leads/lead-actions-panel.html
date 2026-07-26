@@ -1,0 +1,113 @@
+@let currentLead = lead();
+
+@if (!isTerminal(currentLead) && !currentLead.archivedAt) {
+  <section class="lead-actions" aria-label="Дії з клієнтом">
+    <app-ui-button
+      class="lead-action lead-action--comment"
+      variant="secondary"
+      size="large"
+      [block]="true"
+      [disabled]="pending()"
+      (pressed)="openComment()"
+    >
+      <app-ui-icon name="campaign" [size]="19" />
+      {{ i18n.t('leadDetail.addComment') }}
+    </app-ui-button>
+    <app-ui-button
+      class="lead-action lead-action--call"
+      variant="secondary"
+      size="large"
+      [block]="true"
+      [loading]="pending()"
+      (pressed)="openCallMenu()"
+    >
+      <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
+      {{ i18n.t('leadDetail.call') }}
+      <span class="lead-action__arrow" aria-hidden="true">↗</span>
+    </app-ui-button>
+    <app-ui-button
+      class="lead-action lead-action--status"
+      variant="secondary"
+      size="large"
+      [block]="true"
+      [disabled]="pending()"
+      (pressed)="openClientStatusMenu()"
+    >
+      <app-ui-icon name="view_kanban" [size]="19" />
+      {{ i18n.t('leadDetail.clientStatus') }}
+    </app-ui-button>
+  </section>
+} @else if (currentLead.archivedAt) {
+  <div class="terminal-archived">
+    <p class="terminal-note">
+      <app-ui-icon name="archive" [size]="18" />
+      {{ i18n.t('leadDetail.archivedReadonly') }}
+    </p>
+    @if (canManageArchivedLead()) {
+      <div class="terminal-archived__actions">
+        <app-ui-button
+          variant="secondary"
+          size="small"
+          [loading]="pending()"
+          (pressed)="restoreRequested.emit()"
+        >
+          <app-ui-icon name="arrow_upward" [size]="16" />
+          {{ i18n.t('lead.restore') }}
+        </app-ui-button>
+        <app-ui-button
+          variant="danger"
+          size="small"
+          [loading]="deletingLead()"
+          (pressed)="deletePermanentlyRequested.emit()"
+        >
+          <app-ui-icon name="delete" [size]="16" />
+          {{ i18n.t('lead.deletePermanently') }}
+        </app-ui-button>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="terminal-note">
+    <span class="terminal-note__copy">
+      <app-ui-icon name="info" [size]="18" />
+      {{ i18n.t('leadDetail.terminalReadonly') }}
+    </span>
+    <app-ui-button
+      class="terminal-note__action"
+      size="small"
+      [loading]="pending()"
+      (pressed)="reopenRequested.emit()"
+    >
+      <app-ui-icon name="inbox" [size]="16" />
+      {{ i18n.t('leadDetail.reopen') }}
+    </app-ui-button>
+  </div>
+}
+
+@if (currentLead.contract) {
+  <aside class="terminal-summary terminal-summary--success">
+    <div class="terminal-summary__copy">
+      <span>Договір №{{ currentLead.contract.contractNumber }}</span>
+      <strong>{{ formatMoney(currentLead.contract.amount, currentLead.contract.currency) }}</strong>
+    </div>
+  </aside>
+} @else if (currentLead.close) {
+  <aside class="terminal-summary">
+    <div class="terminal-summary__copy">
+      <strong>{{ closeSummaryLine(currentLead) }}</strong>
+    </div>
+    @if (canArchiveLead()) {
+      <div class="terminal-summary__actions">
+        <app-ui-button
+          variant="secondary"
+          size="small"
+          [loading]="deletingLead()"
+          (pressed)="archiveRequested.emit()"
+        >
+          <app-ui-icon name="archive" [size]="16" />
+          {{ i18n.t('lead.archiveShort') }}
+        </app-ui-button>
+      </div>
+    }
+  </aside>
+}

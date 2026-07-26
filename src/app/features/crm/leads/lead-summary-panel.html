@@ -1,0 +1,228 @@
+@let currentLead = lead();
+
+<section class="lead-summary" [attr.aria-label]="'Заявка ' + currentLead.name">
+  <div class="lead-summary__grid" aria-hidden="true"></div>
+  <div class="lead-summary__orb" aria-hidden="true"></div>
+
+  <header class="lead-summary__rail">
+    <dl class="lead-facts">
+      <div>
+        <dt>{{ i18n.t('common.date') }}</dt>
+        <dd>
+          <time [attr.datetime]="currentLead.sourceCreatedAt">
+            {{ formatDateTime(currentLead.sourceCreatedAt) }}
+          </time>
+        </dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('leads.colSource') }}</dt>
+        <dd>{{ sourceLabel(currentLead) }}</dd>
+        <dd class="lead-facts__secondary">
+          <small>{{ officeName(currentLead.officeCode) }}</small>
+        </dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('leadDetail.city') }}</dt>
+        <dd>{{ currentLead.cityRegion || '—' }}</dd>
+      </div>
+      <div class="manager-card">
+        <dt>{{ i18n.t('common.manager') }}</dt>
+        <dd>
+          <div class="manager-card__person">
+            @if (currentLead.assignedToId) {
+              <app-ui-user
+                [userId]="currentLead.assignedToId"
+                [name]="employeeName()(currentLead.assignedToId)"
+                size="md"
+              />
+            } @else {
+              <p>
+                <app-ui-icon name="person" [size]="17" />
+                {{ i18n.t('leadDetail.autoAssign') }}
+              </p>
+            }
+          </div>
+          <div class="manager-card__actions">
+            @if (canAssignManager()) {
+              <app-ui-button
+                class="manager-card__edit"
+                variant="ghost"
+                size="small"
+                [attr.title]="managerActionLabel(currentLead)"
+                [disabled]="pending() || managerPending()"
+                (pressed)="assignManagerRequested.emit()"
+              >
+                <app-ui-icon name="edit" [size]="16" />
+                <span class="manager-card__edit-label">{{ managerActionLabel(currentLead) }}</span>
+              </app-ui-button>
+            }
+          </div>
+        </dd>
+      </div>
+    </dl>
+  </header>
+
+  <div class="lead-summary__body">
+    <div class="lead-identity">
+      <span class="lead-identity__eyebrow">
+        <i aria-hidden="true"></i>{{ i18n.t('leadDetail.client') }}
+      </span>
+      <h1 [id]="'lead-title-' + currentLead.id">{{ currentLead.name }}</h1>
+      <a class="lead-identity__phone" [href]="'tel:' + currentLead.phone">
+        <app-ui-icon name="phone_in_talk" [size]="19" [filled]="true" />
+        {{ currentLead.phone }}
+      </a>
+    </div>
+
+    <section class="lead-details" aria-labelledby="client-data-title">
+      <header>
+        <span>02</span>
+        <h2 id="client-data-title">{{ i18n.t('leadDetail.contactRequest') }}</h2>
+        @if (canEditLead()) {
+          <app-ui-button
+            class="lead-details__edit"
+            variant="ghost"
+            size="small"
+            [attr.title]="i18n.t('lead.editLeadTitle')"
+            [attr.aria-label]="i18n.t('lead.editLeadTitle')"
+            [disabled]="pending()"
+            (pressed)="editLeadRequested.emit()"
+          >
+            <app-ui-icon name="edit" [size]="15" />
+            {{ i18n.t('lead.editLeadTitle') }}
+          </app-ui-button>
+        }
+      </header>
+      <dl class="client-data">
+        <div>
+          <dt>{{ i18n.t('leadDetail.email') }}</dt>
+          <dd>{{ currentLead.email || '—' }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('leadDetail.product') }}</dt>
+          <dd>{{ currentLead.productInterest || '—' }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('leadDetail.budget') }}</dt>
+          <dd>
+            {{
+              currentLead.estimatedBudget === null
+                ? '—'
+                : formatMoney(currentLead.estimatedBudget, defaultCurrency(currentLead))
+            }}
+          </dd>
+        </div>
+        <div class="client-data__message">
+          <dt>{{ i18n.t('leadDetail.clientMessage') }}</dt>
+          <dd>
+            @if (currentLead.initialMessage; as message) {
+              <app-linkified-text [text]="message" />
+            } @else {
+              —
+            }
+          </dd>
+        </div>
+      </dl>
+    </section>
+  </div>
+</section>
+
+@if (error()) {
+  <div class="action-error" role="alert">{{ error() }}</div>
+}
+
+@if (activeReminders(); as reminders) {
+  @if (reminders.length) {
+    <section class="reminders-strip" aria-labelledby="lead-reminders-title">
+      <header class="reminders-strip__intro">
+        <h2 id="lead-reminders-title">{{ i18n.t('leadDetail.reminders') }}</h2>
+      </header>
+      <ul class="reminders-strip__list">
+        @for (reminder of reminders; track reminder.kind) {
+          <li class="reminder-row" [attr.data-kind]="reminder.kind">
+            <div class="reminder-row__icon" aria-hidden="true">
+              <app-ui-icon [name]="reminderIcon(reminder.kind)" [size]="18" [filled]="true" />
+            </div>
+            <div class="reminder-row__copy">
+              <app-ui-badge [tone]="reminder.kind === 'comment' ? 'warning' : 'brand'">
+                {{ reminderLabel(reminder.kind) }}
+              </app-ui-badge>
+              <app-lead-due-date
+                class="reminder-row__due"
+                [date]="reminder.dueAt"
+                [kind]="reminderDueKind(reminder.kind)"
+              />
+            </div>
+            @if (!isTerminal(currentLead) && !currentLead.archivedAt) {
+              <button
+                type="button"
+                class="reminder-row__clear"
+                [disabled]="pending()"
+                [attr.aria-label]="i18n.t('leadDetail.clearReminder')"
+                (click)="clearReminderRequested.emit(reminder)"
+              >
+                <app-ui-icon name="close" [size]="16" />
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}
+
+<section class="status-strip" aria-labelledby="current-status-title">
+  <header class="status-strip__intro">
+    <span aria-hidden="true">01</span>
+    <h2 id="current-status-title">{{ i18n.t('leadDetail.currentState') }}</h2>
+  </header>
+
+  <article class="status-item status-item--call">
+    <div class="status-item__icon" aria-hidden="true">
+      <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
+    </div>
+    <div class="status-item__copy">
+      <span>{{ i18n.t('leads.filter.callStatus') }}</span>
+      @if (currentLead.callStatus; as callStatus) {
+        <app-ui-badge [tone]="callTone(callStatus)">
+          {{ callStatusLabel(callStatus) }}
+        </app-ui-badge>
+        @if (currentLead.callStatusChangedAt) {
+          <small>{{ formatDateTime(currentLead.callStatusChangedAt) }}</small>
+        }
+      } @else {
+        <strong>{{ i18n.t('leadDetail.notRecorded') }}</strong>
+        <small>—</small>
+      }
+    </div>
+  </article>
+
+  <article class="status-item status-item--client" [attr.data-status]="currentLead.clientStatus">
+    <div class="status-item__icon" aria-hidden="true">
+      <app-ui-icon name="automation" [size]="20" [filled]="true" />
+    </div>
+    <div class="status-item__copy">
+      <span>{{ i18n.t('leads.filter.clientStatus') }}</span>
+      <app-ui-badge [tone]="clientToneForLead(currentLead)">
+        {{ clientStatusLabelForLead(currentLead) }}
+      </app-ui-badge>
+      @if (showroomDueAtForLead(currentLead) && calendarAppointmentQuery(); as appointmentQuery) {
+        <a
+          class="status-item__appointment-link"
+          routerLink="/crm/calendar"
+          [queryParams]="appointmentQuery"
+        >
+          <app-ui-icon name="calendar_month" [size]="14" />
+          {{ i18n.t('leadDetail.openAppointment') }}
+        </a>
+      }
+      <small>
+        {{
+          i18n.t('leadDetail.updated', {
+            date: formatDateTime(currentLead.clientStatusChangedAt),
+          })
+        }}
+      </small>
+    </div>
+  </article>
+</section>

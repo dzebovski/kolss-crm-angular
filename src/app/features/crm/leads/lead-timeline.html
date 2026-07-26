@@ -1,0 +1,133 @@
+<section class="timeline-panel" aria-labelledby="timeline-title">
+  <header class="panel-heading">
+    <div>
+      <span>{{ i18n.t('leadDetail.history') }}</span>
+      <h2 id="timeline-title">{{ i18n.t('leadDetail.timeline') }}</h2>
+    </div>
+    <b>{{ events().length }}</b>
+  </header>
+  @if (events().length) {
+    <ol class="timeline-list">
+      @for (event of events(); track event.id) {
+        <li>
+          <span
+            class="timeline-dot"
+            [attr.data-category]="event.category ?? 'legacy'"
+            aria-hidden="true"
+          ></span>
+          <article class="timeline-card">
+            <header class="timeline-card__header">
+              <strong>{{ eventTitle(event) }}</strong>
+              @if (canMutate()(event)) {
+                <div class="timeline-card__actions">
+                  <app-ui-button
+                    variant="ghost"
+                    size="small"
+                    [title]="i18n.t('common.edit')"
+                    [ariaLabel]="i18n.t('common.edit')"
+                    [disabled]="pending()"
+                    (pressed)="editEvent(event)"
+                  >
+                    <app-ui-icon name="edit" [size]="15" />
+                  </app-ui-button>
+                  <app-ui-button
+                    variant="ghost"
+                    size="small"
+                    [title]="i18n.t('common.delete')"
+                    [ariaLabel]="i18n.t('common.delete')"
+                    [disabled]="pending()"
+                    (pressed)="askDelete(event)"
+                  >
+                    <app-ui-icon name="delete" [size]="15" />
+                  </app-ui-button>
+                </div>
+              }
+            </header>
+            @if (eventStatusLabel(event); as statusLabel) {
+              <app-ui-badge class="timeline-card__status" [tone]="eventStatusTone(event)">
+                {{ statusLabel }}
+              </app-ui-badge>
+            }
+            @if (eventBody(event); as body) {
+              <p><app-linkified-text [text]="body" /></p>
+            }
+            @if (eventDueDate(event); as due) {
+              <app-lead-due-date class="timeline-card__due" [date]="due.date" [kind]="due.kind" />
+            }
+            @if (event.comment?.trim()) {
+              @if (event.translationEn; as translation) {
+                <div class="timeline-card__translation">
+                  <span>{{ i18n.t('leadDetail.englishTranslation') }}</span>
+                  <p><app-linkified-text [text]="translation" /></p>
+                </div>
+              } @else {
+                <app-ui-button
+                  class="timeline-card__translate"
+                  variant="ghost"
+                  size="small"
+                  [loading]="isEventTranslationPending(event.id)"
+                  [disabled]="isEventTranslationPending(event.id)"
+                  (pressed)="translate(event)"
+                >
+                  {{
+                    isEventTranslationPending(event.id)
+                      ? i18n.t('leadDetail.translating')
+                      : i18n.t('leadDetail.translateToEnglish')
+                  }}
+                </app-ui-button>
+              }
+              @if (translationError(event.id); as translationErrorText) {
+                <p class="timeline-card__translation-error" role="alert">
+                  {{ translationErrorText }}
+                </p>
+              }
+            }
+            <footer class="timeline-card__meta">
+              <time [attr.datetime]="event.occurredAt">
+                {{ i18n.formatDateTime(event.occurredAt) }}
+              </time>
+              <span class="timeline-card__meta-divider" aria-hidden="true"></span>
+              <app-ui-user
+                [userId]="event.actorId || null"
+                [name]="eventActorName(event)"
+                size="xs"
+              />
+              @if (event.assignedToId) {
+                <span class="timeline-card__meta-divider" aria-hidden="true"></span>
+                <span class="timeline-card__assignee">
+                  <app-ui-icon name="person" [size]="14" />
+                  {{ i18n.t('leadDetail.assignedTo', { manager: eventAssigneeName(event) }) }}
+                </span>
+              }
+            </footer>
+            @if (eventAuditText(event); as auditText) {
+              <p class="timeline-card__audit">{{ auditText }}</p>
+            }
+          </article>
+        </li>
+      }
+    </ol>
+  } @else {
+    <p class="timeline-empty">{{ i18n.t('leadDetail.timelineEmpty') }}</p>
+  }
+</section>
+
+@if (deleteTarget(); as target) {
+  <app-ui-modal labelledBy="delete-event-dialog-title" (dismissed)="cancelDelete()">
+    <div class="manager-dialog-copy">
+      <h2 id="delete-event-dialog-title">{{ i18n.t('leadDetail.deleteEventTitle') }}</h2>
+      <p>{{ i18n.t('leadDetail.deleteEventConfirm') }}</p>
+    </div>
+    @if (error()) {
+      <div class="manager-dialog-error" role="alert">{{ error() }}</div>
+    }
+    <div class="manager-dialog-actions">
+      <app-ui-button variant="ghost" [disabled]="pending()" (pressed)="cancelDelete()">
+        {{ i18n.t('common.cancel') }}
+      </app-ui-button>
+      <app-ui-button variant="danger" [loading]="pending()" (pressed)="confirmDelete()">
+        {{ i18n.t('leadDetail.deleteEventConfirmButton') }}
+      </app-ui-button>
+    </div>
+  </app-ui-modal>
+}

@@ -49,6 +49,7 @@
     "@angular/compiler-cli": "^22.0.5",
     "@eslint/js": "^10.0.1",
     "@material-symbols/svg-400": "^0.45.5",
+    "@vitest/coverage-v8": "^4.1.10",
     "angular-eslint": "22.0.0",
     "axe-core": "^4.12.1",
     "eslint": "^10.3.0",
