@@ -76,7 +76,9 @@ export interface TextActivityDialogResult {
         <app-ui-text-field
           type="date"
           [label]="
-            managerSelected() ? i18n.t('activity.dueDateLabel') : i18n.t('activity.dueDateOptionalLabel')
+            managerSelected()
+              ? i18n.t('activity.dueDateLabel')
+              : i18n.t('activity.dueDateOptionalLabel')
           "
           [formField]="commentForm.dueDate"
           [error]="dueDateError()"

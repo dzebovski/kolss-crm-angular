@@ -4,7 +4,12 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.110.1';
 import { syncMemberships } from '../_shared/admin/sync-memberships.ts';
 import { parseRole, validateUserInput } from '../_shared/admin/validate-user.ts';
 import { createAdminClient, createUserClient } from '../_shared/supabase-admin.ts';
-import { formatCaughtError, handleOptions, jsonResponse, throwIfSupabaseError } from '../_shared/http.ts';
+import {
+  formatCaughtError,
+  handleOptions,
+  jsonResponse,
+  throwIfSupabaseError,
+} from '../_shared/http.ts';
 
 const BAN_DURATION = '876000h';
 
@@ -172,7 +177,9 @@ async function handleCreate(
   userClient: SupabaseClient,
   body: Record<string, unknown>,
 ) {
-  const email = String(body.email ?? '').trim().toLowerCase();
+  const email = String(body.email ?? '')
+    .trim()
+    .toLowerCase();
   const displayName = String(body.display_name ?? '').trim();
   const password = String(body.password ?? '');
   const passwordConfirm = String(body.password_confirm ?? '');
@@ -224,7 +231,9 @@ async function handleUpdate(
   body: Record<string, unknown>,
 ) {
   const userId = String(body.user_id ?? '');
-  const email = String(body.email ?? '').trim().toLowerCase();
+  const email = String(body.email ?? '')
+    .trim()
+    .toLowerCase();
   const displayName = String(body.display_name ?? '').trim();
   const password = String(body.password ?? '');
   const passwordConfirm = String(body.password_confirm ?? '');

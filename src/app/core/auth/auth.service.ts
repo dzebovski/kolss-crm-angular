@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from '@supabase/auth-js';
 
 import type { Profile, SessionContext } from '@models/database';
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
@@ -55,7 +55,7 @@ export class AuthService {
     effect((onCleanup) => {
       if (!this.supabaseService.isConfigured()) return;
 
-      const { data } = this.supabase.auth.onAuthStateChange((_event, session) => {
+      const { data } = this.supabase.onAuthStateChange((_event, session) => {
         void this.applySession(session);
       });
       onCleanup(() => data.subscription.unsubscribe());
@@ -76,7 +76,7 @@ export class AuthService {
     }
 
     try {
-      const { data, error } = await this.supabase.auth.getSession();
+      const { data, error } = await this.supabase.getSession();
       if (error) throw error;
       await this.applySession(data.session);
     } catch (error) {
@@ -100,7 +100,7 @@ export class AuthService {
         );
       }
 
-      const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await this.supabase.signInWithPassword({ email, password });
       if (error) throw error;
 
       await this.applySession(data.session);
@@ -123,7 +123,7 @@ export class AuthService {
         return;
       }
 
-      const { error } = await this.supabase.auth.signOut();
+      const { error } = await this.supabase.signOut();
       if (error) throw error;
       this.sessionSignal.set(null);
       this.profileSignal.set(null);
@@ -146,7 +146,7 @@ export class AuthService {
 
     const profile = me.profile;
     if (profile && !profile.is_active) {
-      await this.supabase.auth.signOut();
+      await this.supabase.signOut();
       this.impersonation.clear();
       this.sessionSignal.set(null);
       this.profileSignal.set(null);

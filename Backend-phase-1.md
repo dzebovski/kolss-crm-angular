@@ -10,12 +10,12 @@
 
 ## Коротко
 
-| Статус | Що |
-|--------|-----|
-| **Готово — не чіпати** | Auth, Supabase client, guards, routing, login, CRM shell, моделі, ролі |
-| **Placeholder — замінити контентом** | `dashboard-page`, `leads-page`, `reports-page`, `accounts-page` |
-| **Ще не існує — створити у UI-фазі** | Мок-дані лідів, картка ліда, складені CRM-патерни, locale switcher |
-| **Не твоя зона** | Edge Functions, Meta webhook, service role, server-side lead ingestion |
+| Статус                               | Що                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------- |
+| **Готово — не чіпати**               | Auth, Supabase client, guards, routing, login, CRM shell, моделі, ролі |
+| **Placeholder — замінити контентом** | `dashboard-page`, `leads-page`, `reports-page`, `accounts-page`        |
+| **Ще не існує — створити у UI-фазі** | Мок-дані лідів, картка ліда, складені CRM-патерни, locale switcher     |
+| **Не твоя зона**                     | Edge Functions, Meta webhook, service role, server-side lead ingestion |
 
 ---
 
@@ -23,13 +23,13 @@
 
 ### Auth і сесія
 
-| Файл | Що робить |
-|------|-----------|
-| `src/app/core/auth/auth.service.ts` | `signIn`, `signOut`, сесія Supabase, профіль з `profiles` |
-| `src/app/core/session/session.service.ts` | Офіси користувача, `officeContext`, view-as |
-| `src/app/core/auth/auth.guard.ts` | `authGuard`, `guestGuard` |
-| `src/app/core/auth/role.guard.ts` | `superAdminGuard` |
-| `src/app/features/auth/login/login-page.ts` | Екран `/login` |
+| Файл                                        | Що робить                                                 |
+| ------------------------------------------- | --------------------------------------------------------- |
+| `src/app/core/auth/auth.service.ts`         | `signIn`, `signOut`, сесія Supabase, профіль з `profiles` |
+| `src/app/core/session/session.service.ts`   | Офіси користувача, `officeContext`, view-as               |
+| `src/app/core/auth/auth.guard.ts`           | `authGuard`, `guestGuard`                                 |
+| `src/app/core/auth/role.guard.ts`           | `superAdminGuard`                                         |
+| `src/app/features/auth/login/login-page.ts` | Екран `/login`                                            |
 
 **Не додавай:** окремий login, auth interceptor, NgRx auth store, власний JWT, `HttpClient` для auth.
 
@@ -43,17 +43,17 @@ import { SessionService } from '../core/session/session.service';
 const auth = inject(AuthService);
 const session = inject(SessionService);
 
-auth.profile();           // Profile | null
-auth.sessionContext();    // { user, profile } | null
-session.officeContext();  // офіси для фільтра
+auth.profile(); // Profile | null
+auth.sessionContext(); // { user, profile } | null
+session.officeContext(); // офіси для фільтра
 ```
 
 ### Supabase
 
-| Файл | Що робить |
-|------|-----------|
-| `src/app/core/supabase/supabase.service.ts` | Єдиний browser-клієнт |
-| `src/environments/environment*.ts` | `supabaseUrl`, `supabaseAnonKey` |
+| Файл                                        | Що робить                        |
+| ------------------------------------------- | -------------------------------- |
+| `src/app/core/supabase/supabase.service.ts` | Єдиний browser-клієнт            |
+| `src/environments/environment*.ts`          | `supabaseUrl`, `supabaseAnonKey` |
 
 **Не додавай:** другий Supabase client, `@supabase/ssr`, `service_role` key, окремий API layer для CRUD на цій фазі.
 
@@ -92,9 +92,9 @@ session.officeContext();  // офіси для фільтра
 
 ### Моделі і ролі
 
-| Файл | Зміст |
-|------|-------|
-| `src/app/models/database.ts` | `Profile`, `Office`, `Lead`, `Project`, … |
+| Файл                          | Зміст                                                |
+| ----------------------------- | ---------------------------------------------------- |
+| `src/app/models/database.ts`  | `Profile`, `Office`, `Lead`, `Project`, …            |
 | `src/app/core/roles/roles.ts` | `canManageUsers`, `hasOfficeLeadFilter`, `roleLabel` |
 
 **Не вигадуй** власні типи ролей (`manager`, `office_head`) — у БД: `super_admin`, `curator`, `office_admin`, `office_member`.
@@ -114,13 +114,13 @@ session.officeContext();  // офіси для фільтра
 
 Ці файли — **placeholder**. Заміни template і логіку, **не створюй нові маршрути** без потреби:
 
-| Файл | Маршрут | Задача UI-фази |
-|------|---------|----------------|
-| `src/app/features/crm/dashboard/dashboard-page.ts` | `/crm/dashboard` | Метрики, огляд |
-| `src/app/features/crm/leads/leads-page.ts` | `/crm/leads` | Таблиця лідів, групування рік/місяць |
-| — | `/crm/leads/:leadId` | **Створити** `lead-detail-page.ts` + route |
-| `src/app/features/crm/reports/reports-page.ts` | `/crm/reports` | Воронка, звіти |
-| `src/app/features/crm/accounts/accounts-page.ts` | `/crm/accounts` | Список користувачів (мок) |
+| Файл                                               | Маршрут              | Задача UI-фази                             |
+| -------------------------------------------------- | -------------------- | ------------------------------------------ |
+| `src/app/features/crm/dashboard/dashboard-page.ts` | `/crm/dashboard`     | Метрики, огляд                             |
+| `src/app/features/crm/leads/leads-page.ts`         | `/crm/leads`         | Таблиця лідів, групування рік/місяць       |
+| —                                                  | `/crm/leads/:leadId` | **Створити** `lead-detail-page.ts` + route |
+| `src/app/features/crm/reports/reports-page.ts`     | `/crm/reports`       | Воронка, звіти                             |
+| `src/app/features/crm/accounts/accounts-page.ts`   | `/crm/accounts`      | Список користувачів (мок)                  |
 
 ---
 
@@ -128,16 +128,16 @@ session.officeContext();  // офіси для фільтра
 
 Готові компоненти: `src/app/ui/` (експорт у `src/app/ui/index.ts`).
 
-| Компонент | Для чого |
-|-----------|----------|
-| `UiDataTable` | Таблиця лідів |
-| `UiButton`, `UiIconButton` | Дії |
-| `UiTextField`, `UiSelect`, `UiTextarea` | Форми |
-| `UiTabs` | Вкладки картки ліда |
-| `UiBadge`, `UiChip` | Статуси |
-| `UiAlert` | Помилки / інфо |
-| `UiDialogService` | Confirm |
-| `UiPagination` | Пагінація |
+| Компонент                               | Для чого            |
+| --------------------------------------- | ------------------- |
+| `UiDataTable`                           | Таблиця лідів       |
+| `UiButton`, `UiIconButton`              | Дії                 |
+| `UiTextField`, `UiSelect`, `UiTextarea` | Форми               |
+| `UiTabs`                                | Вкладки картки ліда |
+| `UiBadge`, `UiChip`                     | Статуси             |
+| `UiAlert`                               | Помилки / інфо      |
+| `UiDialogService`                       | Confirm             |
+| `UiPagination`                          | Пагінація           |
 
 Стилі: токени `--ui-*` з `src/styles.scss`.  
 Референс: сторінка `/design`.
@@ -184,7 +184,7 @@ interface LeadListItem {
   office_code: 'kyiv' | 'warsaw';
   office_name: string;
   assigned_to_name: string | null;
-  source_created_at: string;  // ISO — для групування рік/місяць
+  source_created_at: string; // ISO — для групування рік/місяць
   last_comment: string | null;
   callback_due_at: string | null;
 }
@@ -264,9 +264,9 @@ UI-агент **не налаштовує** Supabase Dashboard і **не пиш�
 
 ## 10. Корисні посилання в репо
 
-| Документ | Зміст |
-|----------|-------|
-| [`docs/FRONTEND-INTEGRATION.md`](docs/FRONTEND-INTEGRATION.md) | API точки, Supabase queries, env |
-| [`crm-interface-prototype-task.md`](crm-interface-prototype-task.md) | Повна UI-специфікація |
-| [`crm-process-ideas.md`](crm-process-ideas.md) | Бізнес-процеси, ролі (концептуально) |
-| [`kolss-crm/PROJECT.md`](../kolss-crm/PROJECT.md) | Реальна бізнес-логіка воронок (джерело) |
+| Документ                                                             | Зміст                                   |
+| -------------------------------------------------------------------- | --------------------------------------- |
+| [`docs/FRONTEND-INTEGRATION.md`](docs/FRONTEND-INTEGRATION.md)       | API точки, Supabase queries, env        |
+| [`crm-interface-prototype-task.md`](crm-interface-prototype-task.md) | Повна UI-специфікація                   |
+| [`crm-process-ideas.md`](crm-process-ideas.md)                       | Бізнес-процеси, ролі (концептуально)    |
+| [`kolss-crm/PROJECT.md`](../kolss-crm/PROJECT.md)                    | Реальна бізнес-логіка воронок (джерело) |

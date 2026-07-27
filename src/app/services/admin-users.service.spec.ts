@@ -6,10 +6,7 @@ import { AdminUsersService } from './admin-users.service';
 describe('AdminUsersService', () => {
   function setup(api: Partial<KolssApiClient>) {
     TestBed.configureTestingModule({
-      providers: [
-        AdminUsersService,
-        { provide: KolssApiClient, useValue: api },
-      ],
+      providers: [AdminUsersService, { provide: KolssApiClient, useValue: api }],
     });
     return TestBed.inject(AdminUsersService);
   }

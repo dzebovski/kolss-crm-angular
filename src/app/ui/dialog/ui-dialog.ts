@@ -1,5 +1,10 @@
 import { Component, inject, Injectable, Type } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialog,
+  MatDialogConfig,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { UiButton } from '@ui/button/ui-button';
 
 /** Shared MatDialog options: backdrop click and Escape close without saving. */

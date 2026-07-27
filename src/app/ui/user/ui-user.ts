@@ -157,4 +157,3 @@ export class UiUser {
     this.avatarFailed.set(true);
   }
 }
-

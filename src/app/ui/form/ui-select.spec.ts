@@ -223,9 +223,7 @@ describe('UiSelect', () => {
     await fixture.whenStable();
 
     const renderedOptions = queryOverlayOptions(overlayContainer);
-    const unassigned = renderedOptions.find((option) =>
-      option.textContent?.includes('Unassigned'),
-    );
+    const unassigned = renderedOptions.find((option) => option.textContent?.includes('Unassigned'));
     const manager = renderedOptions.find((option) =>
       option.textContent?.includes('Inna Yakovenko'),
     );

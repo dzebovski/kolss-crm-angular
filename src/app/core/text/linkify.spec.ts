@@ -8,9 +8,7 @@ describe('linkifySegments', () => {
   });
 
   it('returns plain text unchanged when there are no URLs', () => {
-    expect(linkifySegments('Just a comment')).toEqual([
-      { type: 'text', value: 'Just a comment' },
-    ]);
+    expect(linkifySegments('Just a comment')).toEqual([{ type: 'text', value: 'Just a comment' }]);
   });
 
   it('linkifies a lone https URL', () => {
@@ -20,9 +18,7 @@ describe('linkifySegments', () => {
   });
 
   it('linkifies http and https URLs inside surrounding text', () => {
-    expect(
-      linkifySegments('See http://example.com/a and https://example.com/b please'),
-    ).toEqual([
+    expect(linkifySegments('See http://example.com/a and https://example.com/b please')).toEqual([
       { type: 'text', value: 'See ' },
       { type: 'link', value: 'http://example.com/a' },
       { type: 'text', value: ' and ' },

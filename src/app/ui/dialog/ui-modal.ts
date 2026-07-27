@@ -3,11 +3,7 @@ import { Component, input, output } from '@angular/core';
 @Component({
   selector: 'app-ui-modal',
   template: `
-    <div
-      class="ui-modal-backdrop"
-      role="presentation"
-      (click)="onBackdropClick($event)"
-    >
+    <div class="ui-modal-backdrop" role="presentation" (click)="onBackdropClick($event)">
       <section
         class="ui-modal"
         [class.ui-modal--wide]="wide()"

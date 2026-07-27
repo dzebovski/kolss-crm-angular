@@ -15,7 +15,9 @@ describe('leads-page-preferences.storage', () => {
       setItem: (key: string, value: string) => values.set(key, value),
       removeItem: (key: string) => values.delete(key),
       key: () => null,
-      get length() { return values.size; },
+      get length() {
+        return values.size;
+      },
     });
   });
   afterAll(() => vi.unstubAllGlobals());

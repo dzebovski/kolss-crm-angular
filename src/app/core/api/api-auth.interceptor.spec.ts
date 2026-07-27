@@ -34,9 +34,7 @@ describe('apiAuthInterceptor', () => {
         {
           provide: SupabaseService,
           useValue: {
-            getClient: () => ({
-              auth: { getSession, refreshSession },
-            }),
+            getClient: () => ({ getSession, refreshSession }),
           },
         },
         {

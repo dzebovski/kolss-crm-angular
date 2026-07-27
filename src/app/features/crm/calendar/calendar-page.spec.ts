@@ -190,6 +190,19 @@ const otherOfficeManager = {
 };
 
 describe('CalendarPage', () => {
+  // The component derives its default selected date from the real clock
+  // (`officeDateKey(new Date(), …)`), while every fixture here is dated in the
+  // week of 2026-07-20. Without a fixed clock the week-view specs silently stop
+  // matching once the real date rolls into the next week.
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date('2026-07-23T09:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   async function render(
     queryParams: Record<string, string> = {},
     managers: readonly CrmEmployee[] = [manager],
@@ -295,8 +308,8 @@ describe('CalendarPage', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const heads = Array.from(element.querySelectorAll('.manager-head strong')).map(
-      (node) => node.textContent?.trim(),
+    const heads = Array.from(element.querySelectorAll('.manager-head strong')).map((node) =>
+      node.textContent?.trim(),
     );
     expect(heads).toEqual(['Олена']);
     expect(element.textContent).not.toContain('Деактивований');
@@ -437,10 +450,11 @@ describe('CalendarPage', () => {
       commentReminderDueAt: '2026-07-23T09:00:00.000Z',
       commentReminderAssignedTo: curator.id,
     };
-    const { fixture } = await render({}, [manager, curator, officeAdmin], [
-      memberTask,
-      curatorTask,
-    ]);
+    const { fixture } = await render(
+      {},
+      [manager, curator, officeAdmin],
+      [memberTask, curatorTask],
+    );
     fixture.componentInstance['selectedDate'].set('2026-07-23');
     fixture.componentInstance['view'].set('day');
     fixture.detectChanges();
@@ -448,8 +462,8 @@ describe('CalendarPage', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const heads = Array.from(element.querySelectorAll('.manager-head strong')).map(
-      (node) => node.textContent?.trim(),
+    const heads = Array.from(element.querySelectorAll('.manager-head strong')).map((node) =>
+      node.textContent?.trim(),
     );
     expect(heads).toEqual(['Олена']);
 

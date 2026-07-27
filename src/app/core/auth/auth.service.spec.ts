@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from '@supabase/auth-js';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type { MeResponse } from '@core/api/generated/kolss-api.types';
@@ -75,13 +75,11 @@ describe('AuthService impersonation', () => {
           useValue: {
             isConfigured: () => true,
             getClient: () => ({
-              auth: {
-                getSession,
-                signOut,
-                signInWithPassword: vi.fn(),
-                onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
-                refreshSession: vi.fn(),
-              },
+              getSession,
+              signOut,
+              signInWithPassword: vi.fn(),
+              onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
+              refreshSession: vi.fn(),
             }),
           },
         },
@@ -115,9 +113,9 @@ describe('AuthService impersonation', () => {
       status: 403,
       error: { code: 'invalid_impersonation', message: 'nope' },
     });
-    me
-      .mockRejectedValueOnce(new Error('Impersonation is not permitted', { cause: httpError }))
-      .mockResolvedValueOnce(meResponse({ id: 'admin-user', role: 'super_admin' }));
+    me.mockRejectedValueOnce(
+      new Error('Impersonation is not permitted', { cause: httpError }),
+    ).mockResolvedValueOnce(meResponse({ id: 'admin-user', role: 'super_admin' }));
 
     const auth = TestBed.inject(AuthService);
     await auth.initialize();

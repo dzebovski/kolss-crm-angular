@@ -7,16 +7,16 @@ TypeScript conventions (both are canonical — read them before contributing).
 
 ## Commands
 
-| Command                 | Purpose                                                              |
-| ------------------------ | --------------------------------------------------------------------- |
-| `npm start`              | Dev server (`ng serve`), regenerates `environment.local.ts` first     |
-| `npm run build`          | Production build, regenerates `environment.prod.ts` first             |
-| `npm test`               | Unit tests (Vitest via the Angular test builder)                      |
-| `npm run lint`           | ESLint (TypeScript + templates)                                       |
-| `npm run format`         | Auto-format with Prettier                                             |
-| `npm run format:check`   | Check formatting without writing                                      |
-| `npm run check:api-boundary` | Enforce the Supabase/API boundary (see below)                    |
-| `npm run check`          | Full validation: API boundary → typecheck → lint → test               |
+| Command                      | Purpose                                                           |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `npm start`                  | Dev server (`ng serve`), regenerates `environment.local.ts` first |
+| `npm run build`              | Production build, regenerates `environment.prod.ts` first         |
+| `npm test`                   | Unit tests (Vitest via the Angular test builder)                  |
+| `npm run lint`               | ESLint (TypeScript + templates)                                   |
+| `npm run format`             | Auto-format with Prettier                                         |
+| `npm run format:check`       | Check formatting without writing                                  |
+| `npm run check:api-boundary` | Enforce the Supabase/API boundary (see below)                     |
+| `npm run check`              | Full validation: API boundary → typecheck → lint → test           |
 
 ## Environment configuration
 

@@ -38,6 +38,14 @@
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -98,13 +106,16 @@
         },
         "test": {
           "builder": "@angular/build:unit-test",
-          "options": {
-            "coverage": true,
-            "coverageThresholds": {
-              "statements": 76,
-              "branches": 66,
-              "functions": 65,
-              "lines": 78
+          "options": {},
+          "configurations": {
+            "ci": {
+              "coverage": true,
+              "coverageThresholds": {
+                "statements": 76,
+                "branches": 66,
+                "functions": 65,
+                "lines": 78
+              }
             }
           }
         },

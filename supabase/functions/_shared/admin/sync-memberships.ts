@@ -13,8 +13,8 @@ export async function syncMemberships(
 
   if (officeIds.length === 0) return;
 
-  const { error: insertErr } = await admin.from('user_office_memberships').insert(
-    officeIds.map((office_id) => ({ user_id: userId, office_id })),
-  );
+  const { error: insertErr } = await admin
+    .from('user_office_memberships')
+    .insert(officeIds.map((office_id) => ({ user_id: userId, office_id })));
   if (insertErr) throw insertErr;
 }

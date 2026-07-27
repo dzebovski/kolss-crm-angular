@@ -96,9 +96,7 @@ export function addCalendarMonths(dateKey: string, months: number): string {
     Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth() + 1, 0, 12),
   ).getUTCDate();
   const clampedDay = Math.min(day, lastDay);
-  return new Date(
-    Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth(), clampedDay, 12),
-  )
+  return new Date(Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth(), clampedDay, 12))
     .toISOString()
     .slice(0, 10);
 }

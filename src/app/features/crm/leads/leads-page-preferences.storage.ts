@@ -47,8 +47,7 @@ function isCallStatusFilterKey(value: unknown): value is CallStatusFilterKey {
 
 function isClientStatusFilterKey(value: unknown): value is ClientStatusFilterKey {
   return (
-    typeof value === 'string' &&
-    ALLOWED_CLIENT_STATUS_FILTERS.has(value as ClientStatusFilterKey)
+    typeof value === 'string' && ALLOWED_CLIENT_STATUS_FILTERS.has(value as ClientStatusFilterKey)
   );
 }
 

@@ -220,7 +220,9 @@ describe('DashboardPage lead workflow', () => {
     fixture.detectChanges();
     const page = fixture.nativeElement as HTMLElement;
 
-    expect(page.querySelector('#manager-tasks-title')?.textContent).toContain('Завдання менеджерів');
+    expect(page.querySelector('#manager-tasks-title')?.textContent).toContain(
+      'Завдання менеджерів',
+    );
     expect(page.querySelector('.manager-tasks__total')?.textContent).toContain('1');
     expect(page.querySelector('.manager-tasks__manager')?.textContent).toContain('Данило Мороз');
     expect(page.querySelector('.task-open')?.textContent).toContain('Task Lead');

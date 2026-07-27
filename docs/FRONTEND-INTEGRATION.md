@@ -6,19 +6,19 @@
 
 ## 1. Що реалізовано (Фаза 1)
 
-| Компонент | Шлях | Призначення |
-|-----------|------|-------------|
-| Supabase client | `src/app/core/supabase/supabase.service.ts` | Singleton-клієнт `@supabase/supabase-js` |
-| Auth service | `src/app/core/auth/auth.service.ts` | Сесія, профіль, signIn/signOut |
-| Session service | `src/app/core/session/session.service.ts` | Офіси користувача, view-as |
-| Auth guard | `src/app/core/auth/auth.guard.ts` | Захист `/crm/*`, redirect на `/login` |
-| Guest guard | `src/app/core/auth/auth.guard.ts` | Redirect залогіненого з `/login` |
-| Role guard | `src/app/core/auth/role.guard.ts` | `superAdminGuard` для `/crm/accounts` |
-| Моделі | `src/app/models/database.ts` | TypeScript-типи сутностей |
-| Ролі | `src/app/core/roles/roles.ts` | `canManageUsers`, `hasOfficeLeadFilter` |
-| Login | `src/app/features/auth/login/login-page.ts` | Екран входу |
-| CRM shell | `src/app/features/crm/shell/crm-shell.ts` | Layout + навігація |
-| Placeholder pages | `src/app/features/crm/*/` | dashboard, leads, reports, accounts |
+| Компонент         | Шлях                                        | Призначення                                                                                               |
+| ----------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Supabase client   | `src/app/core/supabase/supabase.service.ts` | Singleton auth-клієнт `@supabase/auth-js` (тільки автентифікація; бізнес-дані йдуть через `api.kolss.eu`) |
+| Auth service      | `src/app/core/auth/auth.service.ts`         | Сесія, профіль, signIn/signOut                                                                            |
+| Session service   | `src/app/core/session/session.service.ts`   | Офіси користувача, view-as                                                                                |
+| Auth guard        | `src/app/core/auth/auth.guard.ts`           | Захист `/crm/*`, redirect на `/login`                                                                     |
+| Guest guard       | `src/app/core/auth/auth.guard.ts`           | Redirect залогіненого з `/login`                                                                          |
+| Role guard        | `src/app/core/auth/role.guard.ts`           | `superAdminGuard` для `/crm/accounts`                                                                     |
+| Моделі            | `src/app/models/database.ts`                | TypeScript-типи сутностей                                                                                 |
+| Ролі              | `src/app/core/roles/roles.ts`               | `canManageUsers`, `hasOfficeLeadFilter`                                                                   |
+| Login             | `src/app/features/auth/login/login-page.ts` | Екран входу                                                                                               |
+| CRM shell         | `src/app/features/crm/shell/crm-shell.ts`   | Layout + навігація                                                                                        |
+| Placeholder pages | `src/app/features/crm/*/`                   | dashboard, leads, reports, accounts                                                                       |
 
 ---
 
@@ -26,11 +26,11 @@
 
 ### Файли
 
-| Файл | Коли використовується |
-|------|----------------------|
-| `src/environments/environment.ts` | Базовий шаблон |
+| Файл                                    | Коли використовується                               |
+| --------------------------------------- | --------------------------------------------------- |
+| `src/environments/environment.ts`       | Базовий шаблон                                      |
 | `src/environments/environment.local.ts` | `ng serve` / watch (генерує `scripts/sync-env.mjs`) |
-| `src/environments/environment.prod.ts` | `ng build` (генерує `scripts/sync-env.mjs --prod`) |
+| `src/environments/environment.prod.ts`  | `ng build` (генерує `scripts/sync-env.mjs --prod`)  |
 
 Локально: `.env.local` → `npm start` / `npm run sync-env`.  
 Vercel: Environment Variables → `prebuild` → `environment.prod.ts`.
@@ -61,17 +61,17 @@ Authentication → URL Configuration:
 
 ## 3. Маршрути
 
-| Шлях | Guard | Статус |
-|------|-------|--------|
-| `/` | — | Redirect → `/login` або `/crm/dashboard` |
-| `/login` | `guestGuard` | Готово |
-| `/design` | — | Дизайн-каталог (без auth) |
-| `/crm` | `authGuard` | CRM shell |
-| `/crm/dashboard` | `authGuard` | Placeholder |
-| `/crm/leads` | `authGuard` | Placeholder → **Фаза 2** |
-| `/crm/leads/:id` | `authGuard` | **Фаза 2** (ще не створено) |
-| `/crm/reports` | `authGuard` | Placeholder → **Фаза 2** |
-| `/crm/accounts` | `authGuard` + `superAdminGuard` | Placeholder → **Фаза 3** |
+| Шлях             | Guard                           | Статус                                   |
+| ---------------- | ------------------------------- | ---------------------------------------- |
+| `/`              | —                               | Redirect → `/login` або `/crm/dashboard` |
+| `/login`         | `guestGuard`                    | Готово                                   |
+| `/design`        | —                               | Дизайн-каталог (без auth)                |
+| `/crm`           | `authGuard`                     | CRM shell                                |
+| `/crm/dashboard` | `authGuard`                     | Placeholder                              |
+| `/crm/leads`     | `authGuard`                     | Placeholder → **Фаза 2**                 |
+| `/crm/leads/:id` | `authGuard`                     | **Фаза 2** (ще не створено)              |
+| `/crm/reports`   | `authGuard`                     | Placeholder → **Фаза 2**                 |
+| `/crm/accounts`  | `authGuard` + `superAdminGuard` | Placeholder → **Фаза 3**                 |
 
 Query params:
 
@@ -113,13 +113,13 @@ const session = inject(SessionService);
 const supabase = injectSupabase();
 
 // Signals (readonly)
-auth.session();           // Supabase Session | null
-auth.profile();           // Profile | null
-auth.sessionContext();    // { user, profile } | null
-auth.isAuthenticated();   // boolean
+auth.session(); // Supabase Session | null
+auth.profile(); // Profile | null
+auth.sessionContext(); // { user, profile } | null
+auth.isAuthenticated(); // boolean
 
-session.officeContext();  // UserOfficeContext | null
-session.filterOffices();  // Office[] для фільтра лідів
+session.officeContext(); // UserOfficeContext | null
+session.filterOffices(); // Office[] для фільтра лідів
 ```
 
 ### Sign in / sign out
@@ -135,12 +135,12 @@ await auth.signOut();
 
 ## 5. Ролі та доступ
 
-| Роль у БД (`profiles.role`) | UI label | Доступ |
-|-----------------------------|----------|--------|
-| `super_admin` | Супер-адмін | Всі офіси, `/crm/accounts` |
-| `curator` | Куратор | Кілька офісів, фільтр по офісу |
-| `office_admin` | Адмін офісу | Офіси з memberships |
-| `office_member` | Менеджер | Офіси з memberships |
+| Роль у БД (`profiles.role`) | UI label    | Доступ                         |
+| --------------------------- | ----------- | ------------------------------ |
+| `super_admin`               | Супер-адмін | Всі офіси, `/crm/accounts`     |
+| `curator`                   | Куратор     | Кілька офісів, фільтр по офісу |
+| `office_admin`              | Адмін офісу | Офіси з memberships            |
+| `office_member`             | Менеджер    | Офіси з memberships            |
 
 **RLS у Supabase** обмежує дані на рівні БД. Фронтенд додатково:
 
@@ -161,38 +161,38 @@ await auth.signOut();
 
 ### Auth / користувачі
 
-| Таблиця | Колонки (ключові) | Використання |
-|---------|-------------------|--------------|
-| `profiles` | `id`, `role`, `display_name`, `is_active` | Сесія, guards |
-| `user_office_memberships` | `user_id`, `office_id` | Офіси користувача |
-| `offices` | `id`, `code`, `name_uk`, `name_pl`, `is_active` | Фільтр, labels |
+| Таблиця                   | Колонки (ключові)                               | Використання      |
+| ------------------------- | ----------------------------------------------- | ----------------- |
+| `profiles`                | `id`, `role`, `display_name`, `is_active`       | Сесія, guards     |
+| `user_office_memberships` | `user_id`, `office_id`                          | Офіси користувача |
+| `offices`                 | `id`, `code`, `name_uk`, `name_pl`, `is_active` | Фільтр, labels    |
 
 ### Ліди (Фаза 2–3)
 
-| Таблиця | Призначення |
-|---------|-------------|
-| `leads` | Головна сутність CRM |
-| `lead_statuses` | Довідник статусів воронки лідів |
-| `lead_comments` | Коментарі на картці ліда |
-| `lead_events` | Історія змін |
-| `lead_contact_attempts` | Спроби додзвону |
-| `lead_showroom_visits` | Візити в шоурум |
-| `lead_contracts` | Договори |
-| `lead_attachments` | Файли (Storage bucket `lead-attachments`) |
+| Таблиця                 | Призначення                               |
+| ----------------------- | ----------------------------------------- |
+| `leads`                 | Головна сутність CRM                      |
+| `lead_statuses`         | Довідник статусів воронки лідів           |
+| `lead_comments`         | Коментарі на картці ліда                  |
+| `lead_events`           | Історія змін                              |
+| `lead_contact_attempts` | Спроби додзвону                           |
+| `lead_showroom_visits`  | Візити в шоурум                           |
+| `lead_contracts`        | Договори                                  |
+| `lead_attachments`      | Файли (Storage bucket `lead-attachments`) |
 
 ### Проєкти (Фаза 5)
 
-| Таблиця | Призначення |
-|---------|-------------|
-| `projects` | Воронка виконання |
-| `project_stages` | Етапи проєкту |
+| Таблиця            | Призначення       |
+| ------------------ | ----------------- |
+| `projects`         | Воронка виконання |
+| `project_stages`   | Етапи проєкту     |
 | `project_comments` | Коментарі проєкту |
 
 ### Довідники
 
-| Таблиця | Призначення |
-|---------|-------------|
-| `loss_reasons` | Причини відмови |
+| Таблиця             | Призначення           |
+| ------------------- | --------------------- |
+| `loss_reasons`      | Причини відмови       |
 | `workflow_statuses` | Статуси workflow ліда |
 
 Повна схема: `kolss-crm/supabase/migrations/`
@@ -206,13 +206,15 @@ await auth.signOut();
 ```typescript
 const { data, error } = await supabase
   .from('leads')
-  .select(`
+  .select(
+    `
     id, name, phone, email, lead_status, workflow_status,
     office_id, assigned_to, source_created_at, created_at,
     last_comment, callback_due_at,
     offices (code, name_uk, name_pl),
     profiles:assigned_to (display_name)
-  `)
+  `,
+  )
   .order('created_at', { ascending: false })
   .limit(50);
 ```
@@ -226,11 +228,7 @@ const { data, error } = await supabase
 ### Один лід
 
 ```typescript
-const { data, error } = await supabase
-  .from('leads')
-  .select('*')
-  .eq('id', leadId)
-  .single();
+const { data, error } = await supabase.from('leads').select('*').eq('id', leadId).single();
 ```
 
 ### Довідник статусів
@@ -302,16 +300,16 @@ export const leadsResource = resource({
 
 Використовувати з `src/app/ui/`:
 
-| Компонент | Selector | Для чого |
-|-----------|----------|----------|
-| `UiDataTable` | `app-ui-data-table` | Таблиця лідів |
-| `UiButton` | `app-ui-button` | Дії |
-| `UiTextField` | `app-ui-text-field` | Форми |
-| `UiSelect` | `app-ui-select` | Фільтри, статуси |
-| `UiTabs` | `app-ui-tabs` | Вкладки картки ліда |
-| `UiBadge` | `app-ui-badge` | Статуси |
-| `UiAlert` | `app-ui-alert` | Помилки |
-| `UiDialogService` | inject | Confirm dialogs |
+| Компонент         | Selector            | Для чого            |
+| ----------------- | ------------------- | ------------------- |
+| `UiDataTable`     | `app-ui-data-table` | Таблиця лідів       |
+| `UiButton`        | `app-ui-button`     | Дії                 |
+| `UiTextField`     | `app-ui-text-field` | Форми               |
+| `UiSelect`        | `app-ui-select`     | Фільтри, статуси    |
+| `UiTabs`          | `app-ui-tabs`       | Вкладки картки ліда |
+| `UiBadge`         | `app-ui-badge`      | Статуси             |
+| `UiAlert`         | `app-ui-alert`      | Помилки             |
+| `UiDialogService` | inject              | Confirm dialogs     |
 
 Дизайн-токени: `src/styles.scss` (`--ui-*`)
 
@@ -331,12 +329,12 @@ interface LeadListItem {
   name: string | null;
   phone: string | null;
   email: string | null;
-  lead_status: string;        // 'new' | 'in_progress' | 'converted' | 'failed'
+  lead_status: string; // 'new' | 'in_progress' | 'converted' | 'failed'
   workflow_status: string;
   office_code: 'kyiv' | 'warsaw';
   office_name: string;
   assigned_to_name: string | null;
-  source_created_at: string;    // ISO date — для групування рік/місяць
+  source_created_at: string; // ISO date — для групування рік/місяць
   last_comment: string | null;
   callback_due_at: string | null;
 }
@@ -359,12 +357,12 @@ const MOCK_OFFICES = [
 
 ### Статуси лідів (з БД seed)
 
-| code | label_uk |
-|------|----------|
-| `new` | Нова заявка |
-| `in_progress` | В роботі |
-| `converted` | Конвертований |
-| `failed` | Невдалий лід |
+| code          | label_uk      |
+| ------------- | ------------- |
+| `new`         | Нова заявка   |
+| `in_progress` | В роботі      |
+| `converted`   | Конвертований |
+| `failed`      | Невдалий лід  |
 
 ---
 
@@ -372,12 +370,12 @@ const MOCK_OFFICES = [
 
 Ці endpoint-и **не** викликаються з Angular:
 
-| Endpoint | Власник |
-|----------|---------|
-| `GET/POST /v1/integrations/meta/webhook` | Go API; Meta verification та Lead Ads delivery |
-| `POST /api/webhooks/site-lead` | Edge Function `site-lead` |
-| `POST /api/webhooks/process-notifications` | Edge Function `process-notifications` |
-| Admin create user | Edge Function `admin-create-user` |
+| Endpoint                                   | Власник                                        |
+| ------------------------------------------ | ---------------------------------------------- |
+| `GET/POST /v1/integrations/meta/webhook`   | Go API; Meta verification та Lead Ads delivery |
+| `POST /api/webhooks/site-lead`             | Edge Function `site-lead`                      |
+| `POST /api/webhooks/process-notifications` | Edge Function `process-notifications`          |
+| Admin create user                          | Edge Function `admin-create-user`              |
 
 Детальніше: `kolss-platform-api/docs/META-LEAD-ADS-SETUP.md`.
 
@@ -408,12 +406,12 @@ npm run check   # typecheck + lint + test
 
 ## 13. Наступні кроки
 
-| Фаза | Що робити |
-|------|-----------|
-| **2** | CRM UI на моках: leads table, lead card, reports |
+| Фаза  | Що робити                                            |
+| ----- | ---------------------------------------------------- |
+| **2** | CRM UI на моках: leads table, lead card, reports     |
 | **3** | `LeadsService` + `resource()`, реальні дані Supabase |
-| **4** | Edge Functions для webhooks |
-| **5** | Projects funnel, workflow actions |
-| **6** | i18n, cutover |
+| **4** | Edge Functions для webhooks                          |
+| **5** | Projects funnel, workflow actions                    |
+| **6** | i18n, cutover                                        |
 
 Джерело бізнес-логіки: `kolss-crm/` (Next.js CRM).

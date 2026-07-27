@@ -21,7 +21,7 @@ export function isLeadFieldKey(value: string): value is LeadFieldKey {
 
 /** Maps legacy Ukrainian audit labels to stable keys. */
 export const LEGACY_FIELD_KEY_MAP: Record<string, LeadFieldKey> = {
-  "імʼя": 'name',
+  імʼя: 'name',
   імя: 'name',
   телефон: 'phone',
   email: 'email',

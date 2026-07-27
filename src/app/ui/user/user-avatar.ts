@@ -11,4 +11,3 @@ export function getAvatarUrl(userId: string | null | undefined): string | null {
   if (!userId) return null;
   return USER_AVATARS.get(userId) ?? null;
 }
-

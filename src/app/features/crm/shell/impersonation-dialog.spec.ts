@@ -39,9 +39,9 @@ describe('ImpersonationDialog', () => {
     fixture.detectChanges();
 
     expect(users.listManagers).toHaveBeenCalledOnce();
-    expect(fixture.componentInstance['managerOptions']().some((option) => option.value === 'mgr-1')).toBe(
-      true,
-    );
+    expect(
+      fixture.componentInstance['managerOptions']().some((option) => option.value === 'mgr-1'),
+    ).toBe(true);
   });
 
   it('emits selected manager id on confirm', async () => {

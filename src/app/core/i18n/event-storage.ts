@@ -67,7 +67,7 @@ export interface RawLeadEventRow {
 
 export function leadFieldKeyFromLegacyUkrainian(field: string): LeadFieldKey | null {
   const map: Record<string, LeadFieldKey> = {
-    "імʼя": 'name',
+    імʼя: 'name',
     імя: 'name',
     телефон: 'phone',
     email: 'email',

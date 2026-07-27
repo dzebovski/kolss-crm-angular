@@ -54,11 +54,7 @@ import { UiIcon } from '@ui/icon/ui-icon';
         </div>
 
         <div class="login-panel login-panel--form">
-          <div
-            class="login-language"
-            [attr.aria-label]="'nav.language' | translate"
-            role="group"
-          >
+          <div class="login-language" [attr.aria-label]="'nav.language' | translate" role="group">
             @for (item of locales; track item.value) {
               <button
                 type="button"

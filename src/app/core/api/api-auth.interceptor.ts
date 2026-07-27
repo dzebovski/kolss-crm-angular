@@ -29,7 +29,7 @@ export const apiAuthInterceptor: HttpInterceptorFn = (request, next) => {
   const supabase = inject(SupabaseService).getClient();
   const impersonation = inject(ImpersonationService);
 
-  return from(supabase.auth.getSession()).pipe(
+  return from(supabase.getSession()).pipe(
     switchMap(({ data, error }) => {
       if (error) throw error;
       const impersonateUserId = impersonation.targetUserId();
@@ -43,7 +43,7 @@ export const apiAuthInterceptor: HttpInterceptorFn = (request, next) => {
           if (!(error instanceof HttpErrorResponse) || error.status !== 401) {
             return throwError(() => error);
           }
-          return from(supabase.auth.refreshSession()).pipe(
+          return from(supabase.refreshSession()).pipe(
             switchMap(({ data: refreshed, error: refreshError }) => {
               if (refreshError || !refreshed.session?.access_token) {
                 return throwError(() => refreshError ?? error);

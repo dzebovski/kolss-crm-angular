@@ -8,10 +8,10 @@
 
 Dashboard → **Project Settings** → **API**:
 
-| Dashboard | Angular `environment.ts` |
-| --- | --- |
-| Project URL | `supabaseUrl` |
-| `anon` public key | `supabaseAnonKey` |
+| Dashboard         | Angular `environment.ts` |
+| ----------------- | ------------------------ |
+| Project URL       | `supabaseUrl`            |
+| `anon` public key | `supabaseAnonKey`        |
 
 Ніколи не додавайте `service_role` key, Meta tokens або Telegram tokens у Angular.
 
