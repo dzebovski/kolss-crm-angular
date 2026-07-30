@@ -11,8 +11,8 @@ export interface LeadsListFilters {
   assignedTo?: string | null;
   search?: string | null;
   source?: string | null;
-  callStatus?: string | null;
-  clientStatus?: string | null;
+  callStatus?: readonly string[] | null;
+  clientStatus?: readonly string[] | null;
   archived?: 'active' | 'only' | 'all';
   days?: number | null;
   limit?: number;

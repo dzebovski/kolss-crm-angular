@@ -451,6 +451,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'leads.filter.byManager': 'Show by manager',
   'leads.filter.callStatus': 'Call status',
   'leads.filter.clientStatus': 'Client status',
+  'leads.filter.selectedCount': '{count} selected',
   'lead.assignManager': 'Assign manager',
   'lead.replaceManager': 'Replace manager',
   'lead.assignManagerTitle': 'Assign manager',

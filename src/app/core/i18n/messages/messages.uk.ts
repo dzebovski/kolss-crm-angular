@@ -448,6 +448,7 @@ export const messagesUk = {
   'leads.filter.byManager': 'Показати по менеджеру',
   'leads.filter.callStatus': 'Статус дзвінка',
   'leads.filter.clientStatus': 'Статус клієнта',
+  'leads.filter.selectedCount': '{count} обрано',
   'lead.assignManager': 'Призначити менеджера',
   'lead.replaceManager': 'Замінити менеджера',
   'lead.assignManagerTitle': 'Призначення менеджера',

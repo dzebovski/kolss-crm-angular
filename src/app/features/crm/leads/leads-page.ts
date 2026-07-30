@@ -22,6 +22,7 @@ import { UiButton } from '@ui/button/ui-button';
 import { UiAlert } from '@ui/feedback/ui-alert';
 import { UiBadge } from '@ui/feedback/ui-badge';
 import { UiChip } from '@ui/feedback/ui-chip';
+import { UiMultiSelect, type UiMultiSelectOption } from '@ui/form/ui-multi-select';
 import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { UiIcon } from '@ui/icon/ui-icon';
@@ -48,6 +49,7 @@ import {
     UiButton,
     UiChip,
     UiIcon,
+    UiMultiSelect,
     UiSelect,
     UiTextField,
     UiUser,
@@ -69,11 +71,11 @@ export class LeadsPage {
   protected readonly debouncedQuery = signal('');
   protected readonly showArchived = signal(false);
   protected readonly periodDays = signal<number | null>(this.initialPreferences.periodDays);
-  protected readonly callStatusFilter = signal<CallStatusFilterKey | ''>(
-    this.initialPreferences.callStatusFilter ?? '',
+  protected readonly callStatusFilter = signal<readonly CallStatusFilterKey[]>(
+    this.initialPreferences.callStatusFilter,
   );
-  protected readonly clientStatusFilter = signal<ClientStatusFilterKey | ''>(
-    this.initialPreferences.clientStatusFilter ?? '',
+  protected readonly clientStatusFilter = signal<readonly ClientStatusFilterKey[]>(
+    this.initialPreferences.clientStatusFilter,
   );
   protected readonly managerFilter = signal(this.initialPreferences.managerFilter);
   protected readonly createDialogOpen = signal(false);
@@ -84,8 +86,8 @@ export class LeadsPage {
     effect(() => {
       writeLeadsPagePreferences({
         periodDays: this.periodDays(),
-        callStatusFilter: this.callStatusFilter() || null,
-        clientStatusFilter: this.clientStatusFilter() || null,
+        callStatusFilter: this.callStatusFilter(),
+        clientStatusFilter: this.clientStatusFilter(),
         managerFilter: this.managerFilter(),
       });
     });
@@ -108,7 +110,7 @@ export class LeadsPage {
     ];
   });
 
-  protected readonly callStatusOptions = computed((): readonly UiSelectOption[] => {
+  protected readonly callStatusOptions = computed((): readonly UiMultiSelectOption[] => {
     this.i18n.locale();
     return (['reached', 'no_answer', 'callback_requested'] as const).map((status) => ({
       value: status,
@@ -116,7 +118,7 @@ export class LeadsPage {
     }));
   });
 
-  protected readonly clientStatusOptions = computed((): readonly UiSelectOption[] => {
+  protected readonly clientStatusOptions = computed((): readonly UiMultiSelectOption[] => {
     this.i18n.locale();
     return (
       [
@@ -131,14 +133,19 @@ export class LeadsPage {
     ).map((status) => ({ value: status, label: this.clientStatusFilterLabel(status) }));
   });
 
+  protected readonly filterSummaryLabel = computed(() => {
+    this.i18n.locale();
+    return (count: number) => this.i18n.t('leads.filter.selectedCount', { count });
+  });
+
   protected readonly leadsResource = resource({
     params: () => ({
       officeId: this.session.selectedOfficeId(),
       search: this.debouncedQuery().trim(),
       archived: this.showArchived() ? ('only' as const) : ('active' as const),
       days: this.periodDays(),
-      callStatus: this.callStatusFilter() || null,
-      clientStatus: this.clientStatusFilter() || null,
+      callStatus: this.callStatusFilter(),
+      clientStatus: this.clientStatusFilter(),
       assignedTo: this.managerFilter() || null,
     }),
     loader: ({ params }) => this.leadsService.list(params),
@@ -251,10 +258,16 @@ export class LeadsPage {
     );
   }
 
-  protected clearFilter(kind: 'call' | 'client' | 'manager'): void {
-    if (kind === 'call') this.callStatusFilter.set('');
-    if (kind === 'client') this.clientStatusFilter.set('');
-    if (kind === 'manager') this.managerFilter.set('');
+  protected removeCallStatus(value: CallStatusFilterKey): void {
+    this.callStatusFilter.update((values) => values.filter((v) => v !== value));
+  }
+
+  protected removeClientStatus(value: ClientStatusFilterKey): void {
+    this.clientStatusFilter.update((values) => values.filter((v) => v !== value));
+  }
+
+  protected clearManagerFilter(): void {
+    this.managerFilter.set('');
   }
 
   protected toggleArchived(): void {

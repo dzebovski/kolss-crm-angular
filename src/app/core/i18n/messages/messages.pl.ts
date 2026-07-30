@@ -454,6 +454,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'leads.filter.byManager': 'Pokaż według menedżera',
   'leads.filter.callStatus': 'Status połączenia',
   'leads.filter.clientStatus': 'Status klienta',
+  'leads.filter.selectedCount': 'Wybrano {count}',
   'lead.assignManager': 'Przypisz menedżera',
   'lead.replaceManager': 'Zastąp menedżera',
   'lead.assignManagerTitle': 'Przypisanie menedżera',

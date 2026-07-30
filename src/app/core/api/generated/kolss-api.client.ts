@@ -48,7 +48,7 @@ export class KolssApiClient {
   }
 
   listLeads(
-    query: Readonly<Record<string, string | number | null | undefined>>,
+    query: Readonly<Record<string, string | number | readonly string[] | null | undefined>>,
   ): Promise<LeadListResponse> {
     return this.get('/v1/leads', query);
   }
@@ -197,11 +197,16 @@ export class KolssApiClient {
 
   private async get<T>(
     path: string,
-    query: Readonly<Record<string, string | number | null | undefined>> = {},
+    query: Readonly<Record<string, string | number | readonly string[] | null | undefined>> = {},
   ): Promise<T> {
     let params = new HttpParams();
     for (const [key, value] of Object.entries(query)) {
-      if (value != null && value !== '') params = params.set(key, String(value));
+      if (value == null) continue;
+      if (Array.isArray(value)) {
+        if (value.length > 0) params = params.set(key, value.join(','));
+        continue;
+      }
+      if (value !== '') params = params.set(key, String(value));
     }
     return this.unwrap(firstValueFrom(this.http.get<T>(this.baseUrl + path, { params })));
   }

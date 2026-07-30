@@ -6,8 +6,8 @@ export type ClientStatusFilterKey = ClientStatus | 'in_work';
 
 export interface LeadsPagePreferences {
   periodDays: number | null;
-  callStatusFilter: CallStatusFilterKey | null;
-  clientStatusFilter: ClientStatusFilterKey | null;
+  callStatusFilter: readonly CallStatusFilterKey[];
+  clientStatusFilter: readonly ClientStatusFilterKey[];
   /** Empty string = no manager filter. */
   managerFilter: string;
 }
@@ -32,8 +32,8 @@ const ALLOWED_CLIENT_STATUS_FILTERS = new Set<ClientStatusFilterKey>([
 
 export const DEFAULT_LEADS_PAGE_PREFERENCES: LeadsPagePreferences = {
   periodDays: 7,
-  callStatusFilter: null,
-  clientStatusFilter: null,
+  callStatusFilter: [],
+  clientStatusFilter: [],
   managerFilter: '',
 };
 
@@ -49,6 +49,14 @@ function isClientStatusFilterKey(value: unknown): value is ClientStatusFilterKey
   return (
     typeof value === 'string' && ALLOWED_CLIENT_STATUS_FILTERS.has(value as ClientStatusFilterKey)
   );
+}
+
+function parseCallStatusFilterKeys(value: unknown): readonly CallStatusFilterKey[] {
+  return Array.isArray(value) ? value.filter(isCallStatusFilterKey) : [];
+}
+
+function parseClientStatusFilterKeys(value: unknown): readonly ClientStatusFilterKey[] {
+  return Array.isArray(value) ? value.filter(isClientStatusFilterKey) : [];
 }
 
 function isPeriodDays(value: unknown): value is number | null {
@@ -73,12 +81,8 @@ export function readLeadsPagePreferences(): LeadsPagePreferences {
       periodDays: isPeriodDays(record['periodDays'])
         ? record['periodDays']
         : DEFAULT_LEADS_PAGE_PREFERENCES.periodDays,
-      callStatusFilter: isCallStatusFilterKey(record['callStatusFilter'])
-        ? record['callStatusFilter']
-        : DEFAULT_LEADS_PAGE_PREFERENCES.callStatusFilter,
-      clientStatusFilter: isClientStatusFilterKey(record['clientStatusFilter'])
-        ? record['clientStatusFilter']
-        : DEFAULT_LEADS_PAGE_PREFERENCES.clientStatusFilter,
+      callStatusFilter: parseCallStatusFilterKeys(record['callStatusFilter']),
+      clientStatusFilter: parseClientStatusFilterKeys(record['clientStatusFilter']),
       managerFilter: isManagerFilter(record['managerFilter'])
         ? record['managerFilter']
         : DEFAULT_LEADS_PAGE_PREFERENCES.managerFilter,

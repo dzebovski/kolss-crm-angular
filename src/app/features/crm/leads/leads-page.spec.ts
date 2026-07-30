@@ -8,7 +8,7 @@ import { FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
 import type { Lead } from '@domain/lead.types';
 import { LeadsService, type LeadsListFilters } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
-import { UiSelect } from '@ui/form/ui-select';
+import { UiMultiSelect } from '@ui/form/ui-multi-select';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { LeadsPage } from './leads-page';
 
@@ -151,21 +151,36 @@ describe('LeadsPage', () => {
     expect(count?.querySelector('.lead-count-badge')?.textContent).toContain('2 лідів');
     expect(count?.querySelector('.lead-count-badge app-ui-icon')).not.toBeNull();
 
-    const callStatusSelect = fixture.debugElement.queryAll(By.directive(UiSelect))[0]
-      ?.componentInstance as UiSelect;
-    callStatusSelect.value.set('reached');
+    const callStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[0]
+      ?.componentInstance as UiMultiSelect;
+    callStatusSelect.value.set(['reached']);
     await fixture.whenStable();
 
-    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ callStatus: 'reached' }));
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ callStatus: ['reached'] }));
     expect(element.querySelector('.lead-count-badge')?.textContent).toContain('0 лідів');
+  });
+
+  it('combines multiple call statuses for the same filter with OR', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    list.mockClear();
+
+    const callStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[0]
+      ?.componentInstance as UiMultiSelect;
+    callStatusSelect.value.set(['reached', 'no_answer']);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ callStatus: ['reached', 'no_answer'] }),
+    );
   });
 
   it('exposes separate new lead and in progress client status filters', async () => {
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
 
-    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiSelect))[1]
-      ?.componentInstance as UiSelect;
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
     const optionValues = clientStatusSelect.options().map((option) => option.value);
     expect(optionValues).toEqual([
       'new_lead',
@@ -180,13 +195,53 @@ describe('LeadsPage', () => {
       'В роботі',
     );
 
-    clientStatusSelect.value.set('new_lead');
+    clientStatusSelect.value.set(['new_lead']);
     await fixture.whenStable();
-    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: 'new_lead' }));
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['new_lead'] }));
 
-    clientStatusSelect.value.set('in_work');
+    clientStatusSelect.value.set(['in_work']);
     await fixture.whenStable();
-    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: 'in_work' }));
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['in_work'] }));
+  });
+
+  it('renders a chip per selected client status and removing one keeps the rest', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    list.mockClear();
+
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
+    clientStatusSelect.value.set(['new_lead', 'thinking']);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ clientStatus: ['new_lead', 'thinking'] }),
+    );
+
+    const element = fixture.nativeElement as HTMLElement;
+    const chips = Array.from(element.querySelectorAll('.filter-chips app-ui-chip'));
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Нова заявка'),
+        expect.stringContaining('Думає'),
+      ]),
+    );
+
+    const removeButtons = Array.from(
+      element.querySelectorAll<HTMLButtonElement>('.filter-chips app-ui-chip button'),
+    );
+    const thinkingRemove = removeButtons.find((button) =>
+      button.getAttribute('aria-label')?.includes('Думає'),
+    );
+    thinkingRemove?.click();
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['new_lead'] }));
+    expect(
+      Array.from(element.querySelectorAll('.filter-chips app-ui-chip')).map((chip) =>
+        chip.textContent?.trim(),
+      ),
+    ).toEqual([expect.stringContaining('Нова заявка')]);
   });
 
   it('shows a new lead as in progress after any call result is recorded', async () => {

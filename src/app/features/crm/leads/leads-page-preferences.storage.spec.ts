@@ -30,26 +30,62 @@ describe('leads-page-preferences.storage', () => {
     expect(readLeadsPagePreferences()).toEqual(DEFAULT_LEADS_PAGE_PREFERENCES);
   });
 
-  it('persists independent call and client status filters', () => {
+  it('persists multiple call and client status filters', () => {
     const preferences = {
       periodDays: 30,
-      callStatusFilter: 'no_answer' as const,
-      clientStatusFilter: 'thinking' as const,
+      callStatusFilter: ['no_answer', 'reached'] as const,
+      clientStatusFilter: ['thinking', 'in_work'] as const,
       managerFilter: 'manager-2',
     };
     writeLeadsPagePreferences(preferences);
     expect(readLeadsPagePreferences()).toEqual(preferences);
   });
 
-  it('persists the in_work client status filter', () => {
+  it('persists an empty selection as no filter', () => {
     const preferences = {
       periodDays: 7,
-      callStatusFilter: null,
-      clientStatusFilter: 'in_work' as const,
+      callStatusFilter: [] as const,
+      clientStatusFilter: [] as const,
       managerFilter: '',
     };
     writeLeadsPagePreferences(preferences);
     expect(readLeadsPagePreferences()).toEqual(preferences);
+  });
+
+  it('keeps valid elements and drops an invalid one', () => {
+    localStorage.setItem(
+      LEADS_PAGE_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({
+        periodDays: 7,
+        callStatusFilter: ['reached', 'not_a_status'],
+        clientStatusFilter: ['thinking', 42],
+        managerFilter: '',
+      }),
+    );
+    expect(readLeadsPagePreferences()).toEqual({
+      periodDays: 7,
+      callStatusFilter: ['reached'],
+      clientStatusFilter: ['thinking'],
+      managerFilter: '',
+    });
+  });
+
+  it('falls back to an empty array when the stored value is not an array', () => {
+    localStorage.setItem(
+      LEADS_PAGE_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({
+        periodDays: 7,
+        callStatusFilter: 'reached',
+        clientStatusFilter: 'thinking',
+        managerFilter: '',
+      }),
+    );
+    expect(readLeadsPagePreferences()).toEqual({
+      periodDays: 7,
+      callStatusFilter: [],
+      clientStatusFilter: [],
+      managerFilter: '',
+    });
   });
 
   it('does not restore the retired workflow filter', () => {
@@ -59,8 +95,8 @@ describe('leads-page-preferences.storage', () => {
     );
     expect(readLeadsPagePreferences()).toEqual({
       periodDays: 180,
-      callStatusFilter: null,
-      clientStatusFilter: null,
+      callStatusFilter: [],
+      clientStatusFilter: [],
       managerFilter: '',
     });
   });

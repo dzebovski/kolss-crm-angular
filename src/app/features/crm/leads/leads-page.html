@@ -61,17 +61,19 @@
         [(value)]="query"
       />
 
-      <app-ui-select
+      <app-ui-multi-select
         [label]="'leads.filter.callStatus' | translate"
         [placeholder]="'leads.filter.all' | translate"
         [options]="callStatusOptions()"
+        [selectedSummaryLabel]="filterSummaryLabel()"
         [(value)]="callStatusFilter"
       />
 
-      <app-ui-select
+      <app-ui-multi-select
         [label]="'leads.filter.clientStatus' | translate"
         [placeholder]="'leads.filter.all' | translate"
         [options]="clientStatusOptions()"
+        [selectedSummaryLabel]="filterSummaryLabel()"
         [(value)]="clientStatusFilter"
       />
 
@@ -83,44 +85,37 @@
       />
     </div>
 
-    @if (callStatusFilter() || clientStatusFilter() || managerFilter()) {
+    @if (callStatusFilter().length || clientStatusFilter().length || managerFilter()) {
       <div class="filter-chips" aria-live="polite">
-        <span></span>
-        <span>
-          @if (callStatusFilter(); as callStatus) {
-            <app-ui-chip
-              [label]="callStatusLabel(callStatus)"
-              [tone]="callStatusTone(callStatus)"
-              [removable]="true"
-              (removed)="clearFilter('call')"
-            >
-              {{ callStatusLabel(callStatus) }}
-            </app-ui-chip>
-          }
-        </span>
-        <span>
-          @if (clientStatusFilter(); as clientStatus) {
-            <app-ui-chip
-              [label]="clientStatusFilterLabel(clientStatus)"
-              [tone]="clientStatusFilterTone(clientStatus)"
-              [removable]="true"
-              (removed)="clearFilter('client')"
-            >
-              {{ clientStatusFilterLabel(clientStatus) }}
-            </app-ui-chip>
-          }
-        </span>
-        <span>
-          @if (managerFilter(); as managerId) {
-            <app-ui-chip
-              [label]="employeeName(managerId)"
-              [removable]="true"
-              (removed)="clearFilter('manager')"
-            >
-              {{ employeeName(managerId) }}
-            </app-ui-chip>
-          }
-        </span>
+        @for (status of callStatusFilter(); track status) {
+          <app-ui-chip
+            [label]="callStatusLabel(status)"
+            [tone]="callStatusTone(status)"
+            [removable]="true"
+            (removed)="removeCallStatus(status)"
+          >
+            {{ callStatusLabel(status) }}
+          </app-ui-chip>
+        }
+        @for (status of clientStatusFilter(); track status) {
+          <app-ui-chip
+            [label]="clientStatusFilterLabel(status)"
+            [tone]="clientStatusFilterTone(status)"
+            [removable]="true"
+            (removed)="removeClientStatus(status)"
+          >
+            {{ clientStatusFilterLabel(status) }}
+          </app-ui-chip>
+        }
+        @if (managerFilter(); as managerId) {
+          <app-ui-chip
+            [label]="employeeName(managerId)"
+            [removable]="true"
+            (removed)="clearManagerFilter()"
+          >
+            {{ employeeName(managerId) }}
+          </app-ui-chip>
+        }
       </div>
     }
   </div>
