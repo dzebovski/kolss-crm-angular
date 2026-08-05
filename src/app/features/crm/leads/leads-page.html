@@ -228,6 +228,9 @@
                   <app-ui-badge [tone]="clientStatusToneForLead(lead)">
                     {{ clientStatusLabelForLead(lead) }}
                   </app-ui-badge>
+                  @if (closeReasonLabelForLead(lead); as closeReason) {
+                    <small>{{ closeReason }}</small>
+                  }
                   @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
                     <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
                   } @else if (showroomDueAtForLead(lead); as showroomDueAt) {

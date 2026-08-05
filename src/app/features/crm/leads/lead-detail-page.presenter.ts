@@ -112,6 +112,14 @@ export function clientStatusLabelForLead(
   return leadIsInWork(lead) ? workflowTakenLabel : clientStatusLabel(lead.clientStatus);
 }
 
+/** The lead's close-reason label alone (badge context); '' unless the lead is closed_lost. */
+export function closeReasonLabelForLead(
+  lead: Pick<Lead, 'close'>,
+  closeReasonLabel: (code: string) => string,
+): string {
+  return lead.close ? closeReasonLabel(lead.close.reason) : '';
+}
+
 /** The one-line "Closed - reason - comment" summary shown once a lead is closed_lost. */
 export function closeSummaryLine(
   lead: Pick<Lead, 'close'>,

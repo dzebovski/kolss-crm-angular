@@ -95,6 +95,10 @@ export class LeadSummaryPanel {
     );
   }
 
+  protected closeReasonLabelForLead(lead: Lead): string {
+    return presenter.closeReasonLabelForLead(lead, (code) => this.i18n.closeReasonLabel(code));
+  }
+
   protected reminderLabel(kind: LeadReminderKind): string {
     return this.i18n.t(`leadDetail.reminder.${kind}` as 'leadDetail.reminder.callback');
   }

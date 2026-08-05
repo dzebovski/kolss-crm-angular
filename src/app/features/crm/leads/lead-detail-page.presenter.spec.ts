@@ -3,6 +3,7 @@ import type { LeadEvent } from '@domain/lead.types';
 import {
   activeOfficeStaffOptions,
   clientStatusLabelForLead,
+  closeReasonLabelForLead,
   closeSummaryLine,
   eventBody,
   eventDueDate,
@@ -235,6 +236,24 @@ describe('lead-detail-page.presenter', () => {
         },
       };
       expect(closeSummaryLine(lead, 'Закрито', () => 'Дорого')).toBe('Закрито - Дорого');
+    });
+  });
+
+  describe('closeReasonLabelForLead', () => {
+    it('returns an empty string when the lead has no close payload', () => {
+      expect(closeReasonLabelForLead({ close: null }, (code) => code)).toBe('');
+    });
+
+    it('returns the reason label when the lead is closed', () => {
+      const lead = {
+        close: {
+          reason: 'expensive' as const,
+          comment: '',
+          closedAt: '2026-07-16T09:15:00.000Z',
+          actorId: 'emp-kyiv-1',
+        },
+      };
+      expect(closeReasonLabelForLead(lead, () => 'Дорого')).toBe('Дорого');
     });
   });
 

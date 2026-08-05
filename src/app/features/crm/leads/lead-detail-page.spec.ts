@@ -517,6 +517,7 @@ describe('LeadDetailView', () => {
     expect(summary?.textContent).toContain(
       'Закрито - Дорого - Після пояснення бюджету клієнт відмовився.',
     );
+    expect(element.querySelector('.status-item--client')?.textContent).toContain('Дорого');
     expect(terminalNote).not.toBeNull();
     expect(findButton(terminalNote!, 'Перевідкрити')).toBeTruthy();
     expect(findButton(summary!, 'Архівувати')).toBeTruthy();

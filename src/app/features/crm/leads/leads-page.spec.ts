@@ -121,6 +121,16 @@ describe('LeadsPage', () => {
     expect(cells[3]?.querySelector('.call-status-actor')?.textContent).toContain('Софія Литвин');
   });
 
+  it('shows the close reason next to the client status for a closed_lost lead', async () => {
+    list.mockResolvedValueOnce([FIXTURE_LEADS[7]!]);
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    const cells = (fixture.nativeElement as HTMLElement).querySelectorAll('.lead-row td');
+
+    expect(cells[4]?.textContent).toContain('Закрито');
+    expect(cells[4]?.textContent).toContain('Дорого');
+  });
+
   it('does not render an author line when the current call author is unknown', async () => {
     list.mockResolvedValueOnce([
       {

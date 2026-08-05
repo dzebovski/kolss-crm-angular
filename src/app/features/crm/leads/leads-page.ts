@@ -29,6 +29,7 @@ import { UiIcon } from '@ui/icon/ui-icon';
 import { LinkifiedText } from '@ui/text/linkified-text';
 import { UiUser } from '@ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
+import { closeReasonLabelForLead } from './lead-detail-page.presenter';
 import { LeadDueDate } from './lead-due-date';
 import {
   readLeadsPagePreferences,
@@ -213,6 +214,10 @@ export class LeadsPage {
 
   protected clientStatusToneForLead(lead: Lead) {
     return clientStatusToneForLead(lead);
+  }
+
+  protected closeReasonLabelForLead(lead: Lead): string {
+    return closeReasonLabelForLead(lead, (code) => this.i18n.closeReasonLabel(code));
   }
 
   protected commentContext(category: LeadEventCategory | null, statusCode: string | null): string {

@@ -206,6 +206,9 @@
       <app-ui-badge [tone]="clientToneForLead(currentLead)">
         {{ clientStatusLabelForLead(currentLead) }}
       </app-ui-badge>
+      @if (closeReasonLabelForLead(currentLead); as closeReason) {
+        <small>{{ closeReason }}</small>
+      }
       @if (showroomDueAtForLead(currentLead) && calendarAppointmentQuery(); as appointmentQuery) {
         <a
           class="status-item__appointment-link"
