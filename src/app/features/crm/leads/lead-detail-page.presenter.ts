@@ -25,6 +25,7 @@ export function isClientStatus(value: string | null | undefined): value is Clien
   return (
     value === 'new_lead' ||
     value === 'showroom_invited' ||
+    value === 'measurement_scheduled' ||
     value === 'calculation_in_progress' ||
     value === 'thinking' ||
     value === 'closed_lost' ||

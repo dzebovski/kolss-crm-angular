@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '@core/auth/auth.service';
 import { KolssApiError } from '@core/api/generated/kolss-api.client';
+import type { AppointmentKind } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
 import { officeTimeZone } from '@core/office/office.config';
 import * as leadPolicy from '@core/policy/lead.policy';
@@ -12,6 +13,7 @@ import { SessionService } from '@core/session/session.service';
 import {
   activeRemindersForLead,
   leadIsTerminal,
+  measurementDueAtForLead,
   showroomDueAtForLead,
   type LeadActiveReminder,
 } from '@domain/lead.rules';
@@ -388,7 +390,7 @@ export class LeadDetailView {
     );
   }
 
-  protected async openLeadAppointment(lead: Lead): Promise<void> {
+  protected async openLeadAppointment(lead: Lead, kind: AppointmentKind): Promise<void> {
     const office = (this.session.officeContext()?.filterOffices ?? []).find(
       (item) => item.code === lead.officeCode,
     );
@@ -397,9 +399,10 @@ export class LeadDetailView {
       return;
     }
     const timeZone = office.timezone_name ?? officeTimeZone(office.code);
-    const showroomDueAt = showroomDueAtForLead(lead);
-    const date = showroomDueAt
-      ? officeDateKey(new Date(showroomDueAt), timeZone)
+    const dueAt =
+      kind === 'measurement' ? measurementDueAtForLead(lead) : showroomDueAtForLead(lead);
+    const date = dueAt
+      ? officeDateKey(new Date(dueAt), timeZone)
       : officeDateKey(new Date(), timeZone);
     this.actionPending.set(true);
     this.actionError.set('');
@@ -410,7 +413,9 @@ export class LeadDetailView {
         to: addCalendarDays(date, 1),
         status: 'scheduled',
       });
-      const appointment = response.items.find((item) => item.lead.id === lead.id);
+      const appointment = response.items.find(
+        (item) => item.lead.id === lead.id && item.kind === kind,
+      );
       const result = await firstValueFrom(
         this.dialog
           .open<AppointmentDrawer, AppointmentDrawerData, AppointmentDrawerResult | undefined>(
@@ -420,6 +425,7 @@ export class LeadDetailView {
                 office: { ...office, timezone_name: timeZone },
                 managers: this.employeesResource.value() ?? [],
                 lead,
+                kind,
                 date,
                 appointment,
                 appointments: response.items,
@@ -482,8 +488,8 @@ export class LeadDetailView {
   }
 
   protected calendarAppointmentQueryParams(lead: Lead): CalendarAppointmentDeepLink | null {
-    const showroomDueAt = showroomDueAtForLead(lead);
-    if (!showroomDueAt) return null;
+    const appointmentDueAt = showroomDueAtForLead(lead) ?? measurementDueAtForLead(lead);
+    if (!appointmentDueAt) return null;
     const office = (this.session.officeContext()?.filterOffices ?? []).find(
       (item) => item.code === lead.officeCode,
     );
@@ -491,7 +497,7 @@ export class LeadDetailView {
     const timeZone = office.timezone_name ?? officeTimeZone(office.code);
     return calendarAppointmentDeepLink({
       leadId: lead.id,
-      showroomDueAt,
+      appointmentDueAt,
       officeId: office.id,
       timeZone,
     });

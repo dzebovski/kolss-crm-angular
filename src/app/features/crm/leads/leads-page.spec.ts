@@ -196,6 +196,7 @@ describe('LeadsPage', () => {
       'new_lead',
       'in_work',
       'showroom_invited',
+      'measurement_scheduled',
       'calculation_in_progress',
       'thinking',
       'closed_lost',

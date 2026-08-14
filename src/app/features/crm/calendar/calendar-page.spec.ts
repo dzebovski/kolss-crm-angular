@@ -53,6 +53,7 @@ const appointment: Appointment = {
     timezoneName: office.timezone_name,
   },
   responsibleManager: { id: manager.id, displayName: manager.displayName },
+  kind: 'showroom',
   startsAt: '2026-07-23T07:00:00.000Z',
   endsAt: '2026-07-23T08:00:00.000Z',
   status: 'scheduled',
@@ -69,6 +70,7 @@ const visitedAppointment: Appointment = {
   ...appointment,
   id: 'appointment-visited',
   lead: { id: 'lead-visited', name: 'Ірина Бондар', phone: '+380501112244' },
+  kind: 'showroom',
   startsAt: '2026-07-23T08:00:00.000Z',
   endsAt: '2026-07-23T09:00:00.000Z',
   status: 'visited',
@@ -79,6 +81,7 @@ const noShowAppointment: Appointment = {
   ...appointment,
   id: 'appointment-no-show',
   lead: { id: 'lead-no-show', name: 'Максим Левченко', phone: '+380501112255' },
+  kind: 'showroom',
   startsAt: '2026-07-23T09:00:00.000Z',
   endsAt: '2026-07-23T10:00:00.000Z',
   status: 'no_show',
@@ -89,9 +92,20 @@ const canceledAppointment: Appointment = {
   ...appointment,
   id: 'appointment-canceled',
   lead: { id: 'lead-canceled', name: 'Олена Савчук', phone: '+380501112266' },
+  kind: 'showroom',
   startsAt: '2026-07-23T10:00:00.000Z',
   endsAt: '2026-07-23T11:00:00.000Z',
   status: 'canceled',
+  version: 2,
+};
+
+const measurementAppointment: Appointment = {
+  ...appointment,
+  id: 'appointment-measurement',
+  lead: { id: 'lead-measurement', name: 'Тарас Мельник', phone: '+380501112288' },
+  kind: 'measurement',
+  startsAt: '2026-07-23T12:00:00.000Z',
+  endsAt: '2026-07-23T14:00:00.000Z',
   version: 2,
 };
 
@@ -99,6 +113,7 @@ const rescheduledAppointment: Appointment = {
   ...appointment,
   id: 'appointment-rescheduled',
   lead: { id: 'lead-rescheduled', name: 'Старий запис', phone: '+380501112277' },
+  kind: 'showroom',
   startsAt: '2026-07-23T11:00:00.000Z',
   endsAt: '2026-07-23T12:00:00.000Z',
   status: 'rescheduled',
@@ -216,6 +231,7 @@ describe('CalendarPage', () => {
         visitedAppointment,
         noShowAppointment,
         canceledAppointment,
+        measurementAppointment,
         rescheduledAppointment,
       ],
       timezone: office.timezone_name,
@@ -291,6 +307,31 @@ describe('CalendarPage', () => {
     expect(element.querySelector('.appointment-card .appointment-comment')?.textContent).toContain(
       'Підготувати документи для зустрічі',
     );
+  });
+
+  it('marks measurement appointments apart from showroom meetings', async () => {
+    const { fixture, open } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const measurementCard = element.querySelector('.week-card.is-measurement');
+    expect(measurementCard).not.toBeNull();
+    expect(measurementCard?.textContent).toContain('Тарас Мельник');
+    expect(element.querySelectorAll('.week-card.is-measurement')).toHaveLength(1);
+    expect(measurementCard?.querySelector('[aria-label]')?.getAttribute('aria-label')).toContain(
+      'Замір у клієнта',
+    );
+    expect(element.querySelector('.kind-legend')?.textContent).toContain('Замір у клієнта');
+
+    const measurementButton = Array.from(
+      element.querySelectorAll<HTMLButtonElement>('.header-actions button'),
+    ).find((button) => button.textContent?.includes('Замір у клієнта'))!;
+    measurementButton.click();
+    await fixture.whenStable();
+
+    expect(open.mock.calls[0]?.[1]?.data).toEqual(expect.objectContaining({ kind: 'measurement' }));
   });
 
   it('shows only active managers of the selected office in day view', async () => {
@@ -475,6 +516,34 @@ describe('CalendarPage', () => {
     expect(banner?.querySelector('.reminder-chip.is-task')?.textContent).toContain('Curator Task');
     expect(banner?.textContent).toContain('Куратор Офісу');
     expect(banner?.textContent).not.toContain('Member Task');
+  });
+
+  it('drops reminders of closed leads from the calendar', async () => {
+    const closedCallback: Lead = {
+      ...callbackLead,
+      id: 'lead-closed-callback',
+      name: 'Закритий Callback',
+      clientStatus: 'closed_lost',
+    };
+    const signedTask: Lead = {
+      ...baseLead,
+      id: 'lead-signed-task',
+      name: 'Підписаний Договір',
+      clientStatus: 'contract_signed',
+      commentReminderDueAt: '2026-07-23T09:00:00.000Z',
+      commentReminderAssignedTo: manager.id,
+    };
+    const { fixture } = await render({}, [manager], [closedCallback, signedTask]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.reminder-chip')).toBeNull();
+    expect(element.textContent).not.toContain('Закритий Callback');
+    expect(element.textContent).not.toContain('Підписаний Договір');
   });
 
   it('narrows reminders by the selected manager filter', async () => {

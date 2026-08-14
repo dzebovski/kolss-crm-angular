@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.7.0' as const;
+export const API_CONTRACT_VERSION = '2.8.0' as const;
 
 export interface ApiErrorResponse {
   readonly code: string;
@@ -69,6 +69,7 @@ export interface AdminUserRow {
 }
 
 export type AppointmentStatus = 'scheduled' | 'visited' | 'no_show' | 'canceled' | 'rescheduled';
+export type AppointmentKind = 'showroom' | 'measurement';
 export type AppointmentWarning = 'manager_overlap' | 'outside_working_hours';
 
 export interface Appointment {
@@ -88,6 +89,7 @@ export interface Appointment {
     readonly id: string;
     readonly displayName: string;
   } | null;
+  readonly kind: AppointmentKind;
   readonly startsAt: string;
   readonly endsAt: string;
   readonly status: AppointmentStatus;
@@ -114,6 +116,7 @@ export interface AppointmentMutationResponse {
 
 export interface CreateAppointmentRequest {
   readonly leadId: string;
+  readonly kind?: AppointmentKind;
   readonly startsAtLocal: string;
   readonly durationMinutes: number;
   readonly responsibleManagerId: string;

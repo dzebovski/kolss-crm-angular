@@ -132,6 +132,7 @@ export class KolssApiClient {
     readonly to: string;
     readonly managerId?: string;
     readonly status?: string;
+    readonly kind?: string;
   }): Promise<AppointmentListResponse> {
     return this.get('/v1/appointments', query);
   }

@@ -25,6 +25,7 @@ const appointment: Appointment = {
     timezoneName: 'Europe/Kyiv',
   },
   responsibleManager: { id: 'manager-1', displayName: 'Олена' },
+  kind: 'showroom',
   startsAt: '2026-07-23T07:00:00.000Z',
   endsAt: '2026-07-23T08:00:00.000Z',
   status: 'scheduled',
@@ -122,7 +123,7 @@ describe('appointment office-time helpers', () => {
     expect(
       calendarAppointmentDeepLink({
         leadId: 'lead-1',
-        showroomDueAt: '2026-07-22T22:30:00.000Z',
+        appointmentDueAt: '2026-07-22T22:30:00.000Z',
         officeId: 'office-kyiv',
         timeZone: 'Europe/Kyiv',
       }),

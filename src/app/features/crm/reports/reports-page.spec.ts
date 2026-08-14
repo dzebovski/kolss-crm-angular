@@ -22,6 +22,7 @@ const report: LeadReportResponse = {
     byClientStatus: {
       new_lead: 0,
       showroom_invited: 0,
+      measurement_scheduled: 0,
       calculation_in_progress: 1,
       thinking: 0,
       closed_lost: 1,
@@ -55,6 +56,7 @@ const report: LeadReportResponse = {
         byClientStatus: {
           new_lead: 0,
           showroom_invited: 0,
+          measurement_scheduled: 0,
           calculation_in_progress: 1,
           thinking: 0,
           closed_lost: 1,
@@ -125,6 +127,7 @@ const report: LeadReportResponse = {
         byClientStatus: {
           new_lead: 0,
           showroom_invited: 0,
+          measurement_scheduled: 0,
           calculation_in_progress: 0,
           thinking: 0,
           closed_lost: 0,

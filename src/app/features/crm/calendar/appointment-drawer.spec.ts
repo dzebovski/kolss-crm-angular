@@ -7,6 +7,7 @@ import { SessionService } from '@core/session/session.service';
 import { FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
 import { AppointmentsService } from '@services/appointments.service';
 import { LeadsService } from '@services/leads.service';
+import { KolssApiError } from '@core/api/generated/kolss-api.client';
 import { AppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 
 describe('AppointmentDrawer', () => {
@@ -22,6 +23,7 @@ describe('AppointmentDrawer', () => {
         timezoneName: 'Europe/Kyiv',
       },
       responsibleManager: { id: 'manager-1', displayName: 'Олена' },
+      kind: 'showroom',
       startsAt: '2026-07-26T17:00:00.000Z',
       endsAt: '2026-07-26T18:00:00.000Z',
       status: 'scheduled',
@@ -90,6 +92,7 @@ describe('AppointmentDrawer', () => {
 
     expect(create).toHaveBeenCalledWith({
       leadId: lead.id,
+      kind: 'showroom',
       startsAtLocal: '2026-07-26T20:00',
       durationMinutes: 60,
       responsibleManagerId: 'manager-1',
@@ -132,6 +135,7 @@ describe('AppointmentDrawer', () => {
           timezoneName: 'Europe/Kyiv',
         },
         responsibleManager: { id: 'manager-1', displayName: 'Олена' },
+        kind: 'showroom',
         startsAt: '2026-07-23T07:00:00.000Z',
         endsAt: '2026-07-23T08:00:00.000Z',
         status: 'visited',
@@ -215,6 +219,7 @@ describe('AppointmentDrawer', () => {
           timezoneName: 'Europe/Kyiv',
         },
         responsibleManager: { id: 'manager-1', displayName: 'Олена' },
+        kind: 'showroom',
         startsAt: '2026-07-23T07:00:00.000Z',
         endsAt: '2026-07-23T08:00:00.000Z',
         status: 'canceled',
@@ -312,5 +317,194 @@ describe('AppointmentDrawer', () => {
     // that races TestBed teardown.
     fixture.componentInstance['close']();
     expect(close).toHaveBeenCalledWith();
+  });
+
+  it('creates a measurement with the 120-minute default and a teal kind chip', async () => {
+    const lead = { ...FIXTURE_LEADS[0]!, assignedToId: 'manager-1' };
+    const create = vi.fn().mockResolvedValue({ id: 'appointment-2' });
+    const close = vi.fn();
+    const data: AppointmentDrawerData = {
+      office: {
+        id: 'office-kyiv',
+        code: 'kyiv',
+        name_uk: 'Київ',
+        name_pl: 'Kijów',
+        timezone_name: 'Europe/Kyiv',
+        is_active: true,
+      },
+      managers: [
+        {
+          id: 'manager-1',
+          email: null,
+          displayName: 'Олена',
+          role: 'office_member',
+          officeIds: ['kyiv'],
+          officeUuids: ['office-kyiv'],
+          status: 'active',
+          createdAt: '2026-01-01T00:00:00Z',
+          lastActiveAt: '2026-07-23T00:00:00Z',
+        },
+      ],
+      lead,
+      kind: 'measurement',
+      date: '2026-07-27',
+      time: '11:00',
+    };
+    await TestBed.configureTestingModule({
+      imports: [AppointmentDrawer],
+      providers: [
+        provideRouter([]),
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: MatDialogRef, useValue: { close } },
+        { provide: AppointmentsService, useValue: { create } },
+        { provide: LeadsService, useValue: { list: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: { sessionContext: () => ({ user: { id: 'manager-1' } }) },
+        },
+        { provide: SessionService, useValue: { locale: () => 'uk' } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppointmentDrawer);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.appointment-kind.is-measurement')?.textContent).toContain(
+      'Замір у клієнта',
+    );
+    element.querySelector<HTMLFormElement>('form')!.requestSubmit();
+    await fixture.whenStable();
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'measurement', durationMinutes: 120 }),
+    );
+  });
+
+  it('sends a custom duration and blocks an invalid one', async () => {
+    const lead = { ...FIXTURE_LEADS[0]!, assignedToId: 'manager-1' };
+    const create = vi.fn().mockResolvedValue({ id: 'appointment-3' });
+    const data: AppointmentDrawerData = {
+      office: {
+        id: 'office-kyiv',
+        code: 'kyiv',
+        name_uk: 'Київ',
+        name_pl: 'Kijów',
+        timezone_name: 'Europe/Kyiv',
+        is_active: true,
+      },
+      managers: [
+        {
+          id: 'manager-1',
+          email: null,
+          displayName: 'Олена',
+          role: 'office_member',
+          officeIds: ['kyiv'],
+          officeUuids: ['office-kyiv'],
+          status: 'active',
+          createdAt: '2026-01-01T00:00:00Z',
+          lastActiveAt: '2026-07-23T00:00:00Z',
+        },
+      ],
+      lead,
+      kind: 'measurement',
+      date: '2026-07-27',
+      time: '11:00',
+    };
+    await TestBed.configureTestingModule({
+      imports: [AppointmentDrawer],
+      providers: [
+        provideRouter([]),
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: MatDialogRef, useValue: { close: vi.fn() } },
+        { provide: AppointmentsService, useValue: { create } },
+        { provide: LeadsService, useValue: { list: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: { sessionContext: () => ({ user: { id: 'manager-1' } }) },
+        },
+        { provide: SessionService, useValue: { locale: () => 'uk' } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppointmentDrawer);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const component = fixture.componentInstance as unknown as {
+      model: { update: (fn: (value: Record<string, string>) => Record<string, string>) => void };
+    };
+
+    component.model.update((value) => ({ ...value, duration: 'custom', customDuration: '35' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
+    await fixture.whenStable();
+    expect(create).not.toHaveBeenCalled();
+
+    component.model.update((value) => ({ ...value, customDuration: '150' }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
+    await fixture.whenStable();
+
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ durationMinutes: 150 }));
+  });
+
+  it('surfaces the server manager_busy rejection instead of saving', async () => {
+    const lead = { ...FIXTURE_LEADS[0]!, assignedToId: 'manager-1' };
+    const create = vi
+      .fn()
+      .mockRejectedValue(new KolssApiError('Manager busy', 'manager_busy', 409, 'req-1'));
+    const close = vi.fn();
+    const data: AppointmentDrawerData = {
+      office: {
+        id: 'office-kyiv',
+        code: 'kyiv',
+        name_uk: 'Київ',
+        name_pl: 'Kijów',
+        timezone_name: 'Europe/Kyiv',
+        is_active: true,
+      },
+      managers: [
+        {
+          id: 'manager-1',
+          email: null,
+          displayName: 'Олена',
+          role: 'office_member',
+          officeIds: ['kyiv'],
+          officeUuids: ['office-kyiv'],
+          status: 'active',
+          createdAt: '2026-01-01T00:00:00Z',
+          lastActiveAt: '2026-07-23T00:00:00Z',
+        },
+      ],
+      lead,
+      date: '2026-07-27',
+      time: '11:00',
+    };
+    await TestBed.configureTestingModule({
+      imports: [AppointmentDrawer],
+      providers: [
+        provideRouter([]),
+        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: MatDialogRef, useValue: { close } },
+        { provide: AppointmentsService, useValue: { create } },
+        { provide: LeadsService, useValue: { list: vi.fn() } },
+        {
+          provide: AuthService,
+          useValue: { sessionContext: () => ({ user: { id: 'manager-1' } }) },
+        },
+        { provide: SessionService, useValue: { locale: () => 'uk' } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(AppointmentDrawer);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
+    await fixture.whenStable();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.error')?.textContent).toContain(
+      'уже зайнятий',
+    );
+    expect(close).not.toHaveBeenCalled();
   });
 });

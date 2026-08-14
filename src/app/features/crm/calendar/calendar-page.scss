@@ -48,6 +48,43 @@ h1 {
   gap: var(--ui-space-2);
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
+}
+
+.kind-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ui-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+}
+
+.kind-swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 0.2rem;
+  border: 1px solid color-mix(in srgb, var(--ui-action) 45%, transparent);
+  background: var(--ui-action);
+
+  &.is-measurement {
+    border-color: color-mix(in srgb, var(--ui-teal) 45%, transparent);
+    background: var(--ui-teal);
+  }
+}
+
 .date-navigation strong {
   min-width: 13rem;
   margin-left: var(--ui-space-2);
@@ -287,6 +324,16 @@ h1 {
   white-space: nowrap;
 }
 
+.is-measurement {
+  border-color: color-mix(in srgb, var(--ui-teal) 30%, var(--ui-border));
+  border-left-color: var(--ui-teal);
+  background: color-mix(in srgb, var(--ui-teal) 8%, var(--ui-surface-raised));
+
+  time {
+    color: var(--ui-teal);
+  }
+}
+
 .has-warning {
   border-left-color: var(--ui-warning);
 }
@@ -304,6 +351,10 @@ h1 {
 .is-canceled {
   border-left-color: var(--ui-danger);
   background: var(--ui-danger-soft);
+}
+
+.is-measurement .appointment-status-icon {
+  color: var(--ui-teal);
 }
 
 .is-visited time,
@@ -574,6 +625,10 @@ h1 {
   }
 
   .toolbar-filters {
+    flex-wrap: wrap;
+  }
+
+  .kind-legend {
     flex-wrap: wrap;
   }
 

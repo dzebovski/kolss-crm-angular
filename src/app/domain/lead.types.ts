@@ -7,6 +7,7 @@ export type CallStatus = 'reached' | 'no_answer' | 'callback_requested';
 export type ClientStatus =
   | 'new_lead'
   | 'showroom_invited'
+  | 'measurement_scheduled'
   | 'calculation_in_progress'
   | 'thinking'
   | 'closed_lost'
@@ -167,6 +168,7 @@ export interface Lead {
   readonly commentReminderAssignedTo: string | null;
   readonly callbackDueContext?: CallbackDueContext | null;
   readonly showroomDueAt?: string | null;
+  readonly measurementDueAt?: string | null;
   readonly lastComment: string | null;
   readonly latestTimelineComment: LatestTimelineComment | null;
   readonly lastActivityAt: string;
@@ -243,6 +245,6 @@ export type LeadActivityPayload =
     }
   | {
       readonly type: 'clear_reminder';
-      readonly kind: 'callback' | 'thinking' | 'comment' | 'showroom';
+      readonly kind: 'callback' | 'thinking' | 'comment' | 'showroom' | 'measurement';
     }
   | { readonly type: 'reopen' };

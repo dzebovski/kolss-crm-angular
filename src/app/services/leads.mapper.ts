@@ -66,6 +66,7 @@ export type LeadListRow = LeadRow & {
   comment_reminder_due_at?: string | null;
   comment_reminder_assigned_to?: string | null;
   showroom_due_at?: string | null;
+  measurement_due_at?: string | null;
   callback_due_context?: CallbackDueContextEmbed | null;
   markers?: readonly LeadMarkerEmbed[] | null;
 };
@@ -541,6 +542,13 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
           callbackDueContext.statusCode === 'showroom_invited'
         ? row.callback_due_at
         : null;
+  const measurementDueAt =
+    row.measurement_due_at !== undefined
+      ? row.measurement_due_at
+      : callbackDueContext?.category === 'client_status' &&
+          callbackDueContext.statusCode === 'measurement_scheduled'
+        ? row.callback_due_at
+        : null;
 
   return {
     id: row.id,
@@ -575,6 +583,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     commentReminderAssignedTo: row.comment_reminder_assigned_to ?? null,
     callbackDueContext,
     showroomDueAt,
+    measurementDueAt,
     lastComment: row.last_comment,
     latestTimelineComment: mapLatestTimelineComment(row.latest_timeline_comment),
     lastActivityAt: row.updated_at,
@@ -629,6 +638,7 @@ function mapCallStatus(status: string | null | undefined): CallStatus | null {
 function mapClientStatus(status: string | null | undefined): ClientStatus {
   switch (status) {
     case 'showroom_invited':
+    case 'measurement_scheduled':
     case 'calculation_in_progress':
     case 'thinking':
     case 'closed_lost':

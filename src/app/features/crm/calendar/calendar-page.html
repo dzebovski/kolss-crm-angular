@@ -4,10 +4,16 @@
       <p>{{ i18n.t('calendar.kicker') }}</p>
       <h1 id="calendar-title">{{ i18n.t('calendar.title') }}</h1>
     </div>
-    <app-ui-button (pressed)="openCreate()">
-      <app-ui-icon name="add" [size]="18" />
-      {{ i18n.t('calendar.newAppointment') }}
-    </app-ui-button>
+    <div class="header-actions">
+      <app-ui-button (pressed)="openCreate()">
+        <app-ui-icon name="add" [size]="18" />
+        {{ i18n.t('calendar.newAppointment') }}
+      </app-ui-button>
+      <app-ui-button variant="secondary" (pressed)="openCreateMeasurement()">
+        <app-ui-icon name="straighten" [size]="18" />
+        {{ i18n.t('calendar.kind.measurement') }}
+      </app-ui-button>
+    </div>
   </header>
 
   <div class="toolbar" role="toolbar" [attr.aria-label]="i18n.t('calendar.controls')">
@@ -62,6 +68,12 @@
           {{ i18n.t('calendar.month') }}
         </button>
       </div>
+      <ul class="kind-legend" [attr.aria-label]="i18n.t('calendar.legend')">
+        <li><span class="kind-swatch"></span>{{ i18n.t('calendar.kind.showroom') }}</li>
+        <li>
+          <span class="kind-swatch is-measurement"></span>{{ i18n.t('calendar.kind.measurement') }}
+        </li>
+      </ul>
     </div>
   </div>
 
@@ -150,6 +162,7 @@
                     ngGridCellWidget
                     type="button"
                     class="appointment-card"
+                    [class.is-measurement]="appointment.kind === 'measurement'"
                     [class.has-warning]="appointment.warnings.length"
                     [class.is-visited]="appointment.status === 'visited'"
                     [class.is-no-show]="appointment.status === 'no_show'"
@@ -168,7 +181,7 @@
                         [class.is-canceled]="appointment.status === 'canceled'"
                         [name]="appointmentStatusIcon(appointment)"
                         [size]="15"
-                        [attr.aria-label]="appointmentStatusLabel(appointment)"
+                        [attr.aria-label]="appointmentIconLabel(appointment)"
                       />
                     }
                     @if (appointment.comment; as comment) {
@@ -211,6 +224,7 @@
                   ngGridCellWidget
                   type="button"
                   class="week-card"
+                  [class.is-measurement]="appointment.kind === 'measurement'"
                   [class.has-warning]="appointment.warnings.length"
                   [class.is-visited]="appointment.status === 'visited'"
                   [class.is-no-show]="appointment.status === 'no_show'"
@@ -225,7 +239,7 @@
                       <app-ui-icon
                         [name]="appointmentStatusIcon(appointment)"
                         [size]="14"
-                        [attr.aria-label]="appointmentStatusLabel(appointment)"
+                        [attr.aria-label]="appointmentIconLabel(appointment)"
                       />
                     }
                   </span>
@@ -316,6 +330,7 @@
                     ngGridCellWidget
                     type="button"
                     class="month-card"
+                    [class.is-measurement]="appointment.kind === 'measurement'"
                     [class.has-warning]="appointment.warnings.length"
                     [class.is-visited]="appointment.status === 'visited'"
                     [class.is-no-show]="appointment.status === 'no_show'"
@@ -333,7 +348,7 @@
                         [class.is-canceled]="appointment.status === 'canceled'"
                         [name]="appointmentStatusIcon(appointment)"
                         [size]="12"
-                        [attr.aria-label]="appointmentStatusLabel(appointment)"
+                        [attr.aria-label]="appointmentIconLabel(appointment)"
                       />
                     }
                   </button>
@@ -366,6 +381,7 @@
             <button
               type="button"
               class="agenda-card"
+              [class.is-measurement]="appointment.kind === 'measurement'"
               [class.has-warning]="appointment.warnings.length"
               [class.is-visited]="appointment.status === 'visited'"
               [class.is-no-show]="appointment.status === 'no_show'"
@@ -403,7 +419,7 @@
                   <app-ui-icon
                     [name]="appointmentStatusIcon(appointment)"
                     [size]="16"
-                    [attr.aria-label]="appointmentStatusLabel(appointment)"
+                    [attr.aria-label]="appointmentIconLabel(appointment)"
                   />
                 }
                 <app-ui-icon name="chevron_right" [size]="18" />

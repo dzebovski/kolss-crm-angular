@@ -10,6 +10,7 @@ import {
   defaultCurrencyForOffice,
   leadIsTerminal,
 } from '@domain/lead.rules';
+import type { AppointmentKind } from '@core/api/generated/kolss-api.types';
 import type { CallStatus, ClientStatus, Lead } from '@domain/lead.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { UiButton } from '@ui/button/ui-button';
@@ -46,11 +47,27 @@ const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label' | 'tone'>[] 
 
 type SelectableClientStatus = Exclude<ClientStatus, 'new_lead'>;
 
+/**
+ * Statuses that own a calendar appointment: they are never set directly, they
+ * open the appointment drawer, and re-selecting the current one reschedules.
+ */
+const APPOINTMENT_KIND_BY_STATUS = {
+  showroom_invited: 'showroom',
+  measurement_scheduled: 'measurement',
+} as const satisfies Partial<Record<SelectableClientStatus, AppointmentKind>>;
+
+type AppointmentClientStatus = keyof typeof APPOINTMENT_KIND_BY_STATUS;
+
+function isAppointmentStatus(status: ClientStatus): status is AppointmentClientStatus {
+  return status in APPOINTMENT_KIND_BY_STATUS;
+}
+
 const CLIENT_STATUS_ACTIONS: readonly Omit<
   RadialAction<SelectableClientStatus>,
   'label' | 'tone'
 >[] = [
   { id: 'showroom_invited', icon: 'calendar_month' },
+  { id: 'measurement_scheduled', icon: 'straighten' },
   { id: 'calculation_in_progress', icon: 'automation' },
   { id: 'thinking', icon: 'schedule' },
   { id: 'closed_lost', icon: 'close' },
@@ -60,11 +77,12 @@ const CLIENT_STATUS_ACTIONS: readonly Omit<
 const CLIENT_STATUS_RADIAL_LAYOUT: RadialLayoutConfig<SelectableClientStatus> = {
   buttonAppearance: 'tone',
   anglesByActionId: {
-    calculation_in_progress: -126,
-    showroom_invited: -54,
-    contract_signed: 18,
+    calculation_in_progress: -150,
+    showroom_invited: -90,
+    measurement_scheduled: -30,
+    contract_signed: 30,
     thinking: 90,
-    closed_lost: 162,
+    closed_lost: 150,
   },
 };
 
@@ -103,7 +121,7 @@ export class LeadActionsPanel {
   readonly restoreRequested = output<void>();
   readonly archiveRequested = output<void>();
   readonly deletePermanentlyRequested = output<void>();
-  readonly showroomInviteRequested = output<void>();
+  readonly appointmentRequested = output<AppointmentKind>();
 
   protected readonly isTerminal = leadIsTerminal;
 
@@ -186,7 +204,7 @@ export class LeadActionsPanel {
               ...action,
               label: this.i18n.clientStatusLabel(action.id),
               tone: clientStatusTone(action.id),
-              disabled: action.id === lead.clientStatus && action.id !== 'showroom_invited',
+              disabled: action.id === lead.clientStatus && !isAppointmentStatus(action.id),
             })),
             layout: CLIENT_STATUS_RADIAL_LAYOUT,
           },
@@ -235,7 +253,7 @@ export class LeadActionsPanel {
   }
 
   private async selectClientStatus(lead: Lead, status: SelectableClientStatus): Promise<void> {
-    if (status === lead.clientStatus && status !== 'showroom_invited') return;
+    if (status === lead.clientStatus && !isAppointmentStatus(status)) return;
     if (status === 'closed_lost') {
       const result = await firstValueFrom(
         this.dialog
@@ -275,8 +293,8 @@ export class LeadActionsPanel {
       );
       return;
     }
-    if (status === 'showroom_invited') {
-      this.showroomInviteRequested.emit();
+    if (isAppointmentStatus(status)) {
+      this.appointmentRequested.emit(APPOINTMENT_KIND_BY_STATUS[status]);
       return;
     }
     if (status === 'thinking') {

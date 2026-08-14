@@ -109,7 +109,7 @@ export class LeadSummaryPanel {
 
   protected reminderIcon(
     kind: LeadReminderKind,
-  ): 'phone_in_talk' | 'schedule' | 'campaign' | 'calendar_month' {
+  ): 'phone_in_talk' | 'schedule' | 'campaign' | 'calendar_month' | 'straighten' {
     switch (kind) {
       case 'callback':
         return 'phone_in_talk';
@@ -119,6 +119,8 @@ export class LeadSummaryPanel {
         return 'campaign';
       case 'showroom':
         return 'calendar_month';
+      case 'measurement':
+        return 'straighten';
     }
   }
 }

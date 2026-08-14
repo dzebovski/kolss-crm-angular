@@ -13,6 +13,7 @@ import {
   commentDueAtForLead,
   clientStatusTone,
   groupLeadsForDashboard,
+  leadIsTerminal,
   showroomDueAtForLead,
 } from '@domain/lead.rules';
 import type { LeadMarkerKind, Lead } from '@domain/lead.types';
@@ -93,7 +94,7 @@ export class DashboardPage {
   /** Active leads whose latest comment is a manager task, grouped by assignee. */
   protected readonly managerTasks = computed<readonly ManagerTaskGroup[]>(() => {
     const leads = (this.leadsResource.value() ?? []).filter(
-      (lead) => !lead.archivedAt && commentAssigneeForLead(lead),
+      (lead) => !lead.archivedAt && !leadIsTerminal(lead) && commentAssigneeForLead(lead),
     );
     const byManager = new Map<string, Lead[]>();
     for (const lead of leads) {

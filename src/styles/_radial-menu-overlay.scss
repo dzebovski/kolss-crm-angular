@@ -52,6 +52,11 @@
   color: var(--ui-warning-on-solid);
 }
 
+.radial-selector[data-button-appearance='tone'] .radial-action[data-tone='teal'] {
+  background: var(--ui-teal-solid);
+  color: var(--ui-teal-on-solid);
+}
+
 .radial-selector[data-button-appearance='tone'] .radial-action[data-tone='neutral'] {
   background: var(--ui-neutral-solid);
   color: var(--ui-neutral-on-solid);

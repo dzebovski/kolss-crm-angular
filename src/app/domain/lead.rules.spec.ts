@@ -6,7 +6,9 @@ import {
   commentAssigneeForLead,
   commentDueAtForLead,
   groupLeadsByYearMonth,
+  groupLeadsForDashboard,
   matchesLeadSearch,
+  measurementDueAtForLead,
   showroomDueAtForLead,
   sumContractsByCurrency,
   validateCloseLead,
@@ -28,11 +30,98 @@ describe('CRM status tones', () => {
     expect([
       clientStatusTone('new_lead'),
       clientStatusTone('showroom_invited'),
+      clientStatusTone('measurement_scheduled'),
       clientStatusTone('calculation_in_progress'),
       clientStatusTone('thinking'),
       clientStatusTone('closed_lost'),
       clientStatusTone('contract_signed'),
-    ]).toEqual(['brand', 'info', 'warning', 'brand', 'danger', 'success']);
+    ]).toEqual(['brand', 'info', 'teal', 'warning', 'brand', 'danger', 'success']);
+  });
+});
+
+describe('on-site measurements', () => {
+  it('keeps the measurement date independent of the showroom date', () => {
+    const lead = {
+      callbackDueAt: null,
+      showroomDueAt: '2026-08-05T12:00:00.000Z',
+      measurementDueAt: '2026-08-11T08:00:00.000Z',
+    };
+
+    expect(showroomDueAtForLead(lead)).toBe('2026-08-05T12:00:00.000Z');
+    expect(measurementDueAtForLead(lead)).toBe('2026-08-11T08:00:00.000Z');
+  });
+
+  it('falls back to the callback context when the API omits measurement_due_at', () => {
+    expect(
+      measurementDueAtForLead({
+        callbackDueAt: '2026-08-11T08:00:00.000Z',
+        callbackDueContext: { category: 'client_status', statusCode: 'measurement_scheduled' },
+      }),
+    ).toBe('2026-08-11T08:00:00.000Z');
+    expect(
+      measurementDueAtForLead({
+        callbackDueAt: '2026-08-11T08:00:00.000Z',
+        callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
+      }),
+    ).toBeNull();
+  });
+
+  it('surfaces both appointments as separate reminders', () => {
+    expect(
+      activeRemindersForLead({
+        callStatus: null,
+        clientStatus: 'measurement_scheduled',
+        callbackDueAt: null,
+        commentReminderDueAt: null,
+        showroomDueAt: '2026-08-05T12:00:00.000Z',
+        measurementDueAt: '2026-08-11T08:00:00.000Z',
+      }),
+    ).toEqual([
+      { kind: 'showroom', dueAt: '2026-08-05T12:00:00.000Z' },
+      { kind: 'measurement', dueAt: '2026-08-11T08:00:00.000Z' },
+    ]);
+  });
+
+  it('gives measurement leads their own dashboard bucket', () => {
+    const lead = {
+      ...FIXTURE_LEADS[0]!,
+      clientStatus: 'measurement_scheduled',
+      archivedAt: null,
+    } as Lead;
+    const groups = groupLeadsForDashboard([lead]);
+    const measurement = groups.find((group) => group.key === 'measurement');
+
+    expect(measurement?.tone).toBe('teal');
+    expect(measurement?.rows).toEqual([lead]);
+    expect(groups.find((group) => group.key === 'showroom')?.rows).toEqual([]);
+  });
+});
+
+describe('closed leads carry no reminders', () => {
+  it.each(['closed_lost', 'contract_signed'])('drops every reminder for %s', (clientStatus) => {
+    expect(
+      activeRemindersForLead({
+        callStatus: 'callback_requested',
+        clientStatus,
+        callbackDueAt: '2026-08-03T12:00:00.000Z',
+        commentReminderDueAt: '2026-08-06T12:00:00.000Z',
+        showroomDueAt: '2026-08-05T12:00:00.000Z',
+        measurementDueAt: '2026-08-11T08:00:00.000Z',
+      }),
+    ).toEqual([]);
+  });
+
+  it('still lists reminders while the lead is in work', () => {
+    expect(
+      activeRemindersForLead({
+        callStatus: 'callback_requested',
+        clientStatus: 'new_lead',
+        callbackDueAt: '2026-08-03T12:00:00.000Z',
+        commentReminderDueAt: null,
+        showroomDueAt: null,
+        measurementDueAt: null,
+      }),
+    ).toEqual([{ kind: 'callback', dueAt: '2026-08-03T12:00:00.000Z' }]);
   });
 });
 

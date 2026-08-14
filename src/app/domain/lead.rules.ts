@@ -104,6 +104,7 @@ export function clientStatusTone(status: ClientStatus): UiBadgeTone {
   const tones: Record<ClientStatus, UiBadgeTone> = {
     new_lead: 'brand',
     showroom_invited: 'info',
+    measurement_scheduled: 'teal',
     calculation_in_progress: 'warning',
     thinking: 'brand',
     closed_lost: 'danger',
@@ -122,8 +123,13 @@ export function clientStatusToneForLead(lead: Lead): UiBadgeTone {
   return clientStatusTone(lead.clientStatus);
 }
 
+/** Terminal statuses end the work on a lead — no groups, no reminders, no tasks. */
+export function clientStatusIsTerminal(status: string): boolean {
+  return status === 'closed_lost' || status === 'contract_signed';
+}
+
 export function leadIsTerminal(lead: Lead): boolean {
-  return lead.clientStatus === 'closed_lost' || lead.clientStatus === 'contract_signed';
+  return clientStatusIsTerminal(lead.clientStatus);
 }
 
 /** Only used to build the lead-search haystack below; never surfaced directly. */
@@ -179,7 +185,8 @@ export function groupLeadsByYearMonth(leads: readonly Lead[]): readonly LeadMont
 }
 
 export interface DashboardLeadGroup {
-  readonly key: 'new' | 'callback' | 'showroom' | 'calculation' | 'in_work' | 'paused';
+  readonly key:
+    'new' | 'callback' | 'showroom' | 'measurement' | 'calculation' | 'in_work' | 'paused';
   readonly tone: UiBadgeTone;
   readonly icon: UiIconName;
   readonly rows: readonly Lead[];
@@ -194,6 +201,7 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
   const newLeads: Lead[] = [];
   const callback: Lead[] = [];
   const showroom: Lead[] = [];
+  const measurement: Lead[] = [];
   const calculation: Lead[] = [];
   const paused: Lead[] = [];
   const inWork: Lead[] = [];
@@ -210,6 +218,8 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
       lead.workflowStatus === 'visit_rescheduled'
     ) {
       showroom.push(lead);
+    } else if (lead.clientStatus === 'measurement_scheduled') {
+      measurement.push(lead);
     } else if (lead.clientStatus === 'calculation_in_progress') {
       calculation.push(lead);
     } else if (lead.callStatus === 'no_answer' || lead.callStatus === 'callback_requested') {
@@ -225,6 +235,7 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
     { key: 'new', tone: 'brand', icon: 'campaign', rows: newLeads },
     { key: 'callback', tone: 'warning', icon: 'phone_missed', rows: callback },
     { key: 'showroom', tone: 'info', icon: 'schedule', rows: showroom },
+    { key: 'measurement', tone: 'teal', icon: 'straighten', rows: measurement },
     { key: 'calculation', tone: 'warning', icon: 'bar_chart', rows: calculation },
     { key: 'in_work', tone: 'info', icon: 'automation', rows: inWork },
     { key: 'paused', tone: 'info', icon: 'history', rows: paused },
@@ -295,7 +306,7 @@ export function commentDueAtForLead(lead: { commentReminderDueAt: string | null 
   return lead.commentReminderDueAt;
 }
 
-export type LeadReminderKind = 'callback' | 'thinking' | 'comment' | 'showroom';
+export type LeadReminderKind = 'callback' | 'thinking' | 'comment' | 'showroom' | 'measurement';
 
 export interface LeadActiveReminder {
   readonly kind: LeadReminderKind;
@@ -305,7 +316,8 @@ export interface LeadActiveReminder {
 /**
  * Active due-dated reminders shown at the top of the lead card.
  * Callback and thinking share leads.callbackDueAt; comment uses the derived
- * field; showroom uses the scheduled visit date.
+ * field; showroom uses the scheduled visit date. Closed leads have none — the
+ * API already blanks these fields, this keeps stale cached rows honest too.
  */
 export function activeRemindersForLead(lead: {
   callStatus: string | null;
@@ -314,7 +326,10 @@ export function activeRemindersForLead(lead: {
   commentReminderDueAt: string | null;
   callbackDueContext?: { category: string; statusCode: string | null } | null;
   showroomDueAt?: string | null;
+  measurementDueAt?: string | null;
 }): readonly LeadActiveReminder[] {
+  if (clientStatusIsTerminal(lead.clientStatus)) return [];
+
   const reminders: LeadActiveReminder[] = [];
   if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
     reminders.push({ kind: 'callback', dueAt: lead.callbackDueAt });
@@ -325,6 +340,10 @@ export function activeRemindersForLead(lead: {
   const showroomDueAt = showroomDueAtForLead(lead);
   if (showroomDueAt) {
     reminders.push({ kind: 'showroom', dueAt: showroomDueAt });
+  }
+  const measurementDueAt = measurementDueAtForLead(lead);
+  if (measurementDueAt) {
+    reminders.push({ kind: 'measurement', dueAt: measurementDueAt });
   }
   if (lead.commentReminderDueAt) {
     reminders.push({ kind: 'comment', dueAt: lead.commentReminderDueAt });
@@ -348,6 +367,19 @@ export function showroomDueAtForLead(lead: {
   if (lead.showroomDueAt !== undefined) return lead.showroomDueAt;
   return lead.callbackDueContext?.category === 'client_status' &&
     lead.callbackDueContext.statusCode === 'showroom_invited'
+    ? lead.callbackDueAt
+    : null;
+}
+
+/** Returns the active on-site measurement date, same derivation as the showroom one. */
+export function measurementDueAtForLead(lead: {
+  callbackDueAt: string | null;
+  callbackDueContext?: { category: string; statusCode: string | null } | null;
+  measurementDueAt?: string | null;
+}): string | null {
+  if (lead.measurementDueAt !== undefined) return lead.measurementDueAt;
+  return lead.callbackDueContext?.category === 'client_status' &&
+    lead.callbackDueContext.statusCode === 'measurement_scheduled'
     ? lead.callbackDueAt
     : null;
 }

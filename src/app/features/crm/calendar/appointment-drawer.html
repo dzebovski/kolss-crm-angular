@@ -2,13 +2,16 @@
   <header class="drawer-head">
     <div>
       <p>{{ data.office.name_uk }} · {{ data.office.timezone_name ?? 'UTC' }}</p>
-      <h2 id="appointment-drawer-title">
+      <h2 id="appointment-drawer-title">{{ title() }}</h2>
+      <span class="appointment-kind" [class.is-measurement]="kind === 'measurement'">
+        <app-ui-icon
+          [name]="kind === 'measurement' ? 'straighten' : 'calendar_month'"
+          [size]="15"
+        />
         {{
-          data.appointment && !rebook()
-            ? i18n.t('calendar.editTitle')
-            : i18n.t('calendar.createTitle')
+          i18n.t(kind === 'measurement' ? 'calendar.kind.measurement' : 'calendar.kind.showroom')
         }}
-      </h2>
+      </span>
       @if (data.appointment && isTerminal && !rebook()) {
         <span
           class="terminal-status"
@@ -105,12 +108,22 @@
           [options]="durationOptions"
           [formField]="appointmentForm.duration"
         />
-        <app-ui-select
-          [label]="i18n.t('common.manager')"
-          [options]="managerOptions()"
-          [formField]="appointmentForm.managerId"
-        />
+        @if (usesCustomDuration()) {
+          <app-ui-text-field
+            type="number"
+            [label]="i18n.t('calendar.customDurationLabel')"
+            [hint]="i18n.t('calendar.customDurationInvalid')"
+            [error]="customDurationError()"
+            [formField]="appointmentForm.customDuration"
+          />
+        }
       </div>
+
+      <app-ui-select
+        [label]="i18n.t('common.manager')"
+        [options]="managerOptions()"
+        [formField]="appointmentForm.managerId"
+      />
 
       <app-ui-textarea
         [label]="i18n.t('calendar.comment')"

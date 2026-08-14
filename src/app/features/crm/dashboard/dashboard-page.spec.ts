@@ -233,4 +233,29 @@ describe('DashboardPage lead workflow', () => {
     await fixture.whenStable();
     expect(dialogOpen).toHaveBeenCalledOnce();
   });
+
+  it('drops the task of a closed lead from the manager task list', async () => {
+    const { fixture } = await render(undefined, {
+      name: 'Closed Task Lead',
+      clientStatus: 'closed_lost',
+      commentReminderDueAt: '2026-07-25T12:00:00.000Z',
+      commentReminderAssignedTo: 'emp-kyiv-1',
+      latestTimelineComment: {
+        comment: 'Підготувати кошторис',
+        occurredAt: '2026-07-24T10:00:00.000Z',
+        eventType: 'comment_added',
+        category: 'comment',
+        statusCode: null,
+        newValue: {
+          callback_due_at: '2026-07-25T12:00:00.000Z',
+          assigned_to: 'emp-kyiv-1',
+        },
+      },
+    });
+    fixture.detectChanges();
+    const page = fixture.nativeElement as HTMLElement;
+
+    expect(page.querySelector('.manager-tasks__total')?.textContent).toContain('0');
+    expect(page.querySelector('.task-open')).toBeNull();
+  });
 });

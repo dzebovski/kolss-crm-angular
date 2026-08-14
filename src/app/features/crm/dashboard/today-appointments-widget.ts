@@ -65,6 +65,7 @@ interface OfficeAppointmentGroup {
                     <button
                       type="button"
                       class="appointment-row"
+                      [class.is-measurement]="appointment.kind === 'measurement'"
                       [class.is-visited]="appointment.status === 'visited'"
                       [class.is-no-show]="appointment.status === 'no_show'"
                       [class.is-canceled]="appointment.status === 'canceled'"
@@ -78,6 +79,11 @@ interface OfficeAppointmentGroup {
                         }}</small>
                         @if (appointment.comment; as comment) {
                           <small class="appointment-comment" [title]="comment">{{ comment }}</small>
+                        }
+                        @if (appointment.kind === 'measurement') {
+                          <small class="appointment-kind">
+                            {{ i18n.t('calendar.kind.measurement') }}
+                          </small>
                         }
                         @if (appointment.status !== 'scheduled') {
                           <small
@@ -301,6 +307,15 @@ interface OfficeAppointmentGroup {
 
     .appointment-status.is-canceled {
       color: var(--ui-danger);
+    }
+
+    .appointment-row.is-measurement {
+      box-shadow: inset 3px 0 0 var(--ui-teal);
+    }
+
+    .appointment-kind {
+      color: var(--ui-teal);
+      font-weight: 650;
     }
 
     .appointment-row.is-visited {

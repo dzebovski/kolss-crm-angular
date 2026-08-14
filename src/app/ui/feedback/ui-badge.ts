@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-export type UiBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand';
+export type UiBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand' | 'teal';
 
 @Component({
   selector: 'app-ui-badge',
@@ -48,6 +48,11 @@ export type UiBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger' 
     .ui-badge--brand {
       background: var(--ui-brand-soft);
       color: var(--ui-brand);
+    }
+
+    .ui-badge--teal {
+      background: var(--ui-teal-soft);
+      color: var(--ui-teal);
     }
   `,
 })

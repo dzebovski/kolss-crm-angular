@@ -12,7 +12,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import type { Appointment } from '@core/api/generated/kolss-api.types';
+import type { Appointment, AppointmentKind } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
 import { OFFICE_CONFIG } from '@core/office/office.config';
 import { isOfficeMemberRole } from '@core/roles/roles';
@@ -31,7 +31,7 @@ import {
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
 } from '@services/appointments.service';
-import { commentAssigneeForLead, commentDueAtForLead } from '@domain/lead.rules';
+import { commentAssigneeForLead, commentDueAtForLead, leadIsTerminal } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
@@ -220,8 +220,8 @@ export class CalendarPage {
   /**
    * Date-only lead reminders (blue callbacks, orange comment follow-ups) bucketed
    * by office day. Showroom due dates are excluded — they render as appointment
-   * cards. Honors the toolbar manager filter; office is already scoped by the
-   * loaded resource.
+   * cards. Closed leads are excluded entirely. Honors the toolbar manager
+   * filter; office is already scoped by the loaded resource.
    */
   private readonly remindersByDate = computed(() => {
     const leads = this.leadsResource.value() ?? [];
@@ -236,6 +236,8 @@ export class CalendarPage {
     };
 
     for (const lead of leads) {
+      if (leadIsTerminal(lead)) continue;
+
       const assigneeId = commentAssigneeForLead(lead);
       if (
         selectedManager !== 'all' &&
@@ -371,17 +373,27 @@ export class CalendarPage {
     this.leadsResource.reload();
   }
 
-  protected openCreate(date = this.selectedDate(), time = '10:00', managerId?: string): void {
+  protected openCreate(
+    date = this.selectedDate(),
+    time = '10:00',
+    managerId?: string,
+    kind: AppointmentKind = 'showroom',
+  ): void {
     const office = this.office();
     if (!office) return;
     this.openDrawer({
       office,
       managers: this.officeManagers(),
+      kind,
       date,
       time,
       defaultManagerId: managerId,
       appointments: this.items(),
     });
+  }
+
+  protected openCreateMeasurement(): void {
+    this.openCreate(this.selectedDate(), '10:00', undefined, 'measurement');
   }
 
   protected openEdit(appointment: Appointment): void {
@@ -508,10 +520,24 @@ export class CalendarPage {
       case 'canceled':
         return 'close';
       case 'scheduled':
-        return 'calendar_month';
+        return appointment.kind === 'measurement' ? 'straighten' : 'calendar_month';
       default:
         return 'schedule';
     }
+  }
+
+  protected appointmentKindLabel(appointment: Appointment): string {
+    return this.i18n.t(
+      appointment.kind === 'measurement' ? 'calendar.kind.measurement' : 'calendar.kind.showroom',
+    );
+  }
+
+  /**
+   * Cards distinguish kind by colour and icon; this makes the same distinction
+   * available to screen readers.
+   */
+  protected appointmentIconLabel(appointment: Appointment): string {
+    return `${this.appointmentKindLabel(appointment)} · ${this.appointmentStatusLabel(appointment)}`;
   }
 
   protected slotLabel(date: string, time: string, manager: string): string {

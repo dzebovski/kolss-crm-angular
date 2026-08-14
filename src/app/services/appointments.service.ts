@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type {
   Appointment,
+  AppointmentKind,
   AppointmentListResponse,
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
@@ -14,6 +15,7 @@ export interface AppointmentRange {
   readonly to: string;
   readonly managerId?: string;
   readonly status?: string;
+  readonly kind?: AppointmentKind;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -58,13 +60,14 @@ const OFFICE_LOCAL_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function calendarAppointmentDeepLink(input: {
   readonly leadId: string;
-  readonly showroomDueAt: string;
+  /** Start of the appointment to jump to — showroom visit or on-site measurement. */
+  readonly appointmentDueAt: string;
   readonly officeId: string;
   readonly timeZone: string;
 }): CalendarAppointmentDeepLink {
   return {
     leadId: input.leadId,
-    date: officeDateKey(new Date(input.showroomDueAt), input.timeZone),
+    date: officeDateKey(new Date(input.appointmentDueAt), input.timeZone),
     officeId: input.officeId,
   };
 }

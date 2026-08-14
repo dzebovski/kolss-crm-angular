@@ -61,7 +61,7 @@
       (restoreRequested)="restoreLead(lead)"
       (archiveRequested)="confirmArchiveLead(lead)"
       (deletePermanentlyRequested)="confirmDeleteLead(lead)"
-      (showroomInviteRequested)="openLeadAppointment(lead)"
+      (appointmentRequested)="openLeadAppointment(lead, $event)"
     />
 
     <app-lead-timeline
