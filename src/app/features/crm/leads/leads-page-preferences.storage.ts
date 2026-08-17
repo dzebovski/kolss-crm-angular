@@ -42,11 +42,11 @@ function isManagerFilter(value: unknown): value is string {
   return typeof value === 'string';
 }
 
-function isCallStatusFilterKey(value: unknown): value is CallStatusFilterKey {
+export function isCallStatusFilterKey(value: unknown): value is CallStatusFilterKey {
   return typeof value === 'string' && ALLOWED_CALL_STATUS_FILTERS.has(value as CallStatusFilterKey);
 }
 
-function isClientStatusFilterKey(value: unknown): value is ClientStatusFilterKey {
+export function isClientStatusFilterKey(value: unknown): value is ClientStatusFilterKey {
   return (
     typeof value === 'string' && ALLOWED_CLIENT_STATUS_FILTERS.has(value as ClientStatusFilterKey)
   );
@@ -60,7 +60,7 @@ function parseClientStatusFilterKeys(value: unknown): readonly ClientStatusFilte
   return Array.isArray(value) ? value.filter(isClientStatusFilterKey) : [];
 }
 
-function isPeriodDays(value: unknown): value is number | null {
+export function isPeriodDays(value: unknown): value is number | null {
   return value === null || (typeof value === 'number' && ALLOWED_PERIOD_DAYS.has(value));
 }
 

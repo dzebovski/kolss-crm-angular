@@ -1,5 +1,5 @@
-import { Component, computed, effect, inject, resource, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, computed, effect, inject, resource, signal, untracked } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
@@ -31,12 +31,18 @@ import { UiUser } from '@ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
 import { closeReasonLabelForLead } from './lead-detail-page.presenter';
 import { LeadDueDate } from './lead-due-date';
+import { formatLeadDayMonth, formatLeadTime } from './leads-page.presenter';
 import {
   readLeadsPagePreferences,
   writeLeadsPagePreferences,
   type CallStatusFilterKey,
   type ClientStatusFilterKey,
 } from './leads-page-preferences.storage';
+import {
+  leadsPageQueryStateFromPreferences,
+  parseLeadsPageQuery,
+  serializeLeadsPageQuery,
+} from './leads-page-query-params';
 
 @Component({
   selector: 'app-leads-page',
@@ -64,21 +70,31 @@ export class LeadsPage {
   private readonly leadsService = inject(LeadsService);
   private readonly usersService = inject(UsersService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly i18n = inject(I18nService);
 
-  private readonly initialPreferences = readLeadsPagePreferences();
-  protected readonly query = signal('');
+  /**
+   * Read once instead of binding through `input()`: this page is both the
+   * reader and the writer of its query params, so a continuous binding would
+   * feed its own writes back in. Same approach as the calendar deep link.
+   */
+  private readonly linkedFilters = parseLeadsPageQuery(this.route.snapshot.queryParamMap);
+  private readonly initialFilters =
+    this.linkedFilters ?? leadsPageQueryStateFromPreferences(readLeadsPagePreferences());
+  private linkedOfficeApplied = false;
+
+  protected readonly query = signal(this.initialFilters.query);
   /** `query`, 300ms after the last keystroke — what leadsResource actually searches by. */
-  protected readonly debouncedQuery = signal('');
-  protected readonly showArchived = signal(false);
-  protected readonly periodDays = signal<number | null>(this.initialPreferences.periodDays);
+  protected readonly debouncedQuery = signal(this.initialFilters.query);
+  protected readonly showArchived = signal(this.initialFilters.showArchived);
+  protected readonly periodDays = signal<number | null>(this.initialFilters.periodDays);
   protected readonly callStatusFilter = signal<readonly CallStatusFilterKey[]>(
-    this.initialPreferences.callStatusFilter,
+    this.initialFilters.callStatusFilter,
   );
   protected readonly clientStatusFilter = signal<readonly ClientStatusFilterKey[]>(
-    this.initialPreferences.clientStatusFilter,
+    this.initialFilters.clientStatusFilter,
   );
-  protected readonly managerFilter = signal(this.initialPreferences.managerFilter);
+  protected readonly managerFilter = signal(this.initialFilters.managerFilter);
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
   protected readonly callStatusTone = callStatusTone;
@@ -91,6 +107,36 @@ export class LeadsPage {
         clientStatusFilter: this.clientStatusFilter(),
         managerFilter: this.managerFilter(),
       });
+    });
+
+    // Keeps the address bar in sync so the current view can be shared as a
+    // link, and so reload / back restores the same list. `replaceUrl` keeps
+    // every filter change out of the browser history.
+    effect(() => {
+      const queryParams = serializeLeadsPageQuery({
+        office: this.session.showOfficeFilter() ? this.session.officeFilter() : null,
+        periodDays: this.periodDays(),
+        callStatusFilter: this.callStatusFilter(),
+        clientStatusFilter: this.clientStatusFilter(),
+        managerFilter: this.managerFilter(),
+        query: this.debouncedQuery().trim(),
+        showArchived: this.showArchived(),
+      });
+      void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
+    });
+
+    // Offices arrive from `/v1/me`, so a linked office can only be applied
+    // once the session context is loaded. An office the user cannot see is
+    // ignored: the rest of the link still applies.
+    effect(() => {
+      const office = this.linkedFilters?.office;
+      const context = this.session.officeContext();
+      if (!office || this.linkedOfficeApplied || !this.session.loaded() || !context) return;
+
+      this.linkedOfficeApplied = true;
+      if (!context.canFilter) return;
+      if (office !== 'all' && !context.filterOffices.some((entry) => entry.code === office)) return;
+      untracked(() => this.session.setOfficeFilter(office));
     });
 
     effect((onCleanup) => {
@@ -229,17 +275,11 @@ export class LeadsPage {
   }
 
   protected formatDayMonth(value: string): string {
-    const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
-    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(
-      new Date(value),
-    );
+    return formatLeadDayMonth(value, this.i18n.locale());
   }
 
   protected formatTime(value: string): string {
-    const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
-    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
-      new Date(value),
-    );
+    return formatLeadTime(value, this.i18n.locale());
   }
 
   protected readonly commentDueAtForLead = commentDueAtForLead;

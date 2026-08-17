@@ -11,9 +11,17 @@ import { UsersService } from '@services/users.service';
 import { UiMultiSelect } from '@ui/form/ui-multi-select';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { LeadsPage } from './leads-page';
+import { LEADS_PAGE_PREFERENCES_STORAGE_KEY } from './leads-page-preferences.storage';
 
 describe('LeadsPage', () => {
   const storedValues = new Map<string, string>();
+  const setOfficeFilter = vi.fn();
+  const kyivOffice = { id: 'office-kyiv', code: 'kyiv', name: 'Kyiv' };
+  let officeFilter = 'all';
+  let officeContext: {
+    canFilter: boolean;
+    filterOffices: readonly { code: string }[];
+  } | null = { canFilter: false, filterOffices: [kyivOffice] };
   const list = vi.fn(async (filters: LeadsListFilters): Promise<readonly Lead[]> => {
     void filters;
     return [
@@ -46,10 +54,13 @@ describe('LeadsPage', () => {
     });
     localStorage.clear();
     list.mockClear();
+    setOfficeFilter.mockClear();
+    officeFilter = 'all';
+    officeContext = { canFilter: false, filterOffices: [kyivOffice] };
     await TestBed.configureTestingModule({
       imports: [LeadsPage],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: '**', children: [] }]),
         { provide: LeadsService, useValue: { list } },
         {
           provide: UsersService,
@@ -69,8 +80,12 @@ describe('LeadsPage', () => {
           provide: SessionService,
           useValue: {
             locale: () => 'uk',
-            selectedOfficeId: () => null,
-            officeFilter: () => 'all',
+            selectedOfficeId: () => (officeFilter === 'all' ? null : kyivOffice.id),
+            officeFilter: () => officeFilter,
+            showOfficeFilter: () => officeContext?.canFilter ?? false,
+            officeContext: () => officeContext,
+            loaded: () => officeContext !== null,
+            setOfficeFilter,
           },
         },
         { provide: AuthService, useValue: { profile: () => ({ role: 'office_member' }) } },
@@ -431,6 +446,69 @@ describe('LeadsPage', () => {
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.lead-row')?.click();
     expect(navigate).toHaveBeenCalledWith(['/crm/leads', 'lead-1003']);
+  });
+
+  it('loads a shared filter link instead of the stored preferences', async () => {
+    storedValues.set(
+      LEADS_PAGE_PREFERENCES_STORAGE_KEY,
+      JSON.stringify({
+        periodDays: 180,
+        callStatusFilter: ['reached'],
+        clientStatusFilter: [],
+        managerFilter: 'emp-kyiv-1',
+      }),
+    );
+    await TestBed.inject(Router).navigateByUrl('/crm/leads?clientStatus=new_lead&days=30');
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        clientStatus: ['new_lead'],
+        days: 30,
+        callStatus: [],
+        assignedTo: null,
+      }),
+    );
+  });
+
+  it('mirrors the selected filters in the URL so the view can be shared', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/crm/leads');
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
+    clientStatusSelect.value.set(['new_lead']);
+    await fixture.whenStable();
+
+    expect(router.url).toContain('clientStatus=new_lead');
+    expect(router.url).toContain('days=7');
+  });
+
+  it('applies a linked office the user can filter by', async () => {
+    officeContext = { canFilter: true, filterOffices: [kyivOffice] };
+    await TestBed.inject(Router).navigateByUrl('/crm/leads?office=kyiv&clientStatus=new_lead');
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    expect(setOfficeFilter).toHaveBeenCalledWith('kyiv');
+  });
+
+  it('ignores a linked office the user has no access to', async () => {
+    officeContext = { canFilter: true, filterOffices: [kyivOffice] };
+    await TestBed.inject(Router).navigateByUrl('/crm/leads?office=warsaw&clientStatus=new_lead');
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    expect(setOfficeFilter).not.toHaveBeenCalled();
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ officeId: null, clientStatus: ['new_lead'] }),
+    );
   });
 
   it('debounces rapid search input into a single leadsResource request', async () => {
