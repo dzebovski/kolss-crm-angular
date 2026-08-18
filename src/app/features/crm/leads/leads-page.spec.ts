@@ -299,6 +299,16 @@ describe('LeadsPage', () => {
     expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: [] }));
   });
 
+  it('keeps every filter field in one grid row and places the active switch at the right edge', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    const filters = (fixture.nativeElement as HTMLElement).querySelector('.filters');
+    expect(filters?.children.length).toBe(5);
+    expect(filters?.querySelector(':scope > .client-status-filter')).toBeNull();
+    expect(filters?.querySelector(':scope > app-ui-switch.active-clients-filter')).toBeTruthy();
+  });
+
   // Regression: "active" ORs with every other clientStatus value at the API,
   // so `active` next to a concrete status (e.g. `active OR closed_lost`)
   // would silently widen the result instead of narrowing it — a switch

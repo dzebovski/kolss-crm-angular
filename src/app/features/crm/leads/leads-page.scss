@@ -50,10 +50,9 @@ h1 {
   align-items: end;
   box-shadow: var(--ui-shadow-1);
 }
-.client-status-filter {
-  display: grid;
-  gap: var(--ui-space-2);
-  min-width: 0;
+.active-clients-filter {
+  grid-column: -2 / -1;
+  justify-self: end;
 }
 .filter-chips {
   display: flex;

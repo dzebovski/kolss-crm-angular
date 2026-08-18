@@ -69,25 +69,25 @@
         [(value)]="callStatusFilter"
       />
 
-      <div class="client-status-filter">
-        <app-ui-multi-select
-          [label]="'leads.filter.clientStatus' | translate"
-          [placeholder]="'leads.filter.all' | translate"
-          [options]="clientStatusOptions()"
-          [selectedSummaryLabel]="filterSummaryLabel()"
-          [(value)]="clientStatusFilter"
-        />
-        <app-ui-switch
-          [label]="'leads.filter.clientStatusActive' | translate"
-          [(checked)]="activeClientsOnly"
-        />
-      </div>
+      <app-ui-multi-select
+        [label]="'leads.filter.clientStatus' | translate"
+        [placeholder]="'leads.filter.all' | translate"
+        [options]="clientStatusOptions()"
+        [selectedSummaryLabel]="filterSummaryLabel()"
+        [(value)]="clientStatusFilter"
+      />
 
       <app-ui-select
         [label]="'leads.filter.byManager' | translate"
         [placeholder]="'leads.filter.all' | translate"
         [options]="managerOptions()"
         [(value)]="managerFilter"
+      />
+
+      <app-ui-switch
+        class="active-clients-filter"
+        [label]="'leads.filter.clientStatusActive' | translate"
+        [(checked)]="activeClientsOnly"
       />
     </div>
 
