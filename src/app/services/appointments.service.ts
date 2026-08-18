@@ -130,6 +130,39 @@ export function monthGridDays(dateKey: string): readonly string[] {
   return days;
 }
 
+/**
+ * How far back the calendar's `due=overdue` view looks for a forgotten
+ * showroom/measurement visit. Deliberately mirrors the platform API's
+ * `internal/leadcohorts` overdue window — keep the two in sync; do not
+ * change this number without changing that one too.
+ */
+export const OVERDUE_LOOKBACK_DAYS = 365;
+
+/** `GET /v1/appointments` rejects any `to - from` over 63 days (`internal/crmapi/appointments.go`). */
+const OVERDUE_WINDOW_DAYS = 60;
+
+/**
+ * Splits `[today - OVERDUE_LOOKBACK_DAYS, today)` into consecutive, non-
+ * overlapping windows no wider than `OVERDUE_WINDOW_DAYS`, so a full year of
+ * "forgotten visit" history can be fetched as several requests instead of
+ * one the server would reject as too wide (63-day hard limit, well above
+ * this function's 60-day window for a safety margin).
+ */
+export function overdueAppointmentWindows(
+  todayKey: string,
+): readonly { readonly from: string; readonly to: string }[] {
+  const start = addCalendarDays(todayKey, -OVERDUE_LOOKBACK_DAYS);
+  const windows: { from: string; to: string }[] = [];
+  let cursor = start;
+  while (cursor < todayKey) {
+    const windowEnd = addCalendarDays(cursor, OVERDUE_WINDOW_DAYS);
+    const to = windowEnd < todayKey ? windowEnd : todayKey;
+    windows.push({ from: cursor, to });
+    cursor = to;
+  }
+  return windows;
+}
+
 export function officeDateTimeParts(
   instant: string,
   timeZone: string,

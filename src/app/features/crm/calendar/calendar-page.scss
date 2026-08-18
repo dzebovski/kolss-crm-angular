@@ -137,6 +137,13 @@ h1 {
   width: 12rem;
 }
 
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+
 .sunday-banner {
   width: 100%;
   padding: var(--ui-space-3) var(--ui-space-4);

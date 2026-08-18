@@ -69,13 +69,19 @@
         [(value)]="callStatusFilter"
       />
 
-      <app-ui-multi-select
-        [label]="'leads.filter.clientStatus' | translate"
-        [placeholder]="'leads.filter.all' | translate"
-        [options]="clientStatusOptions()"
-        [selectedSummaryLabel]="filterSummaryLabel()"
-        [(value)]="clientStatusFilter"
-      />
+      <div class="client-status-filter">
+        <app-ui-multi-select
+          [label]="'leads.filter.clientStatus' | translate"
+          [placeholder]="'leads.filter.all' | translate"
+          [options]="clientStatusOptions()"
+          [selectedSummaryLabel]="filterSummaryLabel()"
+          [(value)]="clientStatusFilter"
+        />
+        <app-ui-switch
+          [label]="'leads.filter.clientStatusActive' | translate"
+          [(checked)]="activeClientsOnly"
+        />
+      </div>
 
       <app-ui-select
         [label]="'leads.filter.byManager' | translate"
@@ -89,12 +95,12 @@
       <div class="filter-chips" aria-live="polite">
         @for (status of callStatusFilter(); track status) {
           <app-ui-chip
-            [label]="callStatusLabel(status)"
-            [tone]="callStatusTone(status)"
+            [label]="callStatusFilterLabel(status)"
+            [tone]="callStatusFilterTone(status)"
             [removable]="true"
             (removed)="removeCallStatus(status)"
           >
-            {{ callStatusLabel(status) }}
+            {{ callStatusFilterLabel(status) }}
           </app-ui-chip>
         }
         @for (status of clientStatusFilter(); track status) {

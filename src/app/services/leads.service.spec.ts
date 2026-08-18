@@ -115,4 +115,58 @@ describe('LeadsService', () => {
     await expect(service.translateHistoryEvent('lead-1', 'event-1')).resolves.toEqual(response);
     expect(translateEvent).toHaveBeenCalledWith('lead-1', 'event-1');
   });
+
+  describe('list() pagination', () => {
+    function makeRows(prefix: string, count: number): LeadListRow[] {
+      return Array.from({ length: count }, (_, i) => ({ ...row, id: `${prefix}-${i}` }));
+    }
+
+    it('walks every cursor page when no limit is given, instead of stopping short', async () => {
+      // Mirrors the shape of the real Kyiv office count (255 active leads):
+      // three pages of 100/100/55 rather than stopping at an arbitrary cap.
+      const listLeads = vi.fn(async ({ cursor }: { cursor: string }) => {
+        if (cursor === '') return { items: makeRows('p1', 100), nextCursor: 'c1' };
+        if (cursor === 'c1') return { items: makeRows('p2', 100), nextCursor: 'c2' };
+        return { items: makeRows('p3', 55), nextCursor: '' };
+      });
+      const service = setup({ listLeads } as Partial<KolssApiClient>);
+
+      const result = await service.list({ officeId: 'office-1', archived: 'active' });
+
+      expect(result).toHaveLength(255);
+      expect(listLeads).toHaveBeenCalledTimes(3);
+      expect(listLeads).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ cursor: '', limit: 100 }),
+      );
+      expect(listLeads).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({ cursor: 'c2', limit: 100 }),
+      );
+    });
+
+    it('stops at an explicit limit instead of paging through everything', async () => {
+      const listLeads = vi
+        .fn()
+        .mockResolvedValue({ items: makeRows('p', 100), nextCursor: 'more' });
+      const service = setup({ listLeads } as Partial<KolssApiClient>);
+
+      const result = await service.list({ officeId: 'office-1', limit: 120 });
+
+      expect(result).toHaveLength(120);
+      expect(listLeads).toHaveBeenCalledTimes(2);
+      expect(listLeads).toHaveBeenNthCalledWith(2, expect.objectContaining({ limit: 20 }));
+    });
+
+    it('fails loudly instead of silently truncating when an unbounded fetch runs away', async () => {
+      let page = 0;
+      const listLeads = vi.fn(async () => {
+        page += 1;
+        return { items: makeRows(`r${page}`, 100), nextCursor: `c${page}` };
+      });
+      const service = setup({ listLeads } as Partial<KolssApiClient>);
+
+      await expect(service.list({ officeId: 'office-1' })).rejects.toThrow(/safety limit/);
+    });
+  });
 });

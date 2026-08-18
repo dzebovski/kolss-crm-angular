@@ -9,6 +9,7 @@ import type { Lead } from '@domain/lead.types';
 import { LeadsService, type LeadsListFilters } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiMultiSelect } from '@ui/form/ui-multi-select';
+import { UiSwitch } from '@ui/form/ui-switch';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { LeadsPage } from './leads-page';
 import { LEADS_PAGE_PREFERENCES_STORAGE_KEY } from './leads-page-preferences.storage';
@@ -228,6 +229,135 @@ describe('LeadsPage', () => {
     clientStatusSelect.value.set(['in_work']);
     await fixture.whenStable();
     expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['in_work'] }));
+  });
+
+  it('exposes the no-call and undated-callback cohorts in the call status filter', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    const callStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[0]
+      ?.componentInstance as UiMultiSelect;
+    const optionValues = callStatusSelect.options().map((option) => option.value);
+    expect(optionValues).toEqual([
+      'reached',
+      'no_answer',
+      'callback_requested',
+      'none',
+      'callback_undated',
+    ]);
+    expect(callStatusSelect.options().find((option) => option.value === 'none')?.label).toBe(
+      'Не телефонували',
+    );
+    expect(
+      callStatusSelect.options().find((option) => option.value === 'callback_undated')?.label,
+    ).toBe('Передзвонити без дати');
+
+    callStatusSelect.value.set(['none', 'callback_undated']);
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({ callStatus: ['none', 'callback_undated'] }),
+    );
+  });
+
+  it('renders natural-language chips for the no-call and undated-callback cohorts', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    list.mockClear();
+
+    const callStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[0]
+      ?.componentInstance as UiMultiSelect;
+    callStatusSelect.value.set(['none', 'callback_undated']);
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const chips = Array.from(element.querySelectorAll('.filter-chips app-ui-chip'));
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
+      'Не телефонували',
+      'Передзвонити без дати',
+    ]);
+  });
+
+  it('keeps the "active" cohort out of the client-status dropdown, offering it via a separate switch instead', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    list.mockClear();
+
+    const activeSwitch = fixture.debugElement.query(By.directive(UiSwitch))
+      ?.componentInstance as UiSwitch;
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
+    expect(activeSwitch).toBeTruthy();
+    expect(activeSwitch.checked()).toBe(false);
+    expect(clientStatusSelect.options().map((option) => option.value)).not.toContain('active');
+
+    activeSwitch.checked.set(true);
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['active'] }));
+
+    activeSwitch.checked.set(false);
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: [] }));
+  });
+
+  // Regression: "active" ORs with every other clientStatus value at the API,
+  // so `active` next to a concrete status (e.g. `active OR closed_lost`)
+  // would silently widen the result instead of narrowing it — a switch
+  // labelled "active" that quietly shows *more* leads. The two controls must
+  // therefore be mutually exclusive: turning "active" on can never coexist
+  // with a concrete selection, in either direction, and `list` must never see
+  // a `clientStatus` array containing both `active` and a concrete status.
+  it('makes "active" + a concrete client status an unreachable combination', async () => {
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+    list.mockClear();
+
+    const activeSwitch = fixture.debugElement.query(By.directive(UiSwitch))
+      ?.componentInstance as UiSwitch;
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
+
+    // Turning "active" on while a concrete status is selected replaces it,
+    // rather than adding to it.
+    clientStatusSelect.value.set(['thinking']);
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['thinking'] }));
+
+    activeSwitch.checked.set(true);
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['active'] }));
+    expect(clientStatusSelect.value()).toEqual([]);
+
+    // Picking a concrete status while "active" is on exits "active" mode,
+    // rather than combining with it.
+    clientStatusSelect.value.set(['new_lead']);
+    await fixture.whenStable();
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['new_lead'] }));
+    expect(activeSwitch.checked()).toBe(false);
+
+    // Across every call made during this whole sequence, `active` never once
+    // appeared alongside a concrete status.
+    for (const call of list.mock.calls) {
+      const clientStatus = call[0]?.clientStatus ?? [];
+      if (clientStatus.includes('active')) {
+        expect(clientStatus).toEqual(['active']);
+      }
+    }
+  });
+
+  it('resolves a deep link with both "active" and a concrete status (e.g. a hand-edited URL) to "active" alone', async () => {
+    await TestBed.inject(Router).navigateByUrl('/crm/leads?clientStatus=active,thinking&days=all');
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: ['active'] }));
+
+    const activeSwitch = fixture.debugElement.query(By.directive(UiSwitch))
+      ?.componentInstance as UiSwitch;
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
+    expect(activeSwitch.checked()).toBe(true);
+    expect(clientStatusSelect.value()).toEqual([]);
   });
 
   it('renders a chip per selected client status and removing one keeps the rest', async () => {
@@ -509,6 +639,60 @@ describe('LeadsPage', () => {
     expect(list).toHaveBeenLastCalledWith(
       expect.objectContaining({ officeId: null, clientStatus: ['new_lead'] }),
     );
+  });
+
+  it('resolves the "not yet called" digest deep link (callStatus=none&clientStatus=active&days=all)', async () => {
+    await TestBed.inject(Router).navigateByUrl(
+      '/crm/leads?office=warsaw&callStatus=none&clientStatus=active&days=all',
+    );
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        callStatus: ['none'],
+        clientStatus: ['active'],
+        days: null,
+      }),
+    );
+  });
+
+  // The morning digest URL-encodes its comma-separated callStatus list as
+  // `%2C` (e.g. `no_answer%2Ccallback_undated`). Angular's router decodes
+  // query param values before `queryParamMap` sees them, so the existing
+  // comma-splitting parser should already handle it — this proves it against
+  // the literal encoded URL instead of assuming the decode happens.
+  it('resolves the digest deep link with a URL-encoded comma (callStatus=no_answer%2Ccallback_undated)', async () => {
+    await TestBed.inject(Router).navigateByUrl(
+      '/crm/leads?office=warsaw&callStatus=no_answer%2Ccallback_undated&clientStatus=active&days=all',
+    );
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        callStatus: ['no_answer', 'callback_undated'],
+        clientStatus: ['active'],
+        days: null,
+      }),
+    );
+  });
+
+  it('reflects a linked "active" client status through the switch, not the dropdown', async () => {
+    await TestBed.inject(Router).navigateByUrl('/crm/leads?clientStatus=active&days=all');
+
+    const fixture = TestBed.createComponent(LeadsPage);
+    await fixture.whenStable();
+
+    const activeSwitch = fixture.debugElement.query(By.directive(UiSwitch))
+      ?.componentInstance as UiSwitch;
+    expect(activeSwitch.checked()).toBe(true);
+
+    const clientStatusSelect = fixture.debugElement.queryAll(By.directive(UiMultiSelect))[1]
+      ?.componentInstance as UiMultiSelect;
+    expect(clientStatusSelect.value()).toEqual([]);
   });
 
   it('debounces rapid search input into a single leadsResource request', async () => {

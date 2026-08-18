@@ -15,8 +15,23 @@ export interface LeadsListFilters {
   clientStatus?: readonly string[] | null;
   archived?: 'active' | 'only' | 'all';
   days?: number | null;
+  /**
+   * Caps the result at this many rows. Omit to fetch the **complete** result
+   * set: `list()` pages through the cursor (100 rows/request) until the API
+   * reports no `nextCursor`, so every caller either gets everything or
+   * explicitly asked for less — never a silent partial list.
+   */
   limit?: number;
 }
+
+/**
+ * Safety net for an unbounded `list()` call (no `limit` given), not a normal
+ * operating limit. Measured production volume is in the low hundreds of
+ * active leads per office; this is far above that. Hitting it means the
+ * cursor loop isn't terminating as expected, so it fails loudly instead of
+ * returning a silently truncated list.
+ */
+const UNBOUNDED_FETCH_SAFETY_LIMIT = 5000;
 
 export interface LeadDetailsUpdate {
   readonly name: string;
@@ -52,7 +67,7 @@ export class LeadsService {
   private readonly auth = inject(AuthService);
 
   async list(filters: LeadsListFilters = {}): Promise<readonly Lead[]> {
-    const requested = Math.max(1, filters.limit ?? 500);
+    const requested = filters.limit != null ? Math.max(1, filters.limit) : null;
     const rows: LeadListRow[] = [];
     let cursor = '';
     do {
@@ -66,12 +81,17 @@ export class LeadsService {
         archived: filters.archived === 'active' ? undefined : filters.archived,
         days: filters.days ?? undefined,
         cursor,
-        limit: Math.min(100, requested - rows.length),
+        limit: requested != null ? Math.min(100, requested - rows.length) : 100,
       });
       rows.push(...page.items);
       cursor = page.nextCursor;
-    } while (cursor && rows.length < requested);
-    return rows.slice(0, requested).map(mapLeadListRow);
+      if (requested == null && rows.length > UNBOUNDED_FETCH_SAFETY_LIMIT) {
+        throw new Error(
+          `LeadsService.list() exceeded the ${UNBOUNDED_FETCH_SAFETY_LIMIT}-row safety limit for an unbounded fetch.`,
+        );
+      }
+    } while (cursor && (requested == null || rows.length < requested));
+    return (requested == null ? rows : rows.slice(0, requested)).map(mapLeadListRow);
   }
 
   async getById(leadId: string): Promise<Lead | null> {

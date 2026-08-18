@@ -120,6 +120,56 @@ const rescheduledAppointment: Appointment = {
   version: 2,
 };
 
+// Overdue-visit fixtures: dated before the fake "today" (2026-07-23), used to
+// verify the `due=overdue` list counts a visit strictly the way the digest
+// does — still `status: 'scheduled'` but past its date. A visit already
+// visited/canceled/no-show is done, not forgotten, and must not appear.
+const overdueScheduledVisit: Appointment = {
+  ...appointment,
+  id: 'appointment-overdue-scheduled',
+  lead: { id: 'lead-overdue-visit', name: 'Забутий Візит', phone: '+380501112299' },
+  kind: 'showroom',
+  startsAt: '2026-07-19T07:00:00.000Z',
+  endsAt: '2026-07-19T08:00:00.000Z',
+  status: 'scheduled',
+  version: 1,
+};
+
+const overdueVisitedVisit: Appointment = {
+  ...appointment,
+  id: 'appointment-overdue-visited',
+  lead: { id: 'lead-overdue-done', name: 'Проведений Візит', phone: '+380501112300' },
+  kind: 'showroom',
+  startsAt: '2026-07-18T07:00:00.000Z',
+  endsAt: '2026-07-18T09:00:00.000Z',
+  status: 'visited',
+  version: 1,
+};
+
+const overdueCanceledVisit: Appointment = {
+  ...appointment,
+  id: 'appointment-overdue-canceled',
+  lead: { id: 'lead-overdue-canceled', name: 'Скасований Візит', phone: '+380501112301' },
+  kind: 'measurement',
+  startsAt: '2026-07-17T07:00:00.000Z',
+  endsAt: '2026-07-17T09:00:00.000Z',
+  status: 'canceled',
+  version: 1,
+};
+
+/** Well outside the 365-day lookback (`OVERDUE_LOOKBACK_DAYS`) — must never
+ * surface, even though it's still `status: 'scheduled'`. */
+const overdueTooOldVisit: Appointment = {
+  ...appointment,
+  id: 'appointment-overdue-too-old',
+  lead: { id: 'lead-overdue-too-old', name: 'Дуже Старий Візит', phone: '+380501112302' },
+  kind: 'showroom',
+  startsAt: '2025-01-01T07:00:00.000Z',
+  endsAt: '2025-01-01T09:00:00.000Z',
+  status: 'scheduled',
+  version: 1,
+};
+
 const baseLead: Lead = {
   id: 'lead-base',
   name: 'Base',
@@ -175,6 +225,68 @@ const commentLead: Lead = {
   commentReminderDueAt: '2026-07-24T09:00:00.000Z',
 };
 
+/** client_status 'thinking' with a due date — the §3 investigation's gap: it
+ * carries callStatus !== 'callback_requested', so it must be reachable via
+ * clientStatus alone, not the callback branch. */
+const thinkingLead: Lead = {
+  ...baseLead,
+  id: 'lead-thinking',
+  name: 'Thinking Клієнт',
+  phone: '+380501110003',
+  assignedToId: 'manager-1',
+  clientStatus: 'thinking',
+  callbackDueAt: '2026-07-23T10:00:00.000Z',
+};
+
+/**
+ * `callStatus` and `clientStatus` are independent columns, so a single lead
+ * can carry both an active callback reminder and an active thinking reminder
+ * at once — each must render as its own overdue row, never merged into one
+ * per lead (per the digest's "count rows, not leads" contract).
+ */
+const overdueMultiKindLead: Lead = {
+  ...baseLead,
+  id: 'lead-overdue-multi',
+  name: 'Прострочений Клієнт',
+  assignedToId: 'manager-1',
+  callStatus: 'callback_requested',
+  callStatusChangedAt: '2026-07-18T00:00:00.000Z',
+  clientStatus: 'thinking',
+  callbackDueAt: '2026-07-20T09:00:00.000Z',
+};
+
+/** Leads matching `overdueScheduledVisit`/`overdueVisitedVisit`/`overdueCanceledVisit`
+ * above by id — `overdueReminders` looks the appointment's lead up in
+ * `leadsResource` to build a full `CalendarOverdueRow`. */
+const overdueVisitLead: Lead = { ...baseLead, id: 'lead-overdue-visit', name: 'Забутий Візит' };
+const overdueDoneVisitLead: Lead = {
+  ...baseLead,
+  id: 'lead-overdue-done',
+  name: 'Проведений Візит',
+};
+const overdueCanceledVisitLead: Lead = {
+  ...baseLead,
+  id: 'lead-overdue-canceled',
+  name: 'Скасований Візит',
+};
+const overdueTooOldVisitLead: Lead = {
+  ...baseLead,
+  id: 'lead-overdue-too-old',
+  name: 'Дуже Старий Візит',
+};
+
+/** Comment reminder more than OVERDUE_LOOKBACK_DAYS (365) before "today"
+ * (2026-07-23) — mirrors overdueTooOldVisit, but for the lead-derived branch
+ * (activeRemindersForLead), which has no implicit range bound the way the
+ * windowed appointments fetch does. */
+const overdueTooOldCommentLead: Lead = {
+  ...baseLead,
+  id: 'lead-overdue-too-old-comment',
+  name: 'Дуже Старий Коментар',
+  assignedToId: 'manager-1',
+  commentReminderDueAt: '2025-01-01T09:00:00.000Z',
+};
+
 const inactiveManager = {
   ...manager,
   id: 'manager-inactive',
@@ -218,29 +330,44 @@ describe('CalendarPage', () => {
     vi.useRealTimers();
   });
 
+  const defaultAppointments: readonly Appointment[] = [
+    appointment,
+    visitedAppointment,
+    noShowAppointment,
+    canceledAppointment,
+    measurementAppointment,
+    rescheduledAppointment,
+  ];
+
   async function render(
     queryParams: Record<string, string> = {},
     managers: readonly CrmEmployee[] = [manager],
     leads: readonly Lead[] = [callbackLead, commentLead],
+    sessionOverrides: Record<string, unknown> = {},
+    appointments: readonly Appointment[] = defaultAppointments,
   ) {
     TestBed.resetTestingModule();
     const selectedOfficeId = signal<string | null>(office.id);
-    const list = vi.fn().mockResolvedValue({
-      items: [
-        appointment,
-        visitedAppointment,
-        noShowAppointment,
-        canceledAppointment,
-        measurementAppointment,
-        rescheduledAppointment,
-      ],
-      timezone: office.timezone_name,
-      from: '2026-07-20',
-      to: '2026-07-27',
-    });
+    // Filters by the requested [from, to) window, like the real endpoint —
+    // required so `due=overdue`'s several windowed requests don't each
+    // return every fixture and duplicate rows. Deliberately does NOT filter
+    // by `status`: that's what lets the "server ignores status" defensive
+    // test below prove the component checks it client-side too.
+    const list = vi.fn((range: { from: string; to: string }) =>
+      Promise.resolve({
+        items: appointments.filter((item) => {
+          const date = item.startsAt.slice(0, 10);
+          return date >= range.from && date < range.to;
+        }),
+        timezone: office.timezone_name,
+        from: range.from,
+        to: range.to,
+      }),
+    );
     const listLeads = vi.fn().mockResolvedValue(leads);
     const open = vi.fn().mockReturnValue({ afterClosed: () => of(undefined) });
     const navigate = vi.fn().mockResolvedValue(true);
+    const setOfficeFilter = vi.fn();
     await TestBed.configureTestingModule({
       imports: [CalendarPage],
       providers: [
@@ -248,8 +375,12 @@ describe('CalendarPage', () => {
           provide: SessionService,
           useValue: {
             selectedOfficeId,
-            officeContext: () => ({ filterOffices: [office, warsawOffice] }),
+            officeContext: () => ({ filterOffices: [office, warsawOffice], canFilter: true }),
+            loaded: () => true,
+            showOfficeFilter: () => true,
+            setOfficeFilter,
             locale: () => 'uk',
+            ...sessionOverrides,
           },
         },
         { provide: AppointmentsService, useValue: { list } },
@@ -266,7 +397,7 @@ describe('CalendarPage', () => {
     const fixture = TestBed.createComponent(CalendarPage);
     await fixture.whenStable();
     fixture.detectChanges();
-    return { fixture, list, listLeads, open, selectedOfficeId, navigate };
+    return { fixture, list, listLeads, open, selectedOfficeId, navigate, setOfficeFilter };
   }
 
   it('loads the office-local week and switches to the manager day grid', async () => {
@@ -596,6 +727,222 @@ describe('CalendarPage', () => {
       expect(list).toHaveBeenCalledWith(
         expect.objectContaining({ officeId: warsawOffice.id, managerId: undefined }),
       ),
+    );
+  });
+
+  it('renders a thinking reminder chip — client_status thinking has no callback_requested call status', async () => {
+    const { fixture } = await render({}, [manager], [callbackLead, commentLead, thinkingLead]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    const chip = element.querySelector('.reminder-chip.is-thinking');
+    expect(chip).not.toBeNull();
+    expect(chip?.textContent).toContain('Thinking Клієнт');
+  });
+
+  it('filters the day to one digest group via a kind + date deep link, and shows a removable count chip', async () => {
+    const { fixture } = await render(
+      { kind: 'callback', date: '2026-07-23' },
+      [manager],
+      [callbackLead, commentLead, thinkingLead],
+    );
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(fixture.componentInstance['view']()).toBe('day');
+    expect(element.querySelector('.day-grid')).not.toBeNull();
+    expect(element.querySelector('.reminder-chip.is-callback')).not.toBeNull();
+    expect(element.querySelector('.reminder-chip.is-thinking')).toBeNull();
+    expect(element.textContent).not.toContain('Comment Клієнт');
+
+    const filterChip = element.querySelector('.filter-chips');
+    expect(filterChip?.textContent).toContain('Перезвони на сьогодні');
+    expect(filterChip?.textContent).toContain('1');
+
+    filterChip!.querySelector<HTMLButtonElement>('button')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.filter-chips')).toBeNull();
+    expect(element.querySelector('.reminder-chip.is-thinking')).not.toBeNull();
+  });
+
+  it('a visit deep link hides reminder chips and narrows cards to still-scheduled visits, matching the digest count', async () => {
+    const { fixture } = await render(
+      { kind: 'visit', date: '2026-07-23' },
+      [manager],
+      [callbackLead, commentLead, thinkingLead],
+    );
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.reminder-chip')).toBeNull();
+
+    // Fixture day 2026-07-23 has 5 non-rescheduled appointments, only 2 of
+    // which are still `status: 'scheduled'` (appointment + measurementAppointment).
+    const cards = element.querySelectorAll('.appointment-card');
+    expect(cards).toHaveLength(2);
+    expect(element.textContent).toContain('Анна Коваль');
+    expect(element.textContent).toContain('Тарас Мельник');
+    expect(element.textContent).not.toContain('Ірина Бондар'); // visited
+    expect(element.textContent).not.toContain('Максим Левченко'); // no_show
+    expect(element.textContent).not.toContain('Олена Савчук'); // canceled
+
+    expect(element.querySelector('.filter-chips')?.textContent).toContain('Візити в салон');
+    expect(element.querySelector('.filter-chips')?.textContent).toContain('2');
+  });
+
+  it('leaves the normal (unfiltered) calendar view showing every appointment status', async () => {
+    const { fixture } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+
+    // No kind=visit filter active — every status (incl. visited/no_show/canceled)
+    // must still render, unlike the filtered case above.
+    expect(element.querySelectorAll('.appointment-card')).toHaveLength(5);
+    expect(element.textContent).toContain('Ірина Бондар');
+    expect(element.textContent).toContain('Максим Левченко');
+    expect(element.textContent).toContain('Олена Савчук');
+  });
+
+  it('an overdue deep link replaces the grid with a flat list, one row per reminder even for the same lead', async () => {
+    const { fixture } = await render(
+      { due: 'overdue' },
+      [manager],
+      [overdueMultiKindLead, overdueVisitLead, overdueDoneVisitLead, overdueCanceledVisitLead],
+      {},
+      [overdueScheduledVisit, overdueVisitedVisit, overdueCanceledVisit],
+    );
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.week-grid')).toBeNull();
+    expect(element.querySelector('.day-grid')).toBeNull();
+    expect(element.textContent).toContain('Прострочені нагадування');
+
+    const rows = element.querySelectorAll('.overdue-row');
+    // 2 lead-derived rows (callback + thinking, same lead) + 1 still-scheduled
+    // visit. The visited/canceled visits are done, not forgotten — excluded.
+    // Sorted chronologically, so don't assume which index is which.
+    expect(rows).toHaveLength(3);
+    const rowTexts = Array.from(rows).map((row) => row.textContent ?? '');
+    expect(rowTexts.filter((text) => text.includes('Прострочений Клієнт'))).toHaveLength(2);
+    expect(rowTexts.filter((text) => text.includes('Забутий Візит'))).toHaveLength(1);
+    expect(element.textContent).not.toContain('Проведений Візит');
+    expect(element.textContent).not.toContain('Скасований Візит');
+
+    const exitButton = Array.from(
+      element.querySelectorAll<HTMLButtonElement>('.date-navigation button'),
+    ).find((button) => button.textContent?.includes('Повернутися до календаря'))!;
+    exitButton.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['overdueMode']()).toBe(false);
+    expect(element.querySelector('.overdue-row')).toBeNull();
+  });
+
+  it('excludes visited/canceled visits from the overdue list even when the mock ignores the requested status filter', async () => {
+    const { fixture } = await render(
+      { due: 'overdue' },
+      [manager],
+      [overdueDoneVisitLead, overdueCanceledVisitLead],
+      {},
+      [overdueVisitedVisit, overdueCanceledVisit],
+    );
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.overdue-row')).toBeNull();
+    expect(element.querySelector('.overdue-empty')).not.toBeNull();
+  });
+
+  it('never requests an appointments window wider than 63 days, even across a 365-day overdue lookback', async () => {
+    // GET /v1/appointments rejects to-from over 63 days (internal/crmapi/appointments.go);
+    // this is the regression a mocked AppointmentsService can't otherwise catch.
+    const { list } = await render({ due: 'overdue' }, [manager], [], {}, []);
+
+    expect(list.mock.calls.length).toBeGreaterThan(1);
+    for (const call of list.mock.calls) {
+      const range = call[0] as { from: string; to: string };
+      const days = (Date.parse(range.to) - Date.parse(range.from)) / (24 * 60 * 60 * 1000);
+      expect(days).toBeLessThanOrEqual(63);
+    }
+  });
+
+  it('excludes an overdue visit older than the 365-day lookback even though it is still scheduled', async () => {
+    const { fixture } = await render({ due: 'overdue' }, [manager], [overdueTooOldVisitLead], {}, [
+      overdueTooOldVisit,
+    ]);
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.overdue-row')).toBeNull();
+    expect(element.textContent).not.toContain('Дуже Старий Візит');
+  });
+
+  it('excludes a lead-derived reminder (comment/callback/thinking) older than the 365-day lookback', async () => {
+    // Unlike the appointments branch, activeRemindersForLead has no implicit
+    // range bound (leadsResource loads every active lead) — this is the
+    // asymmetry that let a >365-day-old comment reminder inflate the list
+    // past what internal/leadcohorts counts.
+    const { fixture } = await render({ due: 'overdue' }, [manager], [overdueTooOldCommentLead]);
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.overdue-row')).toBeNull();
+    expect(element.textContent).not.toContain('Дуже Старий Коментар');
+  });
+
+  it('defaults the manager filter to "all" on an office+overdue deep link, matching the digest\'s office-wide count', async () => {
+    // internal/leadcohorts counts per office, not per manager — if the
+    // manager filter defaulted to anything but 'all' here, the manager
+    // would see fewer rows than the digest's count.
+    const { fixture, setOfficeFilter } = await render({ office: 'warsaw', due: 'overdue' });
+
+    expect(setOfficeFilter).toHaveBeenCalledWith('warsaw');
+    expect(fixture.componentInstance['managerId']()).toBe('all');
+  });
+
+  it('shows the empty state when there is nothing overdue', async () => {
+    const { fixture } = await render({ due: 'overdue' }, [manager], []);
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.overdue-empty')).not.toBeNull();
+    expect(element.querySelector('.overdue-row')).toBeNull();
+  });
+
+  it('applies a digest-linked office the user can filter by', async () => {
+    const { setOfficeFilter } = await render({ office: 'warsaw' });
+
+    expect(setOfficeFilter).toHaveBeenCalledWith('warsaw');
+  });
+
+  it('ignores a digest-linked office the user has no access to', async () => {
+    const { setOfficeFilter } = await render({ office: 'warsaw' }, [manager], [callbackLead], {
+      officeContext: () => ({ filterOffices: [office], canFilter: true }),
+    });
+
+    expect(setOfficeFilter).not.toHaveBeenCalledWith('warsaw');
+  });
+
+  it('keeps the digest filter shareable by persisting it back to the URL', async () => {
+    const { navigate } = await render({ kind: 'reminder', date: '2026-07-23' });
+
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({
+          office: 'kyiv',
+          date: '2026-07-23',
+          kind: 'reminder',
+        }),
+        replaceUrl: true,
+      }),
     );
   });
 });

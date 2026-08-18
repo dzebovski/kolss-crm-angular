@@ -24,6 +24,7 @@ import { UiBadge } from '@ui/feedback/ui-badge';
 import { UiChip } from '@ui/feedback/ui-chip';
 import { UiMultiSelect, type UiMultiSelectOption } from '@ui/form/ui-multi-select';
 import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
+import { UiSwitch } from '@ui/form/ui-switch';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { UiIcon } from '@ui/icon/ui-icon';
 import { LinkifiedText } from '@ui/text/linkified-text';
@@ -58,6 +59,7 @@ import {
     UiIcon,
     UiMultiSelect,
     UiSelect,
+    UiSwitch,
     UiTextField,
     UiUser,
   ],
@@ -91,20 +93,65 @@ export class LeadsPage {
   protected readonly callStatusFilter = signal<readonly CallStatusFilterKey[]>(
     this.initialFilters.callStatusFilter,
   );
+  /**
+   * `active` is a cohort ("everything except closed/won"), not a concrete
+   * status, so it is not one of the checkable `clientStatusOptions` — it has
+   * its own switch (see `activeClientsOnly`) instead of living inside this
+   * multi-select's value.
+   *
+   * The two controls are kept **mutually exclusive** on purpose: the API ORs
+   * every `clientStatus` value together, so `active` (already "everything but
+   * closed/won") combined with any concrete status is either redundant or
+   * self-defeating (e.g. `active OR closed_lost` silently undoes the
+   * exclusion the switch promises). Two effects below (search "mutual
+   * exclusivity") enforce that turning one on clears the other — from either
+   * direction, and regardless of whether the change came from the UI or a
+   * signal write — so `effectiveClientStatusFilter` never has to reconcile
+   * both at once. A query-link/preference already carrying both is resolved
+   * the same way at construction, below.
+   */
+  private readonly initialActiveClientsOnly =
+    this.initialFilters.clientStatusFilter.includes('active');
   protected readonly clientStatusFilter = signal<readonly ClientStatusFilterKey[]>(
-    this.initialFilters.clientStatusFilter,
+    this.initialActiveClientsOnly
+      ? []
+      : this.initialFilters.clientStatusFilter.filter((status) => status !== 'active'),
   );
+  protected readonly activeClientsOnly = signal(this.initialActiveClientsOnly);
   protected readonly managerFilter = signal(this.initialFilters.managerFilter);
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
   protected readonly callStatusTone = callStatusTone;
 
+  /** `active` cohort when its switch is on, otherwise the concrete selection. */
+  protected readonly effectiveClientStatusFilter = computed((): readonly ClientStatusFilterKey[] =>
+    this.activeClientsOnly() ? ['active'] : this.clientStatusFilter(),
+  );
+
   constructor() {
+    // Mutual exclusivity between the client-status multi-select and the
+    // "active" switch (see the invariant note on `clientStatusFilter` above).
+    // Two one-directional effects instead of a single combined one: each
+    // reacts only to the signal *it* clears the other for, so a write that
+    // already satisfies the invariant (e.g. clearing the multi-select while
+    // "active" is off) is a same-reference no-op and never bounces the other
+    // effect.
+    effect(() => {
+      if (this.clientStatusFilter().length) {
+        untracked(() => this.activeClientsOnly.set(false));
+      }
+    });
+    effect(() => {
+      if (this.activeClientsOnly() && this.clientStatusFilter().length) {
+        untracked(() => this.clientStatusFilter.set([]));
+      }
+    });
+
     effect(() => {
       writeLeadsPagePreferences({
         periodDays: this.periodDays(),
         callStatusFilter: this.callStatusFilter(),
-        clientStatusFilter: this.clientStatusFilter(),
+        clientStatusFilter: this.effectiveClientStatusFilter(),
         managerFilter: this.managerFilter(),
       });
     });
@@ -117,7 +164,7 @@ export class LeadsPage {
         office: this.session.showOfficeFilter() ? this.session.officeFilter() : null,
         periodDays: this.periodDays(),
         callStatusFilter: this.callStatusFilter(),
-        clientStatusFilter: this.clientStatusFilter(),
+        clientStatusFilter: this.effectiveClientStatusFilter(),
         managerFilter: this.managerFilter(),
         query: this.debouncedQuery().trim(),
         showArchived: this.showArchived(),
@@ -159,10 +206,15 @@ export class LeadsPage {
 
   protected readonly callStatusOptions = computed((): readonly UiMultiSelectOption[] => {
     this.i18n.locale();
-    return (['reached', 'no_answer', 'callback_requested'] as const).map((status) => ({
-      value: status,
-      label: this.i18n.callStatusLabel(status),
-    }));
+    return (
+      [
+        'reached',
+        'no_answer',
+        'callback_requested',
+        'none',
+        'callback_undated',
+      ] as const satisfies readonly CallStatusFilterKey[]
+    ).map((status) => ({ value: status, label: this.callStatusFilterLabel(status) }));
   });
 
   protected readonly clientStatusOptions = computed((): readonly UiMultiSelectOption[] => {
@@ -193,7 +245,7 @@ export class LeadsPage {
       archived: this.showArchived() ? ('only' as const) : ('active' as const),
       days: this.periodDays(),
       callStatus: this.callStatusFilter(),
-      clientStatus: this.clientStatusFilter(),
+      clientStatus: this.effectiveClientStatusFilter(),
       assignedTo: this.managerFilter() || null,
     }),
     loader: ({ params }) => this.leadsService.list(params),
@@ -242,6 +294,9 @@ export class LeadsPage {
     if (status === 'in_work') {
       return this.i18n.t('workflow.taken');
     }
+    if (status === 'active') {
+      return this.i18n.t('leads.filter.clientStatusActive');
+    }
     return this.clientStatusLabel(status);
   }
 
@@ -249,7 +304,32 @@ export class LeadsPage {
     if (status === 'in_work') {
       return 'info' as const;
     }
+    if (status === 'active') {
+      return 'success' as const;
+    }
     return clientStatusTone(status);
+  }
+
+  /**
+   * `none`/`callback_undated` are filter-only cohorts (see
+   * `CallStatusFilterKey`), never a lead's real `callStatus`, so they need
+   * their own label/tone instead of the domain `callStatusLabel`/`callStatusTone`.
+   */
+  protected callStatusFilterLabel(status: CallStatusFilterKey): string {
+    if (status === 'none') {
+      return this.i18n.t('leads.filter.callStatusNone');
+    }
+    if (status === 'callback_undated') {
+      return this.i18n.t('leads.filter.callStatusCallbackUndated');
+    }
+    return this.callStatusLabel(status);
+  }
+
+  protected callStatusFilterTone(status: CallStatusFilterKey) {
+    if (status === 'none' || status === 'callback_undated') {
+      return 'neutral' as const;
+    }
+    return callStatusTone(status);
   }
 
   protected clientStatusLabelForLead(lead: Lead): string {

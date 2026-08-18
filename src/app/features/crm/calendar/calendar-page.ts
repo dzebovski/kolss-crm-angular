@@ -14,7 +14,8 @@ import { firstValueFrom } from 'rxjs';
 
 import type { Appointment, AppointmentKind } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
-import { OFFICE_CONFIG } from '@core/office/office.config';
+import type { MessageKey } from '@core/i18n/messages';
+import { isOfficeId, OFFICE_CONFIG } from '@core/office/office.config';
 import { isOfficeMemberRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import type { Office } from '@models/database';
@@ -28,14 +29,18 @@ import {
   monthGridRange,
   officeDateKey,
   officeDateTimeParts,
+  OVERDUE_LOOKBACK_DAYS,
+  overdueAppointmentWindows,
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
 } from '@services/appointments.service';
-import { commentAssigneeForLead, commentDueAtForLead, leadIsTerminal } from '@domain/lead.rules';
+import { activeRemindersForLead, commentAssigneeForLead } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
+import type { OfficeId } from '@domain/office.types';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
+import { UiChip } from '@ui/feedback/ui-chip';
 import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
@@ -47,11 +52,19 @@ import {
 } from '@features/crm/leads/lead-detail-drawer';
 import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 import { CalendarDayReminders, type CalendarReminder } from './calendar-day-reminders';
+import { CalendarOverdueList, type CalendarOverdueRow } from './calendar-overdue-list';
+import {
+  CALENDAR_REMINDER_FILTER_KIND_MAP,
+  parseCalendarPageQuery,
+  serializeCalendarPageQuery,
+  type CalendarReminderFilterKind,
+} from './calendar-page-query-params';
 
 type CalendarView = 'day' | 'week' | 'month';
 
 const MONTH_VISIBLE_APPOINTMENTS = 3;
 const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
+const EMPTY_OVERDUE_ROWS: readonly CalendarOverdueRow[] = [];
 
 @Component({
   selector: 'app-calendar-page',
@@ -61,9 +74,11 @@ const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
     GridCellWidget,
     GridRow,
     UiButton,
+    UiChip,
     UiIcon,
     UiSelect,
     CalendarDayReminders,
+    CalendarOverdueList,
   ],
   templateUrl: './calendar-page.html',
   styleUrl: './calendar-page.scss',
@@ -88,7 +103,19 @@ export class CalendarPage {
     this.incomingDeepLink,
   );
 
-  protected readonly view = signal<CalendarView>('week');
+  /**
+   * The morning digest's deep link (`office`/`date`/`kind`/`due`) — unlike
+   * `incomingDeepLink` above, this one is *not* consumed-and-wiped: it stays
+   * shareable via the persistent URL-sync effect below, so it must be read
+   * from a separate param set that the appointment deep link's one-shot
+   * clear (`queryParams: {}`) never needs to touch.
+   */
+  private readonly linkedReminderQuery = parseCalendarPageQuery(this.route.snapshot.queryParamMap);
+  private linkedReminderOfficeApplied = false;
+
+  protected readonly view = signal<CalendarView>(
+    !this.linkedReminderQuery?.due && this.linkedReminderQuery?.date ? 'day' : 'week',
+  );
   protected readonly officeId = linkedSignal(
     () => this.session.selectedOfficeId() ?? this.availableOffices()[0]?.id ?? '',
   );
@@ -96,7 +123,15 @@ export class CalendarPage {
     this.officeId();
     return 'all';
   });
-  protected readonly selectedDate = signal(this.incomingDeepLink?.date ?? this.initialDate());
+  protected readonly selectedDate = signal(
+    this.incomingDeepLink?.date ?? this.linkedReminderQuery?.date ?? this.initialDate(),
+  );
+  /** Business reminder group (`callback`/`visit`/`reminder`) from the digest link, if any. */
+  protected readonly reminderKindFilter = signal<CalendarReminderFilterKind | null>(
+    this.linkedReminderQuery?.due ? null : (this.linkedReminderQuery?.kind ?? null),
+  );
+  /** `due=overdue` — every unfinished reminder due before today, any kind, any day. */
+  protected readonly overdueMode = signal(this.linkedReminderQuery?.due ?? false);
   protected readonly timeSlots = Array.from({ length: 20 }, (_, index) => {
     const minutes = 9 * 60 + index * 30;
     return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
@@ -126,6 +161,34 @@ export class CalendarPage {
         if (appointment) this.openEdit(appointment);
       });
     });
+
+    // Offices arrive from `/v1/me`, so a linked office can only be applied
+    // once the session context is loaded. An office the user cannot see is
+    // ignored: the rest of the link still applies.
+    effect(() => {
+      const office = this.linkedReminderQuery?.office;
+      const context = this.session.officeContext();
+      if (!office || this.linkedReminderOfficeApplied || !this.session.loaded() || !context) return;
+
+      this.linkedReminderOfficeApplied = true;
+      if (!context.canFilter) return;
+      if (!context.filterOffices.some((entry) => entry.code === office)) return;
+      untracked(() => this.session.setOfficeFilter(office));
+    });
+
+    // Keeps the digest's filter/office state in the address bar so the
+    // filtered view stays shareable and survives a reload — unlike the
+    // one-shot appointment deep link above, this effect keeps re-writing the
+    // URL as the user paginates through days or clears the filter.
+    effect(() => {
+      const queryParams = serializeCalendarPageQuery({
+        office: this.session.showOfficeFilter() ? this.officeCode() : null,
+        date: this.reminderKindFilter() ? this.selectedDate() : null,
+        kind: this.reminderKindFilter(),
+        due: this.overdueMode(),
+      });
+      void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
+    });
   }
 
   protected readonly office = computed(
@@ -148,7 +211,25 @@ export class CalendarPage {
     return weeks;
   });
   protected readonly monthWeekdayHeaders = computed(() => this.monthWeeks()[0] ?? []);
+  /**
+   * `due=overdue` needs "any day up to (not incl.) today" instead of the
+   * navigation-bound day/week/month window, since a forgotten visit can be
+   * arbitrarily far in the past — the normal views never need to see it.
+   */
+  /**
+   * `due=overdue` needs "any day up to (not incl.) today" instead of the
+   * navigation-bound day/week/month window, since a forgotten visit can be
+   * arbitrarily far in the past — the normal views never need to see it.
+   * `OVERDUE_LOOKBACK_DAYS` deliberately mirrors the digest's own overdue
+   * window (`internal/leadcohorts`) so the count and this list agree.
+   */
   private readonly range = computed(() => {
+    if (this.overdueMode()) {
+      return {
+        from: addCalendarDays(this.todayKey(), -OVERDUE_LOOKBACK_DAYS),
+        to: this.todayKey(),
+      };
+    }
     if (this.view() === 'day') {
       return { from: this.selectedDate(), to: addCalendarDays(this.selectedDate(), 1) };
     }
@@ -161,17 +242,48 @@ export class CalendarPage {
   protected readonly managersResource = resource({
     loader: () => this.users.listManagers(),
   });
+  /**
+   * Under `due=overdue`, the year-wide `range` above is fetched as several
+   * ≤60-day windows, each requesting `status: 'scheduled'` server-side —
+   * `GET /v1/appointments` hard-rejects any single request spanning more
+   * than 63 days (`internal/crmapi/appointments.go`), and a year is far past
+   * that. `overdueReminders` still re-checks `status === 'scheduled'`
+   * defensively rather than trust the request param blindly. The normal
+   * day/week/month grid is untouched: one request, every status, same as
+   * before.
+   */
   protected readonly appointmentsResource = resource({
     params: () => ({
       officeId: this.officeId(),
       ...this.range(),
       managerId: this.managerId() === 'all' ? undefined : this.managerId(),
+      overdue: this.overdueMode(),
     }),
-    loader: ({ params }) => {
-      if (!params.officeId) {
-        return Promise.resolve({ items: [], timezone: 'UTC', from: params.from, to: params.to });
+    loader: async ({ params }) => {
+      const { officeId, from, to, managerId } = params;
+      if (!officeId) {
+        return { items: [], timezone: 'UTC', from, to };
       }
-      return this.appointments.list(params);
+      if (!params.overdue) {
+        return this.appointments.list({ officeId, from, to, managerId });
+      }
+      const responses = await Promise.all(
+        overdueAppointmentWindows(to).map((window) =>
+          this.appointments.list({
+            officeId,
+            from: window.from,
+            to: window.to,
+            managerId,
+            status: 'scheduled',
+          }),
+        ),
+      );
+      return {
+        items: responses.flatMap((response) => response.items),
+        timezone: responses[0]?.timezone ?? 'UTC',
+        from,
+        to,
+      };
     },
   });
 
@@ -218,10 +330,14 @@ export class CalendarPage {
     return this.appointmentsForDay(addCalendarDays(this.weekStart(), 6));
   });
   /**
-   * Date-only lead reminders (blue callbacks, orange comment follow-ups) bucketed
-   * by office day. Showroom due dates are excluded — they render as appointment
-   * cards. Closed leads are excluded entirely. Honors the toolbar manager
-   * filter; office is already scoped by the loaded resource.
+   * Date-only lead reminders (blue callbacks, violet "thinking", orange comment
+   * follow-ups) bucketed by office day — one entry per active reminder, never
+   * grouped by lead, so a lead with e.g. both a `thinking` and a `comment`
+   * reminder due the same day contributes two chips. Showroom/measurement due
+   * dates are excluded — they render as appointment cards instead (see
+   * `appointmentsForDay`). `activeRemindersForLead` already drops closed
+   * leads. Honors the toolbar manager filter; office is already scoped by the
+   * loaded resource.
    */
   private readonly remindersByDate = computed(() => {
     const leads = this.leadsResource.value() ?? [];
@@ -236,8 +352,6 @@ export class CalendarPage {
     };
 
     for (const lead of leads) {
-      if (leadIsTerminal(lead)) continue;
-
       const assigneeId = commentAssigneeForLead(lead);
       if (
         selectedManager !== 'all' &&
@@ -247,27 +361,19 @@ export class CalendarPage {
         continue;
       }
 
-      if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
-        push({
-          kind: 'callback',
-          date: officeDateTimeParts(lead.callbackDueAt, timeZone).date,
-          lead,
-        });
-      }
-
-      const commentDueAt = commentDueAtForLead(lead);
-      if (commentDueAt) {
-        const date = officeDateTimeParts(commentDueAt, timeZone).date;
-        if (assigneeId) {
+      for (const reminder of activeRemindersForLead(lead)) {
+        if (reminder.kind === 'showroom' || reminder.kind === 'measurement') continue;
+        const date = officeDateTimeParts(reminder.dueAt, timeZone).date;
+        if (reminder.kind === 'comment' && assigneeId) {
           push({
-            kind: 'task',
+            kind: 'comment',
             date,
             lead,
             assigneeId,
             assigneeName: this.employeeName(assigneeId),
           });
         } else {
-          push({ kind: 'comment', date, lead });
+          push({ kind: reminder.kind, date, lead });
         }
       }
     }
@@ -275,8 +381,13 @@ export class CalendarPage {
     return byDate;
   });
 
+  /** Applies the digest's business-group filter (`callback`/`visit`/`reminder`), if any. */
   protected dayReminders(date: string): readonly CalendarReminder[] {
-    return this.remindersByDate().get(date) ?? EMPTY_REMINDERS;
+    const reminders = this.remindersByDate().get(date) ?? EMPTY_REMINDERS;
+    const filterKind = this.reminderKindFilter();
+    if (!filterKind) return reminders;
+    const allowed = CALENDAR_REMINDER_FILTER_KIND_MAP[filterKind];
+    return reminders.filter((reminder) => allowed.includes(reminder.kind));
   }
 
   /**
@@ -288,14 +399,14 @@ export class CalendarPage {
     const columnIds = new Set(this.visibleManagers().map((manager) => manager.id));
     return this.dayReminders(date).filter(
       (reminder) =>
-        reminder.kind !== 'task' || !reminder.assigneeId || !columnIds.has(reminder.assigneeId),
+        !reminder.assigneeId || reminder.kind !== 'comment' || !columnIds.has(reminder.assigneeId),
     );
   }
 
   /** Date-only tasks for a manager's day column all-day strip. */
   protected dayColumnTasks(date: string, managerId: string): readonly CalendarReminder[] {
     return this.dayReminders(date).filter(
-      (reminder) => reminder.kind === 'task' && reminder.assigneeId === managerId,
+      (reminder) => reminder.kind === 'comment' && reminder.assigneeId === managerId,
     );
   }
 
@@ -311,6 +422,122 @@ export class CalendarPage {
       this.managers().find((manager) => manager.id === id)?.displayName ??
       this.i18n.t('common.unknown')
     );
+  }
+
+  /**
+   * `due=overdue` rows: every unfinished reminder due strictly before today
+   * and no more than `OVERDUE_LOOKBACK_DAYS` days ago, across all days — one
+   * row per reminder, never grouped by lead. Independent of `selectedDate`.
+   * Callback/thinking/comment come from `leadsResource`
+   * (`activeRemindersForLead`), which loads every active lead regardless of
+   * date — so unlike the appointments branch below (bounded by the windowed
+   * request range), this one needs its own explicit lower bound, or a
+   * comment reminder from over a year ago would outlive the digest's own
+   * `internal/leadcohorts` cutoff and inflate this list past the count the
+   * digest reported. Showroom/measurement come from `appointmentsResource`
+   * instead, filtered to `status === 'scheduled'` — a visit already marked
+   * visited/canceled/no-show is not overdue, it's done, matching the
+   * digest's `lead_showroom_visits.status = 'scheduled'` rule. The status
+   * check here is a defensive re-check: `appointmentsResource` already
+   * requests `status: 'scheduled'` server-side while overdue mode is on (see
+   * `appointmentsResource` above), this just doesn't blindly trust it.
+   */
+  protected readonly overdueReminders = computed<readonly CalendarOverdueRow[]>(() => {
+    if (!this.overdueMode()) return EMPTY_OVERDUE_ROWS;
+
+    const leads = this.leadsResource.value() ?? [];
+    const leadById = new Map(leads.map((lead) => [lead.id, lead] as const));
+    const timeZone = this.office()?.timezone_name ?? 'UTC';
+    const today = this.todayKey();
+    const earliestOverdueDate = addCalendarDays(today, -OVERDUE_LOOKBACK_DAYS);
+    const selectedManager = this.managerId();
+    const rows: CalendarOverdueRow[] = [];
+
+    for (const lead of leads) {
+      const assigneeId = commentAssigneeForLead(lead);
+      if (
+        selectedManager !== 'all' &&
+        lead.assignedToId !== selectedManager &&
+        assigneeId !== selectedManager
+      ) {
+        continue;
+      }
+
+      for (const reminder of activeRemindersForLead(lead)) {
+        // showroom/measurement are sourced from appointments below instead —
+        // that's the status-aware source of truth, not the lead's derived
+        // due-date fields.
+        if (reminder.kind === 'showroom' || reminder.kind === 'measurement') continue;
+        const parts = officeDateTimeParts(reminder.dueAt, timeZone);
+        if (parts.date >= today || parts.date < earliestOverdueDate) continue;
+        rows.push({
+          kind: reminder.kind,
+          lead,
+          dateLabel: this.shortDateLabel(parts.date),
+          timeLabel: parts.time,
+          assigneeName:
+            reminder.kind === 'comment' && assigneeId ? this.employeeName(assigneeId) : null,
+          dueAt: reminder.dueAt,
+        });
+      }
+    }
+
+    for (const appointment of this.items()) {
+      if (appointment.status !== 'scheduled') continue;
+      if (selectedManager !== 'all' && appointment.responsibleManager?.id !== selectedManager) {
+        continue;
+      }
+      const parts = officeDateTimeParts(appointment.startsAt, timeZone);
+      if (parts.date >= today) continue;
+      const lead = leadById.get(appointment.lead.id);
+      if (!lead) continue;
+      rows.push({
+        kind: appointment.kind,
+        lead,
+        dateLabel: this.shortDateLabel(parts.date),
+        timeLabel: parts.time,
+        assigneeName: null,
+        dueAt: appointment.startsAt,
+      });
+    }
+
+    return rows.sort((left, right) => left.dueAt.localeCompare(right.dueAt));
+  });
+
+  protected readonly overdueLoadError = computed(() => {
+    const error =
+      this.leadsResource.error() ??
+      this.managersResource.error() ??
+      this.appointmentsResource.error();
+    return error instanceof Error ? error.message : error ? String(error) : '';
+  });
+
+  /** Localized name of a digest business group, for the active-filter chip. */
+  protected filterGroupLabel(kind: CalendarReminderFilterKind): string {
+    return this.i18n.t(`calendar.filter.${kind}` as MessageKey);
+  }
+
+  /** How many rows are currently shown for the active filter — must match the digest's count. */
+  protected filteredReminderCount(): number {
+    const kind = this.reminderKindFilter();
+    if (!kind) return 0;
+    if (kind === 'visit') return this.appointmentsForDay(this.selectedDate()).length;
+    return this.dayReminders(this.selectedDate()).length;
+  }
+
+  protected clearReminderFilter(): void {
+    this.reminderKindFilter.set(null);
+  }
+
+  protected exitOverdueMode(): void {
+    this.overdueMode.set(false);
+    this.selectedDate.set(this.todayKey());
+    this.view.set('week');
+  }
+
+  private officeCode(): OfficeId | null {
+    const code = this.office()?.code;
+    return isOfficeId(code) ? code : null;
   }
 
   protected readonly agendaGroups = computed(() => {
@@ -442,7 +669,8 @@ export class CalendarPage {
     return this.items().filter((appointment) => {
       if (
         !this.isTimelineAppointment(appointment) ||
-        appointment.responsibleManager?.id !== managerId
+        appointment.responsibleManager?.id !== managerId ||
+        !this.isVisibleUnderVisitFilter(appointment)
       ) {
         return false;
       }
@@ -462,9 +690,24 @@ export class CalendarPage {
       .filter(
         (appointment) =>
           this.isTimelineAppointment(appointment) &&
+          this.isVisibleUnderVisitFilter(appointment) &&
           officeDateTimeParts(appointment.startsAt, timeZone).date === date,
       )
       .sort((left, right) => left.startsAt.localeCompare(right.startsAt));
+  }
+
+  /**
+   * Under a `kind=visit` deep link, only still-scheduled visits count toward
+   * "Візити в салон" — matches the digest's `lead_showroom_visits.status =
+   * 'scheduled'` rule, so a visit already visited/canceled/no-show doesn't
+   * inflate the count past what the digest reported. Filtered client-side
+   * (not via the request) because the deep link's `date` always falls inside
+   * whatever day/week/month range is already loaded, so the data is already
+   * there — narrowing the request would only add a redundant round-trip.
+   * Normal (unfiltered) browsing is untouched: every status still renders.
+   */
+  private isVisibleUnderVisitFilter(appointment: Appointment): boolean {
+    return this.reminderKindFilter() !== 'visit' || appointment.status === 'scheduled';
   }
 
   protected visibleMonthAppointments(date: string): readonly Appointment[] {

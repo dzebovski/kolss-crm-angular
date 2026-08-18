@@ -4,41 +4,53 @@
       <p>{{ i18n.t('calendar.kicker') }}</p>
       <h1 id="calendar-title">{{ i18n.t('calendar.title') }}</h1>
     </div>
-    <div class="header-actions">
-      <app-ui-button (pressed)="openCreate()">
-        <app-ui-icon name="add" [size]="18" />
-        {{ i18n.t('calendar.newAppointment') }}
-      </app-ui-button>
-      <app-ui-button variant="secondary" (pressed)="openCreateMeasurement()">
-        <app-ui-icon name="straighten" [size]="18" />
-        {{ i18n.t('calendar.kind.measurement') }}
-      </app-ui-button>
-    </div>
+    @if (!overdueMode()) {
+      <div class="header-actions">
+        <app-ui-button (pressed)="openCreate()">
+          <app-ui-icon name="add" [size]="18" />
+          {{ i18n.t('calendar.newAppointment') }}
+        </app-ui-button>
+        <app-ui-button variant="secondary" (pressed)="openCreateMeasurement()">
+          <app-ui-icon name="straighten" [size]="18" />
+          {{ i18n.t('calendar.kind.measurement') }}
+        </app-ui-button>
+      </div>
+    }
   </header>
 
   <div class="toolbar" role="toolbar" [attr.aria-label]="i18n.t('calendar.controls')">
-    <div class="date-navigation">
-      <button
-        type="button"
-        class="icon-button"
-        [attr.aria-label]="i18n.t('calendar.previous')"
-        (click)="navigate(-1)"
-      >
-        <app-ui-icon name="chevron_left" [size]="22" />
-      </button>
-      <button type="button" class="today-button" (click)="goToday()">
-        {{ i18n.t('calendar.today') }}
-      </button>
-      <button
-        type="button"
-        class="icon-button"
-        [attr.aria-label]="i18n.t('calendar.next')"
-        (click)="navigate(1)"
-      >
-        <app-ui-icon name="chevron_right" [size]="22" />
-      </button>
-      <strong>{{ rangeLabel() }}</strong>
-    </div>
+    @if (overdueMode()) {
+      <div class="date-navigation">
+        <strong>{{ i18n.t('calendar.overdue.title') }} · {{ overdueReminders().length }}</strong>
+        <app-ui-button variant="secondary" (pressed)="exitOverdueMode()">
+          <app-ui-icon name="arrow_back" [size]="16" />
+          {{ i18n.t('calendar.overdue.exit') }}
+        </app-ui-button>
+      </div>
+    } @else {
+      <div class="date-navigation">
+        <button
+          type="button"
+          class="icon-button"
+          [attr.aria-label]="i18n.t('calendar.previous')"
+          (click)="navigate(-1)"
+        >
+          <app-ui-icon name="chevron_left" [size]="22" />
+        </button>
+        <button type="button" class="today-button" (click)="goToday()">
+          {{ i18n.t('calendar.today') }}
+        </button>
+        <button
+          type="button"
+          class="icon-button"
+          [attr.aria-label]="i18n.t('calendar.next')"
+          (click)="navigate(1)"
+        >
+          <app-ui-icon name="chevron_right" [size]="22" />
+        </button>
+        <strong>{{ rangeLabel() }}</strong>
+      </div>
+    }
 
     <div class="toolbar-filters">
       @if (officeOptions().length > 1) {
@@ -57,27 +69,43 @@
         [value]="managerId()"
         (valueChange)="managerId.set($event)"
       />
-      <div class="view-switch" [attr.aria-label]="i18n.t('calendar.view')">
-        <button type="button" [class.is-active]="view() === 'day'" (click)="view.set('day')">
-          {{ i18n.t('calendar.day') }}
-        </button>
-        <button type="button" [class.is-active]="view() === 'week'" (click)="view.set('week')">
-          {{ i18n.t('calendar.week') }}
-        </button>
-        <button type="button" [class.is-active]="view() === 'month'" (click)="view.set('month')">
-          {{ i18n.t('calendar.month') }}
-        </button>
-      </div>
-      <ul class="kind-legend" [attr.aria-label]="i18n.t('calendar.legend')">
-        <li><span class="kind-swatch"></span>{{ i18n.t('calendar.kind.showroom') }}</li>
-        <li>
-          <span class="kind-swatch is-measurement"></span>{{ i18n.t('calendar.kind.measurement') }}
-        </li>
-      </ul>
+      @if (!overdueMode()) {
+        <div class="view-switch" [attr.aria-label]="i18n.t('calendar.view')">
+          <button type="button" [class.is-active]="view() === 'day'" (click)="view.set('day')">
+            {{ i18n.t('calendar.day') }}
+          </button>
+          <button type="button" [class.is-active]="view() === 'week'" (click)="view.set('week')">
+            {{ i18n.t('calendar.week') }}
+          </button>
+          <button type="button" [class.is-active]="view() === 'month'" (click)="view.set('month')">
+            {{ i18n.t('calendar.month') }}
+          </button>
+        </div>
+        <ul class="kind-legend" [attr.aria-label]="i18n.t('calendar.legend')">
+          <li><span class="kind-swatch"></span>{{ i18n.t('calendar.kind.showroom') }}</li>
+          <li>
+            <span class="kind-swatch is-measurement"></span
+            >{{ i18n.t('calendar.kind.measurement') }}
+          </li>
+        </ul>
+      }
     </div>
   </div>
 
-  @if (view() === 'week' && sundayAppointments().length) {
+  @if (reminderKindFilter(); as filterKind) {
+    <div class="filter-chips" aria-live="polite">
+      <app-ui-chip
+        tone="brand"
+        [label]="filterGroupLabel(filterKind)"
+        [removable]="true"
+        (removed)="clearReminderFilter()"
+      >
+        {{ filterGroupLabel(filterKind) }} · {{ filteredReminderCount() }}
+      </app-ui-chip>
+    </div>
+  }
+
+  @if (!overdueMode() && view() === 'week' && sundayAppointments().length) {
     <button type="button" class="sunday-banner" (click)="openSunday()">
       <app-ui-icon name="info" [size]="18" />
       <span>
@@ -87,7 +115,26 @@
     </button>
   }
 
-  @if (appointmentsResource.isLoading() || managersResource.isLoading()) {
+  @if (overdueMode()) {
+    @if (
+      leadsResource.isLoading() || managersResource.isLoading() || appointmentsResource.isLoading()
+    ) {
+      <div class="calendar-skeleton" aria-live="polite">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    } @else if (overdueLoadError()) {
+      <div class="state-card" role="alert">
+        <app-ui-icon name="error" [size]="24" />
+        <strong>{{ i18n.t('calendar.overdue.loadFailed') }}</strong>
+        <p>{{ overdueLoadError() }}</p>
+        <app-ui-button variant="secondary" (pressed)="reload()">
+          {{ i18n.t('calendar.retry') }}
+        </app-ui-button>
+      </div>
+    } @else {
+      <app-calendar-overdue-list [rows]="overdueReminders()" (leadSelected)="openLead($event)" />
+    }
+  } @else if (appointmentsResource.isLoading() || managersResource.isLoading()) {
     <div class="calendar-skeleton" aria-live="polite">
       <span></span><span></span><span></span><span></span>
     </div>

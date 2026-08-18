@@ -87,6 +87,41 @@ describe('leads page query params', () => {
     expect(parse(serializeLeadsPageQuery(state))).toEqual(state);
   });
 
+  it('parses the digest deep-link filter cohorts (callStatus=none, clientStatus=active)', () => {
+    expect(
+      parse({ office: 'warsaw', callStatus: 'none', clientStatus: 'active', days: 'all' }),
+    ).toEqual({
+      office: 'warsaw',
+      periodDays: null,
+      callStatusFilter: ['none'],
+      clientStatusFilter: ['active'],
+      managerFilter: '',
+      query: '',
+      showArchived: false,
+    });
+  });
+
+  it('combines a concrete call status with the undated-callback cohort', () => {
+    expect(parse({ callStatus: 'no_answer,callback_undated' })?.callStatusFilter).toEqual([
+      'no_answer',
+      'callback_undated',
+    ]);
+  });
+
+  it('round-trips the new call/client status cohorts', () => {
+    const state: LeadsPageQueryState = {
+      office: 'warsaw',
+      periodDays: null,
+      callStatusFilter: ['no_answer', 'callback_undated', 'none'],
+      clientStatusFilter: ['active'],
+      managerFilter: '',
+      query: '',
+      showArchived: false,
+    };
+
+    expect(parse(serializeLeadsPageQuery(state))).toEqual(state);
+  });
+
   it('builds a link-shaped state from stored preferences', () => {
     expect(
       leadsPageQueryStateFromPreferences({

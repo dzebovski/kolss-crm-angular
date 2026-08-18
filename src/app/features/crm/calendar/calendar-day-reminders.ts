@@ -1,25 +1,35 @@
 import { Component, inject, input, output } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
+import type { LeadReminderKind } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
 import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 
-export type CalendarReminderKind = 'callback' | 'comment' | 'task';
+/**
+ * Chip-rendered reminder kinds — the canonical `LeadReminderKind`
+ * (`@domain/lead.rules`) minus `showroom`/`measurement`, which never appear
+ * here (see `calendar-page.ts`'s `remindersByDate`). "Task" is not a separate
+ * kind: it's a display nuance of a `comment` reminder that has an assignee
+ * (`assigneeId` set), not a filter dimension — see `isTask()` below.
+ */
+export type CalendarReminderKind = Exclude<LeadReminderKind, 'showroom' | 'measurement'>;
 
 export interface CalendarReminder {
   readonly kind: CalendarReminderKind;
   /** Office-local day bucket (YYYY-MM-DD) the reminder is due on. */
   readonly date: string;
   readonly lead: Lead;
-  /** Task assignee uuid (kind === 'task'). */
+  /** Task assignee uuid (kind === 'comment' with an assignee). */
   readonly assigneeId?: string | null;
-  /** Task assignee display name (kind === 'task'). */
+  /** Task assignee display name (kind === 'comment' with an assignee). */
   readonly assigneeName?: string | null;
 }
 
 /**
  * Compact, date-only lead reminder chips rendered at the top of a calendar day.
- * Blue phone chips flag pending callbacks, orange chips flag comment follow-ups.
+ * Blue phone chips flag pending callbacks, violet flag client-status "thinking"
+ * reminders, orange chips flag comment follow-ups (a violet accent + assignee
+ * name marks the ones with a task assignee).
  */
 @Component({
   selector: 'app-calendar-day-reminders',
@@ -30,14 +40,15 @@ export interface CalendarReminder {
         type="button"
         class="reminder-chip"
         [class.is-callback]="reminder.kind === 'callback'"
-        [class.is-comment]="reminder.kind === 'comment'"
-        [class.is-task]="reminder.kind === 'task'"
+        [class.is-thinking]="reminder.kind === 'thinking'"
+        [class.is-comment]="reminder.kind === 'comment' && !isTask(reminder)"
+        [class.is-task]="isTask(reminder)"
         [attr.aria-label]="ariaLabel(reminder)"
         (click)="leadSelected.emit(reminder.lead)"
       >
         <app-ui-icon [name]="iconFor(reminder)" [size]="13" />
         <span class="reminder-name">{{ reminder.lead.name || reminder.lead.phone }}</span>
-        @if (showAssignee() && reminder.kind === 'task' && reminder.assigneeName) {
+        @if (showAssignee() && isTask(reminder) && reminder.assigneeName) {
           <span class="reminder-assignee">{{ reminder.assigneeName }}</span>
         }
       </button>
@@ -100,6 +111,16 @@ export interface CalendarReminder {
       color: var(--ui-info);
     }
 
+    .is-thinking {
+      border-color: color-mix(in srgb, var(--ui-teal) 35%, var(--ui-border));
+      border-left-color: var(--ui-teal);
+      background: color-mix(in srgb, var(--ui-teal) 10%, var(--ui-surface-raised));
+    }
+
+    .is-thinking app-ui-icon {
+      color: var(--ui-teal);
+    }
+
     .is-comment {
       border-color: color-mix(in srgb, var(--ui-warning) 35%, var(--ui-border));
       border-left-color: var(--ui-warning);
@@ -139,16 +160,23 @@ export class CalendarDayReminders {
   readonly showAssignee = input(false);
   readonly leadSelected = output<Lead>();
 
+  /** A comment reminder with an assignee renders as a "task" — see the type doc above. */
+  protected isTask(reminder: CalendarReminder): boolean {
+    return reminder.kind === 'comment' && !!reminder.assigneeId;
+  }
+
   protected iconFor(reminder: CalendarReminder): UiIconName {
     if (reminder.kind === 'callback') return 'phone_in_talk';
-    if (reminder.kind === 'task') return 'person';
+    if (this.isTask(reminder)) return 'person';
+    if (reminder.kind === 'thinking') return 'info';
     return 'schedule';
   }
 
   protected ariaLabel(reminder: CalendarReminder): string {
     const name = reminder.lead.name || reminder.lead.phone;
     if (reminder.kind === 'callback') return this.i18n.t('calendar.reminderCallback', { name });
-    if (reminder.kind === 'task') return this.i18n.t('calendar.reminderTask', { name });
+    if (this.isTask(reminder)) return this.i18n.t('calendar.reminderTask', { name });
+    if (reminder.kind === 'thinking') return this.i18n.t('calendar.reminderThinking', { name });
     return this.i18n.t('calendar.reminderComment', { name });
   }
 }

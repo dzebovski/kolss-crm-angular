@@ -11,6 +11,8 @@ import {
   monthGridRange,
   officeDateKey,
   officeDateTimeParts,
+  OVERDUE_LOOKBACK_DAYS,
+  overdueAppointmentWindows,
   parseCalendarAppointmentQuery,
   startOfCalendarMonth,
 } from './appointments.service';
@@ -147,5 +149,40 @@ describe('appointment office-time helpers', () => {
         get: (name) => (name === 'leadId' ? 'lead-1' : null),
       }),
     ).toBeNull();
+  });
+
+  it('splits the overdue lookback into contiguous windows never wider than 63 days', () => {
+    // GET /v1/appointments hard-rejects any single request spanning more than
+    // 63 days (internal/crmapi/appointments.go) — this is the invariant a
+    // mocked AppointmentsService can't catch on its own.
+    const windows = overdueAppointmentWindows('2026-07-23');
+
+    expect(windows.length).toBeGreaterThan(1);
+    expect(windows[0]?.from).toBe(addCalendarDays('2026-07-23', -OVERDUE_LOOKBACK_DAYS));
+    expect(windows.at(-1)?.to).toBe('2026-07-23');
+
+    for (const window of windows) {
+      const days = (Date.parse(window.to) - Date.parse(window.from)) / (24 * 60 * 60 * 1000);
+      expect(days).toBeGreaterThan(0);
+      expect(days).toBeLessThanOrEqual(63);
+    }
+
+    // Contiguous and non-overlapping: each window starts exactly where the
+    // previous one ended.
+    for (let index = 1; index < windows.length; index++) {
+      expect(windows[index]?.from).toBe(windows[index - 1]?.to);
+    }
+  });
+
+  it('is stable across a leap-year boundary', () => {
+    // 2028 is a leap year; this just guards against an off-by-one from
+    // hand-rolled date math around Feb 29.
+    const windows = overdueAppointmentWindows('2028-03-10');
+    expect(windows[0]?.from).toBe(addCalendarDays('2028-03-10', -OVERDUE_LOOKBACK_DAYS));
+    expect(windows.at(-1)?.to).toBe('2028-03-10');
+    for (const window of windows) {
+      const days = (Date.parse(window.to) - Date.parse(window.from)) / (24 * 60 * 60 * 1000);
+      expect(days).toBeLessThanOrEqual(63);
+    }
   });
 });
