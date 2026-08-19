@@ -14,7 +14,7 @@ export interface ReportTotals {
   readonly contractTotals: readonly ReportContractTotal[];
   readonly closedLost: number;
   readonly callback: number;
-  readonly inactive7d: number;
+  readonly overdueNextActionCount: number;
   readonly conversionPercent: number;
   readonly byClientStatus: Readonly<Record<ClientStatus, number>>;
 }
@@ -42,9 +42,8 @@ export interface ReportLead {
   readonly callStatus: CallStatus | null;
   readonly callStatusChangedAt: string | null;
   readonly lossReason: string | null;
-  readonly lastHumanActivityAt: string | null;
-  readonly inactiveDays: number;
-  readonly inactive7d: boolean;
+  readonly nextActionAt: string | null;
+  readonly overdueDays: number;
   readonly comments: readonly ReportComment[];
 }
 

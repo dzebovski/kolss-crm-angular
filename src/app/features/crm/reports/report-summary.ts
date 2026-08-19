@@ -48,9 +48,9 @@ import type { LeadReportResponse } from './reports.types';
             <dt>{{ i18n.t('reports.metric.lost') }}</dt>
             <dd>{{ report().totals.closedLost }}</dd>
           </div>
-          <div [class.is-danger]="report().totals.inactive7d > 0">
-            <dt>{{ i18n.t('reports.metric.inactive') }}</dt>
-            <dd>{{ report().totals.inactive7d }}</dd>
+          <div [class.is-danger]="report().totals.overdueNextActionCount > 0">
+            <dt>{{ i18n.t('reports.metric.overdueNextAction') }}</dt>
+            <dd>{{ report().totals.overdueNextActionCount }}</dd>
           </div>
         </dl>
       </div>

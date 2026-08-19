@@ -31,10 +31,14 @@ import type { ReportLead } from './reports.types';
       @if (lead().lossReason; as reason) {
         <span>{{ i18n.closeReasonLabel(reason) }}</span>
       }
-      @if (lead().inactive7d) {
-        <span class="is-stale">
-          {{ i18n.t('reports.daysWithoutActivity', { count: lead().inactiveDays }) }}
-        </span>
+      @if (lead().overdueDays > 0) {
+        @if (lead().nextActionAt; as nextActionAt) {
+          <span class="is-stale">
+            {{ i18n.t('reports.nextAction') }}
+            <time [attr.datetime]="nextActionAt">{{ i18n.formatDate(nextActionAt) }}</time>
+            · {{ i18n.t('reports.daysOverdue', { count: lead().overdueDays }) }}
+          </span>
+        }
       }
     </td>
     <td class="lead-comment">
@@ -128,6 +132,10 @@ import type { ReportLead } from './reports.types';
     .lead-client-status .is-stale {
       color: var(--ui-danger);
       font-weight: 750;
+    }
+
+    .lead-client-status .is-stale time {
+      font-variant-numeric: tabular-nums;
     }
 
     .comment-item {

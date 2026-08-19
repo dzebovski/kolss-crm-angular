@@ -17,7 +17,7 @@ const report: LeadReportResponse = {
     contractTotals: [{ currency: 'PLN', total: 29800 }],
     closedLost: 1,
     callback: 1,
-    inactive7d: 1,
+    overdueNextActionCount: 1,
     conversionPercent: 33,
     byClientStatus: {
       new_lead: 0,
@@ -51,7 +51,7 @@ const report: LeadReportResponse = {
         contractTotals: [],
         closedLost: 1,
         callback: 1,
-        inactive7d: 1,
+        overdueNextActionCount: 1,
         conversionPercent: 0,
         byClientStatus: {
           new_lead: 0,
@@ -74,9 +74,8 @@ const report: LeadReportResponse = {
           callStatus: 'callback_requested',
           callStatusChangedAt: '2026-07-01T09:00:00Z',
           lossReason: null,
-          lastHumanActivityAt: '2026-07-08T09:00:00Z',
-          inactiveDays: 9,
-          inactive7d: true,
+          nextActionAt: '2026-07-11T12:00:00Z',
+          overdueDays: 6,
           comments: [
             {
               body: 'Клієнт чекає фінальну версію прорахунку без скорочення тексту.',
@@ -104,9 +103,8 @@ const report: LeadReportResponse = {
           callStatus: 'reached',
           callStatusChangedAt: '2026-07-12T09:00:00Z',
           lossReason: 'expensive',
-          lastHumanActivityAt: '2026-07-12T09:00:00Z',
-          inactiveDays: 5,
-          inactive7d: false,
+          nextActionAt: '2026-07-20T12:00:00Z',
+          overdueDays: 0,
           comments: [],
         },
       ],
@@ -122,7 +120,7 @@ const report: LeadReportResponse = {
         contractTotals: [{ currency: 'PLN', total: 29800 }],
         closedLost: 0,
         callback: 0,
-        inactive7d: 0,
+        overdueNextActionCount: 0,
         conversionPercent: 100,
         byClientStatus: {
           new_lead: 0,
@@ -145,9 +143,8 @@ const report: LeadReportResponse = {
           callStatus: 'reached',
           callStatusChangedAt: '2026-07-15T09:00:00Z',
           lossReason: null,
-          lastHumanActivityAt: '2026-07-15T09:00:00Z',
-          inactiveDays: 2,
-          inactive7d: false,
+          nextActionAt: null,
+          overdueDays: 0,
           comments: [],
         },
       ],
@@ -184,6 +181,7 @@ describe('ReportsPage', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Підсумок роботи з лідами');
+    expect(element.textContent).toContain('Прострочені наступні дії');
     expect(element.textContent).toContain('Олена Коваль');
     expect(element.textContent).toContain('Без менеджера');
     expect(element.querySelectorAll('app-manager-report-section')).toHaveLength(2);
@@ -246,14 +244,20 @@ describe('ReportsPage', () => {
       'Клієнт чекає фінальну версію прорахунку без скорочення тексту.',
     );
     expect(comments[1]!.textContent).toContain('Погодили матеріали та остаточні розміри.');
-    expect(calculationRow!.querySelector('.lead-client-status')?.textContent).toContain(
-      '9 днів без активності',
+    const overdueAction = calculationRow!.querySelector('.lead-client-status .is-stale');
+    expect(overdueAction?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Наступна дія 11.07.2026 · прострочено на 6 дн.',
     );
+    expect(overdueAction?.querySelector('time')?.getAttribute('datetime')).toBe(
+      '2026-07-11T12:00:00Z',
+    );
+    expect(calculationRow!.textContent).not.toContain('без активності');
 
     const lostRow = [...element.querySelectorAll<HTMLElement>('tr.report-lead-block')].find((row) =>
       row.textContent?.includes('Іван Петренко'),
     );
     expect(lostRow?.querySelector('.lead-client-status')?.textContent).toContain('Дорого');
+    expect(lostRow?.querySelector('.lead-client-status .is-stale')).toBeNull();
     expect(lostRow?.querySelectorAll('.lead-comment .empty-value')).toHaveLength(2);
   });
 

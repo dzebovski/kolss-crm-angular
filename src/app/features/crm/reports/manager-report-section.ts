@@ -56,9 +56,9 @@ const STATUS_ORDER: readonly ClientStatus[] = [
             <dt>{{ i18n.t('reports.metric.lost') }}</dt>
             <dd>{{ manager().totals.closedLost }}</dd>
           </div>
-          <div [class.is-alert]="manager().totals.inactive7d > 0">
-            <dt>{{ i18n.t('reports.metric.inactive') }}</dt>
-            <dd>{{ manager().totals.inactive7d }}</dd>
+          <div [class.is-alert]="manager().totals.overdueNextActionCount > 0">
+            <dt>{{ i18n.t('reports.metric.overdueNextAction') }}</dt>
+            <dd>{{ manager().totals.overdueNextActionCount }}</dd>
           </div>
         </dl>
       </header>
