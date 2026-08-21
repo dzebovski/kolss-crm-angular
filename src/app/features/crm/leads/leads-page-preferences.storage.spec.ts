@@ -34,7 +34,7 @@ describe('leads-page-preferences.storage', () => {
     const preferences = {
       periodDays: 30,
       callStatusFilter: ['no_answer', 'reached'] as const,
-      clientStatusFilter: ['thinking', 'in_work'] as const,
+      clientStatusFilter: ['thinking', 'postponed', 'in_work'] as const,
       managerFilter: 'manager-2',
     };
     writeLeadsPagePreferences(preferences);

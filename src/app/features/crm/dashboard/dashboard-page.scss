@@ -120,6 +120,10 @@ summary::-webkit-details-marker {
   background: oklch(96% 0.04 195);
 }
 
+.group-negotiating summary {
+  background: oklch(96% 0.045 340);
+}
+
 .group-in_work summary {
   background: oklch(95% 0.055 260);
 }

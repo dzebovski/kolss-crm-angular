@@ -18,7 +18,7 @@ const DIALOG_STYLES = `
   .activity-dialog h2 { font-family: var(--ui-font-display), sans-serif; font-size: 1.55rem; }
   .activity-dialog p { color: var(--ui-text-muted); font-size: .875rem; }
   .activity-dialog__actions { display: flex; justify-content: flex-end; gap: .75rem; }
-  .reason-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .reason-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
   .reason-selector button { min-height: 2.75rem; padding: .5rem; border: 1px solid var(--ui-border-strong); border-radius: var(--ui-radius-md); background: var(--ui-surface-raised); color: var(--ui-text); cursor: pointer; font-weight: 700; }
   .reason-selector button[aria-checked='true'] { border-color: var(--ui-action); background: color-mix(in srgb, var(--ui-action) 10%, white); color: var(--ui-action); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ui-action) 14%, transparent); }
   .contract-grid { display: grid; grid-template-columns: 1fr 9rem; gap: .75rem; }
@@ -215,7 +215,7 @@ export class DueDateDialog {
 }
 
 export interface CloseStatusResult {
-  readonly reason: 'expensive' | 'invalid' | 'other';
+  readonly reason: 'expensive' | 'invalid' | 'no_contact' | 'other';
   readonly comment: string;
 }
 
@@ -271,6 +271,7 @@ export class CloseStatusDialog {
     { value: 'expensive' as const, label: this.i18n.closeReasonLabel('expensive') },
     { value: 'invalid' as const, label: this.i18n.closeReasonLabel('invalid') },
     { value: 'other' as const, label: this.i18n.closeReasonLabel('other') },
+    { value: 'no_contact' as const, label: this.i18n.closeReasonLabel('no_contact') },
   ];
   protected readonly model = signal<CloseStatusResult>({ reason: 'expensive', comment: '' });
   protected readonly closeForm = form(this.model, (path) => {

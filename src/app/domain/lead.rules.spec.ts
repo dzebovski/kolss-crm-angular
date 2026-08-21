@@ -33,9 +33,10 @@ describe('CRM status tones', () => {
       clientStatusTone('measurement_scheduled'),
       clientStatusTone('calculation_in_progress'),
       clientStatusTone('thinking'),
+      clientStatusTone('postponed'),
       clientStatusTone('closed_lost'),
       clientStatusTone('contract_signed'),
-    ]).toEqual(['brand', 'info', 'teal', 'warning', 'brand', 'danger', 'success']);
+    ]).toEqual(['brand', 'info', 'teal', 'warning', 'brand', 'neutral', 'danger', 'success']);
   });
 });
 
@@ -94,6 +95,34 @@ describe('on-site measurements', () => {
     expect(measurement?.tone).toBe('teal');
     expect(measurement?.rows).toEqual([lead]);
     expect(groups.find((group) => group.key === 'showroom')?.rows).toEqual([]);
+  });
+});
+
+describe('thinking/postponed dashboard buckets', () => {
+  it('routes a negotiating (thinking) lead into its own bucket, not paused', () => {
+    const lead = {
+      ...FIXTURE_LEADS[0]!,
+      clientStatus: 'thinking',
+      archivedAt: null,
+    } as Lead;
+    const groups = groupLeadsForDashboard([lead]);
+
+    expect(groups.find((group) => group.key === 'negotiating')?.rows).toEqual([lead]);
+    expect(groups.find((group) => group.key === 'paused')?.rows).toEqual([]);
+  });
+
+  it('routes a postponed lead into the paused bucket', () => {
+    const lead = {
+      ...FIXTURE_LEADS[0]!,
+      clientStatus: 'postponed',
+      archivedAt: null,
+    } as Lead;
+    const groups = groupLeadsForDashboard([lead]);
+    const paused = groups.find((group) => group.key === 'paused');
+
+    expect(paused?.tone).toBe('info');
+    expect(paused?.rows).toEqual([lead]);
+    expect(groups.find((group) => group.key === 'negotiating')?.rows).toEqual([]);
   });
 });
 
@@ -188,6 +217,18 @@ describe('activeRemindersForLead', () => {
         showroomDueAt: null,
       }),
     ).toEqual([]);
+  });
+
+  it('lists a postponed reminder from the same callbackDueAt field as thinking', () => {
+    expect(
+      activeRemindersForLead({
+        callStatus: null,
+        clientStatus: 'postponed',
+        callbackDueAt: '2026-09-01T12:00:00.000Z',
+        commentReminderDueAt: null,
+        showroomDueAt: null,
+      }),
+    ).toEqual([{ kind: 'postponed', dueAt: '2026-09-01T12:00:00.000Z' }]);
   });
 });
 

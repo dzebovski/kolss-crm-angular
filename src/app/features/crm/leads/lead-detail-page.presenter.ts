@@ -28,6 +28,7 @@ export function isClientStatus(value: string | null | undefined): value is Clien
     value === 'measurement_scheduled' ||
     value === 'calculation_in_progress' ||
     value === 'thinking' ||
+    value === 'postponed' ||
     value === 'closed_lost' ||
     value === 'contract_signed'
   );
@@ -88,7 +89,7 @@ export function eventBody(
   return presentEventBodyFromLeadEvent(event, bundle);
 }
 
-/** The due date (callback/thinking/showroom) attached to a timeline event, if any. */
+/** The due date (callback/thinking/postponed/showroom) attached to a timeline event, if any. */
 export function eventDueDate(
   event: LeadEvent,
 ): { readonly date: string; readonly kind: LeadDueDateKind } | null {
@@ -99,7 +100,9 @@ export function eventDueDate(
   const isScheduledStatus =
     (event.category === 'call_status' && event.statusCode === 'callback_requested') ||
     (event.category === 'client_status' &&
-      (event.statusCode === 'thinking' || event.statusCode === 'showroom_invited'));
+      (event.statusCode === 'thinking' ||
+        event.statusCode === 'postponed' ||
+        event.statusCode === 'showroom_invited'));
   if (!isComment && !isScheduledStatus) return null;
   return { date, kind: isComment ? 'comment' : 'status' };
 }

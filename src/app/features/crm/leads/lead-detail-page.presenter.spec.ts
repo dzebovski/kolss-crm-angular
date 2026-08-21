@@ -28,6 +28,7 @@ describe('lead-detail-page.presenter', () => {
     it('recognizes only known client statuses', () => {
       expect(isClientStatus('new_lead')).toBe(true);
       expect(isClientStatus('contract_signed')).toBe(true);
+      expect(isClientStatus('postponed')).toBe(true);
       expect(isClientStatus('reached')).toBe(false);
       expect(isClientStatus(null)).toBe(false);
     });
@@ -168,6 +169,22 @@ describe('lead-detail-page.presenter', () => {
         occurredAt: '2026-07-16T09:15:00.000Z',
         category: 'call_status',
         statusCode: 'callback_requested',
+      };
+      expect(eventDueDate(e)).toEqual({ date: dueAt, kind: 'status' });
+    });
+
+    it('tags a postponed client-status event as kind "status"', () => {
+      const e: LeadEvent = {
+        id: 'e1',
+        type: 'client_status_changed',
+        rawType: 'client_status_changed',
+        comment: null,
+        newValue: { callback_due_at: dueAt },
+        actorId: '',
+        actorName: '',
+        occurredAt: '2026-07-16T09:15:00.000Z',
+        category: 'client_status',
+        statusCode: 'postponed',
       };
       expect(eventDueDate(e)).toEqual({ date: dueAt, kind: 'status' });
     });

@@ -237,7 +237,10 @@
                   @if (closeReasonLabelForLead(lead); as closeReason) {
                     <small>{{ closeReason }}</small>
                   }
-                  @if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
+                  @if (
+                    (lead.clientStatus === 'thinking' || lead.clientStatus === 'postponed') &&
+                    lead.callbackDueAt
+                  ) {
                     <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
                   } @else if (showroomDueAtForLead(lead); as showroomDueAt) {
                     <app-lead-due-date class="status-due" [date]="showroomDueAt" />

@@ -14,7 +14,7 @@ import {
 import type { CallStatus, Lead } from '@domain/lead.types';
 import type { CalendarAppointmentDeepLink } from '@services/appointments.service';
 import { UiButton } from '@ui/button/ui-button';
-import { UiBadge } from '@ui/feedback/ui-badge';
+import { UiBadge, type UiBadgeTone } from '@ui/feedback/ui-badge';
 import { UiIcon } from '@ui/icon/ui-icon';
 import { LinkifiedText } from '@ui/text/linkified-text';
 import { UiUser } from '@ui/user/ui-user';
@@ -107,14 +107,27 @@ export class LeadSummaryPanel {
     return kind === 'comment' ? 'comment' : 'status';
   }
 
+  protected reminderBadgeTone(kind: LeadReminderKind): UiBadgeTone {
+    switch (kind) {
+      case 'comment':
+        return 'warning';
+      case 'postponed':
+        return 'neutral';
+      default:
+        return 'brand';
+    }
+  }
+
   protected reminderIcon(
     kind: LeadReminderKind,
-  ): 'phone_in_talk' | 'schedule' | 'campaign' | 'calendar_month' | 'straighten' {
+  ): 'phone_in_talk' | 'schedule' | 'history' | 'campaign' | 'calendar_month' | 'straighten' {
     switch (kind) {
       case 'callback':
         return 'phone_in_talk';
       case 'thinking':
         return 'schedule';
+      case 'postponed':
+        return 'history';
       case 'comment':
         return 'campaign';
       case 'showroom':

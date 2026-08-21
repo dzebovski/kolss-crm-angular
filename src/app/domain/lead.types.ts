@@ -10,6 +10,7 @@ export type ClientStatus =
   | 'measurement_scheduled'
   | 'calculation_in_progress'
   | 'thinking'
+  | 'postponed'
   | 'closed_lost'
   | 'contract_signed';
 
@@ -230,7 +231,7 @@ export type LeadActivityPayload =
   | {
       readonly type: 'client_status';
       readonly status: Exclude<ClientStatus, 'new_lead'>;
-      readonly reason?: 'expensive' | 'invalid' | 'other';
+      readonly reason?: CloseReason;
       readonly comment?: string;
       readonly contractNumber?: string;
       readonly amount?: number;
@@ -245,6 +246,6 @@ export type LeadActivityPayload =
     }
   | {
       readonly type: 'clear_reminder';
-      readonly kind: 'callback' | 'thinking' | 'comment' | 'showroom' | 'measurement';
+      readonly kind: 'callback' | 'thinking' | 'postponed' | 'comment' | 'showroom' | 'measurement';
     }
   | { readonly type: 'reopen' };

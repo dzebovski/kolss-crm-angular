@@ -25,7 +25,7 @@ export const CALENDAR_REMINDER_FILTER_KIND_MAP: Record<
 > = {
   callback: ['callback'],
   visit: [],
-  reminder: ['comment', 'thinking'],
+  reminder: ['comment', 'thinking', 'postponed'],
 };
 
 /**

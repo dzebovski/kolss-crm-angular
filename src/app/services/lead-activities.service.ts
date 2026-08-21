@@ -4,6 +4,7 @@ import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type {
   CallStatus,
   ClientStatus,
+  CloseReason,
   ContractCurrency,
   LeadActivityPayload,
 } from '@domain/lead.types';
@@ -44,11 +45,7 @@ export class LeadActivitiesService {
     });
   }
 
-  closeLead(
-    leadId: string,
-    reason: 'expensive' | 'invalid' | 'other',
-    comment: string,
-  ): Promise<void> {
+  closeLead(leadId: string, reason: CloseReason, comment: string): Promise<void> {
     return this.commit(leadId, {
       type: 'client_status',
       status: 'closed_lost',

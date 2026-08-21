@@ -121,6 +121,14 @@ describe('lead.policy', () => {
       expect(canArchiveLead(ctx, lead({ clientStatus: 'thinking' }))).toBe(false);
     });
 
+    it('denies archiving a postponed lead — still non-terminal and awaiting the client', () => {
+      const ctx = context({
+        isSuperAdmin: true,
+        permissions: permissions({ canArchiveLeads: true }),
+      });
+      expect(canArchiveLead(ctx, lead({ clientStatus: 'postponed' }))).toBe(false);
+    });
+
     it('denies archiving an already-archived lead', () => {
       const ctx = context({
         isSuperAdmin: true,

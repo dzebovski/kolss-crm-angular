@@ -11,6 +11,7 @@ const STATUS_ORDER: readonly ClientStatus[] = [
   'showroom_invited',
   'measurement_scheduled',
   'thinking',
+  'postponed',
   'contract_signed',
   'closed_lost',
 ];

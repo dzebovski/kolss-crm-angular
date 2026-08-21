@@ -23,6 +23,7 @@ export interface CalendarOverdueRow {
 const KIND_ICON: Record<LeadReminderKind, UiIconName> = {
   callback: 'phone_in_talk',
   thinking: 'info',
+  postponed: 'history',
   comment: 'schedule',
   showroom: 'calendar_month',
   measurement: 'straighten',
@@ -151,6 +152,14 @@ const KIND_ICON: Record<LeadReminderKind, UiIconName> = {
 
       app-ui-icon {
         color: var(--ui-teal);
+      }
+    }
+
+    .is-postponed {
+      border-left-color: var(--ui-neutral);
+
+      app-ui-icon {
+        color: var(--ui-neutral);
       }
     }
 

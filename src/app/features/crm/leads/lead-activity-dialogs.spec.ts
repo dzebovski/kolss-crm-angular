@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import { SessionService } from '@core/session/session.service';
-import { DueDateDialog, TextActivityDialog } from './lead-activity-dialogs';
+import { CloseStatusDialog, DueDateDialog, TextActivityDialog } from './lead-activity-dialogs';
 
 describe('lead activity dialogs', () => {
   let dialog: MatDialog;
@@ -170,6 +170,39 @@ describe('lead activity dialogs', () => {
       comment: 'Підготувати кошторис',
       dueDate: '2026-07-25',
       assignedTo: 'emp-kyiv-1',
+    });
+  });
+
+  it('lets the manager pick "no contact" as a close reason', async () => {
+    const ref = dialog.open(CloseStatusDialog, {
+      ariaLabelledBy: 'close-status-title',
+      enterAnimationDuration: 0,
+    });
+    const closed = firstValueFrom(ref.afterClosed());
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+    const buttons = Array.from(overlay.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+    expect(buttons.map((button) => button.textContent?.trim())).toEqual([
+      'Дорого',
+      'Невалідна заявка',
+      'Інше',
+      'Немає контакту',
+    ]);
+
+    const noContact = buttons.find((button) => button.textContent?.trim() === 'Немає контакту')!;
+    noContact.click();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(noContact.getAttribute('aria-checked')).toBe('true');
+
+    const textarea = overlay.querySelector<HTMLTextAreaElement>('textarea')!;
+    textarea.value = 'Не відповідає на дзвінки два тижні';
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    overlay.querySelector<HTMLButtonElement>('button[type="submit"]')!.click();
+
+    await expect(closed).resolves.toEqual({
+      reason: 'no_contact',
+      comment: 'Не відповідає на дзвінки два тижні',
     });
   });
 

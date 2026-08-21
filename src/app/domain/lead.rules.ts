@@ -107,6 +107,7 @@ export function clientStatusTone(status: ClientStatus): UiBadgeTone {
     measurement_scheduled: 'teal',
     calculation_in_progress: 'warning',
     thinking: 'brand',
+    postponed: 'neutral',
     closed_lost: 'danger',
     contract_signed: 'success',
   };
@@ -186,7 +187,14 @@ export function groupLeadsByYearMonth(leads: readonly Lead[]): readonly LeadMont
 
 export interface DashboardLeadGroup {
   readonly key:
-    'new' | 'callback' | 'showroom' | 'measurement' | 'calculation' | 'in_work' | 'paused';
+    | 'new'
+    | 'callback'
+    | 'showroom'
+    | 'measurement'
+    | 'calculation'
+    | 'negotiating'
+    | 'in_work'
+    | 'paused';
   readonly tone: UiBadgeTone;
   readonly icon: UiIconName;
   readonly rows: readonly Lead[];
@@ -195,7 +203,11 @@ export interface DashboardLeadGroup {
 /**
  * Splits active leads into the manager reminder buckets shown on the dashboard.
  * Each lead lands in exactly one group (first match wins); closed/won and
- * archived leads are dropped.
+ * archived leads are dropped. `postponed` (a concrete future date, e.g.
+ * "вересень") owns the dormant/paused semantics `thinking` used to carry;
+ * `thinking` now means an active negotiation, so it gets its own `negotiating`
+ * bucket instead of `paused`. `workflowStatus === 'thinking'` is the legacy
+ * pre-split value and still means "paused", independently of `clientStatus`.
  */
 export function groupLeadsForDashboard(leads: readonly Lead[]): readonly DashboardLeadGroup[] {
   const newLeads: Lead[] = [];
@@ -203,6 +215,7 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
   const showroom: Lead[] = [];
   const measurement: Lead[] = [];
   const calculation: Lead[] = [];
+  const negotiating: Lead[] = [];
   const paused: Lead[] = [];
   const inWork: Lead[] = [];
 
@@ -210,7 +223,7 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
     if (lead.archivedAt) continue;
     if (leadIsTerminal(lead)) continue;
 
-    if (lead.clientStatus === 'thinking' || lead.workflowStatus === 'thinking') {
+    if (lead.clientStatus === 'postponed' || lead.workflowStatus === 'thinking') {
       paused.push(lead);
     } else if (
       lead.clientStatus === 'showroom_invited' ||
@@ -222,6 +235,8 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
       measurement.push(lead);
     } else if (lead.clientStatus === 'calculation_in_progress') {
       calculation.push(lead);
+    } else if (lead.clientStatus === 'thinking') {
+      negotiating.push(lead);
     } else if (lead.callStatus === 'no_answer' || lead.callStatus === 'callback_requested') {
       callback.push(lead);
     } else if (lead.clientStatus === 'new_lead' && lead.callStatus === null) {
@@ -237,6 +252,7 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
     { key: 'showroom', tone: 'info', icon: 'schedule', rows: showroom },
     { key: 'measurement', tone: 'teal', icon: 'straighten', rows: measurement },
     { key: 'calculation', tone: 'warning', icon: 'bar_chart', rows: calculation },
+    { key: 'negotiating', tone: 'brand', icon: 'phone_in_talk', rows: negotiating },
     { key: 'in_work', tone: 'info', icon: 'automation', rows: inWork },
     { key: 'paused', tone: 'info', icon: 'history', rows: paused },
   ];
@@ -306,7 +322,8 @@ export function commentDueAtForLead(lead: { commentReminderDueAt: string | null 
   return lead.commentReminderDueAt;
 }
 
-export type LeadReminderKind = 'callback' | 'thinking' | 'comment' | 'showroom' | 'measurement';
+export type LeadReminderKind =
+  'callback' | 'thinking' | 'postponed' | 'comment' | 'showroom' | 'measurement';
 
 export interface LeadActiveReminder {
   readonly kind: LeadReminderKind;
@@ -315,9 +332,10 @@ export interface LeadActiveReminder {
 
 /**
  * Active due-dated reminders shown at the top of the lead card.
- * Callback and thinking share leads.callbackDueAt; comment uses the derived
- * field; showroom uses the scheduled visit date. Closed leads have none — the
- * API already blanks these fields, this keeps stale cached rows honest too.
+ * Callback, thinking, and postponed share leads.callbackDueAt; comment uses
+ * the derived field; showroom uses the scheduled visit date. Closed leads
+ * have none — the API already blanks these fields, this keeps stale cached
+ * rows honest too.
  */
 export function activeRemindersForLead(lead: {
   callStatus: string | null;
@@ -336,6 +354,9 @@ export function activeRemindersForLead(lead: {
   }
   if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
     reminders.push({ kind: 'thinking', dueAt: lead.callbackDueAt });
+  }
+  if (lead.clientStatus === 'postponed' && lead.callbackDueAt) {
+    reminders.push({ kind: 'postponed', dueAt: lead.callbackDueAt });
   }
   const showroomDueAt = showroomDueAtForLead(lead);
   if (showroomDueAt) {

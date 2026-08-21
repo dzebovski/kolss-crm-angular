@@ -215,6 +215,7 @@ describe('LeadsPage', () => {
       'measurement_scheduled',
       'calculation_in_progress',
       'thinking',
+      'postponed',
       'closed_lost',
       'contract_signed',
     ]);
@@ -389,7 +390,7 @@ describe('LeadsPage', () => {
     expect(chips.map((chip) => chip.textContent?.trim())).toEqual(
       expect.arrayContaining([
         expect.stringContaining('Нова заявка'),
-        expect.stringContaining('Думає'),
+        expect.stringContaining('Переговори'),
       ]),
     );
 
@@ -397,7 +398,7 @@ describe('LeadsPage', () => {
       element.querySelectorAll<HTMLButtonElement>('.filter-chips app-ui-chip button'),
     );
     const thinkingRemove = removeButtons.find((button) =>
-      button.getAttribute('aria-label')?.includes('Думає'),
+      button.getAttribute('aria-label')?.includes('Переговори'),
     );
     thinkingRemove?.click();
     await fixture.whenStable();
@@ -462,7 +463,7 @@ describe('LeadsPage', () => {
     expect(cells[3]?.textContent).toContain('Передзвонити');
     expect(cells[3]?.textContent).toContain('До 25.07');
     expect(cells[3]?.textContent).not.toContain('2026');
-    expect(cells[4]?.textContent).toContain('Думає');
+    expect(cells[4]?.textContent).toContain('Переговори');
     expect(cells[4]?.textContent).toContain('До 25.07');
     expect(cells[4]?.textContent).not.toContain('2026');
     expect(cells[3]?.querySelector('app-ui-icon')).toBeTruthy();

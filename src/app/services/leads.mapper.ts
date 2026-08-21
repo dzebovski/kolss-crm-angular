@@ -641,6 +641,7 @@ function mapClientStatus(status: string | null | undefined): ClientStatus {
     case 'measurement_scheduled':
     case 'calculation_in_progress':
     case 'thinking':
+    case 'postponed':
     case 'closed_lost':
     case 'contract_signed':
       return status;

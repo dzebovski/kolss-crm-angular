@@ -144,7 +144,7 @@
               <app-ui-icon [name]="reminderIcon(reminder.kind)" [size]="18" [filled]="true" />
             </div>
             <div class="reminder-row__copy">
-              <app-ui-badge [tone]="reminder.kind === 'comment' ? 'warning' : 'brand'">
+              <app-ui-badge [tone]="reminderBadgeTone(reminder.kind)">
                 {{ reminderLabel(reminder.kind) }}
               </app-ui-badge>
               <app-lead-due-date

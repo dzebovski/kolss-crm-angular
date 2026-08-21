@@ -173,7 +173,9 @@
                             }
                           </span>
                         }
-                        @if (lead.clientStatus === 'thinking') {
+                        @if (
+                          lead.clientStatus === 'thinking' || lead.clientStatus === 'postponed'
+                        ) {
                           <span class="lead-status">
                             <app-ui-badge [tone]="clientStatusTone(lead.clientStatus)">
                               {{ i18n.clientStatusLabel(lead.clientStatus) }}

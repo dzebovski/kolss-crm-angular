@@ -70,19 +70,22 @@ const CLIENT_STATUS_ACTIONS: readonly Omit<
   { id: 'measurement_scheduled', icon: 'straighten' },
   { id: 'calculation_in_progress', icon: 'automation' },
   { id: 'thinking', icon: 'schedule' },
+  { id: 'postponed', icon: 'history' },
   { id: 'closed_lost', icon: 'close' },
   { id: 'contract_signed', icon: 'check_circle' },
 ];
 
+/** Seven actions, spread evenly (360 / 7 ≈ 51.43°) around the same starting anchor the six-action layout used. */
 const CLIENT_STATUS_RADIAL_LAYOUT: RadialLayoutConfig<SelectableClientStatus> = {
   buttonAppearance: 'tone',
   anglesByActionId: {
     calculation_in_progress: -150,
-    showroom_invited: -90,
-    measurement_scheduled: -30,
-    contract_signed: 30,
-    thinking: 90,
-    closed_lost: 150,
+    showroom_invited: -98.57,
+    measurement_scheduled: -47.14,
+    contract_signed: 4.29,
+    thinking: 55.71,
+    postponed: 107.14,
+    closed_lost: 158.57,
   },
 };
 
@@ -305,6 +308,21 @@ export class LeadActionsPanel {
         placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
         submitLabel: this.i18n.t('common.save'),
         commentOptional: true,
+        allowDueDate: true,
+      });
+      if (result === undefined) return;
+      await this.runActivity()(() =>
+        this.activities.setClientStatus(lead.id, status, result.dueDate ?? '', result.comment),
+      );
+      return;
+    }
+    if (status === 'postponed') {
+      const result = await this.openTextDialog({
+        eyebrow: this.i18n.clientStatusLabel(status),
+        title: this.i18n.t('leadDetail.postponedTitle'),
+        description: this.i18n.t('leadDetail.postponedDescription'),
+        placeholder: this.i18n.t('leadDetail.commentPlaceholder'),
+        submitLabel: this.i18n.t('common.save'),
         allowDueDate: true,
       });
       if (result === undefined) return;

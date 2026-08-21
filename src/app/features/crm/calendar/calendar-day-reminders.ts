@@ -27,9 +27,10 @@ export interface CalendarReminder {
 
 /**
  * Compact, date-only lead reminder chips rendered at the top of a calendar day.
- * Blue phone chips flag pending callbacks, violet flag client-status "thinking"
- * reminders, orange chips flag comment follow-ups (a violet accent + assignee
- * name marks the ones with a task assignee).
+ * Blue phone chips flag pending callbacks, teal flag client-status "thinking"
+ * (negotiating) reminders, grey flag "postponed" reminders, orange chips flag
+ * comment follow-ups (a violet accent + assignee name marks the ones with a
+ * task assignee).
  */
 @Component({
   selector: 'app-calendar-day-reminders',
@@ -41,6 +42,7 @@ export interface CalendarReminder {
         class="reminder-chip"
         [class.is-callback]="reminder.kind === 'callback'"
         [class.is-thinking]="reminder.kind === 'thinking'"
+        [class.is-postponed]="reminder.kind === 'postponed'"
         [class.is-comment]="reminder.kind === 'comment' && !isTask(reminder)"
         [class.is-task]="isTask(reminder)"
         [attr.aria-label]="ariaLabel(reminder)"
@@ -121,6 +123,16 @@ export interface CalendarReminder {
       color: var(--ui-teal);
     }
 
+    .is-postponed {
+      border-color: color-mix(in srgb, var(--ui-neutral) 35%, var(--ui-border));
+      border-left-color: var(--ui-neutral);
+      background: color-mix(in srgb, var(--ui-neutral) 10%, var(--ui-surface-raised));
+    }
+
+    .is-postponed app-ui-icon {
+      color: var(--ui-neutral);
+    }
+
     .is-comment {
       border-color: color-mix(in srgb, var(--ui-warning) 35%, var(--ui-border));
       border-left-color: var(--ui-warning);
@@ -169,6 +181,7 @@ export class CalendarDayReminders {
     if (reminder.kind === 'callback') return 'phone_in_talk';
     if (this.isTask(reminder)) return 'person';
     if (reminder.kind === 'thinking') return 'info';
+    if (reminder.kind === 'postponed') return 'history';
     return 'schedule';
   }
 
@@ -177,6 +190,7 @@ export class CalendarDayReminders {
     if (reminder.kind === 'callback') return this.i18n.t('calendar.reminderCallback', { name });
     if (this.isTask(reminder)) return this.i18n.t('calendar.reminderTask', { name });
     if (reminder.kind === 'thinking') return this.i18n.t('calendar.reminderThinking', { name });
+    if (reminder.kind === 'postponed') return this.i18n.t('calendar.reminderPostponed', { name });
     return this.i18n.t('calendar.reminderComment', { name });
   }
 }

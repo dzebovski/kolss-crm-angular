@@ -60,11 +60,25 @@ describe('LeadActivitiesService', () => {
     ]);
   });
 
+  it('sends the required comment and optional due date for postponed', async () => {
+    await service.setClientStatus('lead-1', 'postponed', '2026-09-01', '  Повернеться у вересні  ');
+
+    expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
+      {
+        type: 'client_status',
+        status: 'postponed',
+        comment: 'Повернеться у вересні',
+        dueAt: '2026-09-01T12:00:00.000Z',
+      },
+    ]);
+  });
+
   it('sends comment, close, contract and reopen payloads', async () => {
     await service.addComment('lead-1', '  Нова нотатка  ');
     await service.addComment('lead-1', 'Нагадування', '2026-07-25');
     await service.addComment('lead-1', 'Завдання', '2026-07-26', 'emp-kyiv-1');
     await service.closeLead('lead-1', 'expensive', '  Не вкладається в бюджет  ');
+    await service.closeLead('lead-1', 'no_contact', '  Не вдалось додзвонитись  ');
     await service.signContract('lead-1', '  K-42  ', 1200, 'EUR');
     await service.reopen('lead-1');
     expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
@@ -84,6 +98,12 @@ describe('LeadActivitiesService', () => {
       },
       {
         type: 'client_status',
+        status: 'closed_lost',
+        reason: 'no_contact',
+        comment: 'Не вдалось додзвонитись',
+      },
+      {
+        type: 'client_status',
         status: 'contract_signed',
         contractNumber: 'K-42',
         amount: 1200,
@@ -96,11 +116,13 @@ describe('LeadActivitiesService', () => {
   it('sends clear_reminder payloads by kind', async () => {
     await service.clearReminder('lead-1', 'callback');
     await service.clearReminder('lead-1', 'thinking');
+    await service.clearReminder('lead-1', 'postponed');
     await service.clearReminder('lead-1', 'comment');
     await service.clearReminder('lead-1', 'showroom');
     expect(leadActivity.mock.calls.map((call) => call[1])).toEqual([
       { type: 'clear_reminder', kind: 'callback' },
       { type: 'clear_reminder', kind: 'thinking' },
+      { type: 'clear_reminder', kind: 'postponed' },
       { type: 'clear_reminder', kind: 'comment' },
       { type: 'clear_reminder', kind: 'showroom' },
     ]);

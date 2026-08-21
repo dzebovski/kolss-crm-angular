@@ -875,12 +875,13 @@ describe('LeadDetailView', () => {
 
     const config = dialogOpen.mock.calls[0]?.[1];
     expect(config?.panelClass).toBe('radial-menu-dialog-panel');
-    expect(config?.data.actions).toHaveLength(6);
+    expect(config?.data.actions).toHaveLength(7);
     expect(config?.data.actions.map((action: { id: string }) => action.id)).toEqual([
       'showroom_invited',
       'measurement_scheduled',
       'calculation_in_progress',
       'thinking',
+      'postponed',
       'closed_lost',
       'contract_signed',
     ]);
@@ -888,11 +889,12 @@ describe('LeadDetailView', () => {
       buttonAppearance: 'tone',
       anglesByActionId: {
         calculation_in_progress: -150,
-        showroom_invited: -90,
-        measurement_scheduled: -30,
-        contract_signed: 30,
-        thinking: 90,
-        closed_lost: 150,
+        showroom_invited: -98.57,
+        measurement_scheduled: -47.14,
+        contract_signed: 4.29,
+        thinking: 55.71,
+        postponed: 107.14,
+        closed_lost: 158.57,
       },
     });
     expect(
@@ -908,13 +910,45 @@ describe('LeadDetailView', () => {
     expect(radialStatusTone).toBe(currentStatusTone);
     expect(dialogOpen.mock.calls[1]?.[1]).toMatchObject({
       data: {
-        eyebrow: 'Думає',
-        title: 'Зафіксувати паузу',
+        eyebrow: 'Переговори / приймає рішення',
+        title: 'Зафіксувати деталі переговорів',
         commentOptional: true,
         allowDueDate: true,
       },
       ariaLabelledBy: 'text-activity-title',
     });
+  });
+
+  it('opens the postponed dialog with a required comment and applies the selection', async () => {
+    const lead: Lead = {
+      ...FIXTURE_LEADS[2]!,
+      clientStatus: 'calculation_in_progress',
+    };
+    const { activities, dialogOpen, fixture } = await render(lead);
+    dialogOpen.mockReturnValueOnce({ afterClosed: () => of('postponed') }).mockReturnValueOnce({
+      afterClosed: () => of({ comment: 'Повернеться у вересні', dueDate: '2026-09-01' }),
+    });
+    const element = fixture.nativeElement as HTMLElement;
+
+    findActionButton(element, 'Статус клієнта')?.click();
+    await vi.waitFor(() =>
+      expect(activities.setClientStatus).toHaveBeenCalledWith(
+        lead.id,
+        'postponed',
+        '2026-09-01',
+        'Повернеться у вересні',
+      ),
+    );
+
+    expect(dialogOpen.mock.calls[1]?.[1]).toMatchObject({
+      data: {
+        eyebrow: 'Відкладений',
+        title: 'Коли клієнт планує повернутися?',
+        allowDueDate: true,
+      },
+      ariaLabelledBy: 'text-activity-title',
+    });
+    expect(dialogOpen.mock.calls[1]?.[1]?.data.commentOptional).toBeUndefined();
   });
 
   it('allows reselecting showroom and prefills its optional date', async () => {
@@ -988,7 +1022,7 @@ describe('LeadDetailView', () => {
       'comment',
     ]);
     expect(rows[0]?.textContent).toContain('Callback');
-    expect(rows[1]?.textContent).toContain('Думає');
+    expect(rows[1]?.textContent).toContain('Переговори');
     expect(rows[2]?.textContent).toContain('Коментар');
     expect(element.querySelector('.status-item--call .status-item__due')).toBeNull();
     expect(element.querySelector('.status-item--client .status-item__due')).toBeNull();

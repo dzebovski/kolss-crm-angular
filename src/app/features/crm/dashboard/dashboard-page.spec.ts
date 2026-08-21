@@ -136,7 +136,7 @@ describe('DashboardPage lead workflow', () => {
     const meta = (fixture.nativeElement as HTMLElement).querySelector('.lead-meta');
 
     expect(meta?.textContent).toContain('Передзвонити');
-    expect(meta?.textContent).toContain('Думає');
+    expect(meta?.textContent).toContain('Переговори');
     expect(meta?.textContent).toContain('До 25.07');
     expect(meta?.textContent).not.toContain('2026');
   });

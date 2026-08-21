@@ -330,10 +330,10 @@ export class CalendarPage {
     return this.appointmentsForDay(addCalendarDays(this.weekStart(), 6));
   });
   /**
-   * Date-only lead reminders (blue callbacks, violet "thinking", orange comment
-   * follow-ups) bucketed by office day — one entry per active reminder, never
-   * grouped by lead, so a lead with e.g. both a `thinking` and a `comment`
-   * reminder due the same day contributes two chips. Showroom/measurement due
+   * Date-only lead reminders (blue callbacks, teal "thinking", grey "postponed",
+   * orange comment follow-ups) bucketed by office day — one entry per active
+   * reminder, never grouped by lead, so a lead with e.g. both a `thinking` and a
+   * `comment` reminder due the same day contributes two chips. Showroom/measurement due
    * dates are excluded — they render as appointment cards instead (see
    * `appointmentsForDay`). `activeRemindersForLead` already drops closed
    * leads. Honors the toolbar manager filter; office is already scoped by the

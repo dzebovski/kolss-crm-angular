@@ -227,6 +227,7 @@ export class LeadsPage {
         'measurement_scheduled',
         'calculation_in_progress',
         'thinking',
+        'postponed',
         'closed_lost',
         'contract_signed',
       ] as const satisfies readonly ClientStatusFilterKey[]

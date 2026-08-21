@@ -75,7 +75,7 @@ describe('calendar page query params', () => {
     expect(CALENDAR_REMINDER_FILTER_KIND_MAP).toEqual({
       callback: ['callback'],
       visit: [],
-      reminder: ['comment', 'thinking'],
+      reminder: ['comment', 'thinking', 'postponed'],
     });
   });
 });
