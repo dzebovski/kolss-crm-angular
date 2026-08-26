@@ -15,7 +15,7 @@ import { UiAlert } from '@ui/feedback/ui-alert';
 import { UiMultiSelect, type UiMultiSelectOption } from '@ui/form/ui-multi-select';
 import { UiSwitch } from '@ui/form/ui-switch';
 import { UiTextField } from '@ui/form/ui-text-field';
-import { ManagerReportSection } from './manager-report-section';
+import { LeadReportTable } from './lead-report-table';
 import { ReportSummary } from './report-summary';
 import { ReportsService } from './reports.service';
 import type {
@@ -46,7 +46,7 @@ interface ReportsCriteriaFormModel {
   selector: 'app-reports-page',
   imports: [
     FormField,
-    ManagerReportSection,
+    LeadReportTable,
     ReportSummary,
     TranslatePipe,
     UiAlert,
@@ -173,6 +173,19 @@ export class ReportsPage {
       : error
         ? String(error)
         : '';
+  });
+
+  protected readonly reportLeads = computed(() => {
+    const report = this.reportResource.value();
+    if (!report) return [];
+    return report.managers
+      .flatMap((manager) => manager.leads)
+      .sort((left, right) => {
+        const byDate = right.createdAt.localeCompare(left.createdAt);
+        return byDate !== 0
+          ? byDate
+          : left.name.localeCompare(right.name, undefined, { sensitivity: 'base' });
+      });
   });
 
   protected readonly criteriaLabels = computed((): ReportCriteriaLabels => {

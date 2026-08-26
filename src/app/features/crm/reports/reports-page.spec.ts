@@ -182,26 +182,21 @@ describe('ReportsPage', () => {
     }).compileComponents();
   });
 
-  it('renders the compact summary and six-column manager tables', async () => {
+  it('renders the compact summary and a flat six-column lead table', async () => {
     const fixture = TestBed.createComponent(ReportsPage);
     await fixture.whenStable();
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.textContent).toContain('Підсумок роботи з лідами');
     expect(element.textContent).toContain('Прострочені наступні дії');
-    expect(element.textContent).toContain('Олена Коваль');
-    expect(element.textContent).toContain('Без менеджера');
-    expect(element.querySelectorAll('app-manager-report-section')).toHaveLength(2);
+    expect(element.querySelectorAll('app-lead-report-table')).toHaveLength(1);
+    expect(element.textContent).not.toContain('Детальний звіт менеджера');
 
-    const firstManagerTable = element.querySelector<HTMLTableElement>(
-      'app-manager-report-section .lead-report-table',
-    );
-    expect(firstManagerTable).not.toBeNull();
-    expect(firstManagerTable!.querySelectorAll('thead th')).toHaveLength(6);
+    const leadTable = element.querySelector<HTMLTableElement>('app-lead-report-table .lead-report-table');
+    expect(leadTable).not.toBeNull();
+    expect(leadTable!.querySelectorAll('thead th')).toHaveLength(6);
     expect(
-      [...firstManagerTable!.querySelectorAll('thead th')].map((header) =>
-        header.textContent?.trim(),
-      ),
+      [...leadTable!.querySelectorAll('thead th')].map((header) => header.textContent?.trim()),
     ).toEqual([
       'Дата',
       'Контакт',
@@ -210,28 +205,18 @@ describe('ReportsPage', () => {
       'Останній коментар',
       'Попередній коментар',
     ]);
+    expect(leadTable!.querySelector('.status-group__heading')).toBeNull();
+    expect(leadTable!.querySelectorAll('tr.report-lead-block')).toHaveLength(3);
 
-    const statusHeadings = [...firstManagerTable!.querySelectorAll('.status-group__heading')].map(
-      (row) => row.textContent?.replace(/\s+/g, ' ').trim(),
+    const leadNames = [...leadTable!.querySelectorAll<HTMLElement>('tr.report-lead-block')].map(
+      (row) => row.querySelector('.lead-identity strong')?.textContent?.trim(),
     );
-    expect(statusHeadings[0]).toContain('Прорахунок');
-    expect(statusHeadings[1]).toContain('Втрачено / закрито');
+    expect(leadNames).toEqual(['Anna Nowak', 'Іван Петренко', 'ТОВ Приклад']);
 
     const summarySold = element.querySelector('.summary-ledger .is-sold');
     expect(summarySold?.querySelector('.sold-metric > strong')?.textContent?.trim()).toBe('1');
     expect(
       summarySold?.querySelector('.sold-amounts')?.textContent?.replace(/\s+/g, ' ').trim(),
-    ).toBe('29 800 PLN');
-
-    const soldManager = [
-      ...element.querySelectorAll<HTMLElement>('app-manager-report-section'),
-    ].find((section) => section.textContent?.includes('Anna Nowak'));
-    const managerSoldMetric = soldManager?.querySelector('.is-sold');
-    expect(managerSoldMetric?.querySelector('.sold-metric > strong')?.textContent?.trim()).toBe(
-      '1',
-    );
-    expect(
-      managerSoldMetric?.querySelector('.sold-amounts')?.textContent?.replace(/\s+/g, ' ').trim(),
     ).toBe('29 800 PLN');
   });
 

@@ -88,8 +88,3 @@ export interface LeadReportResponse {
   readonly lossReasons: readonly LossReasonReport[];
   readonly managers: readonly ManagerLeadReport[];
 }
-
-export interface ReportStatusGroup {
-  readonly status: ClientStatus;
-  readonly leads: readonly ReportLead[];
-}

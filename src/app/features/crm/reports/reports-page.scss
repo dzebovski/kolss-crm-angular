@@ -173,11 +173,6 @@ h1 {
   margin: 0;
 }
 
-.manager-report-stack {
-  display: grid;
-  gap: var(--ui-space-3);
-}
-
 .report-loading,
 .report-empty {
   min-height: 22rem;
@@ -291,7 +286,7 @@ h1 {
     display: none !important;
   }
 
-  .manager-report-stack {
+  app-lead-report-table {
     display: block;
     margin-top: 3mm;
   }
