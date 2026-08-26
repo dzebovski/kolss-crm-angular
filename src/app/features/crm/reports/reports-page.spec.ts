@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { signal, type WritableSignal } from '@angular/core';
 import axe from 'axe-core';
 import { vi } from 'vitest';
 
@@ -157,9 +158,12 @@ const report: LeadReportResponse = {
 
 describe('ReportsPage', () => {
   const reportApi = vi.fn(async () => report);
+  const selectedOfficeId = signal<string | null>(null);
 
   beforeEach(async () => {
-    reportApi.mockClear();
+    reportApi.mockReset();
+    reportApi.mockResolvedValue(report);
+    selectedOfficeId.set(null);
     await TestBed.configureTestingModule({
       imports: [ReportsPage],
       providers: [
@@ -171,7 +175,7 @@ describe('ReportsPage', () => {
           provide: SessionService,
           useValue: {
             locale: () => 'uk',
-            selectedOfficeId: () => null,
+            selectedOfficeId,
           },
         },
       ],
@@ -269,7 +273,14 @@ describe('ReportsPage', () => {
     await fixture.whenStable();
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(reportApi).toHaveBeenCalledWith({ officeId: null, from: null, to: null });
+    expect(reportApi).toHaveBeenCalledWith({
+      officeId: null,
+      cohort: 'activity',
+      from: null,
+      to: null,
+      callStatus: null,
+      clientStatus: null,
+    });
 
     buttonByText(element, 'Календарний місяць').click();
     await fixture.whenStable();
@@ -280,8 +291,11 @@ describe('ReportsPage', () => {
     await fixture.whenStable();
     expect(reportApi).toHaveBeenLastCalledWith({
       officeId: null,
+      cohort: 'activity',
       from: '2026-06-01',
       to: '2026-06-30',
+      callStatus: null,
+      clientStatus: null,
     });
 
     buttonByText(element, 'Власні дати').click();
@@ -294,9 +308,231 @@ describe('ReportsPage', () => {
     await fixture.whenStable();
     expect(reportApi).toHaveBeenLastCalledWith({
       officeId: null,
+      cohort: 'activity',
       from: '2026-05-10',
       to: '2026-05-31',
+      callStatus: null,
+      clientStatus: null,
     });
+  });
+
+  it('keeps calendar drafts separate and supports month and custom calendar ranges', async () => {
+    const fixture = TestBed.createComponent(ReportsPage);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    buttonByText(element, 'За календарем').click();
+    await fixture.whenStable();
+    expect(element.querySelector('.criteria-section--period')?.textContent).not.toContain(
+      'За весь час',
+    );
+
+    const calendarMonth = element.querySelector<HTMLInputElement>('input[type="month"]');
+    expect(calendarMonth).not.toBeNull();
+    setInputValue(calendarMonth!, '2026-07');
+    buttonByText(element, 'Сформувати').click();
+    await fixture.whenStable();
+    expect(reportApi).toHaveBeenLastCalledWith({
+      officeId: null,
+      cohort: 'calendar',
+      from: '2026-07-01',
+      to: '2026-07-31',
+      callStatus: null,
+      clientStatus: null,
+    });
+
+    buttonByText(element, 'Власні дати').click();
+    await fixture.whenStable();
+    const dates = element.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    setInputValue(dates[0]!, '2026-08-03');
+    setInputValue(dates[1]!, '2026-08-09');
+    buttonByText(element, 'Сформувати').click();
+    await fixture.whenStable();
+    expect(reportApi).toHaveBeenLastCalledWith({
+      officeId: null,
+      cohort: 'calendar',
+      from: '2026-08-03',
+      to: '2026-08-09',
+      callStatus: null,
+      clientStatus: null,
+    });
+
+    buttonByText(element, 'За активністю').click();
+    await fixture.whenStable();
+    expect(element.textContent).toContain('За весь час');
+    buttonByText(element, 'Календарний місяць').click();
+    await fixture.whenStable();
+    expect(element.querySelector<HTMLInputElement>('input[type="month"]')?.value).not.toBe(
+      '2026-07',
+    );
+  });
+
+  it('validates only the active custom range and applies draft changes atomically', async () => {
+    const fixture = TestBed.createComponent(ReportsPage);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const initialCalls = reportApi.mock.calls.length;
+
+    buttonByText(element, 'За календарем').click();
+    await fixture.whenStable();
+    buttonByText(element, 'Власні дати').click();
+    await fixture.whenStable();
+    expect(reportApi).toHaveBeenCalledTimes(initialCalls);
+
+    buttonByText(element, 'Сформувати').click();
+    await fixture.whenStable();
+    expect(element.textContent).toContain('Вкажіть обидві дати періоду.');
+    expect(reportApi).toHaveBeenCalledTimes(initialCalls);
+
+    const dates = element.querySelectorAll<HTMLInputElement>('input[type="date"]');
+    setInputValue(dates[0]!, '2026-08-20');
+    setInputValue(dates[1]!, '2026-08-10');
+    buttonByText(element, 'Сформувати').click();
+    await fixture.whenStable();
+    expect(element.textContent).toContain('Дата «від» не може бути пізнішою');
+    expect(reportApi).toHaveBeenCalledTimes(initialCalls);
+
+    setInputValue(dates[1]!, '2026-08-31');
+    expect(reportApi).toHaveBeenCalledTimes(initialCalls);
+    buttonByText(element, 'Сформувати').click();
+    await fixture.whenStable();
+    expect(reportApi).toHaveBeenCalledTimes(initialCalls + 1);
+  });
+
+  it('uses the complete shared status taxonomy and keeps active mutually exclusive', async () => {
+    const fixture = TestBed.createComponent(ReportsPage);
+    await fixture.whenStable();
+    const page = pageHarness(fixture.componentInstance);
+
+    expect(page.callStatusOptions().map((option) => option.value)).toEqual([
+      'reached',
+      'no_answer',
+      'callback_requested',
+      'none',
+      'callback_undated',
+    ]);
+    expect(page.clientStatusOptions().map((option) => option.value)).toEqual([
+      'new_lead',
+      'in_work',
+      'showroom_invited',
+      'measurement_scheduled',
+      'calculation_in_progress',
+      'thinking',
+      'postponed',
+      'closed_lost',
+      'contract_signed',
+    ]);
+
+    page.criteriaModel.update((value) => ({
+      ...value,
+      callStatuses: ['no_answer', 'callback_undated'],
+      clientStatuses: ['thinking', 'closed_lost'],
+    }));
+    await fixture.whenStable();
+    buttonByText(fixture.nativeElement as HTMLElement, 'Сформувати').click();
+    await fixture.whenStable();
+    expect(reportApi).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        callStatus: 'no_answer,callback_undated',
+        clientStatus: 'thinking,closed_lost',
+      }),
+    );
+
+    page.criteriaModel.update((value) => ({ ...value, activeClientsOnly: true }));
+    await fixture.whenStable();
+    expect(page.criteriaModel().clientStatuses).toEqual([]);
+    expect(page.criteriaModel().activeClientsOnly).toBe(true);
+
+    page.criteriaModel.update((value) => ({ ...value, clientStatuses: ['postponed'] }));
+    await fixture.whenStable();
+    expect(page.criteriaModel().activeClientsOnly).toBe(false);
+    expect(page.criteriaModel().clientStatuses).toEqual(['postponed']);
+  });
+
+  it('shows the applied mode, period, and statuses in the screen and print summary', async () => {
+    const fixture = TestBed.createComponent(ReportsPage);
+    await fixture.whenStable();
+    const page = pageHarness(fixture.componentInstance);
+    const element = fixture.nativeElement as HTMLElement;
+
+    page.criteriaModel.update((value) => ({
+      ...value,
+      cohort: 'calendar',
+      calendarMonth: '2026-07',
+      callStatuses: ['none'],
+      activeClientsOnly: true,
+    }));
+    await fixture.whenStable();
+    buttonByText(element, 'Сформувати').click();
+    await fixture.whenStable();
+
+    const summary = element.querySelector('.criteria-summary');
+    expect(summary?.textContent).toContain('За календарем');
+    expect(summary?.textContent).toContain('01.07.2026 — 31.07.2026');
+    expect(summary?.textContent).toContain('Не телефонували');
+    expect(summary?.textContent).toContain('Активні');
+  });
+
+  it('reloads the already applied criteria when the office changes', async () => {
+    const fixture = TestBed.createComponent(ReportsPage);
+    await fixture.whenStable();
+    const page = pageHarness(fixture.componentInstance);
+
+    page.criteriaModel.update((value) => ({
+      ...value,
+      cohort: 'calendar',
+      calendarPeriodMode: 'custom',
+      calendarFrom: '2026-06-10',
+      calendarTo: '2026-06-12',
+      callStatuses: ['reached'],
+    }));
+    await fixture.whenStable();
+    buttonByText(fixture.nativeElement as HTMLElement, 'Сформувати').click();
+    await fixture.whenStable();
+
+    selectedOfficeId.set('office-warsaw');
+    await fixture.whenStable();
+    expect(reportApi).toHaveBeenLastCalledWith({
+      officeId: 'office-warsaw',
+      cohort: 'calendar',
+      from: '2026-06-10',
+      to: '2026-06-12',
+      callStatus: 'reached',
+      clientStatus: null,
+    });
+  });
+
+  it('renders loading, empty, and error states', async () => {
+    let resolveReport: ((value: LeadReportResponse) => void) | undefined;
+    reportApi.mockImplementationOnce(
+      () =>
+        new Promise<LeadReportResponse>((resolve) => {
+          resolveReport = resolve;
+        }),
+    );
+    const loadingFixture = TestBed.createComponent(ReportsPage);
+    loadingFixture.detectChanges();
+    expect(
+      (loadingFixture.nativeElement as HTMLElement).querySelector('.report-loading'),
+    ).not.toBeNull();
+    resolveReport?.(report);
+    await loadingFixture.whenStable();
+
+    reportApi.mockResolvedValueOnce({
+      ...report,
+      totals: { ...report.totals, total: 0 },
+      managers: [],
+    });
+    const emptyFixture = TestBed.createComponent(ReportsPage);
+    await emptyFixture.whenStable();
+    expect((emptyFixture.nativeElement as HTMLElement).textContent).toContain(
+      'Немає лідів для звіту',
+    );
+
+    reportApi.mockRejectedValueOnce(new Error('report failed'));
+    const errorFixture = TestBed.createComponent(ReportsPage);
+    await errorFixture.whenStable();
+    expect((errorFixture.nativeElement as HTMLElement).textContent).toContain('report failed');
   });
 
   it('opens the browser print dialog', async () => {
@@ -332,4 +568,41 @@ function buttonByText(element: HTMLElement, text: string): HTMLButtonElement {
 function setInputValue(input: HTMLInputElement, value: string): void {
   input.value = value;
   input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+interface CriteriaDraft {
+  readonly cohort: 'activity' | 'calendar';
+  readonly activityPeriodMode: 'all' | 'month' | 'custom';
+  readonly activityMonth: string;
+  readonly activityFrom: string;
+  readonly activityTo: string;
+  readonly calendarPeriodMode: 'month' | 'custom';
+  readonly calendarMonth: string;
+  readonly calendarFrom: string;
+  readonly calendarTo: string;
+  readonly callStatuses: readonly (
+    'reached' | 'no_answer' | 'callback_requested' | 'none' | 'callback_undated'
+  )[];
+  readonly clientStatuses: readonly (
+    | 'new_lead'
+    | 'in_work'
+    | 'showroom_invited'
+    | 'measurement_scheduled'
+    | 'calculation_in_progress'
+    | 'thinking'
+    | 'postponed'
+    | 'closed_lost'
+    | 'contract_signed'
+  )[];
+  readonly activeClientsOnly: boolean;
+}
+
+interface ReportsPageHarness {
+  readonly criteriaModel: WritableSignal<CriteriaDraft>;
+  readonly callStatusOptions: () => readonly { readonly value: string }[];
+  readonly clientStatusOptions: () => readonly { readonly value: string }[];
+}
+
+function pageHarness(component: ReportsPage): ReportsPageHarness {
+  return component as unknown as ReportsPageHarness;
 }

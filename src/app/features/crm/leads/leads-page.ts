@@ -7,6 +7,12 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import {
+  CALL_STATUS_FILTER_KEYS,
+  SELECTABLE_CLIENT_STATUS_FILTER_KEYS,
+  type CallStatusFilterKey,
+  type ClientStatusFilterKey,
+} from '@domain/lead-filters';
+import {
   callStatusTone,
   commentDueAtForLead,
   clientStatusTone,
@@ -36,8 +42,6 @@ import { formatLeadDayMonth, formatLeadTime } from './leads-page.presenter';
 import {
   readLeadsPagePreferences,
   writeLeadsPagePreferences,
-  type CallStatusFilterKey,
-  type ClientStatusFilterKey,
 } from './leads-page-preferences.storage';
 import {
   leadsPageQueryStateFromPreferences,
@@ -206,32 +210,18 @@ export class LeadsPage {
 
   protected readonly callStatusOptions = computed((): readonly UiMultiSelectOption[] => {
     this.i18n.locale();
-    return (
-      [
-        'reached',
-        'no_answer',
-        'callback_requested',
-        'none',
-        'callback_undated',
-      ] as const satisfies readonly CallStatusFilterKey[]
-    ).map((status) => ({ value: status, label: this.callStatusFilterLabel(status) }));
+    return CALL_STATUS_FILTER_KEYS.map((status) => ({
+      value: status,
+      label: this.callStatusFilterLabel(status),
+    }));
   });
 
   protected readonly clientStatusOptions = computed((): readonly UiMultiSelectOption[] => {
     this.i18n.locale();
-    return (
-      [
-        'new_lead',
-        'in_work',
-        'showroom_invited',
-        'measurement_scheduled',
-        'calculation_in_progress',
-        'thinking',
-        'postponed',
-        'closed_lost',
-        'contract_signed',
-      ] as const satisfies readonly ClientStatusFilterKey[]
-    ).map((status) => ({ value: status, label: this.clientStatusFilterLabel(status) }));
+    return SELECTABLE_CLIENT_STATUS_FILTER_KEYS.map((status) => ({
+      value: status,
+      label: this.clientStatusFilterLabel(status),
+    }));
   });
 
   protected readonly filterSummaryLabel = computed(() => {

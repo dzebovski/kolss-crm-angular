@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.10.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.11.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -12,6 +12,7 @@ import type {
   LeadEventTranslationResponse,
   LeadMarkerResponse,
   LeadListResponse,
+  LeadReportQuery,
   MeResponse,
   UpdateAppointmentRequest,
   UsersResponse,
@@ -188,8 +189,15 @@ export class KolssApiClient {
     return this.get('/v1/dashboard/overview', query);
   }
 
-  report<T>(query: Readonly<Record<string, string | number | null | undefined>>): Promise<T> {
-    return this.get('/v1/reports/leads', query);
+  report<T>(query: LeadReportQuery): Promise<T> {
+    return this.get('/v1/reports/leads', {
+      officeId: query.officeId,
+      cohort: query.cohort,
+      from: query.from,
+      to: query.to,
+      callStatus: query.callStatus,
+      clientStatus: query.clientStatus,
+    });
   }
 
   fileDownloadURL(fileId: string): Promise<{ readonly url: string; readonly expiresAt: string }> {

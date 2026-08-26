@@ -1,12 +1,14 @@
 import { isOfficeId } from '@core/office/office.config';
+import {
+  isCallStatusFilterKey,
+  isClientStatusFilterKey,
+  type CallStatusFilterKey,
+  type ClientStatusFilterKey,
+} from '@domain/lead-filters';
 import type { OfficeFilter } from '@domain/office.types';
 import {
   DEFAULT_LEADS_PAGE_PREFERENCES,
-  isCallStatusFilterKey,
-  isClientStatusFilterKey,
   isPeriodDays,
-  type CallStatusFilterKey,
-  type ClientStatusFilterKey,
   type LeadsPagePreferences,
 } from './leads-page-preferences.storage';
 

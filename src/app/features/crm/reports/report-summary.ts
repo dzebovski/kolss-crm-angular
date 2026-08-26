@@ -1,7 +1,7 @@
 import { Component, inject, input } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
-import type { LeadReportResponse } from './reports.types';
+import type { LeadReportResponse, ReportCriteriaLabels } from './reports.types';
 
 @Component({
   selector: 'app-report-summary',
@@ -13,12 +13,27 @@ import type { LeadReportResponse } from './reports.types';
         <h2 id="report-summary-title">{{ i18n.t('reports.summaryTitle') }}</h2>
       </header>
 
+      <dl class="criteria-summary" [attr.aria-label]="i18n.t('reports.appliedCriteria')">
+        <div>
+          <dt>{{ i18n.t('reports.cohortLabel') }}</dt>
+          <dd>{{ criteria().cohort }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('reports.period') }}</dt>
+          <dd>{{ criteria().period }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('leads.filter.callStatus') }}</dt>
+          <dd>{{ criteria().callStatuses }}</dd>
+        </div>
+        <div>
+          <dt>{{ i18n.t('leads.filter.clientStatus') }}</dt>
+          <dd>{{ criteria().clientStatuses }}</dd>
+        </div>
+      </dl>
+
       <div class="summary-strip__scroll">
         <dl class="summary-ledger" [attr.aria-label]="i18n.t('reports.metrics')">
-          <div class="is-meta">
-            <dt>{{ i18n.t('reports.period') }}</dt>
-            <dd>{{ periodLabel() }}</dd>
-          </div>
           <div class="is-meta">
             <dt>{{ i18n.t('reports.generatedAt') }}</dt>
             <dd>{{ i18n.formatDateTime(report().generatedAt) }}</dd>
@@ -104,12 +119,49 @@ import type { LeadReportResponse } from './reports.types';
       overflow-x: auto;
     }
 
+    .criteria-summary {
+      margin: 0;
+      border-bottom: 1px solid var(--ui-border);
+      display: grid;
+      grid-template-columns: minmax(8rem, 0.75fr) minmax(11rem, 1fr) repeat(
+          2,
+          minmax(12rem, 1.3fr)
+        );
+    }
+
+    .criteria-summary > div {
+      min-width: 0;
+      padding: 0.55rem 0.75rem;
+      border-left: 1px solid var(--ui-border);
+    }
+
+    .criteria-summary > div:first-child {
+      border-left: 0;
+    }
+
+    .criteria-summary dt,
+    .summary-ledger dt {
+      color: var(--ui-text-subtle);
+      font-size: 0.6rem;
+      font-weight: 800;
+      letter-spacing: 0.055em;
+      line-height: 1.15;
+      text-transform: uppercase;
+    }
+
+    .criteria-summary dd {
+      margin: 0.14rem 0 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
     .summary-ledger {
-      min-width: 58rem;
+      min-width: 46rem;
       margin: 0;
       display: grid;
       grid-template-columns:
-        minmax(10rem, 1.4fr) minmax(11rem, 1.45fr) repeat(2, minmax(5.4rem, 0.65fr))
+        minmax(11rem, 1.45fr) repeat(2, minmax(5.4rem, 0.65fr))
         minmax(8.5rem, 0.9fr) repeat(2, minmax(5.4rem, 0.65fr));
     }
 
@@ -122,15 +174,6 @@ import type { LeadReportResponse } from './reports.types';
 
     .summary-ledger > div:first-child {
       border-left: 0;
-    }
-
-    .summary-ledger dt {
-      color: var(--ui-text-subtle);
-      font-size: 0.6rem;
-      font-weight: 800;
-      letter-spacing: 0.055em;
-      line-height: 1.15;
-      text-transform: uppercase;
     }
 
     .summary-ledger dd {
@@ -191,6 +234,18 @@ import type { LeadReportResponse } from './reports.types';
       h2 {
         text-align: left;
       }
+
+      .criteria-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .criteria-summary > div:nth-child(odd) {
+        border-left: 0;
+      }
+
+      .criteria-summary > div:nth-child(n + 3) {
+        border-top: 1px solid var(--ui-border);
+      }
     }
 
     @media print {
@@ -206,6 +261,19 @@ import type { LeadReportResponse } from './reports.types';
         border-color: #aaa;
       }
 
+      .criteria-summary {
+        border-color: #aaa;
+        grid-template-columns: minmax(22mm, 0.75fr) minmax(30mm, 1fr) repeat(
+            2,
+            minmax(35mm, 1.3fr)
+          );
+      }
+
+      .criteria-summary > div {
+        padding: 1.5mm 2mm;
+        border-color: #bbb;
+      }
+
       .summary-strip__scroll {
         overflow: visible;
       }
@@ -213,7 +281,7 @@ import type { LeadReportResponse } from './reports.types';
       .summary-ledger {
         min-width: 0;
         grid-template-columns:
-          minmax(30mm, 1.4fr) minmax(35mm, 1.45fr) repeat(2, minmax(17mm, 0.65fr))
+          minmax(35mm, 1.45fr) repeat(2, minmax(17mm, 0.65fr))
           minmax(26mm, 0.9fr) repeat(2, minmax(17mm, 0.65fr));
       }
 
@@ -238,5 +306,5 @@ import type { LeadReportResponse } from './reports.types';
 export class ReportSummary {
   protected readonly i18n = inject(I18nService);
   readonly report = input.required<LeadReportResponse>();
-  readonly periodLabel = input.required<string>();
+  readonly criteria = input.required<ReportCriteriaLabels>();
 }

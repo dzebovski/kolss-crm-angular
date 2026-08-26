@@ -1,10 +1,27 @@
+import type { CallStatusFilterKey, SelectableClientStatusFilterKey } from '@domain/lead-filters';
 import type { CallStatus, ClientStatus, ContractCurrency } from '@domain/lead.types';
 
 export type ReportPeriodMode = 'all' | 'month' | 'custom';
+export type CalendarReportPeriodMode = Exclude<ReportPeriodMode, 'all'>;
+export type ReportCohort = 'activity' | 'calendar';
 
 export interface ReportPeriod {
   readonly from: string | null;
   readonly to: string | null;
+}
+
+export interface AppliedReportCriteria {
+  readonly cohort: ReportCohort;
+  readonly period: ReportPeriod;
+  readonly callStatuses: readonly CallStatusFilterKey[];
+  readonly clientStatuses: readonly (SelectableClientStatusFilterKey | 'active')[];
+}
+
+export interface ReportCriteriaLabels {
+  readonly cohort: string;
+  readonly period: string;
+  readonly callStatuses: string;
+  readonly clientStatuses: string;
 }
 
 export interface ReportTotals {

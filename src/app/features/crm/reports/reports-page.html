@@ -1,0 +1,210 @@
+<section class="reports-page" aria-labelledby="reports-title">
+  <header class="page-header screen-only">
+    <div>
+      <p class="page-kicker">Management print brief</p>
+      <h1 id="reports-title">{{ 'reports.title' | translate }}</h1>
+      <p>{{ 'reports.subtitle' | translate }}</p>
+    </div>
+    <app-ui-button
+      variant="secondary"
+      [disabled]="reportResource.isLoading() || !reportResource.hasValue()"
+      (pressed)="printReport()"
+    >
+      {{ 'reports.print' | translate }}
+    </app-ui-button>
+  </header>
+
+  <form class="criteria-console screen-only" (submit)="applyCriteria($event)">
+    <header class="criteria-console__intro">
+      <span aria-hidden="true">01</span>
+      <div>
+        <h2 id="criteria-console-title">{{ 'reports.criteria.title' | translate }}</h2>
+        <p>{{ 'reports.criteria.hint' | translate }}</p>
+      </div>
+    </header>
+
+    <div class="criteria-grid" aria-labelledby="criteria-console-title">
+      <section class="criteria-section criteria-section--cohort">
+        <h3>{{ 'reports.cohortLabel' | translate }}</h3>
+        <div
+          class="segmented-control"
+          role="group"
+          [attr.aria-label]="'reports.cohortLabel' | translate"
+        >
+          <button
+            type="button"
+            [class.is-active]="criteriaModel().cohort === 'activity'"
+            [attr.aria-pressed]="criteriaModel().cohort === 'activity'"
+            (click)="selectCohort('activity')"
+          >
+            {{ 'reports.cohort.activity' | translate }}
+          </button>
+          <button
+            type="button"
+            [class.is-active]="criteriaModel().cohort === 'calendar'"
+            [attr.aria-pressed]="criteriaModel().cohort === 'calendar'"
+            (click)="selectCohort('calendar')"
+          >
+            {{ 'reports.cohort.calendar' | translate }}
+          </button>
+        </div>
+        <p>
+          {{
+            (criteriaModel().cohort === 'activity'
+              ? 'reports.cohort.activityHint'
+              : 'reports.cohort.calendarHint'
+            ) | translate
+          }}
+        </p>
+      </section>
+
+      <section class="criteria-section criteria-section--period">
+        <h3>{{ 'reports.period' | translate }}</h3>
+        @if (criteriaModel().cohort === 'activity') {
+          <div
+            class="segmented-control"
+            role="group"
+            [attr.aria-label]="'reports.period' | translate"
+          >
+            @for (mode of activityPeriodModes; track mode.value) {
+              <button
+                type="button"
+                [class.is-active]="criteriaModel().activityPeriodMode === mode.value"
+                [attr.aria-pressed]="criteriaModel().activityPeriodMode === mode.value"
+                (click)="selectActivityPeriodMode(mode.value)"
+              >
+                {{ mode.label | translate }}
+              </button>
+            }
+          </div>
+
+          @if (criteriaModel().activityPeriodMode === 'month') {
+            <app-ui-text-field
+              type="month"
+              [label]="'reports.month' | translate"
+              [formField]="criteriaForm.activityMonth"
+              [error]="fieldError(criteriaForm.activityMonth)"
+            />
+          } @else if (criteriaModel().activityPeriodMode === 'custom') {
+            <div class="custom-dates">
+              <app-ui-text-field
+                type="date"
+                [label]="'reports.dateFrom' | translate"
+                [formField]="criteriaForm.activityFrom"
+                [error]="fieldError(criteriaForm.activityFrom)"
+              />
+              <app-ui-text-field
+                type="date"
+                [label]="'reports.dateTo' | translate"
+                [formField]="criteriaForm.activityTo"
+                [error]="fieldError(criteriaForm.activityTo)"
+              />
+            </div>
+          }
+        } @else {
+          <div
+            class="segmented-control"
+            role="group"
+            [attr.aria-label]="'reports.period' | translate"
+          >
+            @for (mode of calendarPeriodModes; track mode.value) {
+              <button
+                type="button"
+                [class.is-active]="criteriaModel().calendarPeriodMode === mode.value"
+                [attr.aria-pressed]="criteriaModel().calendarPeriodMode === mode.value"
+                (click)="selectCalendarPeriodMode(mode.value)"
+              >
+                {{ mode.label | translate }}
+              </button>
+            }
+          </div>
+
+          @if (criteriaModel().calendarPeriodMode === 'month') {
+            <app-ui-text-field
+              type="month"
+              [label]="'reports.month' | translate"
+              [formField]="criteriaForm.calendarMonth"
+              [error]="fieldError(criteriaForm.calendarMonth)"
+            />
+          } @else {
+            <div class="custom-dates">
+              <app-ui-text-field
+                type="date"
+                [label]="'reports.dateFrom' | translate"
+                [formField]="criteriaForm.calendarFrom"
+                [error]="fieldError(criteriaForm.calendarFrom)"
+              />
+              <app-ui-text-field
+                type="date"
+                [label]="'reports.dateTo' | translate"
+                [formField]="criteriaForm.calendarTo"
+                [error]="fieldError(criteriaForm.calendarTo)"
+              />
+            </div>
+          }
+        }
+      </section>
+
+      <section class="criteria-section criteria-section--filters">
+        <h3>{{ 'reports.statusFilters' | translate }}</h3>
+        <div class="status-filters">
+          <app-ui-multi-select
+            [label]="'leads.filter.callStatus' | translate"
+            [placeholder]="'reports.filters.all' | translate"
+            [options]="callStatusOptions()"
+            [selectedSummaryLabel]="filterSummaryLabel()"
+            [formField]="criteriaForm.callStatuses"
+          />
+          <div class="client-filter">
+            <app-ui-multi-select
+              [label]="'leads.filter.clientStatus' | translate"
+              [placeholder]="'reports.filters.all' | translate"
+              [options]="clientStatusOptions()"
+              [selectedSummaryLabel]="filterSummaryLabel()"
+              [formField]="criteriaForm.clientStatuses"
+            />
+            <app-ui-switch
+              [label]="'reports.filters.activeOnly' | translate"
+              [formField]="criteriaForm.activeClientsOnly"
+            />
+          </div>
+        </div>
+      </section>
+
+      <footer class="criteria-actions">
+        <p>{{ 'reports.criteria.atomicHint' | translate }}</p>
+        <app-ui-button type="submit" [loading]="criteriaForm().submitting()">
+          {{ 'reports.generate' | translate }}
+        </app-ui-button>
+      </footer>
+    </div>
+  </form>
+
+  @if (loadError(); as error) {
+    <app-ui-alert tone="danger" [title]="'reports.loadError' | translate">
+      {{ error }}
+    </app-ui-alert>
+  } @else if (reportResource.isLoading() && !reportResource.hasValue()) {
+    <div class="report-loading" role="status" aria-live="polite">
+      <span aria-hidden="true"></span>
+      <strong>{{ 'reports.loading' | translate }}</strong>
+      <p>{{ 'reports.loadingHint' | translate }}</p>
+    </div>
+  } @else if (reportResource.value(); as report) {
+    @if (report.totals.total > 0) {
+      <app-report-summary [report]="report" [criteria]="criteriaLabels()" />
+
+      <div class="manager-report-stack">
+        @for (manager of report.managers; track manager.officeCode + '-' + manager.managerId) {
+          <app-manager-report-section [manager]="manager" />
+        }
+      </div>
+    } @else {
+      <div class="report-empty" role="status">
+        <span aria-hidden="true">0</span>
+        <h2>{{ 'reports.emptyTitle' | translate }}</h2>
+        <p>{{ 'reports.emptyHint' | translate }}</p>
+      </div>
+    }
+  }
+</section>

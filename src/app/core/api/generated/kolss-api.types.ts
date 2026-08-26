@@ -7,7 +7,18 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.10.0' as const;
+export const API_CONTRACT_VERSION = '2.11.0' as const;
+
+export type LeadReportCohort = 'activity' | 'calendar';
+
+export interface LeadReportQuery {
+  readonly officeId: string | null;
+  readonly cohort?: LeadReportCohort;
+  readonly from?: string | null;
+  readonly to?: string | null;
+  readonly callStatus?: string | null;
+  readonly clientStatus?: string | null;
+}
 
 export interface ApiErrorResponse {
   readonly code: string;
