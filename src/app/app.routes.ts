@@ -58,7 +58,19 @@ export const routes: Routes = [
       {
         path: 'reports',
         loadComponent: () =>
+          import('./features/crm/reports/reports-landing-page').then(
+            (page) => page.ReportsLandingPage,
+          ),
+      },
+      {
+        path: 'reports/leads-status',
+        loadComponent: () =>
           import('./features/crm/reports/reports-page').then((page) => page.ReportsPage),
+      },
+      {
+        path: 'reports/sales-funnel',
+        loadComponent: () =>
+          import('./features/crm/reports/sales-funnel-page').then((page) => page.SalesFunnelPage),
       },
       {
         path: 'accounts',

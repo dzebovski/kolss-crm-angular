@@ -180,9 +180,14 @@ describe('LeadDetailView', () => {
     };
     const { fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
+    const identity = element.querySelector<HTMLElement>('.lead-identity');
+    const eyebrow = identity?.querySelector<HTMLElement>('.lead-identity__eyebrow');
     expect(element.querySelector('.lead-identity__reference')?.textContent).toContain(
       lead.referenceId,
     );
+    expect(getComputedStyle(eyebrow!).display).toBe('flex');
+    expect(identity?.children.item(1)?.classList).toContain('lead-identity__reference');
+    expect(identity?.children.item(2)?.tagName).toBe('H1');
     const summary = element.querySelector('.lead-summary');
     const text = element.textContent ?? '';
     expect(summary).not.toBeNull();

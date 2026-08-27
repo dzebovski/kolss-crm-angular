@@ -1,0 +1,41 @@
+<section class="reports-landing" aria-labelledby="reports-landing-title">
+  <header class="reports-landing__header">
+    <p class="page-kicker">{{ 'reports.landing.kicker' | translate }}</p>
+    <h1 id="reports-landing-title">{{ 'reports.landing.title' | translate }}</h1>
+    <p>{{ 'reports.landing.subtitle' | translate }}</p>
+  </header>
+
+  <div class="report-options">
+    <article class="report-option report-option--leads">
+      <div class="report-option__visual" aria-hidden="true">
+        <app-ui-icon name="bar_chart" [size]="44" />
+        <span>01</span>
+      </div>
+      <div class="report-option__content">
+        <p class="report-option__eyebrow">{{ 'reports.landing.leadsEyebrow' | translate }}</p>
+        <h2>{{ 'reports.landing.leadsTitle' | translate }}</h2>
+        <p>{{ 'reports.landing.leadsDescription' | translate }}</p>
+        <a routerLink="/crm/reports/leads-status">
+          {{ 'reports.landing.openLeads' | translate }}
+          <app-ui-icon name="chevron_right" [size]="20" />
+        </a>
+      </div>
+    </article>
+
+    <article class="report-option report-option--funnel">
+      <div class="report-option__visual" aria-hidden="true">
+        <app-ui-icon name="automation" [size]="44" />
+        <span>02</span>
+      </div>
+      <div class="report-option__content">
+        <p class="report-option__eyebrow">{{ 'reports.landing.funnelEyebrow' | translate }}</p>
+        <h2>{{ 'reports.landing.funnelTitle' | translate }}</h2>
+        <p>{{ 'reports.landing.funnelDescription' | translate }}</p>
+        <a routerLink="/crm/reports/sales-funnel">
+          {{ 'reports.landing.openFunnel' | translate }}
+          <app-ui-icon name="chevron_right" [size]="20" />
+        </a>
+      </div>
+    </article>
+  </div>
+</section>

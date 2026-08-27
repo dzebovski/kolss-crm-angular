@@ -1,0 +1,259 @@
+<section class="sales-funnel-page" aria-labelledby="sales-funnel-title">
+  <a class="back-link" routerLink="/crm/reports">
+    <app-ui-icon name="arrow_back" [size]="18" />
+    {{ 'reports.funnelPage.back' | translate }}
+  </a>
+
+  <header class="page-header">
+    <div>
+      <p class="page-kicker">{{ 'reports.funnelPage.kicker' | translate }}</p>
+      <h1 id="sales-funnel-title">{{ 'reports.funnelPage.title' | translate }}</h1>
+      <p>{{ 'reports.funnelPage.subtitle' | translate }}</p>
+    </div>
+    <div class="applied-period" [attr.aria-label]="'reports.funnelPage.appliedPeriod' | translate">
+      <span>{{ 'reports.funnelPage.appliedPeriod' | translate }}</span>
+      <strong>{{ periodLabel() }}</strong>
+    </div>
+  </header>
+
+  <form class="period-console" (submit)="applyCustomPeriod($event)">
+    <div
+      class="segmented-control"
+      role="group"
+      [attr.aria-label]="'reports.funnelPage.periodChoice' | translate"
+    >
+      <button
+        type="button"
+        [class.is-active]="periodMode() === 'week'"
+        [attr.aria-pressed]="periodMode() === 'week'"
+        (click)="selectPreset('week', 7)"
+      >
+        {{ 'reports.funnelPage.last7Days' | translate }}
+      </button>
+      <button
+        type="button"
+        [class.is-active]="periodMode() === 'month'"
+        [attr.aria-pressed]="periodMode() === 'month'"
+        (click)="selectPreset('month', 30)"
+      >
+        {{ 'reports.funnelPage.last30Days' | translate }}
+      </button>
+      <button
+        type="button"
+        [class.is-active]="periodMode() === 'custom'"
+        [attr.aria-pressed]="periodMode() === 'custom'"
+        (click)="selectCustom()"
+      >
+        {{ 'reports.period.custom' | translate }}
+      </button>
+    </div>
+
+    @if (periodMode() === 'custom') {
+      <div class="custom-period">
+        <app-ui-text-field
+          type="date"
+          [label]="'reports.dateFrom' | translate"
+          [formField]="dateForm.from"
+          [error]="fieldError(dateForm.from)"
+        />
+        <app-ui-text-field
+          type="date"
+          [label]="'reports.dateTo' | translate"
+          [formField]="dateForm.to"
+          [error]="fieldError(dateForm.to)"
+        />
+        <app-ui-button type="submit" [loading]="dateForm().submitting()">
+          {{ 'reports.funnelPage.applyPeriod' | translate }}
+        </app-ui-button>
+      </div>
+    }
+  </form>
+
+  @if (loadError(); as error) {
+    <app-ui-alert tone="danger" [title]="'reports.loadError' | translate">
+      {{ error }}
+    </app-ui-alert>
+  } @else if (reportResource.isLoading() && !reportResource.hasValue()) {
+    <div class="report-loading" role="status" aria-live="polite">
+      <span aria-hidden="true"></span>
+      <strong>{{ 'reports.funnelPage.loading' | translate }}</strong>
+      <p>{{ 'reports.funnelPage.loadingHint' | translate }}</p>
+    </div>
+  } @else if (reportResource.value(); as report) {
+    @if (report.stages.leads.count === 0) {
+      <div class="report-empty" role="status">
+        <span aria-hidden="true">0</span>
+        <h2>{{ 'reports.funnelPage.emptyTitle' | translate }}</h2>
+        <p>{{ 'reports.funnelPage.emptyHint' | translate }}</p>
+      </div>
+    } @else {
+      <section
+        class="financial-summary"
+        [attr.aria-label]="'reports.funnelPage.moneyTitle' | translate"
+      >
+        <article class="money-card money-card--potential">
+          <p>{{ 'reports.funnelPage.potential' | translate }}</p>
+          <strong>{{ formatMoney(report.potential.total, report.potential.currency) }}</strong>
+          <span>{{ 'reports.funnelPage.potentialHint' | translate }}</span>
+        </article>
+        <article class="money-card money-card--contracts">
+          <p>{{ 'reports.funnelPage.contracts' | translate }}</p>
+          @if (report.contractTotals.length) {
+            <div class="contract-totals">
+              @for (total of report.contractTotals; track total.currency) {
+                <strong>{{ formatMoney(total.total, total.currency) }}</strong>
+              }
+            </div>
+          } @else {
+            <strong>{{ 'reports.funnelPage.noContracts' | translate }}</strong>
+          }
+          <span>{{ 'reports.funnelPage.contractsHint' | translate }}</span>
+        </article>
+      </section>
+
+      <section class="funnel-report" aria-labelledby="funnel-report-title">
+        <header class="funnel-report__header">
+          <div>
+            <p class="section-kicker">{{ 'reports.funnelPage.flowKicker' | translate }}</p>
+            <h2 id="funnel-report-title">{{ 'reports.funnelPage.flowTitle' | translate }}</h2>
+          </div>
+          <p>
+            {{ 'reports.funnelPage.generatedAt' | translate }}
+            <time [attr.datetime]="report.generatedAt">{{
+              i18n.formatDateTime(report.generatedAt)
+            }}</time>
+          </p>
+        </header>
+
+        <div class="funnel-flow">
+          <article class="funnel-stage funnel-stage--root">
+            <div class="funnel-stage__bar" [style.width.%]="report.stages.leads.percent"></div>
+            <div class="funnel-stage__content">
+              <span>{{ 'reports.funnelPage.stage.leads' | translate }}</span>
+              <strong>{{ report.stages.leads.count }}</strong>
+              <small>{{ report.stages.leads.percent }}%</small>
+            </div>
+          </article>
+
+          <span class="flow-arrow" aria-hidden="true">↓</span>
+
+          <article class="funnel-stage funnel-stage--calls">
+            <div class="funnel-stage__bar" [style.width.%]="report.stages.calls.percent"></div>
+            <div class="funnel-stage__content">
+              <span>{{ 'reports.funnelPage.stage.calls' | translate }}</span>
+              <strong>{{ report.stages.calls.count }}</strong>
+              <small
+                >{{ report.stages.calls.percent }}%
+                {{ 'reports.funnelPage.fromLeads' | translate }}</small
+              >
+            </div>
+          </article>
+
+          <div class="call-outcomes">
+            <article class="funnel-stage funnel-stage--reached">
+              <div class="funnel-stage__bar" [style.width.%]="report.stages.reached.percent"></div>
+              <div class="funnel-stage__content">
+                <span>{{ 'reports.funnelPage.stage.reached' | translate }}</span>
+                <strong>{{ report.stages.reached.count }}</strong>
+                <small
+                  >{{ report.stages.reached.percent }}%
+                  {{ 'reports.funnelPage.fromCalls' | translate }}</small
+                >
+              </div>
+            </article>
+            <article class="funnel-stage funnel-stage--not-reached">
+              <div
+                class="funnel-stage__bar"
+                [style.width.%]="report.stages.notReached.percent"
+              ></div>
+              <div class="funnel-stage__content">
+                <span>{{ 'reports.funnelPage.stage.notReached' | translate }}</span>
+                <strong>{{ report.stages.notReached.count }}</strong>
+                <small
+                  >{{ report.stages.notReached.percent }}%
+                  {{ 'reports.funnelPage.fromCalls' | translate }}</small
+                >
+              </div>
+            </article>
+          </div>
+
+          <span class="flow-arrow" aria-hidden="true">↓</span>
+
+          <div class="funnel-branches">
+            <section
+              class="funnel-branch"
+              [attr.aria-label]="'reports.funnelPage.branch.showroom' | translate"
+            >
+              <h3>{{ 'reports.funnelPage.branch.showroom' | translate }}</h3>
+              <article class="branch-stage">
+                <span>{{ 'reports.funnelPage.stage.showroomInvited' | translate }}</span>
+                <strong>{{ report.stages.showroomInvited.count }}</strong>
+                <small
+                  >{{ report.stages.showroomInvited.percent }}%
+                  {{ 'reports.funnelPage.fromReached' | translate }}</small
+                >
+                <div><span [style.width.%]="report.stages.showroomInvited.percent"></span></div>
+              </article>
+              <span class="branch-arrow" aria-hidden="true">↓</span>
+              <article class="branch-stage">
+                <span>{{ 'reports.funnelPage.stage.showroomVisited' | translate }}</span>
+                <strong>{{ report.stages.showroomVisited.count }}</strong>
+                <small
+                  >{{ report.stages.showroomVisited.percent }}%
+                  {{ 'reports.funnelPage.fromInvited' | translate }}</small
+                >
+                <div><span [style.width.%]="report.stages.showroomVisited.percent"></span></div>
+              </article>
+            </section>
+
+            <section
+              class="funnel-branch"
+              [attr.aria-label]="'reports.funnelPage.branch.measurement' | translate"
+            >
+              <h3>{{ 'reports.funnelPage.branch.measurement' | translate }}</h3>
+              <article class="branch-stage">
+                <span>{{ 'reports.funnelPage.stage.measurementScheduled' | translate }}</span>
+                <strong>{{ report.stages.measurementScheduled.count }}</strong>
+                <small
+                  >{{ report.stages.measurementScheduled.percent }}%
+                  {{ 'reports.funnelPage.fromReached' | translate }}</small
+                >
+                <div>
+                  <span [style.width.%]="report.stages.measurementScheduled.percent"></span>
+                </div>
+              </article>
+              <span class="branch-arrow" aria-hidden="true">↓</span>
+              <article class="branch-stage">
+                <span>{{ 'reports.funnelPage.stage.measurementCompleted' | translate }}</span>
+                <strong>{{ report.stages.measurementCompleted.count }}</strong>
+                <small
+                  >{{ report.stages.measurementCompleted.percent }}%
+                  {{ 'reports.funnelPage.fromMeasurementScheduled' | translate }}</small
+                >
+                <div>
+                  <span [style.width.%]="report.stages.measurementCompleted.percent"></span>
+                </div>
+              </article>
+            </section>
+
+            <section
+              class="funnel-branch funnel-branch--calculation"
+              [attr.aria-label]="'reports.funnelPage.branch.calculation' | translate"
+            >
+              <h3>{{ 'reports.funnelPage.branch.calculation' | translate }}</h3>
+              <article class="branch-stage">
+                <span>{{ 'reports.funnelPage.stage.calculationStarted' | translate }}</span>
+                <strong>{{ report.stages.calculationStarted.count }}</strong>
+                <small
+                  >{{ report.stages.calculationStarted.percent }}%
+                  {{ 'reports.funnelPage.fromReached' | translate }}</small
+                >
+                <div><span [style.width.%]="report.stages.calculationStarted.percent"></span></div>
+              </article>
+            </section>
+          </div>
+        </div>
+      </section>
+    }
+  }
+</section>

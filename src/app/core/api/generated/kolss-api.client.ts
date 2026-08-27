@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.12.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.13.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +14,8 @@ import type {
   LeadListResponse,
   LeadReportQuery,
   MeResponse,
+  SalesFunnelReportQuery,
+  SalesFunnelReportResponse,
   UpdateAppointmentRequest,
   UsersResponse,
 } from './kolss-api.types';
@@ -197,6 +199,14 @@ export class KolssApiClient {
       to: query.to,
       callStatus: query.callStatus,
       clientStatus: query.clientStatus,
+    });
+  }
+
+  salesFunnelReport(query: SalesFunnelReportQuery): Promise<SalesFunnelReportResponse> {
+    return this.get('/v1/reports/sales-funnel', {
+      officeId: query.officeId,
+      from: query.from,
+      to: query.to,
     });
   }
 

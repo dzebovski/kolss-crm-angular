@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.12.0' as const;
+export const API_CONTRACT_VERSION = '2.13.0' as const;
 
 export type LeadReportCohort = 'activity' | 'calendar';
 
@@ -18,6 +18,44 @@ export interface LeadReportQuery {
   readonly to?: string | null;
   readonly callStatus?: string | null;
   readonly clientStatus?: string | null;
+}
+
+export interface SalesFunnelReportQuery {
+  readonly officeId: string | null;
+  readonly from: string;
+  readonly to: string;
+}
+
+export interface SalesFunnelStage {
+  readonly count: number;
+  readonly percent: number;
+}
+
+export interface SalesFunnelReportResponse {
+  readonly generatedAt: string;
+  readonly period: {
+    readonly from: string;
+    readonly to: string;
+  };
+  readonly stages: {
+    readonly leads: SalesFunnelStage;
+    readonly calls: SalesFunnelStage;
+    readonly reached: SalesFunnelStage;
+    readonly notReached: SalesFunnelStage;
+    readonly showroomInvited: SalesFunnelStage;
+    readonly showroomVisited: SalesFunnelStage;
+    readonly measurementScheduled: SalesFunnelStage;
+    readonly measurementCompleted: SalesFunnelStage;
+    readonly calculationStarted: SalesFunnelStage;
+  };
+  readonly potential: {
+    readonly currency: 'EUR';
+    readonly total: number;
+  };
+  readonly contractTotals: readonly {
+    readonly currency: 'UAH' | 'USD' | 'EUR' | 'PLN';
+    readonly total: number;
+  }[];
 }
 
 export interface ApiErrorResponse {
