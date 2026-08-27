@@ -45,7 +45,12 @@ const manager = {
 
 const appointment: Appointment = {
   id: 'appointment-1',
-  lead: { id: 'lead-1', name: 'Анна Коваль', phone: '+380501112233' },
+  lead: {
+    id: 'lead-1',
+    referenceId: 'k0001',
+    name: 'Анна Коваль',
+    phone: '+380501112233',
+  },
   office: {
     id: office.id,
     code: office.code,
@@ -69,7 +74,12 @@ const appointment: Appointment = {
 const visitedAppointment: Appointment = {
   ...appointment,
   id: 'appointment-visited',
-  lead: { id: 'lead-visited', name: 'Ірина Бондар', phone: '+380501112244' },
+  lead: {
+    id: 'lead-visited',
+    referenceId: 'k0002',
+    name: 'Ірина Бондар',
+    phone: '+380501112244',
+  },
   kind: 'showroom',
   startsAt: '2026-07-23T08:00:00.000Z',
   endsAt: '2026-07-23T09:00:00.000Z',
@@ -80,7 +90,12 @@ const visitedAppointment: Appointment = {
 const noShowAppointment: Appointment = {
   ...appointment,
   id: 'appointment-no-show',
-  lead: { id: 'lead-no-show', name: 'Максим Левченко', phone: '+380501112255' },
+  lead: {
+    id: 'lead-no-show',
+    referenceId: 'k0003',
+    name: 'Максим Левченко',
+    phone: '+380501112255',
+  },
   kind: 'showroom',
   startsAt: '2026-07-23T09:00:00.000Z',
   endsAt: '2026-07-23T10:00:00.000Z',
@@ -91,7 +106,12 @@ const noShowAppointment: Appointment = {
 const canceledAppointment: Appointment = {
   ...appointment,
   id: 'appointment-canceled',
-  lead: { id: 'lead-canceled', name: 'Олена Савчук', phone: '+380501112266' },
+  lead: {
+    id: 'lead-canceled',
+    referenceId: 'k0004',
+    name: 'Олена Савчук',
+    phone: '+380501112266',
+  },
   kind: 'showroom',
   startsAt: '2026-07-23T10:00:00.000Z',
   endsAt: '2026-07-23T11:00:00.000Z',
@@ -102,7 +122,12 @@ const canceledAppointment: Appointment = {
 const measurementAppointment: Appointment = {
   ...appointment,
   id: 'appointment-measurement',
-  lead: { id: 'lead-measurement', name: 'Тарас Мельник', phone: '+380501112288' },
+  lead: {
+    id: 'lead-measurement',
+    referenceId: 'k0005',
+    name: 'Тарас Мельник',
+    phone: '+380501112288',
+  },
   kind: 'measurement',
   startsAt: '2026-07-23T12:00:00.000Z',
   endsAt: '2026-07-23T14:00:00.000Z',
@@ -112,7 +137,12 @@ const measurementAppointment: Appointment = {
 const rescheduledAppointment: Appointment = {
   ...appointment,
   id: 'appointment-rescheduled',
-  lead: { id: 'lead-rescheduled', name: 'Старий запис', phone: '+380501112277' },
+  lead: {
+    id: 'lead-rescheduled',
+    referenceId: 'k0006',
+    name: 'Старий запис',
+    phone: '+380501112277',
+  },
   kind: 'showroom',
   startsAt: '2026-07-23T11:00:00.000Z',
   endsAt: '2026-07-23T12:00:00.000Z',
@@ -127,7 +157,12 @@ const rescheduledAppointment: Appointment = {
 const overdueScheduledVisit: Appointment = {
   ...appointment,
   id: 'appointment-overdue-scheduled',
-  lead: { id: 'lead-overdue-visit', name: 'Забутий Візит', phone: '+380501112299' },
+  lead: {
+    id: 'lead-overdue-visit',
+    referenceId: 'k0007',
+    name: 'Забутий Візит',
+    phone: '+380501112299',
+  },
   kind: 'showroom',
   startsAt: '2026-07-19T07:00:00.000Z',
   endsAt: '2026-07-19T08:00:00.000Z',
@@ -138,7 +173,12 @@ const overdueScheduledVisit: Appointment = {
 const overdueVisitedVisit: Appointment = {
   ...appointment,
   id: 'appointment-overdue-visited',
-  lead: { id: 'lead-overdue-done', name: 'Проведений Візит', phone: '+380501112300' },
+  lead: {
+    id: 'lead-overdue-done',
+    referenceId: 'k0008',
+    name: 'Проведений Візит',
+    phone: '+380501112300',
+  },
   kind: 'showroom',
   startsAt: '2026-07-18T07:00:00.000Z',
   endsAt: '2026-07-18T09:00:00.000Z',
@@ -149,7 +189,12 @@ const overdueVisitedVisit: Appointment = {
 const overdueCanceledVisit: Appointment = {
   ...appointment,
   id: 'appointment-overdue-canceled',
-  lead: { id: 'lead-overdue-canceled', name: 'Скасований Візит', phone: '+380501112301' },
+  lead: {
+    id: 'lead-overdue-canceled',
+    referenceId: 'k0009',
+    name: 'Скасований Візит',
+    phone: '+380501112301',
+  },
   kind: 'measurement',
   startsAt: '2026-07-17T07:00:00.000Z',
   endsAt: '2026-07-17T09:00:00.000Z',
@@ -162,7 +207,12 @@ const overdueCanceledVisit: Appointment = {
 const overdueTooOldVisit: Appointment = {
   ...appointment,
   id: 'appointment-overdue-too-old',
-  lead: { id: 'lead-overdue-too-old', name: 'Дуже Старий Візит', phone: '+380501112302' },
+  lead: {
+    id: 'lead-overdue-too-old',
+    referenceId: 'k0010',
+    name: 'Дуже Старий Візит',
+    phone: '+380501112302',
+  },
   kind: 'showroom',
   startsAt: '2025-01-01T07:00:00.000Z',
   endsAt: '2025-01-01T09:00:00.000Z',
@@ -172,6 +222,7 @@ const overdueTooOldVisit: Appointment = {
 
 const baseLead: Lead = {
   id: 'lead-base',
+  referenceId: 'k0099',
   name: 'Base',
   phone: '+380500000000',
   email: null,
@@ -411,6 +462,7 @@ describe('CalendarPage', () => {
       expect.objectContaining({ officeId: office.id, managerId: undefined }),
     );
     expect(element.querySelector('.week-grid')).not.toBeNull();
+    expect(element.querySelector('.week-card app-lead-reference')?.textContent).toContain('k0001');
     expect(element.textContent).toContain('Анна Коваль');
     expect(element.textContent).toContain('Ірина Бондар');
     expect(element.textContent).toContain('Максим Левченко');
@@ -515,6 +567,7 @@ describe('CalendarPage', () => {
       }),
     );
     expect(element.querySelector('.month-grid')).not.toBeNull();
+    expect(element.querySelector('.month-card app-lead-reference')?.textContent).toContain('k0001');
     expect(element.querySelector('.week-grid')).toBeNull();
     expect(element.textContent).toContain('Анна Коваль');
     expect(element.querySelector('.month-card.is-visited')).not.toBeNull();
@@ -738,6 +791,9 @@ describe('CalendarPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.reminder-chip app-lead-reference')?.textContent).toContain(
+      'k0099',
+    );
 
     const chip = element.querySelector('.reminder-chip.is-thinking');
     expect(chip).not.toBeNull();

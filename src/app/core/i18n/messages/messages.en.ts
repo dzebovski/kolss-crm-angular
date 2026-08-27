@@ -450,7 +450,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'leads.subtitle': 'Working lead list from Supabase, grouped by creation month.',
   'leads.refresh': 'Refresh',
   'leads.loadError': 'Failed to load leads',
-  'leads.searchPlaceholder': 'Phone, name or date',
+  'leads.searchPlaceholder': 'ID, phone, name or date',
   'leads.found': 'found',
   'leads.active': 'active',
   'leads.terminal': 'completed',

@@ -5,6 +5,7 @@ import { CalendarOverdueList, type CalendarOverdueRow } from './calendar-overdue
 
 const baseLead: Lead = {
   id: 'lead-1',
+  referenceId: 'k0001',
   name: 'Overdue Клієнт',
   phone: '+380501110001',
   email: null,

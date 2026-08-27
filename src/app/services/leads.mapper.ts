@@ -552,6 +552,7 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
 
   return {
     id: row.id,
+    referenceId: row.reference_id,
     version: row.version ?? 1,
     archivedAt: row.archived_at ?? null,
     name: row.name ?? 'Без імені',

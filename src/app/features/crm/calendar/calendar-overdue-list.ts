@@ -4,6 +4,7 @@ import type { MessageKey } from '@core/i18n/messages';
 import { I18nService } from '@core/i18n/i18n.service';
 import type { LeadReminderKind } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
+import { LeadReference } from '@features/crm/leads/lead-reference';
 import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 
 /** One reminder due before today — one row per reminder, never grouped by lead. */
@@ -37,7 +38,7 @@ const KIND_ICON: Record<LeadReminderKind, UiIconName> = {
  */
 @Component({
   selector: 'app-calendar-overdue-list',
-  imports: [UiIcon],
+  imports: [LeadReference, UiIcon],
   template: `
     <div class="overdue-list" aria-live="polite">
       @if (!rows().length) {
@@ -53,6 +54,7 @@ const KIND_ICON: Record<LeadReminderKind, UiIconName> = {
               >
                 <app-ui-icon [name]="iconFor(row)" [size]="18" />
                 <span class="overdue-main">
+                  <app-lead-reference [referenceId]="row.lead.referenceId" />
                   <strong>{{ row.lead.name || row.lead.phone }}</strong>
                   <small>
                     {{ kindLabel(row) }}
@@ -112,6 +114,10 @@ const KIND_ICON: Record<LeadReminderKind, UiIconName> = {
       min-width: 0;
       display: grid;
       gap: 0.15rem;
+
+      app-lead-reference {
+        width: fit-content;
+      }
 
       strong {
         overflow: hidden;

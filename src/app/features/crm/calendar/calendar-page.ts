@@ -50,6 +50,7 @@ import {
   type LeadDetailDrawerResult,
   type LeadDetailDrawerState,
 } from '@features/crm/leads/lead-detail-drawer';
+import { LeadReference } from '@features/crm/leads/lead-reference';
 import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
 import { CalendarDayReminders, type CalendarReminder } from './calendar-day-reminders';
 import { CalendarOverdueList, type CalendarOverdueRow } from './calendar-overdue-list';
@@ -77,6 +78,7 @@ const EMPTY_OVERDUE_ROWS: readonly CalendarOverdueRow[] = [];
     UiChip,
     UiIcon,
     UiSelect,
+    LeadReference,
     CalendarDayReminders,
     CalendarOverdueList,
   ],

@@ -115,6 +115,7 @@ export const FIXTURE_EMPLOYEES: readonly Employee[] = [
 export const FIXTURE_LEADS: readonly Lead[] = [
   {
     id: 'lead-1001',
+    referenceId: 'k0001',
     name: 'Марина Гончар',
     phone: '+38 067 2148819',
     email: 'maryna.honchar@example.com',
@@ -159,6 +160,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1002',
+    referenceId: 'k0002',
     name: 'Anna Kowalska',
     phone: '+48 501 223 118',
     email: 'anna.kowalska@example.com',
@@ -212,6 +214,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1003',
+    referenceId: 'k0003',
     name: 'Олександр Бойко',
     phone: '+38 093 1184402',
     email: null,
@@ -269,6 +272,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1004',
+    referenceId: 'w0001',
     name: 'Marta Wisniewska',
     phone: '+48 602 771 009',
     email: 'marta.w@example.com',
@@ -337,6 +341,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1005',
+    referenceId: 'w0002',
     name: 'Ігор Мельник',
     phone: '+38 050 4113144',
     email: 'ihor.melnyk@example.com',
@@ -398,6 +403,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1006',
+    referenceId: 'k0004',
     name: 'Pawel Lewandowski',
     phone: '+48 730 201 445',
     email: 'pawel.lewandowski@example.com',
@@ -467,6 +473,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1007',
+    referenceId: 'w0003',
     name: 'Катерина Савчук',
     phone: '+38 068 9017730',
     email: 'kateryna.s@example.com',
@@ -542,6 +549,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1008',
+    referenceId: 'k0005',
     name: 'Tomasz Grabowski',
     phone: '+48 790 908 111',
     email: null,
@@ -604,6 +612,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1009',
+    referenceId: 'k0006',
     name: 'Вікторія Дуб',
     phone: '+38 097 6001285',
     email: 'victoria.dub@example.com',
@@ -662,6 +671,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
   },
   {
     id: 'lead-1010',
+    referenceId: 'w0004',
     name: 'Michael Brown',
     phone: '+48 664 118 532',
     email: 'michael.brown@example.com',

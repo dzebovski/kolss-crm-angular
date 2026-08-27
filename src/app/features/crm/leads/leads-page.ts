@@ -38,6 +38,7 @@ import { UiUser } from '@ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
 import { closeReasonLabelForLead } from './lead-detail-page.presenter';
 import { LeadDueDate } from './lead-due-date';
+import { LeadReference } from './lead-reference';
 import { formatLeadDayMonth, formatLeadTime } from './leads-page.presenter';
 import {
   readLeadsPagePreferences,
@@ -54,6 +55,7 @@ import {
   imports: [
     CreateLeadDialog,
     LeadDueDate,
+    LeadReference,
     LinkifiedText,
     TranslatePipe,
     UiAlert,

@@ -69,6 +69,7 @@ const report: LeadReportResponse = {
       leads: [
         {
           id: 'lead-calculation',
+          referenceId: 'k0001',
           name: 'ТОВ Приклад',
           phone: '+380 67 123 45 67',
           createdAt: '2026-06-01T09:00:00Z',
@@ -98,6 +99,7 @@ const report: LeadReportResponse = {
         },
         {
           id: 'lead-lost',
+          referenceId: 'k0002',
           name: 'Іван Петренко',
           phone: '+380 50 000 00 00',
           createdAt: '2026-06-03T09:00:00Z',
@@ -139,6 +141,7 @@ const report: LeadReportResponse = {
       leads: [
         {
           id: 'lead-sold',
+          referenceId: 'w0001',
           name: 'Anna Nowak',
           phone: '+48 500 000 000',
           createdAt: '2026-06-04T09:00:00Z',
@@ -192,7 +195,9 @@ describe('ReportsPage', () => {
     expect(element.querySelectorAll('app-lead-report-table')).toHaveLength(1);
     expect(element.textContent).not.toContain('Детальний звіт менеджера');
 
-    const leadTable = element.querySelector<HTMLTableElement>('app-lead-report-table .lead-report-table');
+    const leadTable = element.querySelector<HTMLTableElement>(
+      'app-lead-report-table .lead-report-table',
+    );
     expect(leadTable).not.toBeNull();
     expect(leadTable!.querySelectorAll('thead th')).toHaveLength(6);
     expect(
@@ -212,6 +217,10 @@ describe('ReportsPage', () => {
       (row) => row.querySelector('.lead-identity strong')?.textContent?.trim(),
     );
     expect(leadNames).toEqual(['Anna Nowak', 'Іван Петренко', 'ТОВ Приклад']);
+    const leadReferences = [
+      ...leadTable!.querySelectorAll<HTMLElement>('.lead-identity app-lead-reference'),
+    ].map((reference) => reference.textContent?.trim());
+    expect(leadReferences).toEqual(['w0001', 'k0002', 'k0001']);
 
     const summarySold = element.querySelector('.summary-ledger .is-sold');
     expect(summarySold?.querySelector('.sold-metric > strong')?.textContent?.trim()).toBe('1');

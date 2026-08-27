@@ -3,6 +3,7 @@ import { Component, inject, input, output } from '@angular/core';
 import { I18nService } from '@core/i18n/i18n.service';
 import type { LeadReminderKind } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
+import { LeadReference } from '@features/crm/leads/lead-reference';
 import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 
 /**
@@ -34,7 +35,7 @@ export interface CalendarReminder {
  */
 @Component({
   selector: 'app-calendar-day-reminders',
-  imports: [UiIcon],
+  imports: [LeadReference, UiIcon],
   template: `
     @for (reminder of reminders(); track reminder.lead.id + '-' + reminder.kind) {
       <button
@@ -49,7 +50,10 @@ export interface CalendarReminder {
         (click)="leadSelected.emit(reminder.lead)"
       >
         <app-ui-icon [name]="iconFor(reminder)" [size]="13" />
-        <span class="reminder-name">{{ reminder.lead.name || reminder.lead.phone }}</span>
+        <span class="reminder-identity">
+          <app-lead-reference [referenceId]="reminder.lead.referenceId" />
+          <span class="reminder-name">{{ reminder.lead.name || reminder.lead.phone }}</span>
+        </span>
         @if (showAssignee() && isTask(reminder) && reminder.assigneeName) {
           <span class="reminder-assignee">{{ reminder.assigneeName }}</span>
         }
@@ -90,9 +94,16 @@ export interface CalendarReminder {
       flex: 0 0 auto;
     }
 
-    .reminder-name {
+    .reminder-identity {
       flex: 1;
       min-width: 0;
+      display: grid;
+      justify-items: start;
+      gap: 0.1rem;
+    }
+
+    .reminder-name {
+      width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

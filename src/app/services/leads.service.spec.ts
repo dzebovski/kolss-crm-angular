@@ -7,6 +7,7 @@ import type { LeadListRow } from './leads.mapper';
 
 const row: LeadListRow = {
   id: 'lead-1',
+  reference_id: 'k0001',
   office_id: 'office-1',
   source_system: 'manual',
   external_lead_id: 'crm:1',

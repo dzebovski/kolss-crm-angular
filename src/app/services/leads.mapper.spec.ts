@@ -8,6 +8,7 @@ import type { LeadSource } from '@domain/lead.types';
 
 const baseRow: LeadListRow = {
   id: 'lead-1',
+  reference_id: 'k0001',
   office_id: 'office-1',
   source_system: 'manual',
   external_lead_id: 'crm:1',
@@ -79,7 +80,9 @@ describe('mapLeadListRow first_contact_attempt', () => {
   });
 
   it('sets firstCall to null when attempt is missing', () => {
-    expect(mapLeadListRow(baseRow).firstCall).toBeNull();
+    const lead = mapLeadListRow(baseRow);
+    expect(lead.referenceId).toBe('k0001');
+    expect(lead.firstCall).toBeNull();
     expect(mapLeadListRow({ ...baseRow, first_contact_attempt: null }).firstCall).toBeNull();
   });
 });

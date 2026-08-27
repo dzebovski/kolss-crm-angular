@@ -195,7 +195,10 @@
                   <small>{{ formatTime(lead.sourceCreatedAt) }}</small>
                 </td>
                 <td class="client-cell">
-                  <strong>{{ lead.name }}</strong>
+                  <span class="client-name-row">
+                    <app-lead-reference [referenceId]="lead.referenceId" />
+                    <strong>{{ lead.name }}</strong>
+                  </span>
                   <small>{{ lead.phone }}</small>
                 </td>
                 <td>

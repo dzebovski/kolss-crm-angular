@@ -176,6 +176,20 @@ thead th {
 .date-cell strong {
   text-transform: capitalize;
 }
+.client-name-row {
+  min-width: 0;
+  display: flex !important;
+  align-items: center;
+  gap: 0.42rem;
+}
+.client-name-row app-lead-reference {
+  flex: 0 0 auto;
+}
+.client-name-row strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .comment-cell > span:not(.muted) {
   display: -webkit-box;
   -webkit-box-orient: vertical;

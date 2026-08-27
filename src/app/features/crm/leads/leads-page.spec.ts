@@ -113,6 +113,9 @@ describe('LeadsPage', () => {
     expect(element.textContent).toContain('Прорахунок');
     expect(element.textContent).toContain('Погодили матеріали фасадів.');
     expect(element.textContent).not.toContain('Візит у салон');
+    expect(element.querySelector('.client-name-row app-lead-reference')?.textContent).toContain(
+      FIXTURE_LEADS[2]!.referenceId,
+    );
   });
 
   it('shows the call author below the status independently from the assigned manager', async () => {

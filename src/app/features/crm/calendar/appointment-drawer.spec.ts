@@ -85,6 +85,10 @@ describe('AppointmentDrawer', () => {
     const clientLink = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
       '.client-link',
     );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.selected-lead app-lead-reference')
+        ?.textContent,
+    ).toContain(lead.referenceId);
     expect(clientLink?.textContent).toContain('Відкрити картку клієнта');
     expect(clientLink?.getAttribute('href')).toBe(`/crm/leads/${lead.id}`);
     (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
@@ -127,7 +131,12 @@ describe('AppointmentDrawer', () => {
       ],
       appointment: {
         id: 'appointment-visited',
-        lead: { id: 'lead-1', name: 'Анна Коваль', phone: '+380501112233' },
+        lead: {
+          id: 'lead-1',
+          referenceId: 'k0001',
+          name: 'Анна Коваль',
+          phone: '+380501112233',
+        },
         office: {
           id: 'office-kyiv',
           code: 'kyiv',
@@ -211,7 +220,12 @@ describe('AppointmentDrawer', () => {
       ],
       appointment: {
         id: 'appointment-canceled',
-        lead: { id: 'lead-1', name: 'Анна Коваль', phone: '+380501112233' },
+        lead: {
+          id: 'lead-1',
+          referenceId: 'k0001',
+          name: 'Анна Коваль',
+          phone: '+380501112233',
+        },
         office: {
           id: 'office-kyiv',
           code: 'kyiv',

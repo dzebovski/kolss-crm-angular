@@ -129,6 +129,12 @@ h2 {
   flex: 1;
 }
 
+.selected-lead app-lead-reference,
+.lead-results app-lead-reference {
+  width: fit-content;
+  margin-bottom: 0.16rem;
+}
+
 .selected-lead small,
 .lead-results span {
   color: var(--ui-text-muted);

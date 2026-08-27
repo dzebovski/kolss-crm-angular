@@ -19,7 +19,7 @@ import {
 
 const appointment: Appointment = {
   id: 'appointment-1',
-  lead: { id: 'lead-1', name: 'Анна', phone: '+380501112233' },
+  lead: { id: 'lead-1', referenceId: 'k0001', name: 'Анна', phone: '+380501112233' },
   office: {
     id: 'office-kyiv',
     code: 'kyiv',

@@ -137,6 +137,7 @@ export interface CallStatusActor {
 
 export interface Lead {
   readonly id: string;
+  readonly referenceId: string;
   readonly version?: number;
   readonly archivedAt?: string | null;
   readonly name: string;

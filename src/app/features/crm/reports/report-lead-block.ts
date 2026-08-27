@@ -2,6 +2,7 @@ import { Component, inject, input } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import type { ClientStatus } from '@domain/lead.types';
+import { LeadReference } from '@features/crm/leads/lead-reference';
 import { LinkifiedText } from '@ui/text/linkified-text';
 import type { ReportLead } from './reports.types';
 
@@ -10,12 +11,13 @@ import type { ReportLead } from './reports.types';
   // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'tr[appReportLeadBlock]',
   host: { class: 'report-lead-block' },
-  imports: [LinkifiedText],
+  imports: [LeadReference, LinkifiedText],
   template: `
     <td class="lead-date">
       <time [attr.datetime]="lead().createdAt">{{ i18n.formatDate(lead().createdAt) }}</time>
     </td>
     <th class="lead-identity" scope="row">
+      <app-lead-reference [referenceId]="lead().referenceId" />
       <strong>{{ lead().name || i18n.t('common.unknown') }}</strong>
       <span>{{ lead().phone || '—' }}</span>
     </th>
@@ -119,6 +121,10 @@ import type { ReportLead } from './reports.types';
       color: var(--ui-text);
       font-size: 0.7rem;
       font-weight: 750;
+    }
+
+    .lead-identity app-lead-reference {
+      margin-bottom: 0.22rem;
     }
 
     .lead-identity span,

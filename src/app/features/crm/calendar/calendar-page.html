@@ -218,7 +218,10 @@
                     (click)="openEdit(appointment)"
                   >
                     <time>{{ localTime(appointment.startsAt) }}</time>
-                    <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                    <span class="appointment-identity">
+                      <app-lead-reference [referenceId]="appointment.lead.referenceId" />
+                      <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                    </span>
                     @if (appointment.status === 'scheduled' && appointment.warnings.length) {
                       <app-ui-icon name="warning" [size]="15" />
                     } @else {
@@ -290,6 +293,7 @@
                       />
                     }
                   </span>
+                  <app-lead-reference [referenceId]="appointment.lead.referenceId" />
                   <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
                   @if (appointment.status !== 'scheduled') {
                     <small
@@ -385,7 +389,10 @@
                     (click)="openEdit(appointment)"
                   >
                     <time>{{ localTime(appointment.startsAt) }}</time>
-                    <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                    <span class="appointment-identity">
+                      <app-lead-reference [referenceId]="appointment.lead.referenceId" />
+                      <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
+                    </span>
                     @if (appointment.status === 'scheduled' && appointment.warnings.length) {
                       <app-ui-icon name="warning" [size]="12" />
                     } @else {
@@ -437,6 +444,7 @@
             >
               <time>{{ localTime(appointment.startsAt) }}</time>
               <span>
+                <app-lead-reference [referenceId]="appointment.lead.referenceId" />
                 <strong>{{ appointment.lead.name || appointment.lead.phone }}</strong>
                 <small>{{
                   appointment.responsibleManager?.displayName ?? i18n.t('common.noManager')

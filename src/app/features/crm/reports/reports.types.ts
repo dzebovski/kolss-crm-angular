@@ -51,6 +51,7 @@ export interface ReportComment {
 
 export interface ReportLead {
   readonly id: string;
+  readonly referenceId: string;
   readonly name: string;
   readonly phone: string;
   readonly createdAt: string;

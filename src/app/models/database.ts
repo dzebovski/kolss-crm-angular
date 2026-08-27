@@ -59,6 +59,7 @@ export interface LeadCallStatusActor {
 
 export interface Lead {
   id: string;
+  reference_id: string;
   office_id: string;
   source_system: string;
   external_lead_id: string;

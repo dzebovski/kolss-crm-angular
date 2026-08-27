@@ -180,6 +180,9 @@ describe('LeadDetailView', () => {
     };
     const { fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.lead-identity__reference')?.textContent).toContain(
+      lead.referenceId,
+    );
     const summary = element.querySelector('.lead-summary');
     const text = element.textContent ?? '';
     expect(summary).not.toBeNull();

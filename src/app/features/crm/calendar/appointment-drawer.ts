@@ -11,6 +11,7 @@ import { I18nService } from '@core/i18n/i18n.service';
 import { isOfficeMemberRole } from '@core/roles/roles';
 import type { Office } from '@models/database';
 import type { Lead } from '@domain/lead.types';
+import { LeadReference } from '@features/crm/leads/lead-reference';
 import { AppointmentsService, officeDateTimeParts } from '@services/appointments.service';
 import { LeadsService } from '@services/leads.service';
 import type { CrmEmployee } from '@services/users.service';
@@ -61,7 +62,16 @@ function isValidDuration(minutes: number): boolean {
 
 @Component({
   selector: 'app-appointment-drawer',
-  imports: [FormField, RouterLink, UiButton, UiIcon, UiSelect, UiTextField, UiTextarea],
+  imports: [
+    FormField,
+    LeadReference,
+    RouterLink,
+    UiButton,
+    UiIcon,
+    UiSelect,
+    UiTextField,
+    UiTextarea,
+  ],
   templateUrl: './appointment-drawer.html',
   styleUrl: './appointment-drawer.scss',
 })
@@ -336,6 +346,7 @@ export class AppointmentDrawer {
     if (!appointment) return null;
     return {
       id: appointment.lead.id,
+      referenceId: appointment.lead.referenceId,
       name: appointment.lead.name,
       phone: appointment.lead.phone,
       officeCode: appointment.office.code as Lead['officeCode'],

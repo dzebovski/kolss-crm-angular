@@ -204,9 +204,13 @@
     border-radius: var(--ui-radius-pill);
     background: var(--ui-brand-gradient);
   }
+  .lead-identity__reference {
+    width: fit-content;
+    margin-top: 0.7rem;
+  }
   .lead-summary h1 {
     max-width: 13ch;
-    margin: 0.48rem 0 0;
+    margin: 0.3rem 0 0;
     font-size: clamp(1.9rem, 3.5vw, 3rem);
     font-weight: 570;
     line-height: 0.94;

@@ -67,6 +67,11 @@
       <span class="lead-identity__eyebrow">
         <i aria-hidden="true"></i>{{ i18n.t('leadDetail.client') }}
       </span>
+      <app-lead-reference
+        class="lead-identity__reference"
+        [referenceId]="currentLead.referenceId"
+        appearance="prominent"
+      />
       <h1 [id]="'lead-title-' + currentLead.id">{{ currentLead.name }}</h1>
       <a class="lead-identity__phone" [href]="'tel:' + currentLead.phone">
         <app-ui-icon name="phone_in_talk" [size]="19" [filled]="true" />

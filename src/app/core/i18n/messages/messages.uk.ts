@@ -448,7 +448,7 @@ export const messagesUk = {
   'leads.subtitle': 'Робочий список лідів з Supabase, згруповані за місяцем створення.',
   'leads.refresh': 'Оновити',
   'leads.loadError': 'Не вдалося завантажити ліди',
-  'leads.searchPlaceholder': 'Телефон, ПІБ або дата',
+  'leads.searchPlaceholder': 'ID, телефон, ПІБ або дата',
   'leads.found': 'знайдено',
   'leads.active': 'активні',
   'leads.terminal': 'завершені',

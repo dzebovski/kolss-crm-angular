@@ -49,6 +49,7 @@
         <div class="selected-lead">
           <span class="selected-lead__avatar">{{ lead.name.slice(0, 1).toUpperCase() }}</span>
           <span>
+            <app-lead-reference [referenceId]="lead.referenceId" />
             <strong>{{ lead.name }}</strong>
             <small>{{ lead.phone }}</small>
           </span>
@@ -77,6 +78,7 @@
                     aria-selected="false"
                     (click)="selectLead(lead)"
                   >
+                    <app-lead-reference [referenceId]="lead.referenceId" />
                     <strong>{{ lead.name }}</strong>
                     <span>{{ lead.phone }}</span>
                   </button>

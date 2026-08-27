@@ -20,6 +20,7 @@ import { LinkifiedText } from '@ui/text/linkified-text';
 import { UiUser } from '@ui/user/ui-user';
 import * as presenter from './lead-detail-page.presenter';
 import { LeadDueDate, type LeadDueDateKind } from './lead-due-date';
+import { LeadReference } from './lead-reference';
 
 /**
  * Read-mostly "what is this lead, right now" surface: contact facts, the
@@ -33,7 +34,16 @@ import { LeadDueDate, type LeadDueDateKind } from './lead-due-date';
  */
 @Component({
   selector: 'app-lead-summary-panel',
-  imports: [LeadDueDate, LinkifiedText, RouterLink, UiBadge, UiButton, UiIcon, UiUser],
+  imports: [
+    LeadDueDate,
+    LeadReference,
+    LinkifiedText,
+    RouterLink,
+    UiBadge,
+    UiButton,
+    UiIcon,
+    UiUser,
+  ],
   templateUrl: './lead-summary-panel.html',
   styleUrl: './lead-summary-panel.scss',
 })
