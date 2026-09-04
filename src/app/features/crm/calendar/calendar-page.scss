@@ -72,16 +72,15 @@ h1 {
   }
 }
 
-.kind-swatch {
-  width: 0.7rem;
-  height: 0.7rem;
-  border-radius: 0.2rem;
-  border: 1px solid color-mix(in srgb, var(--ui-action) 45%, transparent);
-  background: var(--ui-action);
+.kind-icon {
+  color: oklch(50% 0.075 300);
 
   &.is-measurement {
-    border-color: color-mix(in srgb, var(--ui-teal) 45%, transparent);
-    background: var(--ui-teal);
+    color: oklch(48% 0.065 195);
+  }
+
+  &.is-office-work {
+    color: oklch(50% 0.055 255);
   }
 }
 
@@ -186,7 +185,7 @@ h1 {
 .all-day-row,
 .time-row {
   display: grid;
-  grid-template-columns: 4.5rem repeat(var(--manager-count, 1), minmax(10rem, 1fr));
+  grid-template-columns: 4.5rem repeat(var(--manager-count, 1), minmax(15rem, 1fr));
 }
 
 .all-day-row {
@@ -248,7 +247,7 @@ h1 {
 }
 
 .time-row {
-  min-height: 3.6rem;
+  min-height: 6.5rem;
   border-bottom: 1px solid var(--ui-border);
 
   &:nth-child(odd) .slot-cell {
@@ -282,24 +281,27 @@ h1 {
   cursor: crosshair;
 }
 
-.appointment-card,
-.week-card,
-.month-card {
+.calendar-event-button {
   position: relative;
   z-index: 1;
   width: 100%;
-  border: 1px solid color-mix(in srgb, var(--ui-action) 30%, var(--ui-border));
-  border-left: 3px solid var(--ui-action);
-  border-radius: var(--ui-radius-sm);
-  background: color-mix(in srgb, var(--ui-action) 8%, var(--ui-surface-raised));
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: inherit;
   cursor: pointer;
+  font: inherit;
   text-align: left;
 
-  time {
-    color: var(--ui-action);
-    font-size: 0.72rem;
-    font-weight: 750;
+  &:hover {
+    --calendar-event-border: var(--ui-border-strong);
+    --calendar-event-shadow: 0 0.42rem 1rem color-mix(in srgb, var(--ui-text) 13%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-action);
+    outline-offset: 2px;
   }
 }
 
@@ -307,93 +309,13 @@ h1 {
   position: absolute;
   inset: 0.2rem 0.2rem auto;
   min-height: 3rem;
-  padding: 0.35rem 0.45rem;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.35rem;
-
-  .appointment-identity {
-    min-width: 0;
-    display: grid;
-    justify-items: start;
-    gap: 0.12rem;
-  }
-
-  strong {
-    width: 100%;
-    overflow: hidden;
-    font-size: 0.78rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .appointment-comment {
-    grid-column: 1 / -1;
-  }
-}
-
-.appointment-comment {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.is-measurement {
-  border-color: color-mix(in srgb, var(--ui-teal) 30%, var(--ui-border));
-  border-left-color: var(--ui-teal);
-  background: color-mix(in srgb, var(--ui-teal) 8%, var(--ui-surface-raised));
-
-  time {
-    color: var(--ui-teal);
-  }
-}
-
-.has-warning {
-  border-left-color: var(--ui-warning);
-}
-
-.is-visited {
-  border-left-color: var(--ui-success);
-  background: var(--ui-success-soft);
-}
-
-.is-no-show {
-  border-left-color: var(--ui-warning);
-  background: var(--ui-warning-soft);
-}
-
-.is-canceled {
-  border-left-color: var(--ui-danger);
-  background: var(--ui-danger-soft);
-}
-
-.is-measurement .appointment-status-icon {
-  color: var(--ui-teal);
-}
-
-.is-visited time,
-.appointment-status,
-.appointment-status-icon {
-  color: var(--ui-success);
-}
-
-.is-no-show time,
-.appointment-status.is-no-show,
-.appointment-status-icon.is-no-show {
-  color: var(--ui-warning);
-}
-
-.is-canceled time,
-.appointment-status.is-canceled,
-.appointment-status-icon.is-canceled {
-  color: var(--ui-danger);
 }
 
 .week-head,
-.week-columns {
+.week-columns,
+.week-add-row {
   display: grid;
-  grid-template-columns: repeat(6, minmax(9rem, 1fr));
+  grid-template-columns: repeat(6, minmax(14rem, 1fr));
 }
 
 .week-head > div {
@@ -434,37 +356,17 @@ h1 {
   gap: var(--ui-space-2);
 }
 
-.week-add {
-  min-height: 2.25rem;
-  border: 1px dashed var(--ui-border-strong);
-  border-radius: var(--ui-radius-sm);
-  background: transparent;
-  color: var(--ui-text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ui-space-1);
+.week-add-row {
+  border-top: 1px solid var(--ui-border);
+}
+
+.week-add-cell {
+  padding: var(--ui-space-2);
+  border-right: 1px solid var(--ui-border);
 }
 
 .week-card {
-  padding: var(--ui-space-3);
-  display: grid;
-  gap: 0.25rem;
-
-  > span {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  strong {
-    font-size: 0.82rem;
-  }
-
-  small {
-    color: var(--ui-text-muted);
-    font-size: 0.72rem;
-  }
+  min-height: 6.25rem;
 }
 
 .empty-day {
@@ -509,9 +411,9 @@ h1 {
     color: #fff;
   }
 
-  &:hover .month-add,
-  &:focus-within .month-add {
-    opacity: 1;
+  &:hover .month-create-menu,
+  &:focus-within .month-create-menu {
+    --calendar-month-add-opacity: 1;
   }
 }
 
@@ -536,58 +438,8 @@ h1 {
   font-size: 0.85rem;
 }
 
-.month-add {
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 0;
-  border-radius: var(--ui-radius-sm);
-  background: transparent;
-  color: var(--ui-text-muted);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  opacity: 0;
-}
-
 .month-card {
-  padding: 0.2rem 0.35rem;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.25rem;
-  min-width: 0;
-
-  time {
-    font-size: 0.65rem;
-  }
-
-  .appointment-identity {
-    min-width: 0;
-    display: grid;
-    justify-items: start;
-    gap: 0.08rem;
-  }
-
-  strong {
-    width: 100%;
-    overflow: hidden;
-    font-size: 0.7rem;
-    font-weight: 650;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-.month-more {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: var(--ui-action);
-  cursor: pointer;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-align: left;
-  padding: 0.15rem 0.25rem;
+  min-height: 2.85rem;
 }
 
 .calendar-skeleton {
@@ -687,48 +539,10 @@ h1 {
 
   .agenda-card {
     width: 100%;
-    padding: var(--ui-space-3);
-    border: 0;
-    border-left: 3px solid var(--ui-action);
-    border-radius: var(--ui-radius-sm);
-    background: var(--ui-surface-muted);
-    color: inherit;
-    display: grid;
-    grid-template-columns: 3.5rem 1fr auto;
-    align-items: center;
-    gap: var(--ui-space-3);
-    text-align: left;
+    min-height: 6.25rem;
 
     + .agenda-card {
       margin-top: var(--ui-space-2);
-    }
-
-    time {
-      color: var(--ui-action);
-      font-weight: 750;
-    }
-
-    span {
-      display: grid;
-    }
-
-    app-lead-reference {
-      width: fit-content;
-      margin-bottom: 0.16rem;
-    }
-
-    .agenda-trailing {
-      display: flex;
-      align-items: center;
-      gap: var(--ui-space-1);
-    }
-
-    .warning {
-      color: var(--ui-warning);
-    }
-
-    small {
-      color: var(--ui-text-muted);
     }
   }
 

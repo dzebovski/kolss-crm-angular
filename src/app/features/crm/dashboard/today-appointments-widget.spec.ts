@@ -84,6 +84,14 @@ describe('TodayAppointmentsWidget', () => {
           },
           {
             ...appointment,
+            id: `appointment-${officeId}-office-work`,
+            lead: { ...appointment.lead, id: 'lead-6', name: 'Робота над проєктом' },
+            kind: 'office_work',
+            startsAt: '2026-07-23T13:00:00.000Z',
+            endsAt: '2026-07-23T15:00:00.000Z',
+          },
+          {
+            ...appointment,
             id: `appointment-${officeId}-rescheduled`,
             lead: { ...appointment.lead, id: 'lead-5', name: 'Старий перенесений запис' },
             kind: 'showroom',
@@ -125,6 +133,7 @@ describe('TodayAppointmentsWidget', () => {
     expect(list.mock.calls.every(([filters]) => filters.status === undefined)).toBe(true);
 
     const element = fixture.nativeElement as HTMLElement;
+    expect(element.textContent).toContain('Розклад на сьогодні');
     expect(element.textContent).toContain('Київ');
     expect(element.textContent).toContain('Варшава');
     expect(element.textContent).toContain('Відвідав');
@@ -134,7 +143,9 @@ describe('TodayAppointmentsWidget', () => {
       'Підготувати документи для зустрічі',
     );
     expect(element.textContent).not.toContain('Старий перенесений запис');
-    expect(element.querySelectorAll('.appointment-row')).toHaveLength(8);
+    expect(element.textContent).toContain('Робота в офісі');
+    expect(element.querySelectorAll('.appointment-row.is-office-work')).toHaveLength(2);
+    expect(element.querySelectorAll('.appointment-row')).toHaveLength(10);
 
     element.querySelector<HTMLButtonElement>('.appointment-row')!.click();
     await fixture.whenStable();

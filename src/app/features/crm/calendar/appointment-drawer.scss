@@ -205,6 +205,11 @@ h2 {
     background: var(--ui-teal-soft);
     color: var(--ui-teal);
   }
+
+  &.is-office-work {
+    background: color-mix(in srgb, oklch(50% 0.055 255) 12%, var(--ui-surface-raised));
+    color: oklch(50% 0.055 255);
+  }
 }
 
 .field-state,
@@ -239,7 +244,6 @@ h2 {
 
 .client-link {
   width: fit-content;
-  margin-top: var(--ui-space-1);
   color: var(--ui-action);
   display: inline-flex;
   align-items: center;
@@ -262,9 +266,21 @@ h2 {
 }
 
 .drawer-actions {
-  justify-content: flex-end;
   border-top: 1px solid var(--ui-border);
   border-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.drawer-actions__leading {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer-actions__primary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
 }
 
 @media (max-width: 520px) {

@@ -56,7 +56,8 @@ export type LeadEventType =
   | 'comment_added'
   | 'lead_reopened'
   | 'attachment'
-  | 'lead_updated';
+  | 'lead_updated'
+  | 'office_work';
 
 /** `loss_reasons.code` from Supabase; mock labels cover CRM defaults. */
 export type CloseReason = string;

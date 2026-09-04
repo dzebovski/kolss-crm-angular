@@ -208,6 +208,8 @@ function mapEventType(eventType: string): LeadEventType {
     visit_completed: 'visit_completed',
     appointment_status_changed: 'visit_completed',
     appointment_updated: 'lead_updated',
+    office_work_scheduled: 'office_work',
+    office_work_updated: 'office_work',
     comment: 'comment',
     thinking: 'thinking',
     activated: 'activated',

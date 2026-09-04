@@ -42,7 +42,7 @@ import { UsersService } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
 import { UiChip } from '@ui/feedback/ui-chip';
 import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
-import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
+import { UiIcon } from '@ui/icon/ui-icon';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
 import {
   LeadDetailDrawer,
@@ -50,9 +50,18 @@ import {
   type LeadDetailDrawerResult,
   type LeadDetailDrawerState,
 } from '@features/crm/leads/lead-detail-drawer';
-import { LeadReference } from '@features/crm/leads/lead-reference';
 import { openAppointmentDrawer, type AppointmentDrawerData } from './appointment-drawer';
-import { CalendarDayReminders, type CalendarReminder } from './calendar-day-reminders';
+import {
+  calendarReminderCardModel,
+  CalendarDayReminders,
+  type CalendarReminder,
+} from './calendar-day-reminders';
+import {
+  CalendarEventCard,
+  type CalendarEventCardDensity,
+  type CalendarEventCardModel,
+} from './calendar-event-card';
+import { CalendarCreateMenu } from './calendar-create-menu';
 import { CalendarOverdueList, type CalendarOverdueRow } from './calendar-overdue-list';
 import {
   CALENDAR_REMINDER_FILTER_KIND_MAP,
@@ -63,7 +72,27 @@ import {
 
 type CalendarView = 'day' | 'week' | 'month';
 
-const MONTH_VISIBLE_APPOINTMENTS = 3;
+type CalendarMonthEntry =
+  | {
+      readonly key: string;
+      readonly source: 'reminder';
+      readonly card: CalendarEventCardModel;
+      readonly lead: Lead;
+    }
+  | {
+      readonly key: string;
+      readonly source: 'appointment';
+      readonly card: CalendarEventCardModel;
+      readonly appointment: Appointment;
+    };
+
+const HALF_HOUR_HEIGHT_PX = 104;
+const MONTH_REMINDER_ORDER: Record<CalendarReminder['kind'], number> = {
+  callback: 0,
+  thinking: 1,
+  postponed: 2,
+  comment: 3,
+};
 const EMPTY_REMINDERS: readonly CalendarReminder[] = [];
 const EMPTY_OVERDUE_ROWS: readonly CalendarOverdueRow[] = [];
 
@@ -78,8 +107,9 @@ const EMPTY_OVERDUE_ROWS: readonly CalendarOverdueRow[] = [];
     UiChip,
     UiIcon,
     UiSelect,
-    LeadReference,
     CalendarDayReminders,
+    CalendarCreateMenu,
+    CalendarEventCard,
     CalendarOverdueList,
   ],
   templateUrl: './calendar-page.html',
@@ -372,10 +402,16 @@ export class CalendarPage {
             date,
             lead,
             assigneeId,
-            assigneeName: this.employeeName(assigneeId),
+            assigneeName: this.calendarManagerName(assigneeId),
+            managerName: this.calendarManagerName(assigneeId),
           });
         } else {
-          push({ kind: reminder.kind, date, lead });
+          push({
+            kind: reminder.kind,
+            date,
+            lead,
+            managerName: this.calendarManagerName(lead.assignedToId),
+          });
         }
       }
     }
@@ -423,6 +459,14 @@ export class CalendarPage {
     return (
       this.managers().find((manager) => manager.id === id)?.displayName ??
       this.i18n.t('common.unknown')
+    );
+  }
+
+  private calendarManagerName(id: string | null): string {
+    if (!id) return this.i18n.t('common.unassigned');
+    return (
+      this.managers().find((manager) => manager.id === id)?.displayName ??
+      this.i18n.t('common.unassigned')
     );
   }
 
@@ -486,6 +530,7 @@ export class CalendarPage {
 
     for (const appointment of this.items()) {
       if (appointment.status !== 'scheduled') continue;
+      if (appointment.kind === 'office_work') continue;
       if (selectedManager !== 'all' && appointment.responsibleManager?.id !== selectedManager) {
         continue;
       }
@@ -552,7 +597,7 @@ export class CalendarPage {
       const groups: { date: string; items: readonly Appointment[] }[] = [];
       for (let date = monthStart; date < nextMonth; date = addCalendarDays(date, 1)) {
         const items = this.appointmentsForDay(date);
-        if (items.length) groups.push({ date, items });
+        if (items.length || this.dayReminders(date).length) groups.push({ date, items });
       }
       return groups.length
         ? groups
@@ -625,6 +670,10 @@ export class CalendarPage {
     this.openCreate(this.selectedDate(), '10:00', undefined, 'measurement');
   }
 
+  protected openCreateFromMenu(kind: AppointmentKind, date: string): void {
+    this.openCreate(date, '10:00', undefined, kind);
+  }
+
   protected openEdit(appointment: Appointment): void {
     const office = this.office();
     if (!office) return;
@@ -670,7 +719,6 @@ export class CalendarPage {
     const slotStart = slotHour * 60 + slotMinute;
     return this.items().filter((appointment) => {
       if (
-        !this.isTimelineAppointment(appointment) ||
         appointment.responsibleManager?.id !== managerId ||
         !this.isVisibleUnderVisitFilter(appointment)
       ) {
@@ -691,7 +739,6 @@ export class CalendarPage {
     return this.items()
       .filter(
         (appointment) =>
-          this.isTimelineAppointment(appointment) &&
           this.isVisibleUnderVisitFilter(appointment) &&
           officeDateTimeParts(appointment.startsAt, timeZone).date === date,
       )
@@ -709,15 +756,38 @@ export class CalendarPage {
    * Normal (unfiltered) browsing is untouched: every status still renders.
    */
   private isVisibleUnderVisitFilter(appointment: Appointment): boolean {
-    return this.reminderKindFilter() !== 'visit' || appointment.status === 'scheduled';
+    return (
+      this.reminderKindFilter() !== 'visit' ||
+      (appointment.kind !== 'office_work' && appointment.status === 'scheduled')
+    );
   }
 
-  protected visibleMonthAppointments(date: string): readonly Appointment[] {
-    return this.appointmentsForDay(date).slice(0, MONTH_VISIBLE_APPOINTMENTS);
+  protected monthEntries(date: string): readonly CalendarMonthEntry[] {
+    const reminders = [...this.dayReminders(date)].sort(
+      (left, right) => MONTH_REMINDER_ORDER[left.kind] - MONTH_REMINDER_ORDER[right.kind],
+    );
+    return [
+      ...reminders.map((reminder): CalendarMonthEntry => ({
+        key: `reminder-${reminder.lead.id}-${reminder.kind}`,
+        source: 'reminder',
+        card: calendarReminderCardModel(reminder),
+        lead: reminder.lead,
+      })),
+      ...this.appointmentsForDay(date).map((appointment): CalendarMonthEntry => ({
+        key: `appointment-${appointment.id}`,
+        source: 'appointment',
+        card: this.appointmentCard(appointment),
+        appointment,
+      })),
+    ];
   }
 
-  protected monthOverflowCount(date: string): number {
-    return Math.max(0, this.appointmentsForDay(date).length - MONTH_VISIBLE_APPOINTMENTS);
+  protected openMonthEntry(entry: CalendarMonthEntry): void {
+    if (entry.source === 'appointment') {
+      this.openEdit(entry.appointment);
+      return;
+    }
+    this.openLead(entry.lead);
   }
 
   protected isOutsideMonth(date: string): boolean {
@@ -725,10 +795,7 @@ export class CalendarPage {
   }
 
   protected appointmentsForManager(managerId: string): readonly Appointment[] {
-    return this.items().filter(
-      (appointment) =>
-        this.isTimelineAppointment(appointment) && appointment.responsibleManager?.id === managerId,
-    );
+    return this.items().filter((appointment) => appointment.responsibleManager?.id === managerId);
   }
 
   protected localTime(instant: string): string {
@@ -738,51 +805,25 @@ export class CalendarPage {
   protected appointmentHeight(appointment: Appointment): number {
     const minutes =
       (new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime()) / 60_000;
-    return Math.max(48, (minutes / 30) * 57.6 - 6);
+    return Math.max(48, (minutes / 30) * HALF_HOUR_HEIGHT_PX - 6);
   }
 
-  protected appointmentStatusLabel(appointment: Appointment): string {
-    switch (appointment.status) {
-      case 'visited':
-        return this.i18n.t('calendar.visited');
-      case 'no_show':
-        return this.i18n.t('calendar.noShow');
-      case 'canceled':
-        return this.i18n.t('calendar.canceled');
-      case 'rescheduled':
-        return this.i18n.t('calendar.rescheduled');
-      case 'scheduled':
-        return this.i18n.t('calendar.scheduled');
-    }
+  protected appointmentDensity(appointment: Appointment): CalendarEventCardDensity {
+    const minutes =
+      (new Date(appointment.endsAt).getTime() - new Date(appointment.startsAt).getTime()) / 60_000;
+    return minutes < 30 ? 'compact' : 'full';
   }
 
-  protected appointmentStatusIcon(appointment: Appointment): UiIconName {
-    switch (appointment.status) {
-      case 'visited':
-        return 'check_circle';
-      case 'no_show':
-        return 'warning';
-      case 'canceled':
-        return 'close';
-      case 'scheduled':
-        return appointment.kind === 'measurement' ? 'straighten' : 'calendar_month';
-      default:
-        return 'schedule';
-    }
-  }
-
-  protected appointmentKindLabel(appointment: Appointment): string {
-    return this.i18n.t(
-      appointment.kind === 'measurement' ? 'calendar.kind.measurement' : 'calendar.kind.showroom',
-    );
-  }
-
-  /**
-   * Cards distinguish kind by colour and icon; this makes the same distinction
-   * available to screen readers.
-   */
-  protected appointmentIconLabel(appointment: Appointment): string {
-    return `${this.appointmentKindLabel(appointment)} · ${this.appointmentStatusLabel(appointment)}`;
+  protected appointmentCard(appointment: Appointment): CalendarEventCardModel {
+    return {
+      kind: appointment.kind,
+      time: this.localTime(appointment.startsAt),
+      lead: appointment.lead,
+      managerName: appointment.responsibleManager?.displayName ?? this.i18n.t('common.noManager'),
+      comment: appointment.comment,
+      status: appointment.status,
+      hasWarning: appointment.warnings.length > 0,
+    };
   }
 
   protected slotLabel(date: string, time: string, manager: string): string {
@@ -862,9 +903,5 @@ export class CalendarPage {
         this.appointmentsResource.reload();
       }
     });
-  }
-
-  private isTimelineAppointment(appointment: Appointment): boolean {
-    return appointment.status !== 'rescheduled';
   }
 }

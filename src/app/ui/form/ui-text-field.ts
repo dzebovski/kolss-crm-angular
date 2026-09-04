@@ -22,6 +22,7 @@ let nextTextFieldId = 0;
         [disabled]="disabled()"
         [readOnly]="readOnly()"
         [required]="required()"
+        [attr.step]="step() ?? null"
         [attr.aria-invalid]="invalid() || !!error()"
         [attr.aria-describedby]="error() || hint() ? descriptionId : null"
         (input)="updateValue($event)"
@@ -54,6 +55,7 @@ export class UiTextField implements FormValueControl<string> {
   readonly required = input(false);
   readonly invalid = input(false);
   readonly name = input('');
+  readonly step = input<number | undefined>(undefined);
   readonly touch = output<void>();
   protected readonly controlId = `ui-text-field-${nextTextFieldId++}`;
   protected readonly descriptionId = `${this.controlId}-description`;

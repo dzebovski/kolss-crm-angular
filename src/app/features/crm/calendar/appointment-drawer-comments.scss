@@ -1,0 +1,90 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.drawer-comments {
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+.drawer-comments > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+}
+
+h3 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+header > span {
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding-inline: 0.35rem;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ui-surface-muted);
+  color: var(--ui-text-subtle);
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--ui-space-2);
+}
+
+li {
+  padding: var(--ui-space-3);
+  border-left: 3px solid color-mix(in srgb, var(--ui-action) 48%, var(--ui-border));
+  border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
+  background: var(--ui-surface-muted);
+}
+
+li p {
+  margin: 0;
+  color: var(--ui-text);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+li footer {
+  margin-top: var(--ui-space-2);
+  color: var(--ui-text-subtle);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  font-size: 0.68rem;
+}
+
+li footer span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+li time {
+  flex: 0 0 auto;
+}
+
+.comments-state {
+  margin: 0;
+  color: var(--ui-text-muted);
+  font-size: 0.78rem;
+}
+
+.comments-state--error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+}

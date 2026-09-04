@@ -3,14 +3,13 @@
     <div>
       <p>{{ data.office.name_uk }} · {{ data.office.timezone_name ?? 'UTC' }}</p>
       <h2 id="appointment-drawer-title">{{ title() }}</h2>
-      <span class="appointment-kind" [class.is-measurement]="kind === 'measurement'">
-        <app-ui-icon
-          [name]="kind === 'measurement' ? 'straighten' : 'calendar_month'"
-          [size]="15"
-        />
-        {{
-          i18n.t(kind === 'measurement' ? 'calendar.kind.measurement' : 'calendar.kind.showroom')
-        }}
+      <span
+        class="appointment-kind"
+        [class.is-measurement]="kind === 'measurement'"
+        [class.is-office-work]="kind === 'office_work'"
+      >
+        <app-ui-icon [name]="kindIcon()" [size]="15" />
+        {{ kindLabel() }}
       </span>
       @if (data.appointment && isTerminal && !rebook()) {
         <span
@@ -21,7 +20,7 @@
           <app-ui-icon name="check_circle" [size]="15" />
           {{ appointmentStatusLabel(data.appointment.status) }}
         </span>
-        @if (data.appointment.status === 'canceled') {
+        @if (data.appointment.status === 'canceled' && kind !== 'office_work') {
           <app-ui-button
             class="rebook-button"
             size="small"
@@ -63,6 +62,8 @@
             type="search"
             [label]="i18n.t('calendar.client')"
             [placeholder]="i18n.t('calendar.clientSearch')"
+            [hint]="kind === 'office_work' ? i18n.t('calendar.clientWorkHint') : ''"
+            [required]="true"
             [value]="leadSearch()"
             (valueChange)="searchLeads($event)"
           />
@@ -111,13 +112,24 @@
           [formField]="appointmentForm.duration"
         />
         @if (usesCustomDuration()) {
-          <app-ui-text-field
-            type="number"
-            [label]="i18n.t('calendar.customDurationLabel')"
-            [hint]="i18n.t('calendar.customDurationInvalid')"
-            [error]="customDurationError()"
-            [formField]="appointmentForm.customDuration"
-          />
+          @if (kind === 'office_work') {
+            <app-ui-text-field
+              type="time"
+              [label]="i18n.t('calendar.endTime')"
+              [hint]="i18n.t('calendar.customEndTimeInvalid')"
+              [error]="customEndTimeError()"
+              [step]="900"
+              [formField]="appointmentForm.customEndTime"
+            />
+          } @else {
+            <app-ui-text-field
+              type="number"
+              [label]="i18n.t('calendar.customDurationLabel')"
+              [hint]="i18n.t('calendar.customDurationInvalid')"
+              [error]="customDurationError()"
+              [formField]="appointmentForm.customDuration"
+            />
+          }
         }
       </div>
 
@@ -133,6 +145,13 @@
         [formField]="appointmentForm.comment"
       />
 
+      <app-appointment-drawer-comments
+        [events]="leadComments()"
+        [loading]="leadDetailsResource.isLoading()"
+        [error]="!!leadDetailsResource.error()"
+        (retry)="leadDetailsResource.reload()"
+      />
+
       @if (clientWarnings().length) {
         <div class="warnings" role="status">
           @for (warning of clientWarnings(); track warning) {
@@ -146,16 +165,9 @@
       @if (error()) {
         <p class="error" role="alert">{{ error() }}</p>
       }
-
-      @if (selectedLead(); as lead) {
-        <a class="client-link" [routerLink]="['/crm/leads', lead.id]" (click)="close()">
-          <app-ui-icon name="person" [size]="16" />
-          {{ i18n.t('calendar.openClient') }}
-        </a>
-      }
     </div>
 
-    @if (data.appointment?.status === 'scheduled') {
+    @if (data.appointment?.status === 'scheduled' && kind !== 'office_work') {
       <div class="status-actions" [attr.aria-label]="i18n.t('calendar.statusActions')">
         <app-ui-button size="small" variant="secondary" (pressed)="setStatus('visited')">
           {{ i18n.t('calendar.visited') }}
@@ -170,16 +182,26 @@
     }
 
     <footer class="drawer-actions">
-      <app-ui-button variant="ghost" (pressed)="close()">
-        {{ i18n.t('common.cancel') }}
-      </app-ui-button>
-      <app-ui-button
-        type="submit"
-        [loading]="appointmentForm().submitting()"
-        [disabled]="appointmentForm().invalid() || !selectedLead()"
-      >
-        {{ i18n.t('common.save') }}
-      </app-ui-button>
+      <div class="drawer-actions__leading">
+        @if (selectedLead(); as lead) {
+          <a class="client-link" [routerLink]="['/crm/leads', lead.id]" (click)="close()">
+            <app-ui-icon name="person" [size]="16" />
+            {{ i18n.t('calendar.openClient') }}
+          </a>
+        }
+      </div>
+      <div class="drawer-actions__primary">
+        <app-ui-button variant="ghost" (pressed)="close()">
+          {{ i18n.t('common.cancel') }}
+        </app-ui-button>
+        <app-ui-button
+          type="submit"
+          [loading]="appointmentForm().submitting()"
+          [disabled]="appointmentForm().invalid() || !selectedLead()"
+        >
+          {{ i18n.t('common.save') }}
+        </app-ui-button>
+      </div>
     </footer>
   </form>
 </aside>

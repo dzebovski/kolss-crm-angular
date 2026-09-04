@@ -81,6 +81,39 @@ describe('I18nService', () => {
     }
   });
 
+  it('names the client code in every search hint', async () => {
+    const locale = signal<LocaleCode>('en');
+    TestBed.configureTestingModule({
+      providers: [I18nService, { provide: SessionService, useValue: { locale } }],
+    });
+    const i18n = TestBed.inject(I18nService);
+    const hints = {
+      en: {
+        calendar: 'Code, name or phone',
+        leads: 'Code, phone, name or date',
+        empty: 'Try a different code, phone, date, or client name.',
+      },
+      uk: {
+        calendar: 'Код, імʼя або телефон',
+        leads: 'Код, телефон, ПІБ або дата',
+        empty: 'Спробуйте інший код, телефон, дату або імʼя клієнта.',
+      },
+      pl: {
+        calendar: 'Kod, imię lub telefon',
+        leads: 'Kod, telefon, imię lub data',
+        empty: 'Spróbuj innego kodu, telefonu, daty lub imienia klienta.',
+      },
+    } as const;
+
+    for (const code of ['en', 'uk', 'pl'] as const) {
+      locale.set(code);
+      await i18n.ensureLoaded(code);
+      expect(i18n.t('calendar.clientSearch')).toBe(hints[code].calendar);
+      expect(i18n.t('leads.searchPlaceholder')).toBe(hints[code].leads);
+      expect(i18n.t('leads.emptyHint')).toBe(hints[code].empty);
+    }
+  });
+
   describe('closeReasonLabel', () => {
     const dbReasons = [
       { code: 'expensive', label_uk: 'Дорого з БД', label_pl: 'Za drogo z BD' },

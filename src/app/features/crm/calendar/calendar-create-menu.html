@@ -1,0 +1,39 @@
+<button
+  ngGridCellWidget
+  ngMenuTrigger
+  type="button"
+  class="create-trigger"
+  [class.create-trigger--month]="variant() === 'month'"
+  [menu]="menu"
+  [attr.aria-label]="triggerLabel() || i18n.t('calendar.add')"
+>
+  <app-ui-icon name="add" [size]="variant() === 'month' ? 14 : 16" />
+  @if (variant() === 'week') {
+    {{ i18n.t('calendar.add') }}
+  }
+</button>
+
+<div
+  ngMenu
+  #menu="ngMenu"
+  class="create-panel"
+  [class.create-panel--visible]="menu.visible()"
+  [class.create-panel--week]="variant() === 'week'"
+  [class.create-panel--month]="variant() === 'month'"
+  (itemSelected)="selectKind($event)"
+>
+  <ng-template ngMenuContent>
+    <button type="button" ngMenuItem class="create-item" value="showroom">
+      <app-ui-icon name="storefront" [size]="18" />
+      {{ i18n.t('calendar.kind.showroom') }}
+    </button>
+    <button type="button" ngMenuItem class="create-item" value="measurement">
+      <app-ui-icon name="straighten" [size]="18" />
+      {{ i18n.t('calendar.kind.measurement') }}
+    </button>
+    <button type="button" ngMenuItem class="create-item" value="office_work">
+      <app-ui-icon name="business_center" [size]="18" />
+      {{ i18n.t('calendar.kind.officeWork') }}
+    </button>
+  </ng-template>
+</div>

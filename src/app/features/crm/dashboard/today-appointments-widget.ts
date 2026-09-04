@@ -31,7 +31,7 @@ interface OfficeAppointmentGroup {
       <header>
         <div>
           <p>{{ i18n.t('calendar.dashboardKicker') }}</p>
-          <h2 id="today-appointments-title">{{ i18n.t('calendar.todayInShowroom') }}</h2>
+          <h2 id="today-appointments-title">{{ i18n.t('calendar.todaySchedule') }}</h2>
         </div>
         <span class="total">{{ total() }}</span>
       </header>
@@ -66,6 +66,7 @@ interface OfficeAppointmentGroup {
                       type="button"
                       class="appointment-row"
                       [class.is-measurement]="appointment.kind === 'measurement'"
+                      [class.is-office-work]="appointment.kind === 'office_work'"
                       [class.is-visited]="appointment.status === 'visited'"
                       [class.is-no-show]="appointment.status === 'no_show'"
                       [class.is-canceled]="appointment.status === 'canceled'"
@@ -80,9 +81,10 @@ interface OfficeAppointmentGroup {
                         @if (appointment.comment; as comment) {
                           <small class="appointment-comment" [title]="comment">{{ comment }}</small>
                         }
-                        @if (appointment.kind === 'measurement') {
+                        @if (appointment.kind !== 'showroom') {
                           <small class="appointment-kind">
-                            {{ i18n.t('calendar.kind.measurement') }}
+                            <app-ui-icon [name]="appointmentKindIcon(appointment)" [size]="14" />
+                            {{ appointmentKindLabel(appointment) }}
                           </small>
                         }
                         @if (appointment.status !== 'scheduled') {
@@ -313,9 +315,20 @@ interface OfficeAppointmentGroup {
       box-shadow: inset 3px 0 0 var(--ui-teal);
     }
 
+    .appointment-row.is-office-work {
+      box-shadow: inset 3px 0 0 oklch(50% 0.055 255);
+    }
+
     .appointment-kind {
       color: var(--ui-teal);
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
       font-weight: 650;
+    }
+
+    .appointment-row.is-office-work .appointment-kind {
+      color: oklch(50% 0.055 255);
     }
 
     .appointment-row.is-visited {
@@ -474,6 +487,16 @@ export class TodayAppointmentsWidget {
       case 'scheduled':
         return this.i18n.t('calendar.scheduled');
     }
+  }
+
+  protected appointmentKindIcon(appointment: Appointment): 'straighten' | 'business_center' {
+    return appointment.kind === 'office_work' ? 'business_center' : 'straighten';
+  }
+
+  protected appointmentKindLabel(appointment: Appointment): string {
+    return this.i18n.t(
+      appointment.kind === 'office_work' ? 'calendar.kind.officeWork' : 'calendar.kind.measurement',
+    );
   }
 
   protected async openAppointment(

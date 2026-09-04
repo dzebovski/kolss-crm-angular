@@ -46,6 +46,7 @@ const CALL_ACTIONS: readonly Omit<RadialAction<CallStatus>, 'label' | 'tone'>[] 
 ];
 
 type SelectableClientStatus = Exclude<ClientStatus, 'new_lead'>;
+type VisitAppointmentKind = Exclude<AppointmentKind, 'office_work'>;
 
 /**
  * Statuses that own a calendar appointment: they are never set directly, they
@@ -54,7 +55,7 @@ type SelectableClientStatus = Exclude<ClientStatus, 'new_lead'>;
 const APPOINTMENT_KIND_BY_STATUS = {
   showroom_invited: 'showroom',
   measurement_scheduled: 'measurement',
-} as const satisfies Partial<Record<SelectableClientStatus, AppointmentKind>>;
+} as const satisfies Partial<Record<SelectableClientStatus, VisitAppointmentKind>>;
 
 type AppointmentClientStatus = keyof typeof APPOINTMENT_KIND_BY_STATUS;
 
@@ -124,7 +125,7 @@ export class LeadActionsPanel {
   readonly restoreRequested = output<void>();
   readonly archiveRequested = output<void>();
   readonly deletePermanentlyRequested = output<void>();
-  readonly appointmentRequested = output<AppointmentKind>();
+  readonly appointmentRequested = output<VisitAppointmentKind>();
 
   protected readonly isTerminal = leadIsTerminal;
 

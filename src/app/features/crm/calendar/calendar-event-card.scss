@@ -1,0 +1,250 @@
+:host {
+  display: block;
+  min-width: 0;
+  height: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.event-card {
+  --event-accent: oklch(48% 0.12 300);
+  --event-border: color-mix(in srgb, var(--event-accent) 31%, var(--ui-border));
+  --event-surface: color-mix(in srgb, var(--event-accent) 8%, var(--ui-surface-raised));
+
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.65rem 0.5rem;
+  border: 1px solid var(--calendar-event-border, var(--event-border));
+  border-left: 0.32rem solid var(--event-accent);
+  border-radius: var(--ui-radius-sm);
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--event-accent) 10%, transparent),
+      transparent 64%
+    ),
+    var(--event-surface);
+  box-shadow: var(
+    --calendar-event-shadow,
+    0 0.2rem 0.65rem color-mix(in srgb, var(--ui-text) 8%, transparent)
+  );
+  display: grid;
+  align-content: space-between;
+  gap: 0.34rem;
+  color: var(--ui-text);
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+
+  &.kind-measurement {
+    --event-accent: oklch(45% 0.105 190);
+  }
+
+  &.kind-office-work {
+    --event-accent: oklch(50% 0.055 255);
+  }
+
+  &.kind-callback {
+    --event-accent: oklch(48% 0.12 245);
+  }
+
+  &.kind-thinking {
+    --event-accent: oklch(48% 0.09 320);
+  }
+
+  &.kind-postponed {
+    --event-accent: oklch(45% 0.045 260);
+  }
+
+  &.kind-comment {
+    --event-accent: oklch(49% 0.105 55);
+  }
+
+  &.kind-task {
+    --event-accent: oklch(0.58 0.13 81.57);
+  }
+}
+
+.event-top,
+.event-heading,
+.event-client,
+.event-footer,
+.month-main,
+.event-state {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.event-top {
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.event-heading {
+  flex: 1;
+  gap: 0.38rem;
+  overflow: hidden;
+  white-space: nowrap;
+
+  time,
+  strong {
+    font-size: 0.76rem;
+    font-weight: 780;
+  }
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.event-state {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  color: var(--event-accent);
+  font-size: 0.68rem;
+  font-weight: 760;
+  white-space: nowrap;
+
+  &.status-visited {
+    color: var(--ui-success);
+  }
+
+  &.status-no_show {
+    color: oklch(52% 0.14 48);
+  }
+
+  &.status-canceled {
+    color: var(--ui-danger);
+  }
+
+  &.status-rescheduled {
+    color: color-mix(in srgb, var(--ui-info) 52%, var(--ui-neutral));
+  }
+
+  &.status-warning {
+    color: var(--ui-warning);
+  }
+}
+
+.event-client {
+  gap: 0.5rem;
+}
+
+.client-icon,
+.event-icon,
+.heading-event-icon {
+  color: var(--event-accent);
+}
+
+.heading-event-icon {
+  flex: 0 0 auto;
+}
+
+.client-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid color-mix(in srgb, var(--event-accent) 20%, transparent);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--event-accent) 15%, var(--ui-surface-raised));
+  display: grid;
+  place-items: center;
+}
+
+.client-copy {
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 0.12rem;
+
+  strong {
+    width: 100%;
+    overflow: hidden;
+    font-size: 0.78rem;
+    font-weight: 680;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.event-footer {
+  gap: 0.3rem;
+  overflow: hidden;
+  color: var(--ui-text-subtle);
+  font-size: 0.68rem;
+  font-weight: 580;
+  white-space: nowrap;
+}
+
+.event-comment {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.is-compact {
+  padding-block: 0.32rem;
+  gap: 0.2rem;
+
+  .event-heading time,
+  .event-heading strong,
+  .client-copy strong {
+    font-size: 0.68rem;
+  }
+
+  .client-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+}
+
+.is-month {
+  min-height: 2.85rem;
+  padding: 0.28rem 0.38rem 0.3rem;
+  gap: 0.2rem;
+  box-shadow: none;
+}
+
+.month-main {
+  gap: 0.25rem;
+
+  time {
+    flex: 0 0 auto;
+    font-size: 0.63rem;
+    font-weight: 780;
+    font-variant-numeric: tabular-nums;
+  }
+
+  app-lead-reference {
+    flex: 0 0 auto;
+  }
+
+  strong {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.67rem;
+    font-weight: 680;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.is-month .event-footer {
+  padding-left: 1.15rem;
+  font-size: 0.61rem;
+  text-overflow: ellipsis;
+}

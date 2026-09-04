@@ -1,0 +1,113 @@
+:host {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.create-trigger {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 1px dashed var(--ui-border-strong);
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-1);
+  font: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: 2px;
+  }
+}
+
+.create-trigger--month {
+  width: 1.5rem;
+  height: 1.5rem;
+  min-height: 1.5rem;
+  border: 0;
+  opacity: var(--calendar-month-add-opacity, 0);
+}
+
+:host(.is-month):focus-within .create-trigger--month,
+.create-trigger--month:hover {
+  opacity: 1;
+}
+
+.create-panel {
+  position: absolute;
+  z-index: var(--ui-z-overlay);
+  min-width: 14rem;
+  padding: var(--ui-space-2);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-surface-raised);
+  box-shadow: var(--ui-shadow-2);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--ui-duration-fast) var(--ui-ease),
+    transform var(--ui-duration-fast) var(--ui-ease);
+}
+
+.create-panel--week {
+  right: 0;
+  bottom: calc(100% + var(--ui-space-2));
+  transform: translateY(0.25rem);
+}
+
+.create-panel--month {
+  top: calc(100% + var(--ui-space-1));
+  right: 0;
+  transform: translateY(-0.25rem);
+}
+
+.create-panel--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.create-item {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 var(--ui-space-3);
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: transparent;
+  color: var(--ui-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  text-align: left;
+  font: inherit;
+  font-size: 0.875rem;
+
+  &:hover,
+  &[data-active='true'] {
+    background: var(--ui-surface-muted);
+  }
+}
+
+.create-item:nth-child(1) app-ui-icon {
+  color: oklch(48% 0.12 300);
+}
+
+.create-item:nth-child(2) app-ui-icon {
+  color: oklch(45% 0.105 190);
+}
+
+.create-item:nth-child(3) app-ui-icon {
+  color: oklch(50% 0.055 255);
+}
+
+@media (max-width: 70rem) {
+  .create-panel--month {
+    right: auto;
+    left: 0;
+  }
+}

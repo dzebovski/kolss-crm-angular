@@ -391,7 +391,10 @@ export class LeadDetailView {
     );
   }
 
-  protected async openLeadAppointment(lead: Lead, kind: AppointmentKind): Promise<void> {
+  protected async openLeadAppointment(
+    lead: Lead,
+    kind: Exclude<AppointmentKind, 'office_work'>,
+  ): Promise<void> {
     const office = (this.session.officeContext()?.filterOffices ?? []).find(
       (item) => item.code === lead.officeCode,
     );

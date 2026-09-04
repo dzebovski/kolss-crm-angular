@@ -1,4 +1,4 @@
-import { computed, inject, signal } from '@angular/core';
+import { computed, inject, resource, signal } from '@angular/core';
 import { Component } from '@angular/core';
 import { form, FormField, required, submit, validate } from '@angular/forms/signals';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -21,6 +21,7 @@ import { UiTextField } from '@ui/form/ui-text-field';
 import { UiTextarea } from '@ui/form/ui-textarea';
 import { UiIcon } from '@ui/icon/ui-icon';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { AppointmentDrawerComments } from './appointment-drawer-comments';
 
 export interface AppointmentDrawerData {
   readonly office: Office;
@@ -44,15 +45,18 @@ interface AppointmentFormModel {
   /** A preset value in minutes, or CUSTOM_DURATION when customDuration is used. */
   readonly duration: string;
   readonly customDuration: string;
+  readonly customEndTime: string;
   readonly managerId: string;
   readonly comment: string;
 }
 
 const CUSTOM_DURATION = 'custom';
-const DURATION_PRESETS = [30, 60, 90, 120, 180, 240] as const;
+const VISIT_DURATION_PRESETS = [30, 60, 90, 120, 180, 240] as const;
+const OFFICE_WORK_DURATION_PRESETS = [60, 120, 180, 240, 300, 360] as const;
 const DEFAULT_DURATION_BY_KIND: Record<AppointmentKind, number> = {
   showroom: 60,
   measurement: 120,
+  office_work: 60,
 };
 
 /** Mirrors validAppointmentDuration in the API. */
@@ -60,10 +64,26 @@ function isValidDuration(minutes: number): boolean {
   return Number.isInteger(minutes) && minutes >= 15 && minutes <= 480 && minutes % 15 === 0;
 }
 
+function minutesFromTime(value: string): number | null {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  return hours * 60 + minutes;
+}
+
+function officeWorkDuration(startTime: string, endTime: string): number {
+  const start = minutesFromTime(startTime);
+  const end = minutesFromTime(endTime);
+  return start === null || end === null ? Number.NaN : end - start;
+}
+
 @Component({
   selector: 'app-appointment-drawer',
   imports: [
     FormField,
+    AppointmentDrawerComments,
     LeadReference,
     RouterLink,
     UiButton,
@@ -93,6 +113,12 @@ export class AppointmentDrawer {
   protected readonly selectedLead = signal<Lead | null>(
     this.data.lead ?? this.leadFromAppointment(this.data.appointment),
   );
+  protected readonly leadDetailsResource = resource({
+    params: () => ({ leadId: this.selectedLead()?.id ?? '' }),
+    loader: ({ params }) =>
+      params.leadId ? this.leads.getById(params.leadId) : Promise.resolve(null),
+  });
+  protected readonly leadComments = computed(() => this.leadDetailsResource.value()?.events ?? []);
   protected readonly isTerminal =
     this.data.appointment != null && this.data.appointment.status !== 'scheduled';
   /** Immutable for the life of the drawer: editing never changes an appointment's kind. */
@@ -108,32 +134,73 @@ export class AppointmentDrawer {
     required(path.duration, { message: this.i18n.t('calendar.durationRequired') });
     required(path.managerId, { message: this.i18n.t('calendar.managerRequired') });
     validate(path.customDuration, ({ valueOf }) =>
+      this.kind !== 'office_work' &&
       valueOf(path.duration) === CUSTOM_DURATION &&
       !isValidDuration(Number(valueOf(path.customDuration)))
         ? { kind: 'duration', message: this.i18n.t('calendar.customDurationInvalid') }
         : undefined,
     );
+    required(path.customEndTime, {
+      message: this.i18n.t('calendar.customEndTimeInvalid'),
+      when: ({ valueOf }) =>
+        this.kind === 'office_work' && valueOf(path.duration) === CUSTOM_DURATION,
+    });
+    validate(path.customEndTime, ({ valueOf }) => {
+      if (this.kind !== 'office_work' || valueOf(path.duration) !== CUSTOM_DURATION) {
+        return undefined;
+      }
+      const duration = officeWorkDuration(valueOf(path.time), valueOf(path.customEndTime));
+      return !isValidDuration(duration)
+        ? { kind: 'endTime', message: this.i18n.t('calendar.customEndTimeInvalid') }
+        : undefined;
+    });
   });
 
   protected readonly durationOptions: readonly UiSelectOption[] = [
-    ...DURATION_PRESETS.map((minutes) => ({
-      value: String(minutes),
-      label: this.i18n.t('calendar.minutes', { count: minutes }),
-    })),
+    ...(this.kind === 'office_work'
+      ? OFFICE_WORK_DURATION_PRESETS.map((minutes) => ({
+          value: String(minutes),
+          label: this.i18n.t('calendar.hours', { count: minutes / 60 }),
+        }))
+      : VISIT_DURATION_PRESETS.map((minutes) => ({
+          value: String(minutes),
+          label: this.i18n.t('calendar.minutes', { count: minutes }),
+        }))),
     { value: CUSTOM_DURATION, label: this.i18n.t('calendar.customDuration') },
   ];
 
   protected readonly usesCustomDuration = computed(() => this.model().duration === CUSTOM_DURATION);
 
   protected readonly title = computed(() => {
-    if (this.data.appointment && !this.rebook()) return this.i18n.t('calendar.editTitle');
-    return this.kind === 'measurement'
-      ? this.i18n.t('calendar.createMeasurementTitle')
-      : this.i18n.t('calendar.createTitle');
+    if (this.data.appointment && !this.rebook()) {
+      return this.kind === 'office_work'
+        ? this.i18n.t('calendar.editOfficeWorkTitle')
+        : this.i18n.t('calendar.editTitle');
+    }
+    if (this.kind === 'measurement') return this.i18n.t('calendar.createMeasurementTitle');
+    if (this.kind === 'office_work') return this.i18n.t('calendar.createOfficeWorkTitle');
+    return this.i18n.t('calendar.createTitle');
+  });
+
+  protected readonly kindIcon = computed(() => {
+    if (this.kind === 'measurement') return 'straighten' as const;
+    if (this.kind === 'office_work') return 'business_center' as const;
+    return 'storefront' as const;
+  });
+
+  protected readonly kindLabel = computed(() => {
+    if (this.kind === 'measurement') return this.i18n.t('calendar.kind.measurement');
+    if (this.kind === 'office_work') return this.i18n.t('calendar.kind.officeWork');
+    return this.i18n.t('calendar.kind.showroom');
   });
 
   protected readonly customDurationError = computed(() => {
     const state = this.appointmentForm.customDuration();
+    return state.touched() ? (state.errors()[0]?.message ?? '') : '';
+  });
+
+  protected readonly customEndTimeError = computed(() => {
+    const state = this.appointmentForm.customEndTime();
     return state.touched() ? (state.errors()[0]?.message ?? '') : '';
   });
 
@@ -160,7 +227,8 @@ export class AppointmentDrawer {
     const value = this.model();
     const warnings: string[] = [];
     const [hour, minute] = value.time.split(':').map(Number);
-    const endMinutes = hour * 60 + minute + this.durationMinutes(value);
+    const duration = this.durationMinutes(value);
+    const endMinutes = hour * 60 + minute + duration;
     const date = new Date(`${value.date}T12:00:00Z`);
     if (date.getUTCDay() === 0 || hour * 60 + minute < 9 * 60 || endMinutes > 19 * 60) {
       warnings.push(this.i18n.t('calendar.warningOutside'));
@@ -169,7 +237,10 @@ export class AppointmentDrawer {
   });
 
   private durationMinutes(value: AppointmentFormModel): number {
-    return Number(value.duration === CUSTOM_DURATION ? value.customDuration : value.duration);
+    if (value.duration !== CUSTOM_DURATION) return Number(value.duration);
+    return this.kind === 'office_work'
+      ? officeWorkDuration(value.time, value.customEndTime)
+      : Number(value.customDuration);
   }
 
   protected async searchLeads(value: string): Promise<void> {
@@ -206,7 +277,7 @@ export class AppointmentDrawer {
     this.selectedLead.set(lead);
     this.leadResults.set([]);
     this.leadSearch.set('');
-    if (lead.assignedToId) {
+    if (this.kind !== 'office_work' && lead.assignedToId) {
       this.model.update((value) => ({ ...value, managerId: lead.assignedToId! }));
     }
   }
@@ -325,19 +396,34 @@ export class AppointmentDrawer {
             60_000,
         )
       : DEFAULT_DURATION_BY_KIND[this.kind];
-    const isPreset = (DURATION_PRESETS as readonly number[]).includes(duration);
+    const durationPresets =
+      this.kind === 'office_work' ? OFFICE_WORK_DURATION_PRESETS : VISIT_DURATION_PRESETS;
+    const isPreset = (durationPresets as readonly number[]).includes(duration);
     const selectedLead = this.selectedLead();
     const currentUserId = this.auth.sessionContext()?.user.id ?? '';
+    const currentUserIsOfficeManager = this.data.managers.some(
+      (manager) =>
+        manager.id === currentUserId &&
+        manager.status === 'active' &&
+        isOfficeMemberRole(manager.role) &&
+        manager.officeUuids.includes(this.data.office.id),
+    );
+    const endTime = appointment
+      ? officeDateTimeParts(appointment.endsAt, this.data.office.timezone_name ?? 'UTC').time
+      : '';
     return {
       date: dateTime?.date ?? this.data.date ?? '',
       time: dateTime?.time ?? this.data.time ?? '10:00',
       duration: isPreset ? String(duration) : CUSTOM_DURATION,
       customDuration: isPreset ? '' : String(duration),
+      customEndTime: isPreset ? '' : endTime,
       managerId:
         appointment?.responsibleManager?.id ??
-        selectedLead?.assignedToId ??
-        this.data.defaultManagerId ??
-        currentUserId,
+        (this.kind === 'office_work'
+          ? currentUserIsOfficeManager
+            ? currentUserId
+            : ''
+          : (selectedLead?.assignedToId ?? this.data.defaultManagerId ?? currentUserId)),
       comment: appointment?.comment ?? '',
     };
   }
@@ -352,7 +438,11 @@ export class AppointmentDrawer {
       officeCode: appointment.office.code as Lead['officeCode'],
       assignedToId: appointment.responsibleManager?.id ?? null,
       clientStatus:
-        appointment.kind === 'measurement' ? 'measurement_scheduled' : 'showroom_invited',
+        appointment.kind === 'measurement'
+          ? 'measurement_scheduled'
+          : appointment.kind === 'showroom'
+            ? 'showroom_invited'
+            : 'new_lead',
     } as Lead;
   }
 }

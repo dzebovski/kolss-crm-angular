@@ -720,16 +720,17 @@ describe('LeadsPage', () => {
 
       const searchField = fixture.debugElement.query(By.directive(UiTextField))
         ?.componentInstance as UiTextField;
+      expect(searchField.placeholder()).toBe('Код, телефон, ПІБ або дата');
 
-      searchField.value.set('a');
+      searchField.value.set('K');
       fixture.detectChanges();
       await vi.advanceTimersByTimeAsync(100);
 
-      searchField.value.set('ab');
+      searchField.value.set('K0');
       fixture.detectChanges();
       await vi.advanceTimersByTimeAsync(100);
 
-      searchField.value.set('abc');
+      searchField.value.set('K0283');
       fixture.detectChanges();
       await vi.advanceTimersByTimeAsync(100);
 
@@ -741,7 +742,7 @@ describe('LeadsPage', () => {
       await fixture.whenStable();
 
       expect(list).toHaveBeenCalledTimes(1);
-      expect(list).toHaveBeenCalledWith(expect.objectContaining({ search: 'abc' }));
+      expect(list).toHaveBeenCalledWith(expect.objectContaining({ search: 'K0283' }));
     } finally {
       vi.useRealTimers();
     }

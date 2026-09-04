@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.14.0' as const;
+export const API_CONTRACT_VERSION = '2.16.0' as const;
 
 export type MoneyCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
 
@@ -144,7 +144,7 @@ export interface AdminUserRow {
 }
 
 export type AppointmentStatus = 'scheduled' | 'visited' | 'no_show' | 'canceled' | 'rescheduled';
-export type AppointmentKind = 'showroom' | 'measurement';
+export type AppointmentKind = 'showroom' | 'measurement' | 'office_work';
 export type AppointmentWarning = 'manager_overlap' | 'outside_working_hours';
 
 export interface Appointment {

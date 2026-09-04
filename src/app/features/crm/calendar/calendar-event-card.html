@@ -1,0 +1,75 @@
+<span class="visually-hidden">{{ accessibleSummary() }}</span>
+
+<div
+  class="event-card"
+  aria-hidden="true"
+  [class.is-month]="isMonth()"
+  [class.is-compact]="isCompact()"
+  [class.kind-showroom]="event().kind === 'showroom'"
+  [class.kind-measurement]="event().kind === 'measurement'"
+  [class.kind-office-work]="event().kind === 'office_work'"
+  [class.kind-callback]="event().kind === 'callback'"
+  [class.kind-thinking]="event().kind === 'thinking'"
+  [class.kind-postponed]="event().kind === 'postponed'"
+  [class.kind-comment]="event().kind === 'comment'"
+  [class.kind-task]="event().kind === 'task'"
+>
+  @if (isMonth()) {
+    <div class="month-main">
+      <app-ui-icon class="event-icon" [name]="eventIcon()" [size]="14" />
+      @if (event().time; as time) {
+        <time>{{ time }}</time>
+      }
+      <app-lead-reference [referenceId]="event().lead.referenceId" />
+      <strong>{{ clientName() }}</strong>
+      @if (showTrailingState()) {
+        <app-ui-icon
+          class="event-state"
+          [class]="statusClass()"
+          [name]="trailingIcon()"
+          [size]="14"
+        />
+      }
+    </div>
+    <div class="event-footer">{{ event().managerName }}</div>
+  } @else {
+    <div class="event-top">
+      <span class="event-heading">
+        @if (isTask()) {
+          <app-ui-icon class="heading-event-icon" [name]="eventIcon()" [size]="16" />
+        }
+        @if (event().time; as time) {
+          <time>{{ time }}</time>
+          <span aria-hidden="true">•</span>
+        }
+        <strong>{{ eventLabel() }}</strong>
+      </span>
+      @if (showTrailingState()) {
+        <span class="event-state" [class]="statusClass()">
+          <app-ui-icon [name]="trailingIcon()" [size]="16" />
+          @if (showStatusText()) {
+            <span>{{ trailingLabel() }}</span>
+          }
+        </span>
+      }
+    </div>
+
+    <div class="event-client">
+      <app-ui-icon class="client-icon" name="person" [size]="21" />
+      <span class="client-copy">
+        <app-lead-reference [referenceId]="event().lead.referenceId" />
+        <strong>{{ clientName() }}</strong>
+      </span>
+    </div>
+
+    @if (showFooter()) {
+      <div class="event-footer">
+        <span>{{ event().managerName }}</span>
+        @if (event().comment; as comment) {
+          <span aria-hidden="true">·</span>
+          <span class="event-comment appointment-comment" [title]="comment">{{ comment }}</span>
+        }
+      </div>
+    }
+  }
+</div>

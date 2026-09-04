@@ -134,6 +134,21 @@ const measurementAppointment: Appointment = {
   version: 2,
 };
 
+const officeWorkAppointment: Appointment = {
+  ...appointment,
+  id: 'appointment-office-work',
+  lead: {
+    id: 'lead-office-work',
+    referenceId: 'k0007',
+    name: 'Офісна робота',
+    phone: '+380501112299',
+  },
+  kind: 'office_work',
+  startsAt: '2026-07-23T14:00:00.000Z',
+  endsAt: '2026-07-23T17:00:00.000Z',
+  comment: 'Підготувати проєкт',
+};
+
 const rescheduledAppointment: Appointment = {
   ...appointment,
   id: 'appointment-rescheduled',
@@ -288,6 +303,16 @@ const thinkingLead: Lead = {
   assignedToId: 'manager-1',
   clientStatus: 'thinking',
   callbackDueAt: '2026-07-23T10:00:00.000Z',
+};
+
+const postponedLead: Lead = {
+  ...baseLead,
+  id: 'lead-postponed',
+  referenceId: 'k0102',
+  name: 'Postponed Клієнт',
+  assignedToId: 'manager-1',
+  clientStatus: 'postponed',
+  callbackDueAt: '2026-07-23T11:00:00.000Z',
 };
 
 /**
@@ -474,10 +499,11 @@ describe('CalendarPage', () => {
     expect(element.querySelector('.agenda-card .appointment-comment')?.textContent).toContain(
       'Підготувати документи для зустрічі',
     );
-    expect(element.textContent).not.toContain('Старий запис');
+    expect(element.textContent).toContain('Старий запис');
     expect(element.querySelector('.week-card.is-visited')).not.toBeNull();
     expect(element.querySelector('.week-card.is-no-show')).not.toBeNull();
     expect(element.querySelector('.week-card.is-canceled')).not.toBeNull();
+    expect(element.querySelector('.week-card.is-rescheduled')).not.toBeNull();
 
     const dayButton = Array.from(
       element.querySelectorAll<HTMLButtonElement>('.view-switch button'),
@@ -504,9 +530,9 @@ describe('CalendarPage', () => {
     expect(measurementCard).not.toBeNull();
     expect(measurementCard?.textContent).toContain('Тарас Мельник');
     expect(element.querySelectorAll('.week-card.is-measurement')).toHaveLength(1);
-    expect(measurementCard?.querySelector('[aria-label]')?.getAttribute('aria-label')).toContain(
-      'Замір у клієнта',
-    );
+    expect(
+      measurementCard?.querySelector('app-calendar-event-card')?.getAttribute('title'),
+    ).toContain('Замір у клієнта');
     expect(element.querySelector('.kind-legend')?.textContent).toContain('Замір у клієнта');
 
     const measurementButton = Array.from(
@@ -516,6 +542,99 @@ describe('CalendarPage', () => {
     await fixture.whenStable();
 
     expect(open.mock.calls[0]?.[1]?.data).toEqual(expect.objectContaining({ kind: 'measurement' }));
+  });
+
+  it('renders office work in every calendar layout and excludes it from visit filters', async () => {
+    const { fixture } = await render({}, [manager], [], {}, [officeWorkAppointment]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.week-card.is-office-work')).not.toBeNull();
+    expect(element.querySelector('[data-event-kind="office_work"]')?.textContent).toContain(
+      'Робота в офісі',
+    );
+    expect(
+      element.querySelector('[data-event-kind="office_work"]')?.getAttribute('title'),
+    ).toContain('Підготувати проєкт');
+    expect(element.querySelector('.agenda-card.is-office-work')).not.toBeNull();
+
+    fixture.componentInstance['view'].set('month');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.querySelector('.month-card.is-office-work')).not.toBeNull();
+
+    fixture.componentInstance['reminderKindFilter'].set('visit');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    expect(element.querySelector('.appointment-card.is-office-work')).toBeNull();
+    expect(fixture.componentInstance['filteredReminderCount']()).toBe(0);
+  });
+
+  it('opens the three-kind creation menu from the week footer', async () => {
+    const { fixture, open } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const weekColumns = element.querySelector<HTMLElement>('.week-columns')!;
+    const addRow = element.querySelector<HTMLElement>('.week-add-row')!;
+    const addButtons = addRow.querySelectorAll<HTMLButtonElement>('.create-trigger');
+
+    expect(weekColumns.nextElementSibling).toBe(addRow);
+    expect(addButtons).toHaveLength(6);
+    expect(weekColumns.querySelector('.create-trigger')).toBeNull();
+
+    addButtons[2]!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const menuItems = addRow.querySelectorAll<HTMLButtonElement>(
+      '.create-panel--visible .create-item',
+    );
+    expect(menuItems).toHaveLength(3);
+    expect(Array.from(menuItems).map((item) => item.textContent?.trim())).toEqual([
+      'Зустріч у салоні',
+      'Замір у клієнта',
+      'Робота в офісі',
+    ]);
+
+    menuItems[2]!.click();
+    await fixture.whenStable();
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          date: '2026-07-22',
+          time: '10:00',
+          kind: 'office_work',
+        }),
+      }),
+    );
+  });
+
+  it('opens the creation menu from the keyboard and restores trigger focus on Escape', async () => {
+    const { fixture } = await render();
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector<HTMLButtonElement>('.week-add-row .create-trigger')!;
+
+    trigger.focus();
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const panel = element.querySelector<HTMLElement>('.create-panel--visible');
+    expect(panel).not.toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(element.querySelector('.create-panel--visible')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
   });
 
   it('shows only active managers of the selected office in day view', async () => {
@@ -544,7 +663,7 @@ describe('CalendarPage', () => {
   });
 
   it('loads the padded month range and opens day view from a month day number', async () => {
-    const { fixture, list } = await render();
+    const { fixture, list, open } = await render();
     fixture.componentInstance['selectedDate'].set('2026-07-23');
     fixture.detectChanges();
     await fixture.whenStable();
@@ -568,7 +687,7 @@ describe('CalendarPage', () => {
       }),
     );
     expect(element.querySelector('.month-grid')).not.toBeNull();
-    expect(element.querySelector('.month-card app-lead-reference')?.textContent).toContain('k0001');
+    expect(element.querySelector('.month-card app-lead-reference')?.textContent).toContain('k0099');
     expect(element.querySelector('.week-grid')).toBeNull();
     expect(element.textContent).toContain('Анна Коваль');
     expect(element.querySelector('.month-card.is-visited')).not.toBeNull();
@@ -576,6 +695,23 @@ describe('CalendarPage', () => {
     const dayNumber = Array.from(
       element.querySelectorAll<HTMLButtonElement>('.month-day-number'),
     ).find((button) => button.textContent?.trim() === '23' && !button.closest('.is-outside'))!;
+    const dayCell = dayNumber.closest<HTMLElement>('.month-day')!;
+    dayCell.querySelector<HTMLButtonElement>('.create-trigger--month')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const officeWorkItem = dayCell.querySelector<HTMLButtonElement>(
+      '.create-panel--visible .create-item[value="office_work"]',
+    );
+    expect(officeWorkItem).not.toBeNull();
+    officeWorkItem!.click();
+    await fixture.whenStable();
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: expect.objectContaining({ date: '2026-07-23', kind: 'office_work' }),
+      }),
+    );
+
     dayNumber.click();
     fixture.detectChanges();
     await fixture.whenStable();
@@ -584,6 +720,89 @@ describe('CalendarPage', () => {
     expect(element.querySelector('.day-grid')).not.toBeNull();
     expect(fixture.componentInstance['selectedDate']()).toBe('2026-07-23');
     expect(fixture.componentInstance['view']()).toBe('day');
+  });
+
+  it('shows every month item in reminder-first order without an overflow counter', async () => {
+    const sameDayComment: Lead = {
+      ...commentLead,
+      commentReminderDueAt: '2026-07-23T12:00:00.000Z',
+    };
+    const sameDayTask: Lead = {
+      ...baseLead,
+      id: 'lead-task',
+      referenceId: 'k0103',
+      name: 'Task Клієнт',
+      commentReminderDueAt: '2026-07-23T13:00:00.000Z',
+      commentReminderAssignedTo: manager.id,
+    };
+    const { fixture } = await render(
+      {},
+      [manager],
+      [callbackLead, thinkingLead, postponedLead, sameDayComment, sameDayTask],
+      {},
+      [appointment],
+    );
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('month');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const entries = fixture.componentInstance['monthEntries']('2026-07-23');
+    expect(entries.map((entry) => entry.card.kind)).toEqual([
+      'callback',
+      'thinking',
+      'postponed',
+      'comment',
+      'task',
+      'showroom',
+    ]);
+
+    const day = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.month-day'),
+    ).find(
+      (cell) =>
+        !cell.classList.contains('is-outside') &&
+        cell.querySelector('.month-day-number')?.textContent?.trim() === '23',
+    )!;
+    expect(day.querySelectorAll('.month-card')).toHaveLength(6);
+    expect(day.querySelector('.month-more')).toBeNull();
+  });
+
+  it('includes reminder-only dates in the mobile month agenda', async () => {
+    const { fixture } = await render({}, [manager], [commentLead], {}, []);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('month');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance['agendaGroups']().map((group) => group.date)).toContain(
+      '2026-07-24',
+    );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.mobile-agenda')?.textContent,
+    ).toContain('Comment Клієнт');
+  });
+
+  it('uses a two-row compact card for a 15-minute appointment in day view', async () => {
+    const shortAppointment: Appointment = {
+      ...appointment,
+      id: 'appointment-short',
+      endsAt: '2026-07-23T07:15:00.000Z',
+    };
+    const { fixture } = await render({}, [manager], [], {}, [shortAppointment]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const card = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>(
+      '.appointment-card',
+    )!;
+    expect(card.style.height).toBe('48px');
+    expect(card.querySelector('.event-card.is-compact')).not.toBeNull();
+    expect(card.querySelector('.event-footer')).toBeNull();
   });
 
   it('opens the drawer from a week appointment and has no basic AXE violations', async () => {
@@ -659,6 +878,24 @@ describe('CalendarPage', () => {
       'Comment Клієнт',
     );
     expect(banner24?.textContent).not.toContain('Callback Клієнт');
+  });
+
+  it('falls back to unassigned when a reminder has no assignee or lead manager', async () => {
+    const unassignedCallback: Lead = {
+      ...callbackLead,
+      id: 'lead-unassigned-callback',
+      assignedToId: null,
+      name: 'Без менеджера',
+    };
+    const { fixture } = await render({}, [manager], [unassignedCallback]);
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
+    fixture.componentInstance['view'].set('day');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const reminder = (fixture.nativeElement as HTMLElement).querySelector('.reminder-chip');
+    expect(reminder?.querySelector('.event-footer')?.textContent).toContain('Не призначено');
   });
 
   it('puts office_member tasks in the day column and keeps other assignees in the banner', async () => {
@@ -861,12 +1098,13 @@ describe('CalendarPage', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 
-    // No kind=visit filter active — every status (incl. visited/no_show/canceled)
+    // No kind=visit filter active — every status (incl. visited/no_show/canceled/rescheduled)
     // must still render, unlike the filtered case above.
-    expect(element.querySelectorAll('.appointment-card')).toHaveLength(5);
+    expect(element.querySelectorAll('.appointment-card')).toHaveLength(6);
     expect(element.textContent).toContain('Ірина Бондар');
     expect(element.textContent).toContain('Максим Левченко');
     expect(element.textContent).toContain('Олена Савчук');
+    expect(element.textContent).toContain('Старий запис');
   });
 
   it('an overdue deep link replaces the grid with a flat list, one row per reminder even for the same lead', async () => {
@@ -918,6 +1156,24 @@ describe('CalendarPage', () => {
 
     expect(element.querySelector('.overdue-row')).toBeNull();
     expect(element.querySelector('.overdue-empty')).not.toBeNull();
+  });
+
+  it('excludes office work from overdue reminder rows', async () => {
+    const overdueOfficeWork: Appointment = {
+      ...officeWorkAppointment,
+      startsAt: '2026-07-20T07:00:00.000Z',
+      endsAt: '2026-07-20T08:00:00.000Z',
+    };
+    const officeWorkLead: Lead = {
+      ...baseLead,
+      id: overdueOfficeWork.lead.id,
+      name: overdueOfficeWork.lead.name,
+    };
+    const { fixture } = await render({ due: 'overdue' }, [manager], [officeWorkLead], {}, [
+      overdueOfficeWork,
+    ]);
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.overdue-row')).toBeNull();
   });
 
   it('never requests an appointments window wider than 63 days, even across a 365-day overdue lookback', async () => {
