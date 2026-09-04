@@ -91,24 +91,36 @@
         class="financial-summary"
         [attr.aria-label]="'reports.funnelPage.moneyTitle' | translate"
       >
-        <article class="money-card money-card--potential">
-          <p>{{ 'reports.funnelPage.potential' | translate }}</p>
-          <strong>{{ formatMoney(report.potential.total, report.potential.currency) }}</strong>
-          <span>{{ 'reports.funnelPage.potentialHint' | translate }}</span>
-        </article>
-        <article class="money-card money-card--contracts">
-          <p>{{ 'reports.funnelPage.contracts' | translate }}</p>
-          @if (report.contractTotals.length) {
-            <div class="contract-totals">
-              @for (total of report.contractTotals; track total.currency) {
-                <strong>{{ formatMoney(total.total, total.currency) }}</strong>
-              }
+        @for (comparison of report.financialComparisons; track comparison.officeCode) {
+          <article class="financial-comparison">
+            <header>
+              <span aria-hidden="true">{{ comparison.officeCode === 'kyiv' ? 'KY' : 'WA' }}</span>
+              <h2>{{ comparisonTitle(comparison) }}</h2>
+            </header>
+            <div class="comparison-grid">
+              <div class="money-metric money-metric--estimated">
+                <p>{{ 'reports.funnelPage.estimatedTotal' | translate }}</p>
+                <strong>{{ formatMoney(comparison.estimatedTotal, comparison.currency) }}</strong>
+              </div>
+              <div class="money-metric money-metric--actual">
+                <p>{{ 'reports.funnelPage.actualTotal' | translate }}</p>
+                <strong>{{ formatMoney(comparison.actualTotal, comparison.currency) }}</strong>
+              </div>
+              <div
+                class="money-metric money-metric--difference"
+                [class.is-positive]="comparison.difference > 0"
+                [class.is-negative]="comparison.difference < 0"
+              >
+                <p>{{ 'reports.funnelPage.difference' | translate }}</p>
+                <strong>{{ formatMoney(comparison.difference, comparison.currency) }}</strong>
+              </div>
+              <div class="money-metric money-metric--realization">
+                <p>{{ 'reports.funnelPage.realization' | translate }}</p>
+                <strong>{{ formatPercent(comparison.realizationPercent) }}</strong>
+              </div>
             </div>
-          } @else {
-            <strong>{{ 'reports.funnelPage.noContracts' | translate }}</strong>
-          }
-          <span>{{ 'reports.funnelPage.contractsHint' | translate }}</span>
-        </article>
+          </article>
+        }
       </section>
 
       <section class="funnel-report" aria-labelledby="funnel-report-title">

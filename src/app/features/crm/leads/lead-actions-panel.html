@@ -23,7 +23,6 @@
     >
       <app-ui-icon name="phone_in_talk" [size]="20" [filled]="true" />
       {{ i18n.t('leadDetail.call') }}
-      <span class="lead-action__arrow" aria-hidden="true">↗</span>
     </app-ui-button>
     <app-ui-button
       class="lead-action lead-action--status"
@@ -33,7 +32,7 @@
       [disabled]="pending()"
       (pressed)="openClientStatusMenu()"
     >
-      <app-ui-icon name="view_kanban" [size]="19" />
+      <app-ui-icon name="person" [size]="19" />
       {{ i18n.t('leadDetail.clientStatus') }}
     </app-ui-button>
   </section>

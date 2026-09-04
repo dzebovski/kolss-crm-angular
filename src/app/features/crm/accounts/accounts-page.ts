@@ -1,5 +1,5 @@
 import { Component, computed, inject, resource, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { SessionService } from '@core/session/session.service';
 import { I18nService } from '@core/i18n/i18n.service';
@@ -28,7 +28,17 @@ import { UiTextField } from '@ui/form/ui-text-field';
 
 @Component({
   selector: 'app-accounts-page',
-  imports: [UiAlert, UiBadge, UiButton, UiIcon, UiSelect, UiTextField, UiUser, TranslatePipe],
+  imports: [
+    RouterLink,
+    UiAlert,
+    UiBadge,
+    UiButton,
+    UiIcon,
+    UiSelect,
+    UiTextField,
+    UiUser,
+    TranslatePipe,
+  ],
   templateUrl: './accounts-page.html',
   styleUrl: './accounts-page.scss',
 })
@@ -239,6 +249,6 @@ export class AccountsPage {
   }
 
   protected async openEmployee(employee: CrmEmployee): Promise<void> {
-    await this.router.navigate(['/crm/accounts', employee.id]);
+    await this.router.navigate(['/crm/accounts/users', employee.id]);
   }
 }

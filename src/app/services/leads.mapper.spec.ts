@@ -59,6 +59,16 @@ describe('mapCreateLeadSource', () => {
   });
 });
 
+describe('mapLeadListRow estimated budget currency', () => {
+  it('maps a stored currency and falls back to EUR for legacy rows', () => {
+    expect(
+      mapLeadListRow({ ...baseRow, estimated_budget: 12_000, estimated_budget_currency: 'PLN' })
+        .estimatedBudgetCurrency,
+    ).toBe('PLN');
+    expect(mapLeadListRow(baseRow).estimatedBudgetCurrency).toBe('EUR');
+  });
+});
+
 describe('mapLeadListRow first_contact_attempt', () => {
   it('maps embedded attempt to firstCall', () => {
     const lead = mapLeadListRow({

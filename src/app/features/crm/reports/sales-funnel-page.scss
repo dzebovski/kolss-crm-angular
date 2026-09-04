@@ -136,68 +136,89 @@ h1 {
 
 .financial-summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ui-space-4);
 }
 
-.money-card {
-  min-height: 10rem;
-  padding: var(--ui-space-5);
+.financial-comparison {
   border: 1px solid var(--ui-border);
   border-radius: var(--ui-radius-lg);
   background: var(--ui-surface-raised);
   box-shadow: var(--ui-shadow-1);
-  display: grid;
-  align-content: end;
-  position: relative;
   overflow: hidden;
 }
 
-.money-card::before {
-  content: '';
-  width: 8rem;
-  height: 8rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--ui-action) 9%, transparent);
-  position: absolute;
-  top: -4rem;
-  right: -2rem;
+.financial-comparison > header {
+  padding: var(--ui-space-4) var(--ui-space-5);
+  border-bottom: 1px solid var(--ui-border);
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
 }
 
-.money-card--contracts::before {
-  background: color-mix(in srgb, var(--ui-success) 11%, transparent);
+.financial-comparison > header > span {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  background: var(--ui-text);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
 }
 
-.money-card p,
-.money-card span {
+.financial-comparison h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.money-metric {
+  min-height: 9rem;
+  padding: var(--ui-space-5);
+  display: grid;
+  align-content: end;
+  gap: var(--ui-space-2);
+}
+
+.money-metric + .money-metric {
+  border-left: 1px solid var(--ui-border);
+}
+
+.money-metric p {
   margin: 0;
   color: var(--ui-text-muted);
-}
-
-.money-card p {
-  margin-bottom: var(--ui-space-2);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.money-card > strong,
-.contract-totals strong {
+.money-metric strong {
   font-family: var(--ui-font-display), sans-serif;
-  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  font-size: clamp(1.25rem, 2.4vw, 1.85rem);
   line-height: 1.1;
 }
 
-.money-card span {
-  margin-top: var(--ui-space-2);
-  font-size: 0.75rem;
+.money-metric--estimated {
+  background: color-mix(in srgb, var(--ui-action) 4%, transparent);
 }
 
-.contract-totals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ui-space-3);
+.money-metric--actual {
+  background: color-mix(in srgb, var(--ui-success) 5%, transparent);
+}
+
+.money-metric--difference.is-positive strong {
+  color: var(--ui-success);
+}
+
+.money-metric--difference.is-negative strong {
+  color: var(--ui-danger);
 }
 
 .funnel-report {
@@ -453,10 +474,21 @@ h1 {
   .funnel-branch {
     min-height: 0;
   }
+
+  .comparison-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .money-metric:nth-child(3) {
+    border-left: 0;
+  }
+
+  .money-metric:nth-child(n + 3) {
+    border-top: 1px solid var(--ui-border);
+  }
 }
 
 @media (max-width: 44rem) {
-  .financial-summary,
   .call-outcomes,
   .custom-period {
     grid-template-columns: minmax(0, 1fr);
@@ -474,6 +506,16 @@ h1 {
 
   .custom-period app-ui-button {
     justify-self: start;
+  }
+
+  .comparison-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .money-metric + .money-metric,
+  .money-metric:nth-child(3) {
+    border-top: 1px solid var(--ui-border);
+    border-left: 0;
   }
 }
 

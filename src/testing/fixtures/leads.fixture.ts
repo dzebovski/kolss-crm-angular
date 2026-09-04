@@ -132,6 +132,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Київ, Печерськ',
     productInterest: 'Кухня під замовлення',
     estimatedBudget: 18000,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: null,
     firstManagerId: null,
     firstCall: null,
@@ -177,6 +178,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Warszawa, Mokotow',
     productInterest: 'Гардеробна',
     estimatedBudget: 12500,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-warsaw-1',
     firstManagerId: 'emp-warsaw-1',
     firstCall: null,
@@ -231,6 +233,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Бровари',
     productInterest: 'Шафа-купе',
     estimatedBudget: 9200,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-kyiv-1',
     firstManagerId: 'emp-kyiv-1',
     firstCall: {
@@ -289,6 +292,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Warszawa, Wola',
     productInterest: 'Кухня + острів',
     estimatedBudget: 24000,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-warsaw-2',
     firstManagerId: 'emp-warsaw-2',
     firstCall: {
@@ -358,6 +362,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Ірпінь',
     productInterest: 'Гардеробна кімната',
     estimatedBudget: 15000,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-kyiv-2',
     firstManagerId: 'emp-kyiv-2',
     firstCall: {
@@ -420,6 +425,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Warszawa, Srodmiescie',
     productInterest: 'Вбудовані шафи',
     estimatedBudget: 17500,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-warsaw-3',
     firstManagerId: 'emp-warsaw-3',
     firstCall: {
@@ -490,6 +496,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Київ, Осокорки',
     productInterest: 'Кухня преміум',
     estimatedBudget: 31000,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-kyiv-1',
     firstManagerId: 'emp-kyiv-1',
     firstCall: {
@@ -566,6 +573,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Warszawa, Praga',
     productInterest: 'Недорога кухня',
     estimatedBudget: 4500,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-warsaw-1',
     firstManagerId: 'emp-warsaw-1',
     firstCall: {
@@ -629,6 +637,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Львів',
     productInterest: 'Кухня',
     estimatedBudget: null,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: 'emp-kyiv-2',
     firstManagerId: 'emp-kyiv-2',
     firstCall: null,
@@ -688,6 +697,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     cityRegion: 'Warszawa, Wilanow',
     productInterest: 'Built-in storage',
     estimatedBudget: 14000,
+    estimatedBudgetCurrency: 'EUR',
     assignedToId: null,
     firstManagerId: null,
     firstCall: null,

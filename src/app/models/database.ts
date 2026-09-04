@@ -76,6 +76,7 @@ export interface Lead {
   loss_reason: string | null;
   converted_project_id: string | null;
   estimated_budget: number | null;
+  estimated_budget_currency?: 'UAH' | 'USD' | 'EUR' | 'PLN';
   our_quote: number | null;
   callback_due_at: string | null;
   source_channel: string | null;

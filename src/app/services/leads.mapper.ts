@@ -31,7 +31,7 @@ export const LEAD_LIST_SELECT = `
   id, name, phone, email, lead_status, workflow_status,
   office_id, assigned_to, source_created_at, created_at, updated_at,
   last_comment, callback_due_at, source_system, source_channel, source_note,
-  product_interest, estimated_budget, city_region, order_comment,
+  product_interest, estimated_budget, estimated_budget_currency, city_region, order_comment,
   offices (id, code, name_uk, name_pl),
   profiles:assigned_to (id, display_name)
 `;
@@ -573,6 +573,9 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     cityRegion: row.city_region ?? '',
     productInterest: row.product_interest ?? '',
     estimatedBudget: row.estimated_budget,
+    estimatedBudgetCurrency: isContractCurrency(row.estimated_budget_currency)
+      ? row.estimated_budget_currency
+      : 'EUR',
     assignedToId: row.assigned_to,
     firstManagerId,
     firstCall,

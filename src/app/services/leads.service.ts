@@ -3,7 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
 import type { LeadEventTranslationResponse } from '@core/api/generated/kolss-api.types';
 import { AuthService } from '@core/auth/auth.service';
-import type { LeadMarker, LeadMarkerKind, LeadSource, Lead } from '@domain/lead.types';
+import type {
+  ContractCurrency,
+  LeadMarker,
+  LeadMarkerKind,
+  LeadSource,
+  Lead,
+} from '@domain/lead.types';
 import { mapLeadDetail, mapLeadListRow, mapLeadMarker, type LeadListRow } from './leads.mapper';
 
 export interface LeadsListFilters {
@@ -40,6 +46,7 @@ export interface LeadDetailsUpdate {
   readonly cityRegion: string;
   readonly productInterest: string;
   readonly estimatedBudget: number | null;
+  readonly estimatedBudgetCurrency: ContractCurrency;
   readonly initialMessage: string;
   readonly assignedToId: string | null;
 }
@@ -57,6 +64,7 @@ export interface CreateLeadPayload {
   readonly cityRegion: string;
   readonly productInterest: string;
   readonly estimatedBudget: number | null;
+  readonly estimatedBudgetCurrency: ContractCurrency;
   readonly initialMessage: string;
   readonly sourceCreatedAtLocal: string;
 }

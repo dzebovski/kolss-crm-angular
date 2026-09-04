@@ -50,7 +50,10 @@ describe('EditLeadDialog', () => {
     expect(inputByLabel(element, 'Email')?.value).toBe(lead.email);
     expect(inputByLabel(element, 'Місто / район')?.value).toBe(lead.cityRegion);
     expect(inputByLabel(element, 'Продукт')?.value).toBe(lead.productInterest);
-    expect(inputByLabel(element, 'Бюджет, EUR')?.value).toBe(String(lead.estimatedBudget));
+    expect(inputByLabel(element, 'Орієнтовний бюджет проєкту')?.value).toBe(
+      String(lead.estimatedBudget),
+    );
+    expect(element.textContent).toContain(lead.estimatedBudgetCurrency);
     expect(element.querySelector('textarea')?.value).toBe(lead.initialMessage);
     expect(element.textContent).not.toContain('Менеджер');
   });
@@ -68,6 +71,7 @@ describe('EditLeadDialog', () => {
       cityRegion: '  Warszawa, Centrum  ',
       productInterest: '  Kuchnia  ',
       budget: '25 500,50',
+      budgetCurrency: 'PLN',
       initialMessage: '  Proszę o kontakt  ',
     }));
     await fixture.componentInstance['save']();
@@ -82,6 +86,7 @@ describe('EditLeadDialog', () => {
         cityRegion: 'Warszawa, Centrum',
         productInterest: 'Kuchnia',
         estimatedBudget: 25500.5,
+        estimatedBudgetCurrency: 'PLN',
         initialMessage: 'Proszę o kontakt',
         assignedToId: lead.assignedToId,
       },

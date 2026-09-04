@@ -7,7 +7,9 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.13.0' as const;
+export const API_CONTRACT_VERSION = '2.14.0' as const;
+
+export type MoneyCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
 
 export type LeadReportCohort = 'activity' | 'calendar';
 
@@ -53,9 +55,33 @@ export interface SalesFunnelReportResponse {
     readonly total: number;
   };
   readonly contractTotals: readonly {
-    readonly currency: 'UAH' | 'USD' | 'EUR' | 'PLN';
+    readonly currency: MoneyCurrency;
     readonly total: number;
   }[];
+  readonly financialComparisons: readonly SalesFunnelFinancialComparison[];
+}
+
+export interface SalesFunnelFinancialComparison {
+  readonly officeCode: 'kyiv' | 'warsaw';
+  readonly currency: 'UAH' | 'PLN';
+  readonly estimatedTotal: number;
+  readonly actualTotal: number;
+  readonly difference: number;
+  readonly realizationPercent: number | null;
+}
+
+export interface CurrencyRateSet {
+  readonly version: number;
+  readonly effectiveFrom: string;
+  readonly plnPerEur: number;
+  readonly uahPerEur: number;
+  readonly uahPerUsd: number;
+}
+
+export interface UpdateCurrencyRatesRequest {
+  readonly plnPerEur: number;
+  readonly uahPerEur: number;
+  readonly uahPerUsd: number;
 }
 
 export interface ApiErrorResponse {

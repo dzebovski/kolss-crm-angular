@@ -21,6 +21,66 @@ describe('I18nService', () => {
     expect(i18n.t('nav.leads')).toBe('Leady');
   });
 
+  it('translates lead action labels and the comment-or-task explanation', async () => {
+    const locale = signal<LocaleCode>('en');
+    TestBed.configureTestingModule({
+      providers: [I18nService, { provide: SessionService, useValue: { locale } }],
+    });
+    const i18n = TestBed.inject(I18nService);
+
+    const expected = {
+      en: {
+        comment: 'Add comment or task',
+        call: 'Call result',
+        status: 'Set client status',
+        description:
+          'A comment or task does not change the current statuses. A task will appear in Calendar with its assigned manager, date, and time.',
+      },
+      uk: {
+        comment: 'Додати коментар або завдання',
+        call: 'Результат дзвінка',
+        status: 'Встановити статус клієнта',
+        description:
+          'Коментар або завдання не змінює поточні статуси. Завдання з’явиться в Календарі з призначеним менеджером, датою та часом.',
+      },
+      pl: {
+        comment: 'Dodaj komentarz lub zadanie',
+        call: 'Wynik połączenia',
+        status: 'Ustaw status klienta',
+        description:
+          'Komentarz lub zadanie nie zmienia bieżących statusów. Zadanie pojawi się w Kalendarzu wraz z przypisanym menedżerem, datą i godziną.',
+      },
+    } as const;
+
+    for (const code of ['en', 'uk', 'pl'] as const) {
+      locale.set(code);
+      await i18n.ensureLoaded(code);
+      expect(i18n.t('leadDetail.addComment')).toBe(expected[code].comment);
+      expect(i18n.t('leadDetail.call')).toBe(expected[code].call);
+      expect(i18n.t('leadDetail.clientStatus')).toBe(expected[code].status);
+      expect(i18n.t('leadDetail.commentDescription')).toBe(expected[code].description);
+    }
+  });
+
+  it('translates the estimated project budget label in every locale', async () => {
+    const locale = signal<LocaleCode>('en');
+    TestBed.configureTestingModule({
+      providers: [I18nService, { provide: SessionService, useValue: { locale } }],
+    });
+    const i18n = TestBed.inject(I18nService);
+    const labels = {
+      en: 'Estimated project budget',
+      uk: 'Орієнтовний бюджет проєкту',
+      pl: 'Szacowany budżet projektu',
+    } as const;
+
+    for (const code of ['en', 'uk', 'pl'] as const) {
+      locale.set(code);
+      await i18n.ensureLoaded(code);
+      expect(i18n.t('common.estimatedProjectBudget')).toBe(labels[code]);
+    }
+  });
+
   describe('closeReasonLabel', () => {
     const dbReasons = [
       { code: 'expensive', label_uk: 'Дорого з БД', label_pl: 'Za drogo z BD' },

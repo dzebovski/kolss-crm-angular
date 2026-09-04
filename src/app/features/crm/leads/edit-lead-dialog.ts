@@ -4,10 +4,11 @@ import { form, FormField, required, submit, validate } from '@angular/forms/sign
 import type { LeadFieldKey } from '@core/i18n/field-keys';
 import { I18nService } from '@core/i18n/i18n.service';
 import { normalizePhoneForOffice } from '@core/phone/phone';
-import type { Lead } from '@domain/lead.types';
+import type { ContractCurrency, Lead } from '@domain/lead.types';
 import { type LeadDetailsUpdate, LeadsService } from '@services/leads.service';
 import { UiButton } from '@ui/button/ui-button';
 import { UiModal } from '@ui/dialog/ui-modal';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { UiTextarea } from '@ui/form/ui-textarea';
 
@@ -18,12 +19,13 @@ interface EditLeadFormModel {
   readonly cityRegion: string;
   readonly productInterest: string;
   readonly budget: string;
+  readonly budgetCurrency: ContractCurrency;
   readonly initialMessage: string;
 }
 
 @Component({
   selector: 'app-edit-lead-dialog',
-  imports: [FormField, UiButton, UiModal, UiTextField, UiTextarea],
+  imports: [FormField, UiButton, UiModal, UiSelect, UiTextField, UiTextarea],
   template: `
     <app-ui-modal [wide]="true" labelledBy="edit-lead-dialog-title" (dismissed)="dismiss()">
       <div class="dialog-copy">
@@ -70,11 +72,18 @@ interface EditLeadFormModel {
               [formField]="editForm.productInterest"
               [label]="i18n.t('common.product')"
             />
-            <app-ui-text-field
-              [formField]="editForm.budget"
-              [label]="i18n.t('common.budgetEur')"
-              [error]="fieldError(editForm.budget)"
-            />
+            <div class="budget-fields">
+              <app-ui-text-field
+                [formField]="editForm.budget"
+                [label]="i18n.t('common.estimatedProjectBudget')"
+                [error]="fieldError(editForm.budget)"
+              />
+              <app-ui-select
+                [formField]="editForm.budgetCurrency"
+                [label]="i18n.t('common.currency')"
+                [options]="currencyOptions"
+              />
+            </div>
           </div>
           <app-ui-textarea
             [formField]="editForm.initialMessage"
@@ -152,9 +161,20 @@ interface EditLeadFormModel {
       gap: var(--ui-space-2);
     }
 
+    .budget-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 7.5rem;
+      gap: var(--ui-space-3);
+      align-items: start;
+    }
+
     @media (max-width: 48rem) {
       .form-grid {
         grid-template-columns: minmax(0, 1fr);
+      }
+
+      .budget-fields {
+        grid-template-columns: minmax(0, 1fr) 6.75rem;
       }
     }
   `,
@@ -168,6 +188,9 @@ export class EditLeadDialog {
   readonly saved = output<void>();
 
   protected readonly error = signal('');
+  protected readonly currencyOptions: readonly UiSelectOption[] = ['UAH', 'USD', 'EUR', 'PLN'].map(
+    (value) => ({ value, label: value }),
+  );
   protected readonly model = linkedSignal<EditLeadFormModel>(() => this.initialModel(this.lead()));
   protected readonly editForm = form(this.model, (path) => {
     required(path.name, { message: this.i18n.t('lead.nameRequired') });
@@ -225,6 +248,7 @@ export class EditLeadDialog {
         cityRegion: value.cityRegion.trim(),
         productInterest: value.productInterest.trim(),
         estimatedBudget: this.parseOptionalMoney(value.budget),
+        estimatedBudgetCurrency: value.budgetCurrency,
         initialMessage: value.initialMessage.trim(),
         assignedToId: lead.assignedToId ?? null,
       };
@@ -258,6 +282,7 @@ export class EditLeadDialog {
       cityRegion: lead.cityRegion,
       productInterest: lead.productInterest,
       budget: lead.estimatedBudget == null ? '' : String(lead.estimatedBudget),
+      budgetCurrency: lead.estimatedBudgetCurrency,
       initialMessage: lead.initialMessage,
     };
   }
@@ -269,7 +294,12 @@ export class EditLeadDialog {
     if ((lead.email ?? null) !== payload.email) fields.push('email');
     if (lead.cityRegion !== payload.cityRegion) fields.push('cityRegion');
     if (lead.productInterest !== payload.productInterest) fields.push('product');
-    if ((lead.estimatedBudget ?? null) !== payload.estimatedBudget) fields.push('budget');
+    if (
+      (lead.estimatedBudget ?? null) !== payload.estimatedBudget ||
+      lead.estimatedBudgetCurrency !== payload.estimatedBudgetCurrency
+    ) {
+      fields.push('budget');
+    }
     if (lead.initialMessage !== payload.initialMessage) fields.push('initialMessage');
     return fields;
   }

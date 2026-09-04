@@ -5,7 +5,6 @@ import { I18nService } from '@core/i18n/i18n.service';
 import {
   callStatusTone,
   clientStatusToneForLead,
-  defaultCurrencyForOffice,
   leadIsTerminal,
   showroomDueAtForLead,
   type LeadActiveReminder,
@@ -79,10 +78,6 @@ export class LeadSummaryPanel {
 
   protected officeName(code: string): string {
     return this.i18n.officeFilterLabel(code);
-  }
-
-  protected defaultCurrency(lead: Lead): string {
-    return defaultCurrencyForOffice(lead.officeCode);
   }
 
   protected formatDateTime(value: string | null | undefined): string {

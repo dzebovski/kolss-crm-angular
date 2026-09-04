@@ -239,6 +239,7 @@ const baseLead: Lead = {
   cityRegion: '',
   productInterest: '',
   estimatedBudget: null,
+  estimatedBudgetCurrency: 'UAH',
   assignedToId: null,
   firstManagerId: null,
   firstCall: null,

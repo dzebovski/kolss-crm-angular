@@ -177,6 +177,7 @@ describe('LeadDetailView', () => {
       email: 'oleksandr@example.com',
       callStatus: 'reached',
       clientStatus: 'calculation_in_progress',
+      estimatedBudgetCurrency: 'USD',
     };
     const { fixture } = await render(lead);
     const element = fixture.nativeElement as HTMLElement;
@@ -203,6 +204,7 @@ describe('LeadDetailView', () => {
     expect(summary?.textContent).toContain(lead.cityRegion);
     expect(summary?.textContent).toContain(lead.email);
     expect(summary?.textContent).toContain(lead.productInterest);
+    expect(summary?.textContent).toContain('9 200 USD');
     expect(summary?.textContent).toContain(lead.initialMessage);
     expect(text).toContain('Контакт і запит');
     expect(text).toContain('Успішний дзвінок');
@@ -222,8 +224,18 @@ describe('LeadDetailView', () => {
     const actionLabels = Array.from(
       element.querySelectorAll<HTMLButtonElement>('.lead-actions button'),
     ).map((button) => button.textContent?.replace(/\s+/g, ' ').trim());
-    expect(actionLabels).toEqual(['Додати коментар', 'Дзвінок ↗', 'Статус клієнта']);
-    expect(element.querySelectorAll('.lead-action--status app-ui-icon')).toHaveLength(1);
+    expect(actionLabels).toEqual([
+      'Додати коментар або завдання',
+      'Результат дзвінка',
+      'Встановити статус клієнта',
+    ]);
+    expect(element.querySelector('.lead-action__arrow')).toBeNull();
+    const callActionButton = element.querySelector<HTMLElement>('.lead-action--call .ui-button');
+    expect(callActionButton).not.toBeNull();
+    expect(getComputedStyle(callActionButton!).justifyContent).toBe('center');
+    expect(element.querySelector('.lead-action--status app-ui-icon')?.getAttribute('name')).toBe(
+      'person',
+    );
   });
 
   it('renders every timeline card as title, optional status, comment and actor metadata', async () => {
@@ -790,7 +802,7 @@ describe('LeadDetailView', () => {
         }),
     });
 
-    findActionButton(element, 'Додати коментар')?.click();
+    findActionButton(element, 'Додати коментар або завдання')?.click();
 
     await vi.waitFor(() =>
       expect(activities.addComment).toHaveBeenCalledWith(
@@ -800,7 +812,10 @@ describe('LeadDetailView', () => {
         'emp-kyiv-1',
       ),
     );
-    expect(dialogOpen.mock.calls[0]?.[1]?.data.title).toBe('Додати коментар');
+    expect(dialogOpen.mock.calls[0]?.[1]?.data.title).toBe('Додати коментар або завдання');
+    expect(dialogOpen.mock.calls[0]?.[1]?.data.description).toBe(
+      'Коментар або завдання не змінює поточні статуси. Завдання з’явиться в Календарі з призначеним менеджером, датою та часом.',
+    );
     expect(dialogOpen.mock.calls[0]?.[1]?.data.allowDueDate).toBe(true);
     expect(dialogOpen.mock.calls[0]?.[1]?.data.allowManager).toBe(true);
     expect(dialogOpen.mock.calls[0]?.[1]?.data.managerOptions).toEqual(
@@ -822,7 +837,7 @@ describe('LeadDetailView', () => {
     const element = fixture.nativeElement as HTMLElement;
     dialogOpen.mockReturnValue({ afterClosed: () => of('no_answer') });
 
-    findActionButton(element, 'Дзвінок')?.click();
+    findActionButton(element, 'Результат дзвінка')?.click();
 
     await vi.waitFor(() =>
       expect(activities.recordCall).toHaveBeenCalledWith(lead.id, 'no_answer', ''),
@@ -844,7 +859,7 @@ describe('LeadDetailView', () => {
       .mockReturnValueOnce({ afterClosed: () => of('callback_requested') })
       .mockReturnValueOnce({ afterClosed: () => of('2026-07-25') });
 
-    findActionButton(fixture.nativeElement as HTMLElement, 'Дзвінок')?.click();
+    findActionButton(fixture.nativeElement as HTMLElement, 'Результат дзвінка')?.click();
 
     await vi.waitFor(() =>
       expect(activities.recordCall).toHaveBeenCalledWith(
@@ -871,7 +886,7 @@ describe('LeadDetailView', () => {
     });
     const element = fixture.nativeElement as HTMLElement;
 
-    findActionButton(element, 'Статус клієнта')?.click();
+    findActionButton(element, 'Встановити статус клієнта')?.click();
     await vi.waitFor(() =>
       expect(activities.setClientStatus).toHaveBeenCalledWith(
         lead.id,
@@ -938,7 +953,7 @@ describe('LeadDetailView', () => {
     });
     const element = fixture.nativeElement as HTMLElement;
 
-    findActionButton(element, 'Статус клієнта')?.click();
+    findActionButton(element, 'Встановити статус клієнта')?.click();
     await vi.waitFor(() =>
       expect(activities.setClientStatus).toHaveBeenCalledWith(
         lead.id,
@@ -971,7 +986,7 @@ describe('LeadDetailView', () => {
       .mockReturnValueOnce({ afterClosed: () => of('showroom_invited') })
       .mockReturnValueOnce({ afterClosed: () => of(undefined) });
 
-    findActionButton(fixture.nativeElement as HTMLElement, 'Статус клієнта')?.click();
+    findActionButton(fixture.nativeElement as HTMLElement, 'Встановити статус клієнта')?.click();
 
     await vi.waitFor(() => expect(appointmentsList).toHaveBeenCalledOnce());
     expect(activities.setClientStatus).not.toHaveBeenCalled();

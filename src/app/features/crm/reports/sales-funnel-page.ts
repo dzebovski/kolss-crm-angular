@@ -10,6 +10,7 @@ import { UiAlert } from '@ui/feedback/ui-alert';
 import { UiIcon } from '@ui/icon/ui-icon';
 import { UiTextField } from '@ui/form/ui-text-field';
 import { SalesFunnelService } from './sales-funnel.service';
+import type { SalesFunnelFinancialComparison } from '@core/api/generated/kolss-api.types';
 
 type FunnelPeriodMode = 'week' | 'month' | 'custom';
 
@@ -98,6 +99,19 @@ export class SalesFunnelPage {
 
   protected formatMoney(total: number, currency: string): string {
     return this.i18n.formatMoney(total, currency);
+  }
+
+  protected comparisonTitle(comparison: SalesFunnelFinancialComparison): string {
+    return this.i18n.t('reports.funnelPage.officeComparison', {
+      office: this.i18n.officeFilterLabel(comparison.officeCode),
+      currency: comparison.currency,
+    });
+  }
+
+  protected formatPercent(value: number | null): string {
+    return value == null
+      ? '—'
+      : `${new Intl.NumberFormat(this.i18n.locale(), { maximumFractionDigits: 1 }).format(value)}%`;
   }
 
   private rollingPeriod(days: number): FunnelDateModel {

@@ -355,6 +355,7 @@ export class LeadDetailView {
           cityRegion: lead.cityRegion,
           productInterest: lead.productInterest,
           estimatedBudget: lead.estimatedBudget,
+          estimatedBudgetCurrency: lead.estimatedBudgetCurrency,
           initialMessage: lead.initialMessage,
           assignedToId,
         },

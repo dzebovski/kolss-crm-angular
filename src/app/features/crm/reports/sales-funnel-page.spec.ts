@@ -31,6 +31,24 @@ const report: SalesFunnelReportResponse = {
     { currency: 'UAH', total: 1_200_000 },
     { currency: 'EUR', total: 75_000 },
   ],
+  financialComparisons: [
+    {
+      officeCode: 'kyiv',
+      currency: 'UAH',
+      estimatedTotal: 13_000_000,
+      actualTotal: 5_100_000,
+      difference: -7_900_000,
+      realizationPercent: 39.2,
+    },
+    {
+      officeCode: 'warsaw',
+      currency: 'PLN',
+      estimatedTotal: 420_000,
+      actualTotal: 460_000,
+      difference: 40_000,
+      realizationPercent: 109.5,
+    },
+  ],
 };
 
 describe('SalesFunnelPage', () => {
@@ -79,8 +97,12 @@ describe('SalesFunnelPage', () => {
     expect(element.textContent).toContain('Надійшло лідів');
     expect(element.textContent).toContain('100');
     expect(element.textContent).toContain('80% від дзвінків');
-    expect(element.textContent).toContain('250 000');
-    expect(element.textContent).toContain('1 200 000');
+    expect(element.textContent).toContain('Київ · порівняння у UAH');
+    expect(element.textContent).toContain('13 000 000');
+    expect(element.textContent).toContain('39,2%');
+    expect(element.querySelectorAll('.financial-comparison')).toHaveLength(2);
+    expect(element.querySelector('.money-metric--difference.is-negative')).not.toBeNull();
+    expect(element.querySelector('.money-metric--difference.is-positive')).not.toBeNull();
     expect(element.querySelectorAll('.funnel-branch')).toHaveLength(3);
   });
 

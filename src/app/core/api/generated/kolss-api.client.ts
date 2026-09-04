@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.13.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.14.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -8,6 +8,7 @@ import type {
   AppointmentListResponse,
   AppointmentMutationResponse,
   CreateAppointmentRequest,
+  CurrencyRateSet,
   LeadDetailResponse,
   LeadEventTranslationResponse,
   LeadMarkerResponse,
@@ -17,6 +18,7 @@ import type {
   SalesFunnelReportQuery,
   SalesFunnelReportResponse,
   UpdateAppointmentRequest,
+  UpdateCurrencyRatesRequest,
   UsersResponse,
 } from './kolss-api.types';
 
@@ -210,6 +212,14 @@ export class KolssApiClient {
     });
   }
 
+  currencyRates(): Promise<CurrencyRateSet> {
+    return this.get('/v1/settings/currency-rates');
+  }
+
+  updateCurrencyRates(version: number, body: UpdateCurrencyRatesRequest): Promise<CurrencyRateSet> {
+    return this.put('/v1/settings/currency-rates', body, { 'If-Match': String(version) });
+  }
+
   fileDownloadURL(fileId: string): Promise<{ readonly url: string; readonly expiresAt: string }> {
     return this.get(`/v1/files/${encodeURIComponent(fileId)}/download-url`);
   }
@@ -247,8 +257,16 @@ export class KolssApiClient {
     );
   }
 
-  private async put<T>(path: string, body: unknown): Promise<T> {
-    return this.unwrap(firstValueFrom(this.http.put<T>(this.baseUrl + path, body)));
+  private async put<T>(
+    path: string,
+    body: unknown,
+    extraHeaders: Readonly<Record<string, string>> = {},
+  ): Promise<T> {
+    return this.unwrap(
+      firstValueFrom(
+        this.http.put<T>(this.baseUrl + path, body, { headers: new HttpHeaders(extraHeaders) }),
+      ),
+    );
   }
 
   private async delete<T>(path: string): Promise<T> {

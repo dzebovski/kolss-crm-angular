@@ -1,0 +1,39 @@
+<section class="accounts-hub" aria-labelledby="accounts-hub-title">
+  <header class="accounts-hub__header">
+    <p class="page-kicker">{{ 'accounts.hubKicker' | translate }}</p>
+    <h1 id="accounts-hub-title">{{ 'accounts.hubTitle' | translate }}</h1>
+    <p>{{ 'accounts.hubSubtitle' | translate }}</p>
+  </header>
+
+  <div class="hub-options">
+    <a class="hub-option hub-option--accounts" routerLink="/crm/accounts/users">
+      <span class="hub-option__number" aria-hidden="true">01</span>
+      <span class="hub-option__icon" aria-hidden="true">
+        <app-ui-icon name="person" [size]="34" [filled]="true" />
+      </span>
+      <span class="hub-option__content">
+        <strong>{{ 'accounts.hub.accountsTitle' | translate }}</strong>
+        <span>{{ 'accounts.hub.accountsDescription' | translate }}</span>
+      </span>
+      <span class="hub-option__action">
+        {{ 'accounts.hub.open' | translate }}
+        <app-ui-icon name="chevron_right" [size]="19" />
+      </span>
+    </a>
+
+    <a class="hub-option hub-option--settings" routerLink="/crm/accounts/settings">
+      <span class="hub-option__number" aria-hidden="true">02</span>
+      <span class="hub-option__icon" aria-hidden="true">
+        <app-ui-icon name="automation" [size]="34" [filled]="true" />
+      </span>
+      <span class="hub-option__content">
+        <strong>{{ 'accounts.hub.settingsTitle' | translate }}</strong>
+        <span>{{ 'accounts.hub.settingsDescription' | translate }}</span>
+      </span>
+      <span class="hub-option__action">
+        {{ 'accounts.hub.open' | translate }}
+        <app-ui-icon name="chevron_right" [size]="19" />
+      </span>
+    </a>
+  </div>
+</section>

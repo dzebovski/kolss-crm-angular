@@ -76,15 +76,33 @@ export const routes: Routes = [
         path: 'accounts',
         canActivate: [superAdminGuard],
         loadComponent: () =>
+          import('./features/crm/accounts/accounts-hub-page').then((page) => page.AccountsHubPage),
+      },
+      {
+        path: 'accounts/users',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
           import('./features/crm/accounts/accounts-page').then((page) => page.AccountsPage),
       },
       {
-        path: 'accounts/:employeeId',
+        path: 'accounts/users/:employeeId',
         canActivate: [superAdminGuard],
         loadComponent: () =>
           import('./features/crm/accounts/employee-detail-page').then(
             (page) => page.EmployeeDetailPage,
           ),
+      },
+      {
+        path: 'accounts/settings',
+        canActivate: [superAdminGuard],
+        loadComponent: () =>
+          import('./features/crm/accounts/currency-settings-page').then(
+            (page) => page.CurrencySettingsPage,
+          ),
+      },
+      {
+        path: 'accounts/:employeeId',
+        redirectTo: 'accounts/users/:employeeId',
       },
     ],
   },

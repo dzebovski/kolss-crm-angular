@@ -113,7 +113,7 @@
             {{
               currentLead.estimatedBudget === null
                 ? '—'
-                : formatMoney(currentLead.estimatedBudget, defaultCurrency(currentLead))
+                : formatMoney(currentLead.estimatedBudget, currentLead.estimatedBudgetCurrency)
             }}
           </dd>
         </div>

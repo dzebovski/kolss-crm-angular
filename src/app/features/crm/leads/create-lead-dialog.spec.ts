@@ -77,6 +77,19 @@ describe('CreateLeadDialog', () => {
     expect(fixture.componentInstance['sourceDate']()).toBe('2026-06-15');
   });
 
+  it('uses the office currency until the user chooses one explicitly', async () => {
+    const fixture = TestBed.createComponent(CreateLeadDialog);
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance['budgetCurrency']()).toBe('UAH');
+    fixture.componentInstance['changeOffice'](warsawOffice.id);
+    expect(fixture.componentInstance['budgetCurrency']()).toBe('PLN');
+
+    fixture.componentInstance['changeBudgetCurrency']('USD');
+    fixture.componentInstance['changeOffice'](kyivOffice.id);
+    expect(fixture.componentInstance['budgetCurrency']()).toBe('USD');
+  });
+
   it('keeps submit enabled and shows field errors on click', async () => {
     const fixture = TestBed.createComponent(CreateLeadDialog);
     await fixture.whenStable();
@@ -121,6 +134,7 @@ describe('CreateLeadDialog', () => {
       expect.objectContaining({
         phone: '+38 067 2148819',
         name: 'Марина',
+        estimatedBudgetCurrency: 'UAH',
         sourceCreatedAtLocal: '2026-07-21T12:00',
       }),
     );

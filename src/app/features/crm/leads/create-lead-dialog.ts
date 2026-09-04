@@ -1,10 +1,10 @@
 import { Component, computed, effect, inject, InjectionToken, output, signal } from '@angular/core';
 
 import { I18nService } from '@core/i18n/i18n.service';
-import { OFFICE_CONFIG } from '@core/office/office.config';
+import { OFFICE_CONFIG, isOfficeId } from '@core/office/office.config';
 import { normalizePhoneForOffice } from '@core/phone/phone';
 import { SessionService } from '@core/session/session.service';
-import type { LeadSource } from '@domain/lead.types';
+import type { ContractCurrency, LeadSource } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UiButton } from '@ui/button/ui-button';
 import { UiModal } from '@ui/dialog/ui-modal';
@@ -119,11 +119,19 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
             (valueChange)="changeSourceTime($event)"
           />
           <app-ui-text-field [label]="i18n.t('common.product')" [(value)]="productInterest" />
-          <app-ui-text-field
-            [label]="i18n.t('common.budgetEur')"
-            [error]="budgetError()"
-            [(value)]="budget"
-          />
+          <div class="budget-fields">
+            <app-ui-text-field
+              [label]="i18n.t('common.estimatedProjectBudget')"
+              [error]="budgetError()"
+              [(value)]="budget"
+            />
+            <app-ui-select
+              [label]="i18n.t('common.currency')"
+              [options]="currencyOptions"
+              [value]="budgetCurrency()"
+              (valueChange)="changeBudgetCurrency($event)"
+            />
+          </div>
         </div>
         <app-ui-textarea
           [label]="i18n.t('lead.initialMessage')"
@@ -176,9 +184,20 @@ export function sourceDateForOffice(now: Date, officeCode: string): string {
       gap: var(--ui-space-2);
     }
 
+    .budget-fields {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 7.5rem;
+      gap: var(--ui-space-3);
+      align-items: start;
+    }
+
     @media (max-width: 48rem) {
       .modal-grid {
         grid-template-columns: minmax(0, 1fr);
+      }
+
+      .budget-fields {
+        grid-template-columns: minmax(0, 1fr) 6.75rem;
       }
     }
   `,
@@ -211,11 +230,19 @@ export class CreateLeadDialog {
   protected readonly cityRegion = signal('');
   protected readonly productInterest = signal('');
   protected readonly budget = signal('');
+  protected readonly budgetCurrency = signal<ContractCurrency>(
+    this.defaultBudgetCurrency(this.defaultOfficeId()),
+  );
   protected readonly initialMessage = signal('');
   protected readonly sourceDate = signal(this.defaultSourceDate());
   protected readonly sourceTime = signal('12:00');
 
   private sourceDateEdited = false;
+  private budgetCurrencyEdited = false;
+
+  protected readonly currencyOptions: readonly UiSelectOption[] = ['UAH', 'USD', 'EUR', 'PLN'].map(
+    (value) => ({ value, label: value }),
+  );
 
   protected readonly sourceOptions = computed((): readonly UiSelectOption[] =>
     (['office', 'website', 'facebook', 'other'] as const).map((value) => ({
@@ -266,6 +293,15 @@ export class CreateLeadDialog {
       this.sourceDate.set(sourceDateForOffice(this.now(), this.officeCode(officeId)));
       this.sourceDateError.set('');
     }
+    if (!this.budgetCurrencyEdited) {
+      this.budgetCurrency.set(this.defaultBudgetCurrency(officeId));
+    }
+  }
+
+  protected changeBudgetCurrency(value: string): void {
+    if (!this.isContractCurrency(value)) return;
+    this.budgetCurrencyEdited = true;
+    this.budgetCurrency.set(value);
   }
 
   protected changeSourceDate(value: string): void {
@@ -349,6 +385,7 @@ export class CreateLeadDialog {
         cityRegion: this.cityRegion().trim(),
         productInterest: this.productInterest().trim(),
         estimatedBudget,
+        estimatedBudgetCurrency: this.budgetCurrency(),
         initialMessage: this.initialMessage().trim(),
         sourceCreatedAtLocal: `${sourceDate}T${sourceTime}`,
       });
@@ -373,6 +410,15 @@ export class CreateLeadDialog {
       (this.session.officeContext()?.filterOffices ?? []).find((office) => office.id === officeId)
         ?.code ?? ''
     );
+  }
+
+  private defaultBudgetCurrency(officeId: string): ContractCurrency {
+    const code = this.officeCode(officeId);
+    return isOfficeId(code) ? OFFICE_CONFIG[code].currency : OFFICE_CONFIG.kyiv.currency;
+  }
+
+  private isContractCurrency(value: string): value is ContractCurrency {
+    return value === 'UAH' || value === 'USD' || value === 'EUR' || value === 'PLN';
   }
 
   private nullableText(value: string): string | null {

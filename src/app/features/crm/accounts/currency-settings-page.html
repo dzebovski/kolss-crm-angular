@@ -1,0 +1,78 @@
+<section class="settings-page" aria-labelledby="currency-settings-title">
+  <a class="back-link" routerLink="/crm/accounts">
+    <app-ui-icon name="arrow_back" [size]="18" />
+    {{ 'accounts.backToHub' | translate }}
+  </a>
+
+  <header class="page-header">
+    <p class="page-kicker">{{ 'accounts.settings.kicker' | translate }}</p>
+    <h1 id="currency-settings-title">{{ 'accounts.settings.title' | translate }}</h1>
+    <p>{{ 'accounts.settings.subtitle' | translate }}</p>
+  </header>
+
+  @if (loadError(); as message) {
+    <app-ui-alert tone="danger" [title]="message">
+      <app-ui-button variant="secondary" size="small" (pressed)="ratesResource.reload()">
+        {{ 'calendar.retry' | translate }}
+      </app-ui-button>
+    </app-ui-alert>
+  } @else if (ratesResource.isLoading() && !ratesResource.hasValue()) {
+    <div class="settings-loading" role="status">{{ 'common.loading' | translate }}</div>
+  } @else if (ratesResource.value()) {
+    @if (error()) {
+      <app-ui-alert tone="danger" [title]="error()" />
+    }
+    @if (notice()) {
+      <div class="notice" role="status">
+        <app-ui-icon name="check_circle" [size]="19" [filled]="true" />
+        {{ notice() }}
+      </div>
+    }
+
+    <form class="rates-panel" (submit)="save($event)">
+      <header class="rates-panel__header">
+        <span class="rates-panel__icon" aria-hidden="true">
+          <app-ui-icon name="bar_chart" [size]="28" [filled]="true" />
+        </span>
+        <div>
+          <h2>{{ 'accounts.settings.ratesTitle' | translate }}</h2>
+          <p>{{ 'accounts.settings.ratesHint' | translate }}</p>
+        </div>
+      </header>
+
+      <div class="rate-grid">
+        <app-ui-text-field
+          type="number"
+          inputmode="decimal"
+          [formField]="ratesForm.plnPerEur"
+          [label]="'accounts.settings.plnPerEur' | translate"
+          [error]="fieldError(ratesForm.plnPerEur)"
+        />
+        <app-ui-text-field
+          type="number"
+          inputmode="decimal"
+          [formField]="ratesForm.uahPerEur"
+          [label]="'accounts.settings.uahPerEur' | translate"
+          [error]="fieldError(ratesForm.uahPerEur)"
+        />
+        <app-ui-text-field
+          type="number"
+          inputmode="decimal"
+          [formField]="ratesForm.uahPerUsd"
+          [label]="'accounts.settings.uahPerUsd' | translate"
+          [error]="fieldError(ratesForm.uahPerUsd)"
+        />
+      </div>
+
+      <footer class="rates-panel__footer">
+        <p>
+          <app-ui-icon name="history" [size]="17" />
+          {{ updatedAtLabel() }}
+        </p>
+        <app-ui-button type="submit" [loading]="ratesForm().submitting()">
+          {{ 'accounts.settings.save' | translate }}
+        </app-ui-button>
+      </footer>
+    </form>
+  }
+</section>

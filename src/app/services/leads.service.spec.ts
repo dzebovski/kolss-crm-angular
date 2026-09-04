@@ -68,6 +68,7 @@ describe('LeadsService', () => {
       cityRegion: '',
       productInterest: '',
       estimatedBudget: null,
+      estimatedBudgetCurrency: 'UAH',
       initialMessage: '',
       sourceCreatedAtLocal: '2026-07-10T12:00',
     });

@@ -158,6 +158,7 @@ export interface Lead {
   readonly cityRegion: string;
   readonly productInterest: string;
   readonly estimatedBudget: number | null;
+  readonly estimatedBudgetCurrency: ContractCurrency;
   readonly assignedToId: string | null;
   readonly firstManagerId: string | null;
   readonly firstCall: FirstCall | null;

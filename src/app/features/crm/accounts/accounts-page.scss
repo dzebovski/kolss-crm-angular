@@ -3,6 +3,21 @@
   gap: var(--ui-space-5);
 }
 
+.back-link {
+  width: fit-content;
+  color: var(--ui-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--ui-action);
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;

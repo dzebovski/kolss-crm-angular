@@ -267,7 +267,7 @@ export class EmployeeDetailPage {
     this.actionError.set('');
     try {
       await this.usersService.deleteEmployee(employee.id, email);
-      await this.router.navigate(['/crm/accounts']);
+      await this.router.navigate(['/crm/accounts/users']);
     } catch (error) {
       this.actionError.set(
         error instanceof Error ? error.message : this.i18n.t('accounts.detail.deleteFailed'),

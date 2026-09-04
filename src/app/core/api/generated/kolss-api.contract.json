@@ -1,6 +1,6 @@
 {
-  "version": "2.13.0",
-  "sha256": "012c15a17a85b05639f8967a95a6c6cbee507b0c6033ffc4a75a81178ca71e4e",
+  "version": "2.14.0",
+  "sha256": "161d17254549b0987ddda57fb4cda613d497d2c6f07525204f6a94a65ec2c3e3",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -33,6 +33,8 @@
     "getDashboardOverview",
     "getLeadReport",
     "getSalesFunnelReport",
+    "getCurrencyRates",
+    "updateCurrencyRates",
     "createFileDownloadURL",
     "verifyMetaWebhook",
     "receiveMetaWebhook",
