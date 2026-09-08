@@ -406,6 +406,30 @@ describe('LeadDetailView', () => {
     expect(cards[1]!.querySelector('.timeline-card__actions')).toBeTruthy();
   });
 
+  it('warns that deleting an office work history entry also removes it from the calendar', async () => {
+    const event: LeadEvent = {
+      id: 'office-work-event',
+      type: 'office_work',
+      rawType: 'office_work_scheduled',
+      comment: 'Підготувати специфікацію',
+      newValue: { appointment_id: 'office-work-appointment' },
+      actorId: 'emp-kyiv-1',
+      actorName: 'Данило Мороз',
+      occurredAt: '2026-07-16T09:15:00.000Z',
+      category: 'system',
+      statusCode: 'scheduled',
+    };
+    const { fixture } = await render({ ...FIXTURE_LEADS[2]!, events: [event] });
+    const element = fixture.nativeElement as HTMLElement;
+
+    element.querySelector<HTMLButtonElement>('.timeline-card button[aria-label="Видалити"]')?.click();
+    await fixture.whenStable();
+
+    expect(element.querySelector('.manager-dialog-copy p')?.textContent).toContain(
+      'пов’язану роботу — з календаря',
+    );
+  });
+
   it('renders callback, thinking and showroom dates consistently in the timeline', async () => {
     const dueAt = '2026-08-03T12:00:00.000Z';
     const events: readonly LeadEvent[] = [

@@ -285,6 +285,8 @@ export const messagesEn: Record<MessageKey, string> = {
   'leadDetail.deleteEventTitle': 'Delete entry?',
   'leadDetail.deleteEventConfirm':
     'The entry will be permanently removed from the timeline. This action cannot be undone.',
+  'leadDetail.deleteOfficeWorkEventConfirm':
+    'The entry will be removed from the timeline and the linked work from the calendar. This action cannot be undone.',
   'leadDetail.deleteEventConfirmButton': 'Delete entry',
   'leadDetail.currentState': 'Current state',
   'leadDetail.reminders': 'Reminders',

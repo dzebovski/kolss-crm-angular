@@ -96,6 +96,14 @@ export class LeadTimeline {
     this.deleteTarget.set(event);
   }
 
+  protected deleteEventConfirmation(event: LeadEvent): string {
+    return this.i18n.t(
+      event.type === 'office_work'
+        ? 'leadDetail.deleteOfficeWorkEventConfirm'
+        : 'leadDetail.deleteEventConfirm',
+    );
+  }
+
   protected cancelDelete(): void {
     if (this.pending()) return;
     this.deleteTarget.set(null);

@@ -286,6 +286,8 @@ export const messagesPl: Record<MessageKey, string> = {
   'leadDetail.deleteEventTitle': 'Usunąć wpis?',
   'leadDetail.deleteEventConfirm':
     'Wpis zostanie trwale usunięty z osi czasu. Tej operacji nie można cofnąć.',
+  'leadDetail.deleteOfficeWorkEventConfirm':
+    'Wpis zostanie usunięty z osi czasu, a powiązana praca z kalendarza. Tej operacji nie można cofnąć.',
   'leadDetail.deleteEventConfirmButton': 'Usuń wpis',
   'leadDetail.currentState': 'Bieżący stan',
   'leadDetail.reminders': 'Przypomnienia',

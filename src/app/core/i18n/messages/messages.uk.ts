@@ -283,6 +283,8 @@ export const messagesUk = {
   'leadDetail.deleteEventTitle': 'Видалити запис?',
   'leadDetail.deleteEventConfirm':
     'Запис буде видалено з таймлайну назавжди. Цю дію не можна скасувати.',
+  'leadDetail.deleteOfficeWorkEventConfirm':
+    'Запис буде видалено з таймлайну, а пов’язану роботу — з календаря. Цю дію не можна скасувати.',
   'leadDetail.deleteEventConfirmButton': 'Видалити запис',
   'leadDetail.currentState': 'Поточний стан',
   'leadDetail.reminders': 'Нагадування',

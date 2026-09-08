@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.16.0' as const;
+export const API_CONTRACT_VERSION = '2.17.0' as const;
 
 export type MoneyCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
 

@@ -116,7 +116,7 @@
   <app-ui-modal labelledBy="delete-event-dialog-title" (dismissed)="cancelDelete()">
     <div class="manager-dialog-copy">
       <h2 id="delete-event-dialog-title">{{ i18n.t('leadDetail.deleteEventTitle') }}</h2>
-      <p>{{ i18n.t('leadDetail.deleteEventConfirm') }}</p>
+      <p>{{ deleteEventConfirmation(target) }}</p>
     </div>
     @if (error()) {
       <div class="manager-dialog-error" role="alert">{{ error() }}</div>
