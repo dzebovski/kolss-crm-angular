@@ -27,6 +27,7 @@ function meResponse(overrides: Partial<MeResponse['user']> & { role?: string } =
     userOffices: [],
     permissions: {
       canManageUsers: false,
+      canManageTasks: false,
       canEditLeadFields: false,
       canArchiveLeads: false,
       canRestoreLeads: false,

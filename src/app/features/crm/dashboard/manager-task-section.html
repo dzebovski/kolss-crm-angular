@@ -1,0 +1,112 @@
+<section [attr.aria-label]="title()" [class.is-important]="section() === 'important'">
+  <header class="section-heading">
+    <h3>{{ title() }}</h3>
+    @if (tasks().length) {
+      <span class="count">{{ tasks().length }}{{ cursor() ? '+' : '' }}</span>
+    }
+    @if (loading()) {
+      <span class="loading-label" role="status">{{ i18n.t('dashboard.board.loading') }}</span>
+    }
+  </header>
+  @if (mutationError()) {
+    <p class="error" role="alert">{{ mutationError() }}</p>
+  }
+  @if (loadError()) {
+    <div class="error" role="alert">
+      {{ loadError() }}
+      <app-ui-button size="small" variant="ghost" (pressed)="retry()">{{
+        i18n.t('dashboard.board.retry')
+      }}</app-ui-button>
+    </div>
+  }
+  @if (tasks().length) {
+    <ul>
+      @for (task of tasks(); track task.id) {
+        <li
+          [class.is-done]="task.status === 'done'"
+          [class.is-canceled]="task.status === 'canceled'"
+        >
+          @if (task.source === 'manual' && !history() && canManage()) {
+            <input
+              type="checkbox"
+              class="task-check"
+              [checked]="false"
+              [disabled]="!!pendingId() || loading()"
+              [attr.aria-label]="i18n.t('dashboard.board.complete') + ': ' + task.title"
+              (click)="$event.preventDefault(); changeStatus(task, 'done')"
+            />
+          } @else {
+            <app-ui-icon
+              class="row-icon"
+              [name]="task.source === 'manual' ? 'check_circle' : 'chevron_right'"
+              [size]="18"
+            />
+          }
+          <div class="task-content">
+            @if (task.source === 'manual') {
+              <strong class="task-title">{{ task.title }}</strong>
+            } @else {
+              <button
+                type="button"
+                class="task-open"
+                [attr.data-task-id]="task.id"
+                (click)="taskOpened.emit(task)"
+              >
+                {{ task.leadName || task.title }}
+              </button>
+            }
+            <div class="task-meta">
+              <span [class.important-label]="task.source === 'manual'">{{ kindLabel(task) }}</span>
+              @if (task.phone) {
+                <span>{{ task.phone }}</span>
+              }
+              @if (!officeId()) {
+                <span>{{ officeName(task) }}</span>
+              }
+            </div>
+            @if (task.comment) {
+              <p class="task-comment">{{ task.comment }}</p>
+            }
+          </div>
+          @if (task.dueAt) {
+            <span class="task-date" [class.is-overdue]="dueTone(task) === 'overdue'">
+              <time [attr.datetime]="task.dueAt">{{ dueLabel(task) }}</time>
+              @if (dueTone(task); as tone) {
+                <small>{{
+                  i18n.t(
+                    tone === 'overdue' ? 'dashboard.board.overdue' : 'dashboard.board.dueToday'
+                  )
+                }}</small>
+              }
+            </span>
+          }
+          @if (task.source === 'manual' && canManage()) {
+            <app-ui-button
+              class="task-action"
+              size="small"
+              variant="ghost"
+              [loading]="pendingId() === task.id"
+              [disabled]="!!pendingId() || loading()"
+              (pressed)="changeStatus(task, history() ? 'open' : 'canceled')"
+            >
+              {{ i18n.t(history() ? 'dashboard.board.restore' : 'dashboard.board.cancel') }}
+            </app-ui-button>
+          }
+        </li>
+      }
+    </ul>
+  } @else if (!loading() && !loadError()) {
+    <p class="empty">{{ i18n.t('dashboard.board.empty') }}</p>
+  }
+  @if (cursor()) {
+    <app-ui-button
+      class="load-more"
+      size="small"
+      variant="ghost"
+      [disabled]="loading()"
+      (pressed)="load(true)"
+    >
+      {{ i18n.t('dashboard.board.loadMore') }}
+    </app-ui-button>
+  }
+</section>

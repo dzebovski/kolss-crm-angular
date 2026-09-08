@@ -36,6 +36,11 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'leads' },
       {
+        path: 'dashboard/reminders',
+        loadComponent: () =>
+          import('./features/crm/dashboard/reminders-page').then((page) => page.RemindersPage),
+      },
+      {
         path: 'dashboard',
         loadComponent: () =>
           import('./features/crm/dashboard/dashboard-page').then((page) => page.DashboardPage),

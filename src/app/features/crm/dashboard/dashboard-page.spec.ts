@@ -1,261 +1,98 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
-import axe from 'axe-core';
-import { of } from 'rxjs';
+import { provideRouter } from '@angular/router';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { AuthService } from '@core/auth/auth.service';
 import { SessionService } from '@core/session/session.service';
-import { FIXTURE_EMPLOYEES, FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
-import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
+import { AppointmentsService } from '@services/appointments.service';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
 import { DashboardPage } from './dashboard-page';
 
-describe('DashboardPage lead workflow', () => {
-  async function render(
-    drawerResult?: { dirty: boolean },
-    leadOverrides: Partial<(typeof FIXTURE_LEADS)[number]> = {},
-  ) {
-    const lead = { ...FIXTURE_LEADS[0]!, ...leadOverrides, markers: [] };
-    const setMarker = vi.fn().mockResolvedValue({
-      kind: 'reviewed',
-      actorId: 'user-1',
-      actorName: 'Олена',
-      markedAt: '2026-07-17T12:00:00.000Z',
-    });
-    const dialogOpen = vi.fn().mockReturnValue({ afterClosed: () => of(drawerResult) });
-    await TestBed.configureTestingModule({
-      imports: [DashboardPage],
-      providers: [
-        provideRouter([]),
-        {
-          provide: SessionService,
-          useValue: {
-            selectedOfficeId: () => null,
-            locale: () => 'uk',
-            officeContext: () => ({ filterOffices: [] }),
-          },
-        },
-        {
-          provide: KolssApiClient,
-          useValue: {
-            dashboard: vi.fn().mockResolvedValue({
-              totalLeads: 1,
-              activeLeads: 1,
-              successfulLeads: 0,
-              employees: 1,
-            }),
-          },
-        },
-        {
-          provide: LeadsService,
-          useValue: {
-            list: vi.fn().mockResolvedValue([lead]),
-            setMarker,
-            deleteMarker: vi.fn().mockResolvedValue(undefined),
-          },
-        },
-        {
-          provide: UsersService,
-          useValue: { listManagers: vi.fn().mockResolvedValue(FIXTURE_EMPLOYEES) },
-        },
-        { provide: UiDialogService, useValue: { open: dialogOpen } },
-      ],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(DashboardPage);
-    await fixture.whenStable();
-    return { dialogOpen, fixture, setMarker };
-  }
+const office = {
+  id: 'office-kyiv',
+  code: 'kyiv',
+  name_uk: 'Київ',
+  name_pl: 'Kijów',
+  timezone_name: 'Europe/Kyiv',
+  is_active: true,
+};
 
-  it('opens the detail drawer without navigating away from dashboard', async () => {
-    const { dialogOpen, fixture } = await render();
-    const router = TestBed.inject(Router);
-    const openButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '.lead-open',
-    );
-    openButton!.click();
-    await fixture.whenStable();
+function manager(id: string, displayName: string) {
+  return {
+    id,
+    email: `${id}@test.local`,
+    displayName,
+    role: 'office_member' as const,
+    officeIds: ['kyiv'] as const,
+    officeUuids: ['office-kyiv'] as const,
+    status: 'active' as const,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    lastActiveAt: '2026-01-01T00:00:00.000Z',
+  };
+}
 
-    expect(dialogOpen).toHaveBeenCalledOnce();
-    expect(dialogOpen.mock.calls[0]![1]).toMatchObject({
-      position: { top: '0', right: '0' },
-      height: '100dvh',
-    });
-    expect(router.url).toBe('/');
-  });
-
-  it('toggles a marker without opening the lead', async () => {
-    const { dialogOpen, fixture, setMarker } = await render();
-    const reviewed = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      'button[aria-label*="Перевірено"]',
-    );
-    reviewed!.click();
-    await fixture.whenStable();
-
-    expect(setMarker).toHaveBeenCalledWith(FIXTURE_LEADS[0]!.id, 'reviewed');
-    expect(dialogOpen).not.toHaveBeenCalled();
-    expect(reviewed!.getAttribute('aria-pressed')).toBe('true');
-  });
-
-  it('restores the dashboard position and lead focus after a dirty close', async () => {
-    const { fixture } = await render({ dirty: true });
-    let afterRender: FrameRequestCallback | undefined;
-    const animationFrame = vi
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation((callback) => {
-        afterRender = callback;
-        return 1;
-      });
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
-    const openButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      '.lead-open',
-    )!;
-
-    openButton.click();
-    await fixture.whenStable();
-    afterRender?.(0);
-
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
-    expect(document.activeElement).toBe(openButton);
-    animationFrame.mockRestore();
-    scrollTo.mockRestore();
-  });
-
-  it('has no automated accessibility violations in the reminder list', async () => {
-    const { fixture } = await render();
-    const reminders = (fixture.nativeElement as HTMLElement).querySelector('.reminders')!;
-    expect((await axe.run(reminders)).violations).toEqual([]);
-  });
-
-  it('shows the selected date next to callback and waiting statuses', async () => {
-    const { fixture } = await render(undefined, {
-      callStatus: 'callback_requested',
-      clientStatus: 'thinking',
-      callbackDueAt: '2026-07-25T12:00:00.000Z',
-    });
-    const meta = (fixture.nativeElement as HTMLElement).querySelector('.lead-meta');
-
-    expect(meta?.textContent).toContain('Передзвонити');
-    expect(meta?.textContent).toContain('Переговори');
-    expect(meta?.textContent).toContain('До 25.07');
-    expect(meta?.textContent).not.toContain('2026');
-  });
-
-  it('shows a dated showroom status with the shared compact treatment', async () => {
-    const { fixture } = await render(undefined, {
-      callStatus: 'reached',
-      clientStatus: 'showroom_invited',
-      callbackDueAt: '2026-08-03T12:00:00.000Z',
-      callbackDueContext: { category: 'client_status', statusCode: 'showroom_invited' },
-    });
-    const meta = (fixture.nativeElement as HTMLElement).querySelector('.lead-meta');
-
-    expect(meta?.textContent).toContain('Запрошено в салон');
-    expect(meta?.textContent).toContain('До 03.08');
-    expect(meta?.textContent).not.toContain('2026');
-  });
-
-  it('shows showroom and latest comment dates independently', async () => {
-    const { fixture } = await render(undefined, {
-      callStatus: 'reached',
-      clientStatus: 'showroom_invited',
-      callbackDueAt: '2026-08-06T12:00:00.000Z',
-      commentReminderDueAt: '2026-08-06T12:00:00.000Z',
-      callbackDueContext: { category: 'comment', statusCode: null },
-      showroomDueAt: '2026-08-05T12:00:00.000Z',
-      latestTimelineComment: {
-        comment: 'Уточнити час зустрічі',
-        occurredAt: '2026-08-01T10:00:00.000Z',
-        eventType: 'comment_added',
-        category: 'comment',
-        statusCode: null,
-        newValue: { callback_due_at: '2026-08-06T12:00:00.000Z' },
-      },
-    });
-    const page = fixture.nativeElement as HTMLElement;
-
-    expect(page.querySelector('.lead-meta')?.textContent).toContain('До 05.08');
-    expect(page.querySelector('.comment-next-action')?.textContent).toContain(
-      'Нагадування до 06.08',
-    );
-  });
-
-  it('hides a stale comment reminder when the latest comment has no date', async () => {
-    const { fixture } = await render(undefined, {
-      callbackDueAt: '2026-08-06T12:00:00.000Z',
-      callbackDueContext: { category: 'comment', statusCode: null },
-      commentReminderDueAt: null,
-      latestTimelineComment: {
-        comment: 'Нове уточнення без нагадування',
-        occurredAt: '2026-08-02T10:00:00.000Z',
-        eventType: 'comment_added',
-        category: 'comment',
-        statusCode: null,
-        newValue: {},
-      },
-    });
-    const page = fixture.nativeElement as HTMLElement;
-
-    expect(page.textContent).toContain('Нове уточнення без нагадування');
-    expect(page.querySelector('.comment-next-action')).toBeNull();
-  });
-
-  it('groups active manager tasks by assignee', async () => {
-    const { dialogOpen, fixture } = await render(undefined, {
-      name: 'Task Lead',
-      commentReminderDueAt: '2026-07-25T12:00:00.000Z',
-      commentReminderAssignedTo: 'emp-kyiv-1',
-      latestTimelineComment: {
-        comment: 'Підготувати кошторис',
-        occurredAt: '2026-07-24T10:00:00.000Z',
-        eventType: 'comment_added',
-        category: 'comment',
-        statusCode: null,
-        newValue: {
-          callback_due_at: '2026-07-25T12:00:00.000Z',
-          assigned_to: 'emp-kyiv-1',
+async function render(
+  managers = [manager('other', 'Other Manager'), manager('current', 'Current User')],
+) {
+  await TestBed.configureTestingModule({
+    imports: [DashboardPage],
+    providers: [
+      provideRouter([]),
+      {
+        provide: AuthService,
+        useValue: {
+          me: () => ({
+            user: { id: 'current' },
+            permissions: { canManageUsers: false, canManageTasks: true },
+          }),
         },
       },
-    });
-    fixture.detectChanges();
-    const page = fixture.nativeElement as HTMLElement;
-
-    expect(page.querySelector('#manager-tasks-title')?.textContent).toContain(
-      'Завдання менеджерів',
-    );
-    expect(page.querySelector('.manager-tasks__total')?.textContent).toContain('1');
-    expect(page.querySelector('.manager-tasks__manager')?.textContent).toContain('Данило Мороз');
-    expect(page.querySelector('.task-open')?.textContent).toContain('Task Lead');
-    expect(page.querySelector('.task-open')?.textContent).toContain('Підготувати кошторис');
-    expect(page.querySelector('.task-due')?.textContent).toContain('Нагадування до 25.07');
-
-    page.querySelector<HTMLButtonElement>('.task-open')!.click();
-    await fixture.whenStable();
-    expect(dialogOpen).toHaveBeenCalledOnce();
-  });
-
-  it('drops the task of a closed lead from the manager task list', async () => {
-    const { fixture } = await render(undefined, {
-      name: 'Closed Task Lead',
-      clientStatus: 'closed_lost',
-      commentReminderDueAt: '2026-07-25T12:00:00.000Z',
-      commentReminderAssignedTo: 'emp-kyiv-1',
-      latestTimelineComment: {
-        comment: 'Підготувати кошторис',
-        occurredAt: '2026-07-24T10:00:00.000Z',
-        eventType: 'comment_added',
-        category: 'comment',
-        statusCode: null,
-        newValue: {
-          callback_due_at: '2026-07-25T12:00:00.000Z',
-          assigned_to: 'emp-kyiv-1',
+      {
+        provide: SessionService,
+        useValue: {
+          selectedOfficeId: () => null,
+          locale: () => 'uk',
+          officeContext: () => ({ filterOffices: [office] }),
         },
       },
-    });
-    fixture.detectChanges();
-    const page = fixture.nativeElement as HTMLElement;
+      { provide: UsersService, useValue: { listManagers: vi.fn().mockResolvedValue(managers) } },
+      {
+        provide: AppointmentsService,
+        useValue: { list: vi.fn().mockResolvedValue({ items: [] }) },
+      },
+      { provide: UiDialogService, useValue: { open: vi.fn() } },
+      {
+        provide: KolssApiClient,
+        useValue: { managerTasks: vi.fn().mockResolvedValue({ items: [], nextCursor: null }) },
+      },
+    ],
+  }).compileComponents();
+  const fixture = TestBed.createComponent(DashboardPage);
+  await fixture.whenStable();
+  return fixture;
+}
 
-    expect(page.querySelector('.manager-tasks__total')?.textContent).toContain('0');
-    expect(page.querySelector('.task-open')).toBeNull();
+describe('DashboardPage manager board', () => {
+  it('puts the current user manager group first and marks it as You', async () => {
+    const fixture = await render();
+    const groups = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('details.manager-group'),
+    ];
+    expect(groups[0]?.textContent).toContain('Current User');
+    expect(groups[0]?.textContent).toContain('Ви');
+  });
+
+  it('renders the empty manager state and an unassigned accordion', async () => {
+    const fixture = await render([]);
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.textContent).toContain('У цьому офісі немає активних менеджерів');
+    expect(page.querySelector('details.manager-group.is-unassigned')).not.toBeNull();
+  });
+
+  it('keeps the unassigned accordion collapsed by default', async () => {
+    const fixture = await render([]);
+    const group = (fixture.nativeElement as HTMLElement).querySelector('details.is-unassigned')!;
+    expect(group.hasAttribute('open')).toBe(false);
   });
 });

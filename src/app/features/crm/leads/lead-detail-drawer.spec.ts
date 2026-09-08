@@ -45,6 +45,7 @@ describe('LeadDetailDrawer', () => {
               userOffices: [],
               permissions: {
                 canManageUsers: false,
+                canManageTasks: false,
                 canEditLeadFields: true,
                 canArchiveLeads: false,
                 canRestoreLeads: false,

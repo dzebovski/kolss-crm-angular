@@ -1,239 +1,193 @@
-import { Component, computed, inject, resource, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import type {
+  DashboardTask,
+  ManagerTaskSection as TaskSection,
+} from '@core/api/generated/kolss-api.types';
+import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
-import type { MessageKey } from '@core/i18n/messages';
-import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { canManageTasks } from '@core/policy/task.policy';
 import { SessionService } from '@core/session/session.service';
-import {
-  callStatusTone,
-  commentAssigneeForLead,
-  commentDueAtForLead,
-  clientStatusTone,
-  groupLeadsForDashboard,
-  leadIsTerminal,
-  showroomDueAtForLead,
-} from '@domain/lead.rules';
-import type { LeadMarkerKind, Lead } from '@domain/lead.types';
-import { LeadsService } from '@services/leads.service';
-import { UsersService } from '@services/users.service';
-import { UiButton } from '@ui/button/ui-button';
-import { UiDialogService } from '@ui/dialog/ui-dialog';
-import { UiBadge } from '@ui/feedback/ui-badge';
-import { UiIcon } from '@ui/icon/ui-icon';
-import { LinkifiedText } from '@ui/text/linkified-text';
-import { UiUser } from '@ui/user/ui-user';
+import { dashboardManagers } from '@domain/manager-tasks.rules';
+import { addCalendarDays, AppointmentsService } from '@services/appointments.service';
+import { UsersService, type CrmEmployee } from '@services/users.service';
+import { openAppointmentDrawer } from '@features/crm/calendar/appointment-drawer';
 import {
   LeadDetailDrawer,
   type LeadDetailDrawerData,
   type LeadDetailDrawerResult,
   type LeadDetailDrawerState,
 } from '@features/crm/leads/lead-detail-drawer';
-import { LeadMarkerToggles } from '@features/crm/leads/lead-marker-toggles';
-import { LeadDueDate } from '@features/crm/leads/lead-due-date';
-import { TodayAppointmentsWidget } from './today-appointments-widget';
-
-interface ManagerTaskGroup {
-  readonly managerId: string;
-  readonly managerName: string;
-  readonly tasks: readonly Lead[];
-}
+import { UiButton } from '@ui/button/ui-button';
+import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiIcon } from '@ui/icon/ui-icon';
+import { UiUser } from '@ui/user/ui-user';
+import { ManagerTaskSection } from './manager-task-section';
+import { TaskCreateForm } from './task-create-form';
 
 @Component({
   selector: 'app-dashboard-page',
   imports: [
     RouterLink,
-    LeadDueDate,
-    LeadMarkerToggles,
-    LinkifiedText,
-    TranslatePipe,
-    UiBadge,
+    RouterLinkActive,
     UiButton,
     UiIcon,
     UiUser,
-    TodayAppointmentsWidget,
+    ManagerTaskSection,
+    TaskCreateForm,
   ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.scss',
 })
 export class DashboardPage {
-  private readonly session = inject(SessionService);
-  private readonly api = inject(KolssApiClient);
-  private readonly leadsService = inject(LeadsService);
-  private readonly usersService = inject(UsersService);
-  private readonly dialog = inject(UiDialogService);
   protected readonly i18n = inject(I18nService);
-
-  protected readonly skeletonRows = [1, 2, 3, 4, 5];
-  protected readonly callStatusTone = callStatusTone;
-  protected readonly clientStatusTone = clientStatusTone;
-  protected readonly markerError = signal('');
-  private readonly markerPendingKey = signal('');
-
-  protected readonly overviewResource = resource({
-    params: () => ({ officeId: this.session.selectedOfficeId() }),
-    loader: ({ params }) => this.api.dashboard(params),
+  protected readonly session = inject(SessionService);
+  private readonly auth = inject(AuthService);
+  private readonly users = inject(UsersService);
+  private readonly appointments = inject(AppointmentsService);
+  private readonly dialogs = inject(UiDialogService);
+  protected readonly currentUserId = computed(() => this.auth.me()?.user.id ?? null);
+  protected readonly canManage = computed(() => canManageTasks(this.auth.me()?.permissions));
+  protected readonly managersResource = resource({
+    params: () => ({ userId: this.currentUserId(), officeId: this.session.selectedOfficeId() }),
+    loader: () => this.users.listManagers(),
   });
-  protected readonly overview = computed(() => this.overviewResource.value());
-
-  protected readonly leadsResource = resource({
-    params: () => ({ officeId: this.session.selectedOfficeId(), archived: 'active' as const }),
-    loader: ({ params }) => this.leadsService.list(params),
-  });
-
-  protected readonly employeesResource = resource({
-    loader: () => this.usersService.listManagers(),
-  });
-
-  protected readonly groups = computed(() =>
-    groupLeadsForDashboard(this.leadsResource.value() ?? []),
+  protected readonly managers = computed(() =>
+    dashboardManagers(
+      this.managersResource.value() ?? [],
+      this.session.selectedOfficeId(),
+      this.currentUserId(),
+      this.i18n.locale(),
+    ),
   );
-
-  /** Active leads whose latest comment is a manager task, grouped by assignee. */
-  protected readonly managerTasks = computed<readonly ManagerTaskGroup[]>(() => {
-    const leads = (this.leadsResource.value() ?? []).filter(
-      (lead) => !lead.archivedAt && !leadIsTerminal(lead) && commentAssigneeForLead(lead),
-    );
-    const byManager = new Map<string, Lead[]>();
-    for (const lead of leads) {
-      const managerId = commentAssigneeForLead(lead)!;
-      const bucket = byManager.get(managerId);
-      if (bucket) bucket.push(lead);
-      else byManager.set(managerId, [lead]);
-    }
-    return [...byManager.entries()]
-      .map(([managerId, tasks]) => ({
-        managerId,
-        managerName: this.employeeName(managerId),
-        tasks: [...tasks].sort((left, right) =>
-          (commentDueAtForLead(left) ?? '').localeCompare(commentDueAtForLead(right) ?? ''),
-        ),
-      }))
-      .sort((left, right) => left.managerName.localeCompare(right.managerName, this.i18n.locale()));
-  });
-
-  protected readonly taskCount = computed(() =>
-    this.managerTasks().reduce((total, group) => total + group.tasks.length, 0),
+  protected readonly groups = computed(() => [
+    ...this.managers().map((manager) => ({ id: manager.id, name: manager.displayName, manager })),
+    { id: 'unassigned', name: this.i18n.t('dashboard.board.unassigned'), manager: null },
+  ]);
+  private readonly viewScope = computed(
+    () => `${this.currentUserId()}:${this.session.selectedOfficeId()}`,
   );
-
-  protected readonly loadError = computed(() => {
-    const error = this.leadsResource.error();
-    return error instanceof Error ? error.message : error ? String(error) : '';
+  protected readonly expanded = linkedSignal<Partial<Record<string, boolean>>>(() => {
+    this.viewScope();
+    return {};
   });
+  protected readonly historyOpen = linkedSignal<Partial<Record<string, boolean>>>(() => {
+    this.viewScope();
+    return {};
+  });
+  protected readonly createFor = linkedSignal<string | null>(() => {
+    this.viewScope();
+    return null;
+  });
+  protected readonly revision = signal(0);
+  protected readonly openError = signal('');
+  protected readonly opening = signal(false);
+  protected readonly activeSections: readonly TaskSection[] = ['important', 'current', 'future'];
+  protected readonly historySections = ['done', 'canceled'] as const;
 
-  protected groupTitle(key: string): string {
-    return this.i18n.t(`dashboard.group.${key}` as MessageKey);
+  protected isExpanded(managerId: string): boolean {
+    return this.expanded()[managerId] ?? managerId === this.currentUserId();
   }
 
-  protected callStatusLabel(status: Lead['callStatus']): string {
-    return status ? this.i18n.callStatusLabel(status) : '';
+  protected toggleManager(managerId: string, event: Event): void {
+    this.expanded.update((state) => ({
+      ...state,
+      [managerId]: (event.target as HTMLDetailsElement).open,
+    }));
   }
 
-  protected employeeName(employeeId: string | null): string {
-    if (!employeeId) return this.i18n.t('common.unassigned');
-    return (
-      (this.employeesResource.value() ?? []).find((employee) => employee.id === employeeId)
-        ?.displayName ?? this.i18n.t('common.unassigned')
-    );
+  protected toggleHistory(managerId: string, section: string, event: Event): void {
+    this.historyOpen.update((state) => ({
+      ...state,
+      [`${managerId}:${section}`]: (event.target as HTMLDetailsElement).open,
+    }));
   }
 
-  protected hasActiveManager(employeeId: string | null): boolean {
-    return (
-      !!employeeId &&
-      (this.employeesResource.value() ?? []).some((employee) => employee.id === employeeId)
-    );
-  }
-
-  protected formatDayMonth(value: string): string {
-    const locale = { uk: 'uk-UA', pl: 'pl-PL', en: 'en-GB' }[this.i18n.locale()];
-    return new Intl.DateTimeFormat(locale, { day: '2-digit', month: 'short' }).format(
-      new Date(value),
-    );
-  }
-
-  protected readonly commentDueAtForLead = commentDueAtForLead;
-  protected readonly showroomDueAtForLead = showroomDueAtForLead;
-
-  protected pendingMarker(leadId: string): LeadMarkerKind | null {
-    const prefix = `${leadId}:`;
-    const key = this.markerPendingKey();
-    return key.startsWith(prefix) ? (key.slice(prefix.length) as LeadMarkerKind) : null;
-  }
-
-  protected async toggleMarker(lead: Lead, kind: LeadMarkerKind): Promise<void> {
-    if (this.markerPendingKey()) return;
-    this.markerError.set('');
-    this.markerPendingKey.set(`${lead.id}:${kind}`);
-    const active = lead.markers.some((marker) => marker.kind === kind);
-    try {
-      const markers = active
-        ? lead.markers.filter((marker) => marker.kind !== kind)
-        : [...lead.markers, await this.leadsService.setMarker(lead.id, kind)];
-      if (active) await this.leadsService.deleteMarker(lead.id, kind);
-      this.leadsResource.value.update((leads) =>
-        leads?.map((item) => (item.id === lead.id ? { ...item, markers } : item)),
-      );
-    } catch (error) {
-      this.markerError.set(
-        error instanceof Error ? error.message : this.i18n.t('dashboard.markerSaveFailed'),
-      );
-    } finally {
-      this.markerPendingKey.set('');
-    }
-  }
-
-  protected async openLead(lead: Lead): Promise<void> {
-    const leadIds = [
-      ...new Set([
-        ...this.groups().flatMap((group) => group.rows.map((row) => row.id)),
-        ...this.managerTasks().flatMap((group) => group.tasks.map((task) => task.id)),
-      ]),
-    ];
-    if (!leadIds.length) return;
-    const scrollY = window.scrollY;
-    const state: LeadDetailDrawerState = { dirty: false };
-    const result = await firstValueFrom(
-      this.dialog
-        .open<LeadDetailDrawer, LeadDetailDrawerData, LeadDetailDrawerResult>(LeadDetailDrawer, {
-          data: { leadIds, initialLeadId: lead.id, state },
-          panelClass: 'lead-detail-drawer-panel',
-          backdropClass: 'lead-detail-drawer-backdrop',
-          position: { top: '0', right: '0' },
-          width: 'min(74rem, calc(100vw - 3rem))',
-          height: '100dvh',
-          maxWidth: '100vw',
-          ariaLabelledBy: 'lead-drawer-title',
-          autoFocus: 'dialog',
-          enterAnimationDuration: 180,
-          exitAnimationDuration: 140,
-        })
-        .afterClosed(),
-    );
-    if (result?.dirty || state.dirty) await this.refreshDashboard(scrollY, lead.id);
-  }
-
-  private async refreshDashboard(scrollY: number, focusLeadId: string): Promise<void> {
+  protected officesFor(manager: CrmEmployee) {
     const officeId = this.session.selectedOfficeId();
+    return (this.session.officeContext()?.filterOffices ?? []).filter(
+      (office) => manager.officeUuids.includes(office.id) && (!officeId || officeId === office.id),
+    );
+  }
+
+  protected refresh(): void {
+    this.revision.update((value) => value + 1);
+  }
+
+  protected taskCreated(): void {
+    this.createFor.set(null);
+    this.refresh();
+  }
+
+  protected async openTask(task: DashboardTask): Promise<void> {
+    if (this.opening()) return;
+    this.opening.set(true);
+    this.openError.set('');
+    const scrollY = window.scrollY;
+    const focusTarget =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const scope = this.viewScope();
     try {
-      const [overview, leads] = await Promise.all([
-        this.api.dashboard({ officeId }),
-        this.leadsService.list({ officeId, archived: 'active' }),
-      ]);
-      this.overviewResource.value.set(overview);
-      this.leadsResource.value.set(leads);
-    } catch (error) {
-      this.markerError.set(
-        error instanceof Error ? error.message : this.i18n.t('dashboard.refreshFailed'),
-      );
+      if (task.source === 'appointment') {
+        const office = this.session
+          .officeContext()
+          ?.filterOffices.find((item) => item.id === task.office.id);
+        if (!office || !task.localDate) throw new Error('Missing appointment office/date');
+        const response = await this.appointments.list({
+          officeId: office.id,
+          from: task.localDate,
+          to: addCalendarDays(task.localDate, 1),
+        });
+        if (scope !== this.viewScope()) return;
+        const appointment = response.items.find((item) => item.id === task.sourceId);
+        if (!appointment) {
+          this.refresh();
+          throw new Error('Appointment changed');
+        }
+        const result = await firstValueFrom(
+          openAppointmentDrawer(this.dialogs, {
+            office,
+            appointment,
+            managers: this.managersResource.value() ?? [],
+            appointments: response.items,
+          }).afterClosed(),
+        );
+        if (result?.kind === 'saved' || result?.kind === 'stale') this.refresh();
+      } else if (task.leadId) {
+        const state: LeadDetailDrawerState = { dirty: false };
+        const result = await firstValueFrom(
+          this.dialogs
+            .open<LeadDetailDrawer, LeadDetailDrawerData, LeadDetailDrawerResult>(
+              LeadDetailDrawer,
+              {
+                data: { leadIds: [task.leadId], initialLeadId: task.leadId, state },
+                panelClass: 'lead-detail-drawer-panel',
+                backdropClass: 'lead-detail-drawer-backdrop',
+                position: { top: '0', right: '0' },
+                width: 'min(74rem, calc(100vw - 3rem))',
+                height: '100dvh',
+                maxWidth: '100vw',
+                ariaLabelledBy: 'lead-drawer-title',
+                autoFocus: 'dialog',
+                enterAnimationDuration: 180,
+                exitAnimationDuration: 140,
+              },
+            )
+            .afterClosed(),
+        );
+        if (result?.dirty || state.dirty) this.refresh();
+      }
+    } catch {
+      this.openError.set(this.i18n.t('dashboard.board.openFailed'));
     } finally {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: scrollY, behavior: 'instant' });
-        document
-          .querySelector<HTMLButtonElement>(`.lead-open[data-lead-id="${focusLeadId}"]`)
-          ?.focus({ preventScroll: true });
-      });
+      this.opening.set(false);
+      if (scope === this.viewScope())
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: scrollY, behavior: 'instant' });
+          if (focusTarget?.isConnected) focusTarget.focus({ preventScroll: true });
+        });
     }
   }
 }

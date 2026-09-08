@@ -1,10 +1,15 @@
-// Generated contract adapter for api/openapi.yaml v2.17.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.18.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '@env/environment';
 import type {
+  CreateManagerTaskRequest,
+  ManagerTaskQuery,
+  ManagerTaskListResponse,
+  ManagerTaskMutationResponse,
+  ManagerTaskStatus,
   AppointmentListResponse,
   AppointmentMutationResponse,
   CreateAppointmentRequest,
@@ -184,6 +189,29 @@ export class KolssApiClient {
     return this.post(`/v1/users/${encodeURIComponent(id)}/${action}`, body).then(() => undefined);
   }
 
+  managerTasks(query: ManagerTaskQuery): Promise<ManagerTaskListResponse> {
+    return this.get('/v1/dashboard/manager-tasks', { ...query });
+  }
+
+  createManagerTask(
+    body: CreateManagerTaskRequest,
+    idempotencyKey: string,
+  ): Promise<ManagerTaskMutationResponse> {
+    return this.post('/v1/tasks', body, idempotencyKey);
+  }
+
+  updateManagerTask(
+    id: string,
+    version: number,
+    status: ManagerTaskStatus,
+  ): Promise<ManagerTaskMutationResponse> {
+    return this.patch(
+      `/v1/tasks/${encodeURIComponent(id)}`,
+      { status },
+      { 'If-Match': String(version) },
+    );
+  }
+
   dashboard(query: Readonly<Record<string, string | null | undefined>> = {}): Promise<{
     readonly totalLeads: number;
     readonly activeLeads: number;
@@ -240,8 +268,12 @@ export class KolssApiClient {
     return this.unwrap(firstValueFrom(this.http.get<T>(this.baseUrl + path, { params })));
   }
 
-  private async post<T>(path: string, body: unknown): Promise<T> {
-    const headers = new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() });
+  private async post<T>(
+    path: string,
+    body: unknown,
+    idempotencyKey: string = crypto.randomUUID(),
+  ): Promise<T> {
+    const headers = new HttpHeaders({ 'Idempotency-Key': idempotencyKey });
     return this.unwrap(firstValueFrom(this.http.post<T>(this.baseUrl + path, body, { headers })));
   }
 

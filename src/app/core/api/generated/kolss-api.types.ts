@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.17.0' as const;
+export const API_CONTRACT_VERSION = '2.18.0' as const;
 
 export type MoneyCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
 
@@ -98,6 +98,7 @@ export interface MeResponse {
   readonly userOffices: readonly Office[];
   readonly permissions: {
     readonly canManageUsers: boolean;
+    readonly canManageTasks: boolean;
     readonly canEditLeadFields: boolean;
     readonly canArchiveLeads: boolean;
     readonly canRestoreLeads: boolean;
@@ -205,4 +206,57 @@ export interface UpdateAppointmentRequest {
   readonly responsibleManagerId?: string;
   readonly comment?: string;
   readonly status?: 'visited' | 'no_show' | 'canceled';
+}
+
+export type ManagerTaskSection = 'important' | 'current' | 'future' | 'done' | 'canceled';
+export type ManagerTaskStatus = 'open' | 'done' | 'canceled';
+
+export interface DashboardTask {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly source: 'manual' | 'reminder' | 'appointment' | 'lead';
+  readonly kind: string;
+  readonly title: string;
+  readonly comment: string | null;
+  readonly dueAt: string | null;
+  readonly localDate: string | null;
+  readonly office: {
+    readonly id: string;
+    readonly code: string;
+    readonly nameUk: string;
+    readonly namePl: string;
+    readonly timezoneName: string;
+  };
+  readonly managerId: string | null;
+  readonly leadId: string | null;
+  readonly leadName: string | null;
+  readonly phone: string | null;
+  readonly status: ManagerTaskStatus;
+  readonly version: number | null;
+  readonly updatedAt: string;
+}
+
+export interface ManagerTaskQuery {
+  readonly officeId: string | null;
+  readonly managerId: string;
+  readonly section: ManagerTaskSection;
+  readonly cursor?: string | null;
+}
+
+export interface ManagerTaskListResponse {
+  readonly items: readonly DashboardTask[];
+  readonly nextCursor: string | null;
+}
+
+export interface CreateManagerTaskRequest {
+  readonly officeId: string;
+  readonly assigneeId: string;
+  readonly title: string;
+  readonly dueDate: string | null;
+}
+
+export interface ManagerTaskMutationResponse {
+  readonly id: string;
+  readonly version: number;
+  readonly status: ManagerTaskStatus;
 }

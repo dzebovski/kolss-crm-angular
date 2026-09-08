@@ -27,6 +27,7 @@ describe('LeadDetailPage route param binding', () => {
             me: () => ({
               permissions: {
                 canManageUsers: false,
+                canManageTasks: false,
                 canEditLeadFields: true,
                 canArchiveLeads: false,
                 canRestoreLeads: false,

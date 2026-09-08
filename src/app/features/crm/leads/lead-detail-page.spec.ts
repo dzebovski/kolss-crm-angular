@@ -165,6 +165,7 @@ describe('LeadDetailView', () => {
     const isSuperAdmin = role === 'super_admin';
     return {
       canManageUsers: isSuperAdmin,
+      canManageTasks: false,
       canEditLeadFields: isSuperAdmin || hasOffice,
       canArchiveLeads: isSuperAdmin || role === 'office_admin',
       canRestoreLeads: isSuperAdmin,

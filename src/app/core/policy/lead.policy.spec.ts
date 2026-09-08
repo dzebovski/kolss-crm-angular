@@ -17,6 +17,7 @@ function permissions(
 ): MeResponse['permissions'] {
   return {
     canManageUsers: false,
+    canManageTasks: false,
     canEditLeadFields: false,
     canArchiveLeads: false,
     canRestoreLeads: false,

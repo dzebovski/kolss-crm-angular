@@ -26,6 +26,7 @@ function meResponse(canManageUsers: boolean): MeResponse {
     userOffices: [],
     permissions: {
       canManageUsers,
+      canManageTasks: false,
       canEditLeadFields: false,
       canArchiveLeads: false,
       canRestoreLeads: false,
