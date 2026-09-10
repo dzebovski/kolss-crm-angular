@@ -30,6 +30,7 @@ function meResponse(canManageUsers: boolean): MeResponse {
       canEditLeadFields: false,
       canArchiveLeads: false,
       canRestoreLeads: false,
+      canAskLeadQuestions: false,
     },
   };
 }

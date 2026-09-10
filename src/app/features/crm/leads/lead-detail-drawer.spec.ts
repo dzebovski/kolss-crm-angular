@@ -49,6 +49,7 @@ describe('LeadDetailDrawer', () => {
                 canEditLeadFields: true,
                 canArchiveLeads: false,
                 canRestoreLeads: false,
+                canAskLeadQuestions: false,
               },
             }),
           },

@@ -7,6 +7,7 @@ import type {
   CloseReason,
   ContractCurrency,
   LeadActivityPayload,
+  QuestionLanguage,
 } from '@domain/lead.types';
 
 @Injectable({ providedIn: 'root' })
@@ -29,6 +30,40 @@ export class LeadActivitiesService {
       ...(dueDate ? { dueAt: dueAtFromDate(dueDate) } : {}),
       ...(assignedTo ? { assignedTo } : {}),
     });
+  }
+
+  addQuestion(
+    leadId: string,
+    comment: string,
+    assigneeIds: readonly string[] = [],
+    translations: Readonly<Partial<Record<QuestionLanguage, string>>> = {},
+  ): Promise<void> {
+    return this.commit(leadId, {
+      type: 'question',
+      comment: comment.trim(),
+      ...(assigneeIds.length ? { assigneeIds } : {}),
+      ...(Object.keys(translations).length ? { translations } : {}),
+    });
+  }
+
+  answerQuestion(leadId: string, eventId: string, answer: string): Promise<void> {
+    return this.api.answerLeadQuestion(leadId, eventId, answer.trim()).then(() => undefined);
+  }
+
+  updateQuestionAnswer(leadId: string, eventId: string, answer: string): Promise<void> {
+    return this.api
+      .updateLeadQuestionAnswer(leadId, eventId, { answer: answer.trim() })
+      .then(() => undefined);
+  }
+
+  translateQuestionAnswer(
+    leadId: string,
+    eventId: string,
+    targetLanguage: QuestionLanguage,
+  ): Promise<void> {
+    return this.api
+      .translateLeadQuestionAnswer(leadId, eventId, { targetLanguage })
+      .then(() => undefined);
   }
 
   setClientStatus(

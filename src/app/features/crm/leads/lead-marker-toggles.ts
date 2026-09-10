@@ -40,6 +40,21 @@ const MARKER_COPY: Readonly<
           }
         </button>
       }
+      @if (canAskQuestion()) {
+        <button
+          type="button"
+          class="lead-marker lead-marker--question"
+          [attr.aria-label]="questionLabel()"
+          [attr.title]="questionLabel()"
+          [disabled]="disabled() || questionPending()"
+          (click)="questionRequested.emit()"
+        >
+          <span class="lead-marker__question-icon" aria-hidden="true">?</span>
+          @if (questionPending()) {
+            <i aria-hidden="true"></i>
+          }
+        </button>
+      }
     </div>
   `,
   styles: `
@@ -99,6 +114,28 @@ const MARKER_COPY: Readonly<
       padding-inline: 0.68rem;
     }
 
+    .lead-marker--question {
+      border-color: color-mix(in srgb, var(--ui-violet) 32%, var(--ui-border));
+      background: color-mix(in srgb, var(--ui-violet) 8%, var(--ui-surface-raised));
+      color: var(--ui-violet);
+    }
+
+    .lead-marker--question:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--ui-violet) 15%, var(--ui-surface-raised));
+    }
+
+    .lead-marker__question-icon {
+      width: 1.1rem;
+      height: 1.1rem;
+      border: 1.5px solid currentColor;
+      border-radius: 50%;
+      font-size: 0.78rem;
+      font-weight: 800;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+    }
+
     .lead-marker small {
       font-size: 0.72rem;
       font-weight: 750;
@@ -140,7 +177,11 @@ export class LeadMarkerToggles {
   readonly markers = input<readonly LeadMarker[]>([]);
   readonly pending = input<LeadMarkerKind | null>(null);
   readonly disabled = input(false);
+  readonly canAskQuestion = input(false);
+  readonly questionPending = input(false);
+  readonly questionLabel = input('Поставити запитання');
   readonly toggled = output<LeadMarkerKind>();
+  readonly questionRequested = output<void>();
 
   protected readonly kinds: readonly LeadMarkerKind[] = ['reviewed', 'manager_aware'];
 

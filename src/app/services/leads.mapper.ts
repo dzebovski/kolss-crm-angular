@@ -18,6 +18,10 @@ import type {
   LeadEventType,
   LeadMarker,
   LeadMarkerKind,
+  LeadQuestionAnswer,
+  LeadQuestionAssignee,
+  LeadQuestionData,
+  QuestionLanguage,
   LatestTimelineComment,
   LeadSource,
   LeadWorkflowStatus,
@@ -226,6 +230,7 @@ function mapEventType(eventType: string): LeadEventType {
     lead_updated: 'lead_updated',
     lead_edited: 'lead_updated',
     lead_assigned: 'comment',
+    question: 'question',
   };
   return map[eventType] ?? 'comment';
 }
@@ -436,6 +441,10 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
     category: mapEventCategory(event.event_category),
     statusCode: event.status_code ?? null,
     editAudit: eventEditAudit(event.new_value),
+    question:
+      event.event_category === 'question' && event.status_code === 'status-question'
+        ? questionDataFromNewValue(event.new_value)
+        : null,
   }));
 }
 
@@ -444,6 +453,7 @@ function mapEventCategory(value: string | null | undefined): LeadEventCategory |
     value === 'call_status' ||
     value === 'client_status' ||
     value === 'comment' ||
+    value === 'question' ||
     value === 'system'
   ) {
     return value;
@@ -466,6 +476,49 @@ function eventEditAudit(value: unknown): LeadEventEditAudit | null {
     editedById: typeof editedById === 'string' ? editedById : '',
     editedByName: typeof editedByName === 'string' ? editedByName : 'Невідомий',
   };
+}
+
+function questionDataFromNewValue(value: unknown): LeadQuestionData | null {
+  if (!isRecord(value)) return null;
+  const rawQ = value['question'];
+  if (!isRecord(rawQ)) return null;
+  const status = rawQ['status'] === 'answered' ? 'answered' : 'pending';
+  const assignees = Array.isArray(rawQ['assignees'])
+    ? rawQ['assignees'].flatMap((item): readonly LeadQuestionAssignee[] => {
+        if (!isRecord(item) || typeof item['id'] !== 'string') return [];
+        return [{ id: item['id'], name: typeof item['name'] === 'string' ? item['name'] : '' }];
+      })
+    : [];
+  const translations = questionTranslations(rawQ['translations']);
+  let answer: LeadQuestionAnswer | null = null;
+  if (isRecord(rawQ['answer'])) {
+    const a = rawQ['answer'];
+    if (typeof a['text'] === 'string') {
+      answer = {
+        text: a['text'],
+        actorId: typeof a['actor_id'] === 'string' ? a['actor_id'] : '',
+        actorName: typeof a['actor_name'] === 'string' ? a['actor_name'] : '',
+        answeredAt: typeof a['answered_at'] === 'string' ? a['answered_at'] : '',
+        translations: questionTranslations(a['translations']),
+      };
+    }
+  }
+  return {
+    assignees,
+    translations,
+    status,
+    answer,
+  };
+}
+
+function questionTranslations(value: unknown): Readonly<Partial<Record<QuestionLanguage, string>>> {
+  if (!isRecord(value)) return {};
+  const result: Partial<Record<QuestionLanguage, string>> = {};
+  for (const language of ['UK', 'PL', 'EN'] as const) {
+    const text = value[language];
+    if (typeof text === 'string' && text.trim()) result[language] = text;
+  }
+  return result;
 }
 
 /** Reads a task assignee uuid from a lead event `new_value.assigned_to`. */

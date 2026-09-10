@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.18.0' as const;
+export const API_CONTRACT_VERSION = '2.19.0' as const;
 
 export type MoneyCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
 
@@ -102,6 +102,7 @@ export interface MeResponse {
     readonly canEditLeadFields: boolean;
     readonly canArchiveLeads: boolean;
     readonly canRestoreLeads: boolean;
+    readonly canAskLeadQuestions: boolean;
   };
 }
 
@@ -131,6 +132,52 @@ export interface LeadEventTranslationResponse {
   readonly translation: string;
   readonly sourceLanguage: 'UK' | 'PL';
   readonly translatedAt: string;
+}
+
+export interface TextTranslationRequest {
+  readonly text: string;
+  readonly sourceLanguage?: 'UK' | 'PL' | 'EN';
+  readonly targetLanguage: 'UK' | 'PL' | 'EN';
+}
+
+export interface TextTranslationResponse {
+  readonly translation: string;
+  readonly sourceLanguage?: 'UK' | 'PL' | 'EN';
+  readonly targetLanguage: 'UK' | 'PL' | 'EN';
+}
+
+export interface AnswerLeadQuestionRequest {
+  readonly answer: string;
+}
+
+export interface AnswerLeadQuestionResponse {
+  readonly ok: boolean;
+  readonly eventId: string;
+  readonly leadId: string;
+  readonly answer: {
+    readonly text: string;
+    readonly actor_id: string;
+    readonly actor_name: string;
+    readonly answered_at: string;
+    readonly translations: Readonly<Partial<Record<'UK' | 'PL' | 'EN', string>>>;
+  };
+}
+
+export interface UpdateLeadQuestionAnswerRequest {
+  readonly answer: string;
+}
+
+export interface TranslateLeadQuestionAnswerRequest {
+  readonly targetLanguage: 'UK' | 'PL' | 'EN';
+}
+
+export interface UpdateLeadQuestionAnswerResponse {
+  readonly changedFields: readonly string[];
+}
+
+export interface TranslateLeadQuestionAnswerResponse {
+  readonly translation: string;
+  readonly targetLanguage: 'UK' | 'PL' | 'EN';
 }
 
 export interface UsersResponse {

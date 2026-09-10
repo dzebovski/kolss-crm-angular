@@ -14,7 +14,7 @@ export type ClientStatus =
   | 'closed_lost'
   | 'contract_signed';
 
-export type LeadEventCategory = 'call_status' | 'client_status' | 'comment' | 'system';
+export type LeadEventCategory = 'call_status' | 'client_status' | 'comment' | 'question' | 'system';
 
 export type LeadWorkflowStatus =
   | 'new'
@@ -57,7 +57,8 @@ export type LeadEventType =
   | 'lead_reopened'
   | 'attachment'
   | 'lead_updated'
-  | 'office_work';
+  | 'office_work'
+  | 'question';
 
 /** `loss_reasons.code` from Supabase; mock labels cover CRM defaults. */
 export type CloseReason = string;
@@ -68,6 +69,28 @@ export interface LeadAttachment {
   readonly sizeLabel: string;
   readonly addedAt: string;
   readonly eventId?: string;
+}
+
+export type QuestionLanguage = 'UK' | 'PL' | 'EN';
+
+export interface LeadQuestionAssignee {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface LeadQuestionAnswer {
+  readonly text: string;
+  readonly actorId: string;
+  readonly actorName: string;
+  readonly answeredAt: string;
+  readonly translations: Readonly<Partial<Record<QuestionLanguage, string>>>;
+}
+
+export interface LeadQuestionData {
+  readonly assignees: readonly LeadQuestionAssignee[];
+  readonly translations: Readonly<Partial<Record<QuestionLanguage, string>>>;
+  readonly status: 'pending' | 'answered';
+  readonly answer?: LeadQuestionAnswer | null;
 }
 
 export interface LeadEvent {
@@ -88,6 +111,7 @@ export interface LeadEvent {
   readonly category?: LeadEventCategory | null;
   readonly statusCode?: string | null;
   readonly editAudit?: LeadEventEditAudit | null;
+  readonly question?: LeadQuestionData | null;
 }
 
 export interface LeadEventEditAudit {
@@ -251,4 +275,10 @@ export type LeadActivityPayload =
       readonly type: 'clear_reminder';
       readonly kind: 'callback' | 'thinking' | 'postponed' | 'comment' | 'showroom' | 'measurement';
     }
-  | { readonly type: 'reopen' };
+  | { readonly type: 'reopen' }
+  | {
+      readonly type: 'question';
+      readonly comment: string;
+      readonly assigneeIds?: readonly string[];
+      readonly translations?: Readonly<Partial<Record<QuestionLanguage, string>>>;
+    };

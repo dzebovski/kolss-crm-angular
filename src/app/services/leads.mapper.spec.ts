@@ -454,6 +454,32 @@ describe('mapLeadDetail events', () => {
           created_at: '2026-07-10T03:00:00Z',
           profiles: { display_name: 'Kyiv Manager' },
         },
+        {
+          id: 'evt-question',
+          lead_id: 'lead-1',
+          actor_id: 'user-admin',
+          event_type: 'question',
+          event_category: 'question',
+          status_code: 'status-question',
+          comment: 'Який колір фасаду?',
+          old_value: null,
+          new_value: {
+            question: {
+              status: 'answered',
+              assignees: [{ id: 'emp-kyiv-1', name: 'Олена' }],
+              translations: { PL: 'Jaki kolor elewacji?' },
+              answer: {
+                text: 'Білий.',
+                actor_id: 'emp-kyiv-1',
+                actor_name: 'Олена',
+                answered_at: '2026-07-10T04:00:00Z',
+                translations: { EN: 'White.' },
+              },
+            },
+          },
+          created_at: '2026-07-10T03:30:00Z',
+          profiles: { display_name: 'Office Admin' },
+        },
       ],
     });
 
@@ -484,6 +510,22 @@ describe('mapLeadDetail events', () => {
       id: 'evt-task',
       type: 'comment',
       assignedToId: 'emp-kyiv-1',
+    });
+    expect(lead.events[4]).toMatchObject({
+      id: 'evt-question',
+      type: 'question',
+      category: 'question',
+      statusCode: 'status-question',
+      question: {
+        status: 'answered',
+        assignees: [{ id: 'emp-kyiv-1', name: 'Олена' }],
+        translations: { PL: 'Jaki kolor elewacji?' },
+        answer: {
+          text: 'Білий.',
+          actorId: 'emp-kyiv-1',
+          translations: { EN: 'White.' },
+        },
+      },
     });
   });
 });

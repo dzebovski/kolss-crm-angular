@@ -35,6 +35,24 @@ export function canEditLead(
   return inUserOffice(context, lead.officeCode);
 }
 
+/** Can the current user ask a question on this non-archived lead. */
+export function canAskLeadQuestion(
+  context: LeadPolicyContext,
+  lead: Pick<Lead, 'archivedAt' | 'officeCode'>,
+): boolean {
+  if (lead.archivedAt) return false;
+  if (!context.permissions?.canAskLeadQuestions) return false;
+  return inUserOffice(context, lead.officeCode);
+}
+
+/** Any user with access to the lead's office may answer an open question. */
+export function canAnswerLeadQuestion(
+  context: LeadPolicyContext,
+  lead: Pick<Lead, 'archivedAt' | 'officeCode'>,
+): boolean {
+  return !lead.archivedAt && inUserOffice(context, lead.officeCode);
+}
+
 /** Can the current user archive this lead (only once it is lost/closed). */
 export function canArchiveLead(
   context: LeadPolicyContext,

@@ -47,6 +47,24 @@ describe('LeadMarkerToggles', () => {
     expect(buttons[1]!.textContent).toContain('На контролі');
   });
 
+  it('renders a non-toggle question action only when the page grants the capability', async () => {
+    const fixture = TestBed.createComponent(LeadMarkerToggles);
+    const requested = vi.fn();
+    fixture.componentInstance.questionRequested.subscribe(requested);
+    fixture.componentRef.setInput('canAskQuestion', true);
+    fixture.componentRef.setInput('questionLabel', 'Поставити запитання');
+    await fixture.whenStable();
+
+    const buttons = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
+    );
+    const questionButton = buttons[2]!;
+    expect(questionButton.getAttribute('aria-pressed')).toBeNull();
+    expect(questionButton.getAttribute('aria-label')).toBe('Поставити запитання');
+    questionButton.click();
+    expect(requested).toHaveBeenCalledOnce();
+  });
+
   it('has no automated accessibility violations', async () => {
     const fixture = TestBed.createComponent(LeadMarkerToggles);
     await fixture.whenStable();

@@ -3,12 +3,13 @@ import { Component, inject, input, output, signal } from '@angular/core';
 import { presentHistoryAuditText } from '@core/i18n/event-presenter';
 import { I18nService } from '@core/i18n/i18n.service';
 import { callStatusTone, clientStatusTone } from '@domain/lead.rules';
-import type { LeadEvent } from '@domain/lead.types';
+import type { LeadEvent, QuestionLanguage } from '@domain/lead.types';
 import { UiButton } from '@ui/button/ui-button';
 import { UiModal } from '@ui/dialog/ui-modal';
 import type { UiBadgeTone } from '@ui/feedback/ui-badge';
 import { UiBadge } from '@ui/feedback/ui-badge';
 import { UiIcon } from '@ui/icon/ui-icon';
+import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { LinkifiedText } from '@ui/text/linkified-text';
 import { UiUser } from '@ui/user/ui-user';
 import { LeadDueDate, type LeadDueDateKind } from './lead-due-date';
@@ -26,7 +27,7 @@ import * as presenter from './lead-detail-page.presenter';
  */
 @Component({
   selector: 'app-lead-timeline',
-  imports: [LeadDueDate, LinkifiedText, UiBadge, UiButton, UiIcon, UiModal, UiUser],
+  imports: [LeadDueDate, LinkifiedText, UiBadge, UiButton, UiIcon, UiModal, UiSelect, UiUser],
   templateUrl: './lead-timeline.html',
   styleUrl: './lead-timeline.scss',
 })
@@ -39,13 +40,27 @@ export class LeadTimeline {
   readonly pending = input(false);
   readonly error = input('');
   readonly translateEvent = input.required<(event: LeadEvent) => Promise<void>>();
+  readonly canAnswerQuestion = input(false);
+  readonly canEditQuestionAnswer = input.required<(event: LeadEvent) => boolean>();
+  readonly translateQuestionAnswer =
+    input.required<(event: LeadEvent, target: QuestionLanguage) => Promise<void>>();
 
   readonly editRequested = output<LeadEvent>();
   readonly deleteConfirmed = output<LeadEvent>();
+  readonly answerRequested = output<LeadEvent>();
+  readonly answerEditRequested = output<LeadEvent>();
 
   protected readonly deleteTarget = signal<LeadEvent | null>(null);
   protected readonly translatingIds = signal<ReadonlySet<string>>(new Set());
   protected readonly translationErrors = signal<Readonly<Record<string, string>>>({});
+  protected readonly questionAnswerTargets = signal<Readonly<Record<string, QuestionLanguage>>>({});
+  protected readonly questionTranslationIds = signal<ReadonlySet<string>>(new Set());
+  protected readonly questionTranslationErrors = signal<Readonly<Record<string, string>>>({});
+  protected readonly languageOptions: readonly UiSelectOption[] = [
+    { value: 'UK', label: 'Українська' },
+    { value: 'PL', label: 'Polski' },
+    { value: 'EN', label: 'English' },
+  ];
 
   protected eventTitle(event: LeadEvent): string {
     return presenter.eventTitle(event, this.i18n.activeBundle());
@@ -149,5 +164,89 @@ export class LeadTimeline {
         return next;
       });
     }
+  }
+
+  protected questionTranslations(
+    event: LeadEvent,
+  ): readonly { readonly language: QuestionLanguage; readonly text: string }[] {
+    return this.translationEntries(event.question?.translations ?? {});
+  }
+
+  protected answerTranslations(
+    event: LeadEvent,
+  ): readonly { readonly language: QuestionLanguage; readonly text: string }[] {
+    return this.translationEntries(event.question?.answer?.translations ?? {});
+  }
+
+  protected questionAssignees(event: LeadEvent): string {
+    const names = event.question?.assignees.map((assignee) => assignee.name || assignee.id) ?? [];
+    return names.length ? names.join(', ') : this.i18n.t('leadQuestion.unassigned');
+  }
+
+  protected answerTarget(event: LeadEvent): QuestionLanguage {
+    return this.questionAnswerTargets()[event.id] ?? 'EN';
+  }
+
+  protected setAnswerTarget(event: LeadEvent, target: string): void {
+    if (target !== 'UK' && target !== 'PL' && target !== 'EN') return;
+    this.questionAnswerTargets.update((targets) => ({ ...targets, [event.id]: target }));
+  }
+
+  protected isQuestionTranslationPending(eventId: string): boolean {
+    return this.questionTranslationIds().has(eventId);
+  }
+
+  protected questionTranslationError(eventId: string): string {
+    return this.questionTranslationErrors()[eventId] ?? '';
+  }
+
+  protected requestAnswer(event: LeadEvent): void {
+    if (event.question?.answer || !this.canAnswerQuestion() || this.pending()) return;
+    this.answerRequested.emit(event);
+  }
+
+  protected requestAnswerEdit(event: LeadEvent): void {
+    if (!event.question?.answer || !this.canEditQuestionAnswer()(event) || this.pending()) return;
+    this.answerEditRequested.emit(event);
+  }
+
+  protected async translateAnswer(event: LeadEvent): Promise<void> {
+    if (
+      !event.question?.answer ||
+      !this.canAnswerQuestion() ||
+      this.isQuestionTranslationPending(event.id)
+    ) {
+      return;
+    }
+    this.questionTranslationErrors.update((errors) => {
+      if (!(event.id in errors)) return errors;
+      const next = { ...errors };
+      delete next[event.id];
+      return next;
+    });
+    this.questionTranslationIds.update((ids) => new Set(ids).add(event.id));
+    try {
+      await this.translateQuestionAnswer()(event, this.answerTarget(event));
+    } catch {
+      this.questionTranslationErrors.update((errors) => ({
+        ...errors,
+        [event.id]: this.i18n.t('leadQuestion.translationFailed'),
+      }));
+    } finally {
+      this.questionTranslationIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(event.id);
+        return next;
+      });
+    }
+  }
+
+  private translationEntries(
+    translations: Readonly<Partial<Record<QuestionLanguage, string>>>,
+  ): readonly { readonly language: QuestionLanguage; readonly text: string }[] {
+    return (['UK', 'PL', 'EN'] as const).flatMap((language) => {
+      const text = translations[language];
+      return text ? [{ language, text }] : [];
+    });
   }
 }

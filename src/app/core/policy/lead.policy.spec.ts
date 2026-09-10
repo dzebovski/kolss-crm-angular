@@ -2,6 +2,7 @@ import type { MeResponse } from '@core/api/generated/kolss-api.types';
 import type { Lead, LeadEvent } from '@domain/lead.types';
 import {
   canArchiveLead,
+  canAskLeadQuestion,
   canEditLead,
   canManageArchivedLead,
   canMutateEvent,
@@ -21,6 +22,7 @@ function permissions(
     canEditLeadFields: false,
     canArchiveLeads: false,
     canRestoreLeads: false,
+    canAskLeadQuestions: false,
     ...overrides,
   };
 }
@@ -144,6 +146,26 @@ describe('lead.policy', () => {
         userOffices: [{ code: 'kyiv' }],
       });
       expect(canArchiveLead(ctx, lead({ officeCode: 'kyiv' }))).toBe(false);
+    });
+  });
+
+  describe('canAskLeadQuestion', () => {
+    it('requires the server capability and access to the lead office', () => {
+      const allowed = context({
+        permissions: permissions({ canAskLeadQuestions: true }),
+        userOffices: [{ code: 'kyiv' }],
+      });
+      expect(canAskLeadQuestion(allowed, lead())).toBe(true);
+      expect(canAskLeadQuestion(allowed, lead({ officeCode: 'warsaw' }))).toBe(false);
+      expect(canAskLeadQuestion(context({ userOffices: [{ code: 'kyiv' }] }), lead())).toBe(false);
+    });
+
+    it('never exposes the action on an archived lead', () => {
+      const ctx = context({
+        isSuperAdmin: true,
+        permissions: permissions({ canAskLeadQuestions: true }),
+      });
+      expect(canAskLeadQuestion(ctx, lead({ archivedAt: '2026-07-01T00:00:00.000Z' }))).toBe(false);
     });
   });
 

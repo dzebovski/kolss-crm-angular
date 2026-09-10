@@ -26,7 +26,11 @@
         [markers]="lead.markers"
         [pending]="markerPending()"
         [disabled]="!!lead.archivedAt"
+        [canAskQuestion]="canAskQuestion(lead)"
+        [questionPending]="questionPending()"
+        [questionLabel]="i18n.t('leadQuestion.actionLabel')"
         (toggled)="toggleMarker(lead, $event)"
+        (questionRequested)="openQuestion(lead)"
       />
     </div>
 
@@ -71,8 +75,13 @@
       [pending]="actionPending()"
       [error]="actionError()"
       [translateEvent]="translateEventFor(lead)"
+      [canAnswerQuestion]="canAnswerQuestion(lead)"
+      [canEditQuestionAnswer]="canEditQuestionAnswerFn"
+      [translateQuestionAnswer]="translateQuestionAnswerFor(lead)"
       (editRequested)="editEvent(lead, $event)"
       (deleteConfirmed)="deleteTimelineEvent(lead, $event)"
+      (answerRequested)="answerQuestion(lead, $event)"
+      (answerEditRequested)="editQuestionAnswer(lead, $event)"
     />
 
     @if (editLeadDialogOpen()) {

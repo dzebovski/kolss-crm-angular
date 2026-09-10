@@ -15,7 +15,7 @@
             [attr.data-category]="event.category ?? 'legacy'"
             aria-hidden="true"
           ></span>
-          <article class="timeline-card">
+          <article class="timeline-card" [class.timeline-card--question]="!!event.question">
             <header class="timeline-card__header">
               <strong>{{ eventTitle(event) }}</strong>
               @if (canMutate()(event)) {
@@ -43,18 +43,122 @@
                 </div>
               }
             </header>
-            @if (eventStatusLabel(event); as statusLabel) {
+            @if (event.question; as question) {
+              <app-ui-badge class="timeline-card__status" tone="info">
+                {{
+                  i18n.t(
+                    question.status === 'answered'
+                      ? 'leadQuestion.answered'
+                      : 'leadQuestion.pending'
+                  )
+                }}
+              </app-ui-badge>
+              @if (event.comment?.trim()) {
+                <p><app-linkified-text [text]="event.comment!" /></p>
+              }
+              @for (translation of questionTranslations(event); track translation.language) {
+                <section
+                  class="timeline-card__translation"
+                  [attr.aria-label]="translation.language"
+                >
+                  <span>{{
+                    i18n.t('leadQuestion.translation', { language: translation.language })
+                  }}</span>
+                  <p><app-linkified-text [text]="translation.text" /></p>
+                </section>
+              }
+              <p class="timeline-card__question-assignees">
+                <app-ui-icon name="person" [size]="15" />
+                <span>{{ i18n.t('leadQuestion.assignees') }}: {{ questionAssignees(event) }}</span>
+              </p>
+              @if (!question.answer) {
+                <app-ui-button
+                  class="timeline-card__reply"
+                  size="small"
+                  [disabled]="pending() || !canAnswerQuestion()"
+                  (pressed)="requestAnswer(event)"
+                  >{{ i18n.t('leadQuestion.answer') }}</app-ui-button
+                >
+              } @else {
+                <section
+                  class="timeline-card__answer"
+                  [attr.aria-label]="i18n.t('leadQuestion.answer')"
+                >
+                  <header>
+                    <strong>{{ i18n.t('leadQuestion.answer') }}</strong>
+                    @if (canEditQuestionAnswer()(event)) {
+                      <app-ui-button
+                        variant="ghost"
+                        size="small"
+                        [ariaLabel]="i18n.t('common.edit')"
+                        [title]="i18n.t('common.edit')"
+                        [disabled]="pending()"
+                        (pressed)="requestAnswerEdit(event)"
+                        ><app-ui-icon name="edit" [size]="14"
+                      /></app-ui-button>
+                    }
+                  </header>
+                  <p><app-linkified-text [text]="question.answer.text" /></p>
+                  @for (translation of answerTranslations(event); track translation.language) {
+                    <section
+                      class="timeline-card__translation"
+                      [attr.aria-label]="translation.language"
+                    >
+                      <span>{{
+                        i18n.t('leadQuestion.translation', { language: translation.language })
+                      }}</span>
+                      <p><app-linkified-text [text]="translation.text" /></p>
+                    </section>
+                  }
+                  <footer class="timeline-card__answer-meta">
+                    <time [attr.datetime]="question.answer.answeredAt">
+                      {{ i18n.formatDateTime(question.answer.answeredAt) }}
+                    </time>
+                    <span aria-hidden="true">·</span>
+                    <app-ui-user
+                      [userId]="question.answer.actorId || null"
+                      [name]="question.answer.actorName || i18n.t('common.unknown')"
+                      size="xs"
+                    />
+                  </footer>
+                  @if (canAnswerQuestion()) {
+                    <div class="timeline-card__answer-translate">
+                      <app-ui-select
+                        [label]="i18n.t('leadQuestion.targetLanguage')"
+                        [options]="languageOptions"
+                        [value]="answerTarget(event)"
+                        [disabled]="pending() || isQuestionTranslationPending(event.id)"
+                        (valueChange)="setAnswerTarget(event, $event)"
+                      />
+                      <app-ui-button
+                        variant="ghost"
+                        size="small"
+                        [loading]="isQuestionTranslationPending(event.id)"
+                        [disabled]="pending() || isQuestionTranslationPending(event.id)"
+                        (pressed)="translateAnswer(event)"
+                        >{{ i18n.t('leadQuestion.translate') }}</app-ui-button
+                      >
+                    </div>
+                    @if (questionTranslationError(event.id); as questionTranslationErrorText) {
+                      <p class="timeline-card__translation-error" role="alert">
+                        {{ questionTranslationErrorText }}
+                      </p>
+                    }
+                  }
+                </section>
+              }
+            } @else if (eventStatusLabel(event); as statusLabel) {
               <app-ui-badge class="timeline-card__status" [tone]="eventStatusTone(event)">
                 {{ statusLabel }}
               </app-ui-badge>
             }
-            @if (eventBody(event); as body) {
+            @if (!event.question && eventBody(event); as body) {
               <p><app-linkified-text [text]="body" /></p>
             }
             @if (eventDueDate(event); as due) {
               <app-lead-due-date class="timeline-card__due" [date]="due.date" [kind]="due.kind" />
             }
-            @if (event.comment?.trim()) {
+            @if (!event.question && event.comment?.trim()) {
               @if (event.translationEn; as translation) {
                 <div class="timeline-card__translation">
                   <span>{{ i18n.t('leadDetail.englishTranslation') }}</span>

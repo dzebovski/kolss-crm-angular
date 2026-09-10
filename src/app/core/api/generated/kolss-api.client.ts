@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.18.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.19.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -10,6 +10,7 @@ import type {
   ManagerTaskListResponse,
   ManagerTaskMutationResponse,
   ManagerTaskStatus,
+  AnswerLeadQuestionResponse,
   AppointmentListResponse,
   AppointmentMutationResponse,
   CreateAppointmentRequest,
@@ -22,6 +23,10 @@ import type {
   MeResponse,
   SalesFunnelReportQuery,
   SalesFunnelReportResponse,
+  TextTranslationRequest,
+  TextTranslationResponse,
+  TranslateLeadQuestionAnswerResponse,
+  UpdateLeadQuestionAnswerResponse,
   UpdateAppointmentRequest,
   UpdateCurrencyRatesRequest,
   UsersResponse,
@@ -106,6 +111,43 @@ export class KolssApiClient {
     return this.post(
       `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}/translate`,
       {},
+    );
+  }
+
+  translateText(body: TextTranslationRequest): Promise<TextTranslationResponse> {
+    return this.post('/v1/translate', body);
+  }
+
+  answerLeadQuestion(
+    id: string,
+    eventId: string,
+    answer: string,
+  ): Promise<AnswerLeadQuestionResponse> {
+    return this.post(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}/answer`,
+      { answer },
+    );
+  }
+
+  updateLeadQuestionAnswer(
+    id: string,
+    eventId: string,
+    body: { readonly answer: string },
+  ): Promise<UpdateLeadQuestionAnswerResponse> {
+    return this.patch(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}/answer`,
+      body,
+    );
+  }
+
+  translateLeadQuestionAnswer(
+    id: string,
+    eventId: string,
+    body: { readonly targetLanguage: 'UK' | 'PL' | 'EN' },
+  ): Promise<TranslateLeadQuestionAnswerResponse> {
+    return this.post(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}/answer/translate`,
+      body,
     );
   }
 

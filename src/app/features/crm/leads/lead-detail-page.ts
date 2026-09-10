@@ -17,10 +17,10 @@ import {
   showroomDueAtForLead,
   type LeadActiveReminder,
 } from '@domain/lead.rules';
-import type { LeadEvent, LeadMarkerKind, Lead } from '@domain/lead.types';
+import type { LeadEvent, LeadMarkerKind, Lead, QuestionLanguage } from '@domain/lead.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { LeadsService } from '@services/leads.service';
-import { UsersService } from '@services/users.service';
+import { type CrmEmployee, UsersService } from '@services/users.service';
 import {
   addCalendarDays,
   AppointmentsService,
@@ -43,6 +43,12 @@ import {
   type TextActivityDialogData,
   type TextActivityDialogResult,
 } from './lead-activity-dialogs';
+import {
+  LeadQuestionAnswerDialog,
+  LeadQuestionDialog,
+  type LeadQuestionAnswerDialogResult,
+  type LeadQuestionDialogResult,
+} from './lead-question-dialog';
 import { EditLeadDialog } from './edit-lead-dialog';
 import {
   AppointmentDrawer,
@@ -89,6 +95,7 @@ export class LeadDetailView {
   protected readonly deletingLead = signal(false);
   protected readonly markerPending = signal<LeadMarkerKind | null>(null);
   protected readonly markerError = signal('');
+  protected readonly questionPending = signal(false);
   protected readonly assignManagerDialogOpen = signal(false);
   protected readonly assignManagerId = signal(NO_MANAGER_VALUE);
   protected readonly managerPending = signal(false);
@@ -117,11 +124,28 @@ export class LeadDetailView {
   }
 
   protected canMutateEvent(event: LeadEvent): boolean {
-    return leadPolicy.canMutateEvent(this.leadPolicyContext(), event);
+    return !this.lead()?.archivedAt && leadPolicy.canMutateEvent(this.leadPolicyContext(), event);
+  }
+
+  protected canAskQuestion(lead: Lead): boolean {
+    return leadPolicy.canAskLeadQuestion(this.leadPolicyContext(), lead);
+  }
+
+  protected canAnswerQuestion(lead: Lead): boolean {
+    return leadPolicy.canAnswerLeadQuestion(this.leadPolicyContext(), lead);
+  }
+
+  protected canEditQuestionAnswer(event: LeadEvent): boolean {
+    const answer = event.question?.answer;
+    if (!answer || this.lead()?.archivedAt) return false;
+    const context = this.leadPolicyContext();
+    return context.isSuperAdmin || Boolean(context.userId && context.userId === answer.actorId);
   }
 
   /** Bound field (not a method reference) so `LeadTimeline` can call it detached from `this`. */
   protected readonly canMutateEventFn = (event: LeadEvent): boolean => this.canMutateEvent(event);
+  protected readonly canEditQuestionAnswerFn = (event: LeadEvent): boolean =>
+    this.canEditQuestionAnswer(event);
 
   /** Bound field (not a method reference) so `LeadTimeline` can call it detached from `this`. */
   protected readonly employeeNameFn = (id: string | null): string => this.employeeName(id);
@@ -135,6 +159,44 @@ export class LeadDetailView {
 
   protected async editEvent(lead: Lead, event: LeadEvent): Promise<void> {
     if (!this.canMutateEvent(event)) return;
+    if (event.question) {
+      const result = await firstValueFrom(
+        this.dialog
+          .open<
+            LeadQuestionDialog,
+            {
+              readonly employees: readonly CrmEmployee[];
+              readonly officeCode: Lead['officeCode'];
+              readonly initialText: string;
+              readonly initialAssigneeIds: readonly string[];
+              readonly initialTranslations: Readonly<Partial<Record<QuestionLanguage, string>>>;
+              readonly edit: boolean;
+            },
+            LeadQuestionDialogResult
+          >(LeadQuestionDialog, {
+            data: {
+              employees: this.employeesResource.value() ?? [],
+              officeCode: lead.officeCode,
+              initialText: event.comment ?? '',
+              initialAssigneeIds: event.question.assignees.map((assignee) => assignee.id),
+              initialTranslations: event.question.translations,
+              edit: true,
+            },
+            ariaLabelledBy: 'lead-question-dialog-title',
+            maxWidth: 'calc(100vw - 1rem)',
+          })
+          .afterClosed(),
+      );
+      if (!result) return;
+      await this.runActivity(async () => {
+        await this.leadsService.updateHistoryEvent(lead.id, event.id, {
+          comment: result.text,
+          assigneeIds: result.assigneeIds,
+          translations: result.translations,
+        });
+      });
+      return;
+    }
     const result = await this.openTextDialog({
       eyebrow: this.i18n.t('leadDetail.history'),
       title: this.i18n.t('lead.editHistory'),
@@ -158,6 +220,88 @@ export class LeadDetailView {
   protected translateEventFor(lead: Lead): (event: LeadEvent) => Promise<void> {
     return async (event) => {
       await this.leadsService.translateHistoryEvent(lead.id, event.id);
+      await this.leadResource.reload();
+      this.changed.emit();
+    };
+  }
+
+  protected async openQuestion(lead: Lead): Promise<void> {
+    if (!this.canAskQuestion(lead) || this.questionPending()) return;
+    const result = await firstValueFrom(
+      this.dialog
+        .open<
+          LeadQuestionDialog,
+          { readonly employees: readonly CrmEmployee[]; readonly officeCode: Lead['officeCode'] },
+          LeadQuestionDialogResult
+        >(LeadQuestionDialog, {
+          data: { employees: this.employeesResource.value() ?? [], officeCode: lead.officeCode },
+          ariaLabelledBy: 'lead-question-dialog-title',
+          maxWidth: 'calc(100vw - 1rem)',
+        })
+        .afterClosed(),
+    );
+    if (!result) return;
+    this.questionPending.set(true);
+    this.markerError.set('');
+    try {
+      await this.activities.addQuestion(
+        lead.id,
+        result.text,
+        result.assigneeIds,
+        result.translations,
+      );
+      await this.leadResource.reload();
+      this.changed.emit();
+    } catch (error) {
+      this.markerError.set(
+        error instanceof Error ? error.message : this.i18n.t('leadQuestion.createFailed'),
+      );
+    } finally {
+      this.questionPending.set(false);
+    }
+  }
+
+  protected async answerQuestion(lead: Lead, event: LeadEvent): Promise<void> {
+    if (!event.question || event.question.answer || !this.canAnswerQuestion(lead)) return;
+    const result = await this.openQuestionAnswerDialog();
+    if (!result) return;
+    await this.runActivity(async () => {
+      await this.activities.answerQuestion(lead.id, event.id, result.text);
+      for (const language of Object.keys(result.translations) as QuestionLanguage[]) {
+        await this.activities.translateQuestionAnswer(lead.id, event.id, language);
+      }
+    });
+  }
+
+  protected async editQuestionAnswer(lead: Lead, event: LeadEvent): Promise<void> {
+    const answer = event.question?.answer;
+    if (!answer || !this.canEditQuestionAnswer(event)) return;
+    const result = await this.openQuestionAnswerDialog(answer.text, answer.translations, true);
+    if (!result) return;
+    const translationTargets = (Object.keys(result.translations) as QuestionLanguage[]).filter(
+      (language) => result.translations[language] !== answer.translations[language],
+    );
+    if (result.text === answer.text && translationTargets.length === 0) return;
+    await this.runActivity(async () => {
+      if (result.text !== answer.text) {
+        await this.activities.updateQuestionAnswer(lead.id, event.id, result.text);
+      }
+      const targets =
+        result.text === answer.text
+          ? translationTargets
+          : (Object.keys(result.translations) as QuestionLanguage[]);
+      for (const language of targets) {
+        await this.activities.translateQuestionAnswer(lead.id, event.id, language);
+      }
+    });
+  }
+
+  protected translateQuestionAnswerFor(
+    lead: Lead,
+  ): (event: LeadEvent, target: 'UK' | 'PL' | 'EN') => Promise<void> {
+    return async (event, target) => {
+      if (!event.question?.answer || !this.canAnswerQuestion(lead)) return;
+      await this.activities.translateQuestionAnswer(lead.id, event.id, target);
       await this.leadResource.reload();
       this.changed.emit();
     };
@@ -387,6 +531,30 @@ export class LeadDetailView {
             maxWidth: 'calc(100vw - 1rem)',
           },
         )
+        .afterClosed(),
+    );
+  }
+
+  private async openQuestionAnswerDialog(
+    initialText = '',
+    initialTranslations: Readonly<Partial<Record<QuestionLanguage, string>>> = {},
+    edit = false,
+  ): Promise<LeadQuestionAnswerDialogResult | undefined> {
+    return firstValueFrom(
+      this.dialog
+        .open<
+          LeadQuestionAnswerDialog,
+          {
+            readonly initialText: string;
+            readonly initialTranslations: Readonly<Partial<Record<QuestionLanguage, string>>>;
+            readonly edit: boolean;
+          },
+          LeadQuestionAnswerDialogResult
+        >(LeadQuestionAnswerDialog, {
+          data: { initialText, initialTranslations, edit },
+          ariaLabelledBy: 'lead-question-answer-dialog-title',
+          maxWidth: 'calc(100vw - 1rem)',
+        })
         .afterClosed(),
     );
   }

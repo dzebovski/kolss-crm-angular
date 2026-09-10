@@ -31,6 +31,7 @@ describe('LeadDetailPage route param binding', () => {
                 canEditLeadFields: true,
                 canArchiveLeads: false,
                 canRestoreLeads: false,
+                canAskLeadQuestions: false,
               },
             }),
           },

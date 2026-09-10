@@ -7,6 +7,7 @@ import type {
   ContractCurrency,
   LeadMarker,
   LeadMarkerKind,
+  QuestionLanguage,
   LeadSource,
   Lead,
 } from '@domain/lead.types';
@@ -53,6 +54,8 @@ export interface LeadDetailsUpdate {
 
 export interface HistoryEventUpdate {
   readonly comment: string;
+  readonly assigneeIds?: readonly string[];
+  readonly translations?: Readonly<Partial<Record<QuestionLanguage, string>>>;
 }
 
 export interface CreateLeadPayload {
