@@ -264,6 +264,7 @@ export const messagesUk = {
   'lead.backToList': 'Повернутись до списку',
   'lead.initialMessage': 'Початкове повідомлення',
   'lead.comment': 'Коментар',
+  'leadDrawer.openFullCard': 'Відкрити повну картку',
   'leadDetail.allLeads': 'Усі заявки',
   'leadDetail.created': 'Створено',
   'leadDetail.client': 'Клієнт',

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import axe from 'axe-core';
 
 import { AuthService } from '@core/auth/auth.service';
@@ -20,7 +20,7 @@ describe('LeadDetailDrawer', () => {
     await TestBed.configureTestingModule({
       imports: [LeadDetailDrawer],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'crm/leads/:leadId', component: LeadDetailDrawer }]),
         {
           provide: MAT_DIALOG_DATA,
           useValue: {
@@ -114,12 +114,36 @@ describe('LeadDetailDrawer', () => {
 
     expect(previous.disabled).toBe(true);
     expect(element.textContent).toContain(leads[0]!.name);
+    expect(
+      element.querySelector<HTMLAnchorElement>('.lead-drawer__open-link')?.getAttribute('href'),
+    ).toBe(`/crm/leads/${leads[0]!.id}`);
     next.click();
     await fixture.whenStable();
 
     expect(element.textContent).toContain('2 / 2');
     expect(element.textContent).toContain(leads[1]!.name);
+    expect(
+      element.querySelector<HTMLAnchorElement>('.lead-drawer__open-link')?.getAttribute('href'),
+    ).toBe(`/crm/leads/${leads[1]!.id}`);
     expect(next.disabled).toBe(true);
+  });
+
+  it('opens the current full lead card and closes the drawer', async () => {
+    const { close, fixture, leads } = await render();
+    const router = TestBed.inject(Router);
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('button[aria-label="Наступний лід"]')!.click();
+    fixture.componentInstance['markDirty']();
+    await fixture.whenStable();
+    const link = element.querySelector<HTMLAnchorElement>('.lead-drawer__open-link')!;
+
+    expect(link.textContent).toContain('Відкрити повну картку');
+    expect(link.getAttribute('href')).toBe(`/crm/leads/${leads[1]!.id}`);
+    link.click();
+    await fixture.whenStable();
+
+    expect(router.url).toBe(`/crm/leads/${leads[1]!.id}`);
+    expect(close).toHaveBeenCalledWith({ dirty: true });
   });
 
   it('returns dirty state when closed after a child change', async () => {

@@ -1,7 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { RouterLink } from '@angular/router';
 
+import { I18nService } from '@core/i18n/i18n.service';
 import { UiIconButton } from '@ui/button/ui-icon-button';
+import { UiIcon } from '@ui/icon/ui-icon';
 import { LeadDetailView } from './lead-detail-page';
 
 export interface LeadDetailDrawerData {
@@ -20,7 +23,7 @@ export interface LeadDetailDrawerResult {
 
 @Component({
   selector: 'app-lead-detail-drawer',
-  imports: [LeadDetailView, UiIconButton],
+  imports: [LeadDetailView, RouterLink, UiIcon, UiIconButton],
   template: `
     <section class="lead-drawer" aria-labelledby="lead-drawer-title">
       <header class="lead-drawer__toolbar">
@@ -29,6 +32,15 @@ export interface LeadDetailDrawerResult {
           <strong>{{ currentIndex() + 1 }} / {{ data.leadIds.length }}</strong>
         </div>
         <nav aria-label="Навігація між лідами">
+          <a
+            class="lead-drawer__open-link"
+            [routerLink]="['/crm/leads', leadId()]"
+            [attr.aria-label]="i18n.t('leadDrawer.openFullCard')"
+            (click)="close()"
+          >
+            <app-ui-icon name="person" [size]="17" />
+            <span>{{ i18n.t('leadDrawer.openFullCard') }}</span>
+          </a>
           <app-ui-icon-button
             icon="chevron_left"
             label="Попередній лід"
@@ -93,7 +105,7 @@ export interface LeadDetailDrawerResult {
       gap: 0.12rem;
     }
 
-    .lead-drawer__toolbar span {
+    .lead-drawer__toolbar > div > span {
       color: var(--ui-text-subtle);
       font-size: 0.69rem;
       font-weight: 800;
@@ -112,6 +124,33 @@ export interface LeadDetailDrawerResult {
       gap: 0.38rem;
     }
 
+    .lead-drawer__open-link {
+      min-height: 2rem;
+      padding: 0 var(--ui-space-3);
+      border: 1px solid var(--ui-border-strong);
+      border-radius: var(--ui-radius-md);
+      background: var(--ui-surface-raised);
+      color: var(--ui-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--ui-space-2);
+      font-size: 0.8125rem;
+      font-weight: 650;
+      line-height: 1.2;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .lead-drawer__open-link:hover {
+      background: var(--ui-surface-muted);
+    }
+
+    .lead-drawer__open-link:focus-visible {
+      outline: 2px solid var(--ui-action);
+      outline-offset: 2px;
+    }
+
     .lead-drawer__divider {
       width: 1px;
       height: 1.5rem;
@@ -124,7 +163,27 @@ export interface LeadDetailDrawerResult {
     }
 
     @media (max-width: 40rem) {
-      .lead-drawer__toolbar,
+      .lead-drawer__toolbar {
+        padding-left: var(--ui-space-3);
+        padding-right: var(--ui-space-3);
+        align-items: stretch;
+        flex-direction: column;
+        gap: var(--ui-space-2);
+      }
+
+      .lead-drawer__toolbar nav {
+        justify-content: flex-end;
+      }
+
+      .lead-drawer__open-link {
+        width: 2rem;
+        padding: 0;
+      }
+
+      .lead-drawer__open-link span {
+        display: none;
+      }
+
       .lead-drawer__content {
         padding-left: var(--ui-space-3);
         padding-right: var(--ui-space-3);
@@ -135,6 +194,7 @@ export interface LeadDetailDrawerResult {
 export class LeadDetailDrawer {
   protected readonly data = inject<LeadDetailDrawerData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<LeadDetailDrawer, LeadDetailDrawerResult>);
+  protected readonly i18n = inject(I18nService);
   protected readonly currentIndex = signal(
     Math.max(0, this.data.leadIds.indexOf(this.data.initialLeadId)),
   );

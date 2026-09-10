@@ -267,6 +267,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'lead.backToList': 'Wróć do listy',
   'lead.initialMessage': 'Wiadomość początkowa',
   'lead.comment': 'Komentarz',
+  'leadDrawer.openFullCard': 'Otwórz pełną kartę leada',
   'leadDetail.allLeads': 'Wszystkie zgłoszenia',
   'leadDetail.created': 'Utworzono',
   'leadDetail.client': 'Klient',

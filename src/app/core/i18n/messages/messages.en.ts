@@ -266,6 +266,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'lead.backToList': 'Back to list',
   'lead.initialMessage': 'Initial message',
   'lead.comment': 'Comment',
+  'leadDrawer.openFullCard': 'Open full lead card',
   'leadDetail.allLeads': 'All leads',
   'leadDetail.created': 'Created',
   'leadDetail.client': 'Client',
