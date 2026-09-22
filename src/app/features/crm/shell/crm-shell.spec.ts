@@ -1,17 +1,23 @@
+import { OverlayContainer } from '@angular/cdk/overlay';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { signal } from '@angular/core';
 
 import { AuthService } from '@core/auth/auth.service';
 import { ImpersonationService } from '@core/auth/impersonation.service';
 import { SessionService } from '@core/session/session.service';
+import type { OfficeFilter } from '@domain/office.types';
 import { CrmShell } from './crm-shell';
 
 describe('CrmShell', () => {
   const impersonationActive = signal(false);
+  const officeFilter = signal<OfficeFilter>('all');
+  const setOfficeFilter = vi.fn((filter: OfficeFilter) => officeFilter.set(filter));
 
   beforeEach(async () => {
     impersonationActive.set(false);
+    officeFilter.set('all');
+    setOfficeFilter.mockClear();
     await TestBed.configureTestingModule({
       imports: [CrmShell],
       providers: [
@@ -47,7 +53,7 @@ describe('CrmShell', () => {
           provide: SessionService,
           useValue: {
             showOfficeFilter: () => true,
-            officeFilter: () => 'all',
+            officeFilter,
             locale: () => 'uk',
             officeContext: () => ({
               isSuperAdmin: true,
@@ -72,12 +78,16 @@ describe('CrmShell', () => {
                 },
               ],
             }),
-            setOfficeFilter: vi.fn(),
+            setOfficeFilter,
             setLocale: vi.fn(),
           },
         },
       ],
     }).compileComponents();
+  });
+
+  afterEach(() => {
+    TestBed.inject(OverlayContainer).ngOnDestroy();
   });
 
   it('keeps navigation and context controls in the left cluster', async () => {
@@ -91,9 +101,40 @@ describe('CrmShell', () => {
 
     expect(left?.querySelector('.crm-shell__brand')).toBeTruthy();
     expect(left?.querySelector('.crm-shell__nav')).toBeTruthy();
-    expect(left?.querySelector('.crm-shell__segmented--office')).toBeTruthy();
+    expect(left?.querySelector('app-ui-picker')).toBeTruthy();
     expect(user?.querySelector('.crm-shell__user-meta')).toBeTruthy();
     expect(user?.querySelector('app-ui-menu')).toBeTruthy();
+  });
+
+  it('renders localized office options and delegates the selected office', async () => {
+    const fixture = TestBed.createComponent(CrmShell);
+    await fixture.whenStable();
+    const overlayContainer = TestBed.inject(OverlayContainer);
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector('app-ui-picker button') as HTMLButtonElement;
+
+    expect(trigger.textContent).toContain('Усі офіси');
+    expect(trigger.getAttribute('aria-label')).toBe('Офісний контекст');
+    expect(trigger.getAttribute('aria-disabled')).toBe('false');
+
+    trigger.focus();
+    trigger.click();
+    await fixture.whenStable();
+
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+
+    const renderedOptions = Array.from(
+      overlayContainer.getContainerElement().querySelectorAll<HTMLElement>('[role="option"]'),
+    );
+    expect(
+      renderedOptions.map((option) => option.textContent?.replace(/\s+/g, ' ').trim()),
+    ).toEqual(['Усі офіси', '🇺🇦Київ', '🇵🇱Варшава']);
+
+    renderedOptions.find((option) => option.textContent?.includes('Київ'))?.click();
+    await fixture.whenStable();
+
+    expect(setOfficeFilter).toHaveBeenCalledWith('kyiv');
+    expect(trigger.textContent).toContain('Київ');
   });
 
   it('lists language options in the user menu', async () => {

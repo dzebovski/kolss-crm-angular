@@ -5,13 +5,13 @@ import { AuthService } from '@core/auth/auth.service';
 import { ImpersonationService } from '@core/auth/impersonation.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { isOfficeId } from '@core/office/office.config';
+import { isOfficeId, OFFICE_CONFIG } from '@core/office/office.config';
 import { isSuperAdminRole, ROLE_OFFICE_MEMBER } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import type { LocaleCode } from '@domain/i18n.types';
-import type { OfficeFilter } from '@domain/office.types';
 import { UiIcon } from '@ui/icon/ui-icon';
 import { UiMenu, type UiMenuItem } from '@ui/menu/ui-menu';
+import { UiPicker, type UiPickerOption } from '@ui/picker/ui-picker';
 import { UiUser } from '@ui/user/ui-user';
 import { ImpersonationDialog } from './impersonation-dialog';
 
@@ -23,6 +23,7 @@ import { ImpersonationDialog } from './impersonation-dialog';
     RouterLinkActive,
     UiIcon,
     UiMenu,
+    UiPicker,
     UiUser,
     TranslatePipe,
     ImpersonationDialog,
@@ -139,20 +140,13 @@ import { ImpersonationDialog } from './impersonation-dialog';
             [attr.aria-label]="'nav.crmControls' | translate"
           >
             @if (showOfficeFilter()) {
-              <div
-                class="crm-shell__segmented crm-shell__segmented--office"
-                [attr.aria-label]="'nav.officeContext' | translate"
-              >
-                @for (item of officeFilters(); track item.value) {
-                  <button
-                    type="button"
-                    [class.is-active]="officeFilter() === item.value"
-                    (click)="setOfficeFilter(item.value)"
-                  >
-                    {{ item.label }}
-                  </button>
-                }
-              </div>
+              <app-ui-picker
+                class="crm-shell__office-picker"
+                [ariaLabel]="'nav.officeContext' | translate"
+                [options]="officeFilters()"
+                [value]="officeFilter()"
+                (valueChange)="setOfficeFilter($event)"
+              />
             }
           </div>
         </div>
@@ -315,30 +309,8 @@ import { ImpersonationDialog } from './impersonation-dialog';
       min-width: 0;
     }
 
-    .crm-shell__segmented {
-      display: inline-flex;
-      padding: 0.2rem;
-      border-radius: var(--ui-radius-pill);
-      background: var(--ui-surface-muted);
-      gap: 0.15rem;
-    }
-
-    .crm-shell__segmented button {
-      min-height: 2rem;
-      padding: 0 var(--ui-space-3);
-      border: 0;
-      border-radius: var(--ui-radius-pill);
-      background: transparent;
-      color: var(--ui-text-muted);
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .crm-shell__segmented button.is-active {
-      background: var(--ui-surface-raised);
-      color: var(--ui-action);
-      box-shadow: var(--ui-shadow-1);
+    .crm-shell__office-picker {
+      flex: 0 1 auto;
     }
 
     .crm-shell__user-meta {
@@ -424,21 +396,21 @@ export class CrmShell {
 
   protected readonly officeFilters = computed(() => {
     const offices = this.session.officeContext()?.filterOffices ?? [];
-    const items: { value: OfficeFilter; label: string }[] = [
-      { value: 'all', label: this.i18n.t('office.all') },
-    ];
+    const items: UiPickerOption[] = [{ value: 'all', label: this.i18n.t('office.all') }];
     for (const office of offices) {
       if (isOfficeId(office.code)) {
         items.push({
           value: office.code,
           label: this.i18n.officeFilterLabel(office.code),
+          leading: OFFICE_CONFIG[office.code].flagEmoji,
         });
       }
     }
     return items;
   });
 
-  protected setOfficeFilter(filter: OfficeFilter): void {
+  protected setOfficeFilter(filter: string): void {
+    if (filter !== 'all' && !isOfficeId(filter)) return;
     this.session.setOfficeFilter(filter);
   }
 

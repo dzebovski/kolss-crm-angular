@@ -16,6 +16,8 @@ export interface OfficeConfig {
   readonly id: OfficeId;
   /** i18n key for the office's display name (`messages.ts`). */
   readonly nameKey: MessageKey;
+  /** Decorative national marker used in compact office pickers. */
+  readonly flagEmoji: string;
   readonly phoneFormat: PhoneFormat;
   readonly currency: ContractCurrency;
   readonly timeZone: string;
@@ -28,6 +30,7 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
   kyiv: {
     id: 'kyiv',
     nameKey: 'office.kyiv',
+    flagEmoji: '🇺🇦',
     phoneFormat: 'ua',
     currency: 'UAH',
     timeZone: 'Europe/Kyiv',
@@ -37,6 +40,7 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
   warsaw: {
     id: 'warsaw',
     nameKey: 'office.warsaw',
+    flagEmoji: '🇵🇱',
     phoneFormat: 'pl',
     currency: 'PLN',
     timeZone: 'Europe/Warsaw',

@@ -1,0 +1,78 @@
+<div class="ui-picker">
+  <button
+    #trigger
+    type="button"
+    ngCombobox
+    #combobox="ngCombobox"
+    cdkOverlayOrigin
+    #origin="cdkOverlayOrigin"
+    class="ui-picker__trigger"
+    [(expanded)]="expanded"
+    [disabled]="unavailable()"
+    [attr.aria-label]="ariaLabel()"
+    (keydown.escape)="closeFromKeyboard($event)"
+  >
+    <span class="ui-picker__selection">
+      @if (selectedOption(); as selected) {
+        @if (selected.leading) {
+          <span class="ui-picker__leading" aria-hidden="true">{{ selected.leading }}</span>
+        }
+        <span class="ui-picker__label">{{ selected.label }}</span>
+      } @else {
+        <span class="ui-picker__placeholder">{{ placeholder() }}</span>
+      }
+    </span>
+    <span class="ui-picker__affordance" aria-hidden="true">
+      <app-ui-icon [name]="triggerIcon()" [size]="20" />
+    </span>
+  </button>
+
+  <ng-template
+    cdkConnectedOverlay
+    [cdkConnectedOverlayOrigin]="origin"
+    [cdkConnectedOverlayOpen]="expanded()"
+    [cdkConnectedOverlayMatchWidth]="true"
+    [cdkConnectedOverlayHasBackdrop]="false"
+    [cdkConnectedOverlayPositions]="dropdownPositions"
+    [cdkConnectedOverlayOffsetY]="8"
+    [cdkConnectedOverlayPanelClass]="'ui-picker__overlay-pane'"
+    (overlayOutsideClick)="close()"
+  >
+    <ng-template ngComboboxPopup [combobox]="combobox">
+      <ul
+        ngComboboxWidget
+        ngListbox
+        #listbox="ngListbox"
+        class="ui-picker__options"
+        tabindex="0"
+        focusMode="activedescendant"
+        selectionMode="explicit"
+        [value]="selectedValues()"
+        [activeDescendant]="listbox.activeDescendant()"
+        [attr.aria-label]="ariaLabel()"
+        (valueChange)="selectValue($event)"
+        (keydown.escape)="closeFromKeyboard($event)"
+      >
+        @for (option of options(); track option.value) {
+          <li
+            ngOption
+            class="ui-picker__option"
+            [value]="option.value"
+            [label]="option.label"
+            [disabled]="option.disabled ?? false"
+          >
+            <span class="ui-picker__option-content">
+              @if (option.leading) {
+                <span class="ui-picker__leading" aria-hidden="true">{{ option.leading }}</span>
+              }
+              <span class="ui-picker__label">{{ option.label }}</span>
+            </span>
+            @if (option.value === value()) {
+              <app-ui-icon class="ui-picker__check" name="check" [size]="17" />
+            }
+          </li>
+        }
+      </ul>
+    </ng-template>
+  </ng-template>
+</div>
