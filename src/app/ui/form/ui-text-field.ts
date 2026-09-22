@@ -29,15 +29,17 @@ let nextTextFieldId = 0;
         (blur)="touch.emit()"
       />
     </div>
-    <span
-      class="ui-field__message"
-      [class.ui-field__message--error]="!!error()"
-      [id]="descriptionId"
-      [attr.role]="error() ? 'alert' : null"
-      [attr.aria-hidden]="error() || hint() ? null : 'true'"
-    >
-      {{ error() || hint() }}
-    </span>
+    @if (reserveMessageSpace() || error() || hint()) {
+      <span
+        class="ui-field__message"
+        [class.ui-field__message--error]="!!error()"
+        [id]="descriptionId"
+        [attr.role]="error() ? 'alert' : null"
+        [attr.aria-hidden]="error() || hint() ? null : 'true'"
+      >
+        {{ error() || hint() }}
+      </span>
+    }
   `,
   styleUrl: './ui-field.scss',
 })
@@ -47,6 +49,7 @@ export class UiTextField implements FormValueControl<string> {
   readonly placeholder = input('');
   readonly hint = input('');
   readonly error = input('');
+  readonly reserveMessageSpace = input(true);
   readonly type = input<
     'text' | 'email' | 'search' | 'password' | 'date' | 'month' | 'time' | 'tel' | 'number'
   >('text');

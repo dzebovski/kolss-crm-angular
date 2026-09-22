@@ -1,0 +1,41 @@
+<div class="ui-menu">
+  <button type="button" class="ui-menu__trigger" ngMenuTrigger [menu]="menu">
+    <span class="ui-menu__trigger-content">
+      @if (triggerIcon(); as icon) {
+        <app-ui-icon [name]="icon" [size]="18" />
+      }
+      <span class="ui-menu__trigger-label">{{ label() }}</span>
+    </span>
+    <span class="ui-menu__affordance" aria-hidden="true">
+      <app-ui-icon name="keyboard_arrow_down" [size]="18" />
+    </span>
+  </button>
+
+  <div
+    ngMenu
+    #menu="ngMenu"
+    class="ui-menu__panel"
+    [class.ui-menu__panel--start]="align() === 'start'"
+    [class.ui-menu__panel--visible]="menu.visible()"
+    (itemSelected)="selected.emit($event)"
+  >
+    <ng-template ngMenuContent>
+      @for (item of items(); track item.value) {
+        <button
+          type="button"
+          ngMenuItem
+          class="ui-menu__item"
+          [class.ui-menu__item--current]="item.current"
+          [value]="item.value"
+          [disabled]="item.disabled ?? false"
+          [attr.aria-current]="item.current ? 'page' : null"
+        >
+          @if (item.icon) {
+            <app-ui-icon [name]="item.icon" [size]="18" />
+          }
+          <span>{{ item.label }}</span>
+        </button>
+      }
+    </ng-template>
+  </div>
+</div>

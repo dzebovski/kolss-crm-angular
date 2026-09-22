@@ -80,4 +80,20 @@ describe('UiTextField', () => {
     expect(errorMessage?.textContent).toContain('Invalid value');
     expect(input?.getAttribute('aria-describedby')).toBe(errorMessage?.id);
   });
+
+  it('can collapse an unused message slot without suppressing validation text', async () => {
+    const fixture = TestBed.createComponent(UiTextField);
+    fixture.componentRef.setInput('reserveMessageSpace', false);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.ui-field__message')).toBeNull();
+
+    fixture.componentRef.setInput('error', 'Invalid value');
+    await fixture.whenStable();
+
+    const errorMessage = element.querySelector('.ui-field__message');
+    expect(errorMessage?.textContent).toContain('Invalid value');
+    expect(element.querySelector('input')?.getAttribute('aria-describedby')).toBe(errorMessage?.id);
+  });
 });

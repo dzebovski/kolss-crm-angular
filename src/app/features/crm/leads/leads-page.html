@@ -54,33 +54,40 @@
   <div class="filters-stack">
     <div class="filters" aria-label="{{ 'leads.filterAria' | translate }}">
       <app-ui-text-field
-        class="filter-search"
+        class="filter-field filter-search"
         [label]="'common.search' | translate"
         type="search"
         [placeholder]="'leads.searchPlaceholder' | translate"
+        [reserveMessageSpace]="false"
         [(value)]="query"
       />
 
       <app-ui-multi-select
+        class="filter-field"
         [label]="'leads.filter.callStatus' | translate"
         [placeholder]="'leads.filter.all' | translate"
         [options]="callStatusOptions()"
         [selectedSummaryLabel]="filterSummaryLabel()"
+        [reserveMessageSpace]="false"
         [(value)]="callStatusFilter"
       />
 
       <app-ui-multi-select
+        class="filter-field"
         [label]="'leads.filter.clientStatus' | translate"
         [placeholder]="'leads.filter.all' | translate"
         [options]="clientStatusOptions()"
         [selectedSummaryLabel]="filterSummaryLabel()"
+        [reserveMessageSpace]="false"
         [(value)]="clientStatusFilter"
       />
 
       <app-ui-select
+        class="filter-field"
         [label]="'leads.filter.byManager' | translate"
         [placeholder]="'leads.filter.all' | translate"
         [options]="managerOptions()"
+        [reserveMessageSpace]="false"
         [(value)]="managerFilter"
       />
 

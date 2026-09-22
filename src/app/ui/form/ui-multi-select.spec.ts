@@ -129,6 +129,23 @@ describe('UiMultiSelect', () => {
     expect(trigger.textContent).toContain('2 selected');
   });
 
+  it('can collapse an unused message slot without suppressing hint text', async () => {
+    const fixture = TestBed.createComponent(UiMultiSelect);
+    fixture.componentRef.setInput('options', options);
+    fixture.componentRef.setInput('reserveMessageSpace', false);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.ui-multi-select__message')).toBeNull();
+
+    fixture.componentRef.setInput('hint', 'Choose one or more statuses');
+    await fixture.whenStable();
+
+    const hintMessage = element.querySelector('.ui-multi-select__message');
+    expect(hintMessage?.textContent).toContain('Choose one or more statuses');
+    expect(element.querySelector('button')?.getAttribute('aria-describedby')).toBe(hintMessage?.id);
+  });
+
   it('closes on outside click', async () => {
     const fixture = TestBed.createComponent(MultiSelectHost);
     await fixture.whenStable();

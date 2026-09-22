@@ -90,20 +90,49 @@ describe('CrmShell', () => {
     TestBed.inject(OverlayContainer).ngOnDestroy();
   });
 
-  it('keeps navigation and context controls in the left cluster', async () => {
+  it('keeps compact navigation left and moves office controls to the right cluster', async () => {
     const fixture = TestBed.createComponent(CrmShell);
     await fixture.whenStable();
-    fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
+    const header = element.querySelector('.crm-shell__header');
+    const headerContainer = header?.querySelector('.crm-shell__header-container');
     const left = element.querySelector('.crm-shell__left');
+    const actions = element.querySelector('.crm-shell__actions');
     const user = element.querySelector('.crm-shell__user');
 
+    expect(headerContainer).toBeTruthy();
+    expect(headerContainer?.parentElement).toBe(header);
     expect(left?.querySelector('.crm-shell__brand')).toBeTruthy();
-    expect(left?.querySelector('.crm-shell__nav')).toBeTruthy();
-    expect(left?.querySelector('app-ui-picker')).toBeTruthy();
+    expect(left?.querySelector('.crm-shell__nav app-ui-menu')).toBeTruthy();
+    expect(left?.querySelector('app-ui-picker')).toBeNull();
+    expect(actions?.querySelector('app-ui-picker')).toBeTruthy();
     expect(user?.querySelector('.crm-shell__user-meta')).toBeTruthy();
     expect(user?.querySelector('app-ui-menu')).toBeTruthy();
+  });
+
+  it('places every allowed destination with its icon in the navigation menu', async () => {
+    const fixture = TestBed.createComponent(CrmShell);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const navigation = element.querySelector('.crm-shell__nav') as HTMLElement;
+    const trigger = navigation.querySelector('.ui-menu__trigger') as HTMLButtonElement;
+
+    expect(trigger.textContent).toContain('Ліди');
+
+    trigger.focus();
+    trigger.click();
+    await fixture.whenStable();
+
+    const items = Array.from(navigation.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+    expect(items.map((item) => item.textContent?.trim())).toEqual([
+      'Дешборд',
+      'Ліди',
+      'Розклад',
+      'Звітність',
+      'Акаунти',
+    ]);
+    expect(items.every((item) => item.querySelector('app-ui-icon'))).toBe(true);
   });
 
   it('renders localized office options and delegates the selected office', async () => {

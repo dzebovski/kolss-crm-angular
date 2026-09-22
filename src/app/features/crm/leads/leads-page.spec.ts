@@ -303,12 +303,16 @@ describe('LeadsPage', () => {
     expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: [] }));
   });
 
-  it('keeps every filter field in one grid row and places the active switch at the right edge', async () => {
+  it('uses four compact subgrid fields and places the active switch in the fifth column', async () => {
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
 
     const filters = (fixture.nativeElement as HTMLElement).querySelector('.filters');
     expect(filters?.children.length).toBe(5);
+    expect(filters?.querySelectorAll(':scope > .filter-field')).toHaveLength(4);
+    expect(
+      filters?.querySelector('.ui-field__message, .ui-multi-select__message, .ui-select__message'),
+    ).toBeNull();
     expect(filters?.querySelector(':scope > .client-status-filter')).toBeNull();
     expect(filters?.querySelector(':scope > app-ui-switch.active-clients-filter')).toBeTruthy();
   });

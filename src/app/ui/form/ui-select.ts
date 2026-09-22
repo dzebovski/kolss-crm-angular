@@ -122,15 +122,17 @@ let nextSelectId = 0;
         </ng-template>
       </ng-template>
     </div>
-    <span
-      class="ui-select__message"
-      [class.ui-select__message--error]="!!error()"
-      [id]="descriptionId"
-      [attr.role]="error() ? 'alert' : null"
-      [attr.aria-hidden]="error() || hint() ? null : 'true'"
-    >
-      {{ error() || hint() }}
-    </span>
+    @if (reserveMessageSpace() || error() || hint()) {
+      <span
+        class="ui-select__message"
+        [class.ui-select__message--error]="!!error()"
+        [id]="descriptionId"
+        [attr.role]="error() ? 'alert' : null"
+        [attr.aria-hidden]="error() || hint() ? null : 'true'"
+      >
+        {{ error() || hint() }}
+      </span>
+    }
   `,
   styles: `
     :host {
@@ -252,6 +254,7 @@ export class UiSelect implements FormValueControl<string> {
   readonly options = input.required<readonly UiSelectOption[]>();
   readonly hint = input('');
   readonly error = input('');
+  readonly reserveMessageSpace = input(true);
   readonly disabled = input(false);
   readonly required = input(false);
   readonly invalid = input(false);

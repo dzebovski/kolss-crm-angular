@@ -183,6 +183,25 @@ describe('UiSelect', () => {
     expect(trigger?.getAttribute('aria-describedby')).toBe(errorMessage?.id);
   });
 
+  it('can collapse an unused message slot without suppressing validation text', async () => {
+    const fixture = TestBed.createComponent(UiSelect);
+    fixture.componentRef.setInput('options', options);
+    fixture.componentRef.setInput('reserveMessageSpace', false);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+
+    expect(element.querySelector('.ui-select__message')).toBeNull();
+
+    fixture.componentRef.setInput('error', 'Select a stage');
+    await fixture.whenStable();
+
+    const errorMessage = element.querySelector('.ui-select__message');
+    expect(errorMessage?.textContent).toContain('Select a stage');
+    expect(element.querySelector('button')?.getAttribute('aria-describedby')).toBe(
+      errorMessage?.id,
+    );
+  });
+
   it('renders options outside an overflow-clipped modal ancestor', async () => {
     const fixture = TestBed.createComponent(OverflowClippedHost);
     await fixture.whenStable();
