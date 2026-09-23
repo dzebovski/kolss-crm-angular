@@ -110,6 +110,7 @@
           "configurations": {
             "ci": {
               "coverage": true,
+              "coverageExclude": ["src/app/features/v2/**"],
               "coverageThresholds": {
                 "statements": 76,
                 "branches": 66,

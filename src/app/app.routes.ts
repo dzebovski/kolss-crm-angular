@@ -36,6 +36,11 @@ export const routes: Routes = [
     children: [],
   },
   {
+    path: 'v2',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/v2/v2.routes'),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./features/crm/shell/crm-shell').then((page) => page.CrmShell),
