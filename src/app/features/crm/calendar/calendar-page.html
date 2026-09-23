@@ -5,16 +5,14 @@
       <h1 id="calendar-title">{{ i18n.t('calendar.title') }}</h1>
     </div>
     @if (!overdueMode()) {
-      <div class="header-actions">
-        <app-ui-button (pressed)="openCreate()">
-          <app-ui-icon name="add" [size]="18" />
-          {{ i18n.t('calendar.newAppointment') }}
-        </app-ui-button>
-        <app-ui-button variant="secondary" (pressed)="openCreateMeasurement()">
-          <app-ui-icon name="straighten" [size]="18" />
-          {{ i18n.t('calendar.kind.measurement') }}
-        </app-ui-button>
-      </div>
+      <app-ui-menu
+        class="header-create-menu"
+        variant="primary"
+        triggerIcon="add"
+        [label]="i18n.t('calendar.createNew')"
+        [items]="createMenuItems()"
+        (selected)="openCreateFromHeader($event)"
+      />
     }
   </header>
 

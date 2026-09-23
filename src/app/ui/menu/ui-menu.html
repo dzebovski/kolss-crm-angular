@@ -1,5 +1,11 @@
 <div class="ui-menu">
-  <button type="button" class="ui-menu__trigger" ngMenuTrigger [menu]="menu">
+  <button
+    type="button"
+    class="ui-menu__trigger"
+    [class.ui-menu__trigger--primary]="variant() === 'primary'"
+    ngMenuTrigger
+    [menu]="menu"
+  >
     <span class="ui-menu__trigger-content">
       @if (triggerIcon(); as icon) {
         <app-ui-icon [name]="icon" [size]="18" />

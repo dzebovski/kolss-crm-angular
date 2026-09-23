@@ -520,7 +520,7 @@ describe('CalendarPage', () => {
   });
 
   it('marks measurement appointments apart from showroom meetings', async () => {
-    const { fixture, open } = await render();
+    const { fixture } = await render();
     fixture.componentInstance['selectedDate'].set('2026-07-23');
     fixture.detectChanges();
     await fixture.whenStable();
@@ -534,14 +534,51 @@ describe('CalendarPage', () => {
       measurementCard?.querySelector('app-calendar-event-card')?.getAttribute('title'),
     ).toContain('Замір у клієнта');
     expect(element.querySelector('.kind-legend')?.textContent).toContain('Замір у клієнта');
+  });
 
-    const measurementButton = Array.from(
-      element.querySelectorAll<HTMLButtonElement>('.header-actions button'),
-    ).find((button) => button.textContent?.includes('Замір у клієнта'))!;
-    measurementButton.click();
+  it('opens every appointment kind from the primary create menu', async () => {
+    const { fixture, open } = await render();
+    fixture.componentInstance['selectedDate'].set('2026-07-23');
     await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const createMenu = element.querySelector('app-ui-menu.header-create-menu');
+    const trigger = createMenu?.querySelector<HTMLButtonElement>('.ui-menu__trigger');
 
-    expect(open.mock.calls[0]?.[1]?.data).toEqual(expect.objectContaining({ kind: 'measurement' }));
+    expect(createMenu).not.toBeNull();
+    expect(trigger?.textContent).toContain('Створити нове');
+    expect(trigger?.classList.contains('ui-menu__trigger--primary')).toBe(true);
+
+    const commands = [
+      { kind: 'showroom', label: 'Новий запис' },
+      { kind: 'measurement', label: 'Замір у клієнта' },
+      { kind: 'office_work', label: 'Робота в офісі' },
+    ] as const;
+
+    for (const command of commands) {
+      trigger?.click();
+      await fixture.whenStable();
+
+      const items = Array.from(
+        createMenu?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+      );
+      expect(items).toHaveLength(3);
+      expect(items.every((item) => item.querySelector('app-ui-icon'))).toBe(true);
+
+      const item = items.find((candidate) => candidate.textContent?.includes(command.label));
+      expect(item).toBeTruthy();
+      item?.click();
+      await fixture.whenStable();
+
+      expect(open).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            date: '2026-07-23',
+            kind: command.kind,
+          }),
+        }),
+      );
+    }
   });
 
   it('renders office work in every calendar layout and excludes it from visit filters', async () => {

@@ -44,6 +44,7 @@ import { UiChip } from '@ui/feedback/ui-chip';
 import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { UiIcon } from '@ui/icon/ui-icon';
 import { UiDialogService } from '@ui/dialog/ui-dialog';
+import { UiMenu, type UiMenuItem } from '@ui/menu/ui-menu';
 import {
   LeadDetailDrawer,
   type LeadDetailDrawerData,
@@ -106,6 +107,7 @@ const EMPTY_OVERDUE_ROWS: readonly CalendarOverdueRow[] = [];
     UiButton,
     UiChip,
     UiIcon,
+    UiMenu,
     UiSelect,
     CalendarDayReminders,
     CalendarCreateMenu,
@@ -356,6 +358,23 @@ export class CalendarPage {
       label: manager.displayName,
       userId: manager.id,
     })),
+  ]);
+  protected readonly createMenuItems = computed<readonly UiMenuItem[]>(() => [
+    {
+      value: 'showroom',
+      label: this.i18n.t('calendar.newAppointment'),
+      icon: 'add',
+    },
+    {
+      value: 'measurement',
+      label: this.i18n.t('calendar.kind.measurement'),
+      icon: 'straighten',
+    },
+    {
+      value: 'office_work',
+      label: this.i18n.t('calendar.kind.officeWork'),
+      icon: 'business_center',
+    },
   ]);
   protected readonly sundayAppointments = computed(() => {
     if (this.view() !== 'week') return [];
@@ -666,8 +685,9 @@ export class CalendarPage {
     });
   }
 
-  protected openCreateMeasurement(): void {
-    this.openCreate(this.selectedDate(), '10:00', undefined, 'measurement');
+  protected openCreateFromHeader(value: string): void {
+    if (value !== 'showroom' && value !== 'measurement' && value !== 'office_work') return;
+    this.openCreate(this.selectedDate(), '10:00', undefined, value);
   }
 
   protected openCreateFromMenu(kind: AppointmentKind, date: string): void {

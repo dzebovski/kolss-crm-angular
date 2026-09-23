@@ -2,7 +2,7 @@ import axe from 'axe-core';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { UiMenu, type UiMenuItem } from './ui-menu';
+import { UiMenu, type UiMenuItem, type UiMenuVariant } from './ui-menu';
 
 const items: readonly UiMenuItem[] = [
   { value: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -17,6 +17,7 @@ const items: readonly UiMenuItem[] = [
       label="Leads"
       triggerIcon="view_kanban"
       align="start"
+      [variant]="variant()"
       [items]="items"
       (selected)="selection.set($event)"
     />
@@ -25,6 +26,7 @@ const items: readonly UiMenuItem[] = [
 class MenuHost {
   readonly items = items;
   readonly selection = signal('');
+  readonly variant = signal<UiMenuVariant>('secondary');
 }
 
 describe('UiMenu', () => {
@@ -36,6 +38,19 @@ describe('UiMenu', () => {
     expect(trigger.textContent).toContain('Leads');
     expect(trigger.querySelectorAll('app-ui-icon')).toHaveLength(2);
     expect(trigger.getAttribute('aria-haspopup')).toBe('true');
+  });
+
+  it('supports a primary action trigger without changing the secondary default', async () => {
+    const fixture = TestBed.createComponent(MenuHost);
+    await fixture.whenStable();
+    const trigger = fixture.nativeElement.querySelector('.ui-menu__trigger') as HTMLButtonElement;
+
+    expect(trigger.classList.contains('ui-menu__trigger--primary')).toBe(false);
+
+    fixture.componentInstance.variant.set('primary');
+    await fixture.whenStable();
+
+    expect(trigger.classList.contains('ui-menu__trigger--primary')).toBe(true);
   });
 
   it('renders item icons and marks the current navigation destination', async () => {

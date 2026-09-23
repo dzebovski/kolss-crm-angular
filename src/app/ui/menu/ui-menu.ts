@@ -2,6 +2,8 @@ import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
 import { Component, input, output } from '@angular/core';
 import { UiIcon, type UiIconName } from '@ui/icon/ui-icon';
 
+export type UiMenuVariant = 'primary' | 'secondary';
+
 export interface UiMenuItem {
   readonly value: string;
   readonly label: string;
@@ -22,5 +24,6 @@ export class UiMenu {
   readonly items = input.required<readonly UiMenuItem[]>();
   readonly triggerIcon = input<UiIconName | null>(null);
   readonly align = input<'start' | 'end'>('end');
+  readonly variant = input<UiMenuVariant>('secondary');
   readonly selected = output<string>();
 }

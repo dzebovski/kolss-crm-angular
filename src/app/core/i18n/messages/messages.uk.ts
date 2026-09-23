@@ -72,6 +72,7 @@ export const messagesUk = {
   'office.warsaw': 'Варшава',
   'calendar.kicker': 'Операційний день',
   'calendar.title': 'Розклад салону',
+  'calendar.createNew': 'Створити нове',
   'calendar.newAppointment': 'Новий запис',
   'calendar.controls': 'Керування календарем',
   'calendar.previous': 'Попередній період',

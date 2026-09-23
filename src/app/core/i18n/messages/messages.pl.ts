@@ -74,6 +74,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'office.warsaw': 'Warszawa',
   'calendar.kicker': 'Dzień operacyjny',
   'calendar.title': 'Harmonogram salonu',
+  'calendar.createNew': 'Utwórz nowe',
   'calendar.newAppointment': 'Nowa wizyta',
   'calendar.controls': 'Sterowanie kalendarzem',
   'calendar.previous': 'Poprzedni okres',

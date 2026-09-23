@@ -74,6 +74,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'office.warsaw': 'Warsaw',
   'calendar.kicker': 'Operations',
   'calendar.title': 'Showroom schedule',
+  'calendar.createNew': 'Create new',
   'calendar.newAppointment': 'New appointment',
   'calendar.controls': 'Calendar controls',
   'calendar.previous': 'Previous period',
