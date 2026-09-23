@@ -184,7 +184,7 @@
     <footer class="drawer-actions">
       <div class="drawer-actions__leading">
         @if (selectedLead(); as lead) {
-          <a class="client-link" [routerLink]="['/crm/leads', lead.id]" (click)="close()">
+          <a class="client-link" [routerLink]="['/leads', lead.id]" (click)="close()">
             <app-ui-icon name="person" [size]="16" />
             {{ i18n.t('calendar.openClient') }}
           </a>

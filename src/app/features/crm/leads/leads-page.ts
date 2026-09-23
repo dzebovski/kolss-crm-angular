@@ -398,7 +398,7 @@ export class LeadsPage {
   }
 
   protected async openLead(lead: Lead): Promise<void> {
-    await this.router.navigate(['/crm/leads', lead.id]);
+    await this.router.navigate(['/leads', lead.id]);
   }
 
   protected openCreateDialog(): void {
@@ -412,6 +412,6 @@ export class LeadsPage {
   protected async onLeadCreated(leadId: string): Promise<void> {
     this.createDialogOpen.set(false);
     await this.leadsResource.reload();
-    await this.router.navigate(['/crm/leads', leadId]);
+    await this.router.navigate(['/leads', leadId]);
   }
 }

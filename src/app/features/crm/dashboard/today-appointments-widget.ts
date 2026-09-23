@@ -130,7 +130,7 @@ interface OfficeAppointmentGroup {
         } @else {
           <span></span>
         }
-        <app-ui-button routerLink="/crm/calendar" variant="secondary" size="small">
+        <app-ui-button routerLink="/calendar" variant="secondary" size="small">
           {{ i18n.t('calendar.openSchedule') }}
           <app-ui-icon name="chevron_right" [size]="16" />
         </app-ui-button>

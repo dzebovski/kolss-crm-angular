@@ -20,7 +20,7 @@ export class RootRedirect {
       await this.auth.initialize();
     }
 
-    const target = this.auth.isAuthenticated() ? '/crm/leads' : '/login';
+    const target = this.auth.isAuthenticated() ? '/leads' : '/login';
     await this.router.navigateByUrl(target, { replaceUrl: true });
   }
 }

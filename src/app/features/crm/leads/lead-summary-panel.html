@@ -217,7 +217,7 @@
       @if (showroomDueAtForLead(currentLead) && calendarAppointmentQuery(); as appointmentQuery) {
         <a
           class="status-item__appointment-link"
-          routerLink="/crm/calendar"
+          routerLink="/calendar"
           [queryParams]="appointmentQuery"
         >
           <app-ui-icon name="calendar_month" [size]="14" />

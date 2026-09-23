@@ -20,7 +20,7 @@ describe('LeadDetailDrawer', () => {
     await TestBed.configureTestingModule({
       imports: [LeadDetailDrawer],
       providers: [
-        provideRouter([{ path: 'crm/leads/:leadId', component: LeadDetailDrawer }]),
+        provideRouter([{ path: 'leads/:leadId', component: LeadDetailDrawer }]),
         {
           provide: MAT_DIALOG_DATA,
           useValue: {
@@ -116,7 +116,7 @@ describe('LeadDetailDrawer', () => {
     expect(element.textContent).toContain(leads[0]!.name);
     expect(
       element.querySelector<HTMLAnchorElement>('.lead-drawer__open-link')?.getAttribute('href'),
-    ).toBe(`/crm/leads/${leads[0]!.id}`);
+    ).toBe(`/leads/${leads[0]!.id}`);
     next.click();
     await fixture.whenStable();
 
@@ -124,7 +124,7 @@ describe('LeadDetailDrawer', () => {
     expect(element.textContent).toContain(leads[1]!.name);
     expect(
       element.querySelector<HTMLAnchorElement>('.lead-drawer__open-link')?.getAttribute('href'),
-    ).toBe(`/crm/leads/${leads[1]!.id}`);
+    ).toBe(`/leads/${leads[1]!.id}`);
     expect(next.disabled).toBe(true);
   });
 
@@ -138,11 +138,11 @@ describe('LeadDetailDrawer', () => {
     const link = element.querySelector<HTMLAnchorElement>('.lead-drawer__open-link')!;
 
     expect(link.textContent).toContain('Відкрити повну картку');
-    expect(link.getAttribute('href')).toBe(`/crm/leads/${leads[1]!.id}`);
+    expect(link.getAttribute('href')).toBe(`/leads/${leads[1]!.id}`);
     link.click();
     await fixture.whenStable();
 
-    expect(router.url).toBe(`/crm/leads/${leads[1]!.id}`);
+    expect(router.url).toBe(`/leads/${leads[1]!.id}`);
     expect(close).toHaveBeenCalledWith({ dirty: true });
   });
 

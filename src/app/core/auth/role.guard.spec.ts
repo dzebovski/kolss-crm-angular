@@ -64,7 +64,7 @@ describe('superAdminGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('redirects to /crm/leads when canManageUsers is false', async () => {
+  it('redirects to /leads when canManageUsers is false', async () => {
     setup({
       initialized: () => true,
       loading: () => false,
@@ -74,7 +74,7 @@ describe('superAdminGuard', () => {
     const result = await TestBed.runInInjectionContext(() => superAdminGuard(route, state));
 
     expect(result).toBeInstanceOf(UrlTree);
-    expect((result as UrlTree).toString()).toBe('/crm/leads');
+    expect((result as UrlTree).toString()).toBe('/leads');
   });
 
   it('waits for auth.initialize() before checking, then denies if /v1/me never loaded', async () => {

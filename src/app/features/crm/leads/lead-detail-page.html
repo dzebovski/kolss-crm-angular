@@ -9,13 +9,13 @@
     <app-ui-icon name="warning" [size]="30" />
     <h1>Не вдалося завантажити заявку</h1>
     <p>{{ loadError() }}</p>
-    <a routerLink="/crm/leads">Повернутися до списку</a>
+    <a routerLink="/leads">Повернутися до списку</a>
   </section>
 } @else if (lead(); as lead) {
   <section class="lead-page" [attr.aria-labelledby]="'lead-title-' + lead.id">
     <div class="lead-control-bar" [class.lead-control-bar--drawer]="displayMode() === 'drawer'">
       @if (displayMode() === 'page') {
-        <a class="back-link" routerLink="/crm/leads">
+        <a class="back-link" routerLink="/leads">
           <app-ui-icon name="arrow_back" [size]="17" />
           {{ i18n.t('leadDetail.allLeads') }}
         </a>

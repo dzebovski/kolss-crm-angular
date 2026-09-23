@@ -35,7 +35,7 @@ export function permissionGuard(requiredCheck: (me: MeResponse | null) => boolea
     }
 
     if (!requiredCheck(auth.me())) {
-      return router.createUrlTree(['/crm/leads']);
+      return router.createUrlTree(['/leads']);
     }
 
     return true;

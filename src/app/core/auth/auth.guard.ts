@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { AuthService } from './auth.service';
 import { SessionService } from '@core/session/session.service';
-import { safeCrmReturnTo } from '@core/navigation/safe-return-to';
+import { safeAppReturnTo } from '@core/navigation/safe-return-to';
 
 export const authGuard: CanActivateFn = async (route, state) => {
   const auth = inject(AuthService);
@@ -50,7 +50,7 @@ export const guestGuard: CanActivateFn = async (route) => {
   }
 
   if (auth.isAuthenticated() && auth.profile()?.is_active) {
-    const next = safeCrmReturnTo(route.queryParamMap.get('next'));
+    const next = safeAppReturnTo(route.queryParamMap.get('next'));
     return router.parseUrl(next);
   }
 

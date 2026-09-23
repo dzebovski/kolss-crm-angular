@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { safeCrmReturnTo } from '@core/navigation/safe-return-to';
+import { safeAppReturnTo } from '@core/navigation/safe-return-to';
 import { SessionService } from '@core/session/session.service';
 import type { LocaleCode } from '@domain/i18n.types';
 import { UiAlert } from '@ui/feedback/ui-alert';
@@ -340,7 +340,7 @@ export class LoginPage {
         this.loginForm.email().value().trim(),
         this.loginForm.password().value(),
       );
-      const next = safeCrmReturnTo(this.route.snapshot.queryParamMap.get('next'));
+      const next = safeAppReturnTo(this.route.snapshot.queryParamMap.get('next'));
       await this.router.navigateByUrl(next);
     } catch (error) {
       this.errorMessage.set(

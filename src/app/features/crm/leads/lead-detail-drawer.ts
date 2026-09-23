@@ -34,7 +34,7 @@ export interface LeadDetailDrawerResult {
         <nav aria-label="Навігація між лідами">
           <a
             class="lead-drawer__open-link"
-            [routerLink]="['/crm/leads', leadId()]"
+            [routerLink]="['/leads', leadId()]"
             [attr.aria-label]="i18n.t('leadDrawer.openFullCard')"
             (click)="close()"
           >

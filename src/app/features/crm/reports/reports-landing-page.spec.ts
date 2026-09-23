@@ -31,12 +31,12 @@ describe('ReportsLandingPage', () => {
       [...element.querySelectorAll<HTMLAnchorElement>('.report-option a')].map((link) =>
         link.getAttribute('href'),
       ),
-    ).toEqual(['/crm/reports/leads-status', '/crm/reports/sales-funnel']);
+    ).toEqual(['/reports/leads-status', '/reports/sales-funnel']);
   });
 
   it('registers landing and both lazy report routes', () => {
-    const crm = routes.find((route) => route.path === 'crm');
-    expect(crm?.children?.map((route) => route.path)).toEqual(
+    const workspace = routes.find((route) => route.path === '' && route.children);
+    expect(workspace?.children?.map((route) => route.path)).toEqual(
       expect.arrayContaining(['reports', 'reports/leads-status', 'reports/sales-funnel']),
     );
   });

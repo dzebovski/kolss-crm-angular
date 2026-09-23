@@ -249,6 +249,6 @@ export class AccountsPage {
   }
 
   protected async openEmployee(employee: CrmEmployee): Promise<void> {
-    await this.router.navigate(['/crm/accounts/users', employee.id]);
+    await this.router.navigate(['/accounts/users', employee.id]);
   }
 }

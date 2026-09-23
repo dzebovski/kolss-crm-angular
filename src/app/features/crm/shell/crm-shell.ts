@@ -1,4 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
@@ -15,6 +24,7 @@ import { UiIcon } from '@ui/icon/ui-icon';
 import { UiMenu, type UiMenuItem } from '@ui/menu/ui-menu';
 import { UiPicker, type UiPickerOption } from '@ui/picker/ui-picker';
 import { UiUser } from '@ui/user/ui-user';
+import { GlobalNavigationDrawer } from './global-navigation-drawer';
 import { ImpersonationDialog } from './impersonation-dialog';
 
 @Component({
@@ -27,6 +37,7 @@ import { ImpersonationDialog } from './impersonation-dialog';
     UiPicker,
     UiUser,
     TranslatePipe,
+    GlobalNavigationDrawer,
     ImpersonationDialog,
   ],
   template: `
@@ -48,7 +59,7 @@ import { ImpersonationDialog } from './impersonation-dialog';
       <header class="crm-shell__header">
         <div class="crm-shell__header-container">
           <div class="crm-shell__left">
-            <a class="crm-shell__brand" routerLink="/crm/leads" aria-label="KOLSS CRM">
+            <a class="crm-shell__brand" routerLink="/leads" aria-label="KOLSS CRM">
               <span class="crm-shell__brand-logo" aria-hidden="true">
                 <svg
                   class="crm-shell__brand-logo-svg"
@@ -112,16 +123,21 @@ import { ImpersonationDialog } from './impersonation-dialog';
               </span>
             </a>
 
-            <nav class="crm-shell__nav" [attr.aria-label]="'nav.main' | translate">
-              <app-ui-menu
-                class="crm-shell__nav-menu"
-                align="start"
-                [label]="activeNavigationItem().label"
-                [triggerIcon]="activeNavigationItem().icon ?? null"
-                [items]="navigationItems()"
-                (selected)="handleNavigation($event)"
-              />
-            </nav>
+            <button
+              #navigationTrigger
+              type="button"
+              class="crm-shell__navigation-trigger"
+              aria-controls="global-navigation-drawer"
+              [attr.aria-expanded]="navigationOpen()"
+              (click)="toggleNavigation()"
+            >
+              <span class="crm-shell__navigation-trigger-icon" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+              <span>{{ 'nav.menu' | translate }}</span>
+            </button>
           </div>
 
           <div class="crm-shell__actions">
@@ -131,7 +147,7 @@ import { ImpersonationDialog } from './impersonation-dialog';
                 [attr.aria-label]="'nav.crmControls' | translate"
               >
                 <app-ui-picker
-                  class="crm-shell__office-picker"
+                  class="crm-shell__office-picker crm-shell__office-picker--desktop"
                   [ariaLabel]="'nav.officeContext' | translate"
                   [options]="officeFilters()"
                   [value]="officeFilter()"
@@ -155,7 +171,7 @@ import { ImpersonationDialog } from './impersonation-dialog';
                 <small>{{ roleName() }}</small>
               </div>
               <app-ui-menu
-                [label]="'nav.menu' | translate"
+                [label]="'nav.settings' | translate"
                 [items]="userMenuItems()"
                 (selected)="handleUserMenu($event)"
               />
@@ -164,7 +180,29 @@ import { ImpersonationDialog } from './impersonation-dialog';
         </div>
       </header>
 
-      <main class="crm-shell__main">
+      <app-global-navigation-drawer
+        [open]="navigationOpen()"
+        [currentUrl]="currentUrl()"
+        [canManageAccounts]="canManageAccounts()"
+        (closeRequested)="closeNavigation()"
+      >
+        @if (showOfficeFilter()) {
+          <app-ui-picker
+            navigation-office
+            class="crm-shell__drawer-office"
+            [ariaLabel]="'nav.officeContext' | translate"
+            [options]="officeFilters()"
+            [value]="officeFilter()"
+            (valueChange)="setOfficeFilter($event)"
+          />
+        }
+      </app-global-navigation-drawer>
+
+      <main
+        class="crm-shell__main"
+        [attr.inert]="navigationOpen() ? '' : null"
+        [attr.aria-hidden]="navigationOpen() ? 'true' : null"
+      >
         <router-outlet />
       </main>
 
@@ -178,6 +216,8 @@ import { ImpersonationDialog } from './impersonation-dialog';
   `,
   styles: `
     .crm-shell {
+      --crm-header-height: 3.25rem;
+
       min-height: 100dvh;
       display: grid;
       grid-template-rows: auto auto 1fr;
@@ -286,14 +326,52 @@ import { ImpersonationDialog } from './impersonation-dialog';
       max-width: 8rem;
     }
 
-    .crm-shell__nav {
-      display: inline-block;
-      min-width: 0;
-      flex: 0 0 auto;
+    .crm-shell__navigation-trigger {
+      min-height: 2.5rem;
+      padding: 0 var(--ui-space-3);
+      border: 1px solid var(--ui-border-strong);
+      border-radius: var(--ui-radius-md);
+      background: linear-gradient(
+        180deg,
+        var(--ui-surface-raised),
+        color-mix(in srgb, var(--ui-surface-raised) 92%, var(--ui-surface-muted))
+      );
+      color: var(--ui-text);
+      box-shadow: var(--ui-shadow-1);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--ui-space-2);
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition:
+        border-color var(--ui-duration-fast) var(--ui-ease),
+        box-shadow var(--ui-duration-fast) var(--ui-ease),
+        background var(--ui-duration-fast) var(--ui-ease);
     }
 
-    .crm-shell__nav-menu {
-      max-width: 12rem;
+    .crm-shell__navigation-trigger:hover {
+      border-color: color-mix(in srgb, var(--ui-border-strong) 70%, var(--ui-action));
+    }
+
+    .crm-shell__navigation-trigger[aria-expanded='true'] {
+      border-color: var(--ui-focus);
+      background: var(--ui-brand-soft);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-focus) 15%, transparent);
+      color: var(--ui-action);
+    }
+
+    .crm-shell__navigation-trigger-icon {
+      width: 1.1rem;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .crm-shell__navigation-trigger-icon span {
+      height: 1.5px;
+      border-radius: var(--ui-radius-pill);
+      background: currentColor;
+      transition: transform var(--ui-duration-fast) var(--ui-ease);
     }
 
     .crm-shell__context-controls {
@@ -302,6 +380,10 @@ import { ImpersonationDialog } from './impersonation-dialog';
 
     .crm-shell__office-picker {
       flex: 0 1 auto;
+    }
+
+    .crm-shell__drawer-office {
+      inline-size: 100%;
     }
 
     .crm-shell__user-meta {
@@ -344,6 +426,25 @@ import { ImpersonationDialog } from './impersonation-dialog';
         max-width: 6.5rem;
       }
     }
+
+    @media (max-width: 40rem) {
+      .crm-shell__office-picker--desktop,
+      .crm-shell__user-avatar {
+        display: none;
+      }
+
+      .crm-shell__left {
+        gap: var(--ui-space-3);
+      }
+
+      .crm-shell__brand-logo-svg {
+        max-width: 5.75rem;
+      }
+
+      .crm-shell__main {
+        padding-inline: var(--ui-space-3);
+      }
+    }
   `,
 })
 export class CrmShell {
@@ -353,7 +454,7 @@ export class CrmShell {
   private readonly router = inject(Router);
   private readonly i18n = inject(I18nService);
 
-  private readonly currentUrl = toSignal(
+  protected readonly currentUrl = toSignal(
     this.router.events.pipe(
       filter((event): event is NavigationEnd => event instanceof NavigationEnd),
       map((event) => event.urlAfterRedirects),
@@ -362,6 +463,19 @@ export class CrmShell {
   );
 
   protected readonly showImpersonationDialog = signal(false);
+  protected readonly navigationOpen = signal(false);
+  private readonly navigationTrigger =
+    viewChild<ElementRef<HTMLButtonElement>>('navigationTrigger');
+  private previousNavigationUrl = this.router.url;
+
+  constructor() {
+    effect(() => {
+      const currentUrl = this.currentUrl();
+      if (currentUrl === this.previousNavigationUrl) return;
+      this.previousNavigationUrl = currentUrl;
+      untracked(() => this.closeNavigation());
+    });
+  }
 
   protected readonly locales: readonly { value: LocaleCode; label: string }[] = [
     { value: 'en', label: 'English' },
@@ -373,55 +487,6 @@ export class CrmShell {
 
   protected readonly impersonationBanner = computed(() =>
     this.i18n.t('impersonation.banner', { name: this.displayName() }),
-  );
-
-  protected readonly navigationItems = computed<readonly UiMenuItem[]>(() => {
-    this.locale();
-    const currentUrl = this.currentUrl();
-    const items: UiMenuItem[] = [
-      {
-        value: '/crm/dashboard',
-        label: this.i18n.t('nav.dashboard'),
-        icon: 'dashboard',
-        current: currentUrl.startsWith('/crm/dashboard'),
-      },
-      {
-        value: '/crm/leads',
-        label: this.i18n.t('nav.leads'),
-        icon: 'view_kanban',
-        current: currentUrl.startsWith('/crm/leads'),
-      },
-      {
-        value: '/crm/calendar',
-        label: this.i18n.t('nav.calendar'),
-        icon: 'calendar_month',
-        current: currentUrl.startsWith('/crm/calendar'),
-      },
-      {
-        value: '/crm/reports',
-        label: this.i18n.t('nav.reports'),
-        icon: 'bar_chart',
-        current: currentUrl.startsWith('/crm/reports'),
-      },
-    ];
-
-    if (this.canManageAccounts()) {
-      items.push({
-        value: '/crm/accounts',
-        label: this.i18n.t('nav.accounts'),
-        icon: 'history',
-        current: currentUrl.startsWith('/crm/accounts'),
-      });
-    }
-
-    return items;
-  });
-
-  protected readonly activeNavigationItem = computed<UiMenuItem>(
-    () =>
-      this.navigationItems().find((item) => item.current) ??
-      this.navigationItems().find((item) => item.value === '/crm/leads') ??
-      this.navigationItems()[0]!,
   );
 
   protected readonly userMenuItems = computed<readonly UiMenuItem[]>(() => {
@@ -483,9 +548,14 @@ export class CrmShell {
     this.session.setOfficeFilter(filter);
   }
 
-  protected async handleNavigation(value: string): Promise<void> {
-    if (!this.navigationItems().some((item) => item.value === value)) return;
-    await this.router.navigateByUrl(value);
+  protected toggleNavigation(): void {
+    this.navigationOpen.update((open) => !open);
+  }
+
+  protected closeNavigation(): void {
+    if (!this.navigationOpen()) return;
+    this.navigationOpen.set(false);
+    queueMicrotask(() => this.navigationTrigger()?.nativeElement.focus());
   }
 
   protected async handleUserMenu(value: string): Promise<void> {

@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/auth.guard';
+import { legacyCrmMatcher, legacyCrmRedirectGuard } from './core/navigation/legacy-crm-redirect';
 import { superAdminGuard } from './core/auth/role.guard';
 
 export const routes: Routes = [
@@ -30,7 +31,12 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/design/design-page').then((page) => page.DesignPage),
   },
   {
-    path: 'crm',
+    matcher: legacyCrmMatcher,
+    canActivate: [legacyCrmRedirectGuard],
+    children: [],
+  },
+  {
+    path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./features/crm/shell/crm-shell').then((page) => page.CrmShell),
     children: [
@@ -49,6 +55,18 @@ export const routes: Routes = [
         path: 'leads',
         loadComponent: () =>
           import('./features/crm/leads/leads-page').then((page) => page.LeadsPage),
+      },
+      {
+        path: 'projects',
+        title: 'Projects | KOLSS',
+        loadComponent: () =>
+          import('./features/crm/projects/projects-page').then((page) => page.ProjectsPage),
+      },
+      {
+        path: 'clients',
+        title: 'Clients | KOLSS',
+        loadComponent: () =>
+          import('./features/crm/clients/clients-page').then((page) => page.ClientsPage),
       },
       {
         path: 'calendar',

@@ -363,7 +363,7 @@ describe('LeadsPage', () => {
   });
 
   it('resolves a deep link with both "active" and a concrete status (e.g. a hand-edited URL) to "active" alone', async () => {
-    await TestBed.inject(Router).navigateByUrl('/crm/leads?clientStatus=active,thinking&days=all');
+    await TestBed.inject(Router).navigateByUrl('/leads?clientStatus=active,thinking&days=all');
 
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
@@ -593,7 +593,7 @@ describe('LeadsPage', () => {
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.lead-row')?.click();
-    expect(navigate).toHaveBeenCalledWith(['/crm/leads', 'lead-1003']);
+    expect(navigate).toHaveBeenCalledWith(['/leads', 'lead-1003']);
   });
 
   it('loads a shared filter link instead of the stored preferences', async () => {
@@ -606,7 +606,7 @@ describe('LeadsPage', () => {
         managerFilter: 'emp-kyiv-1',
       }),
     );
-    await TestBed.inject(Router).navigateByUrl('/crm/leads?clientStatus=new_lead&days=30');
+    await TestBed.inject(Router).navigateByUrl('/leads?clientStatus=new_lead&days=30');
 
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
@@ -623,7 +623,7 @@ describe('LeadsPage', () => {
 
   it('mirrors the selected filters in the URL so the view can be shared', async () => {
     const router = TestBed.inject(Router);
-    await router.navigateByUrl('/crm/leads');
+    await router.navigateByUrl('/leads');
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
 
@@ -638,7 +638,7 @@ describe('LeadsPage', () => {
 
   it('applies a linked office the user can filter by', async () => {
     officeContext = { canFilter: true, filterOffices: [kyivOffice] };
-    await TestBed.inject(Router).navigateByUrl('/crm/leads?office=kyiv&clientStatus=new_lead');
+    await TestBed.inject(Router).navigateByUrl('/leads?office=kyiv&clientStatus=new_lead');
 
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
@@ -648,7 +648,7 @@ describe('LeadsPage', () => {
 
   it('ignores a linked office the user has no access to', async () => {
     officeContext = { canFilter: true, filterOffices: [kyivOffice] };
-    await TestBed.inject(Router).navigateByUrl('/crm/leads?office=warsaw&clientStatus=new_lead');
+    await TestBed.inject(Router).navigateByUrl('/leads?office=warsaw&clientStatus=new_lead');
 
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
@@ -661,7 +661,7 @@ describe('LeadsPage', () => {
 
   it('resolves the "not yet called" digest deep link (callStatus=none&clientStatus=active&days=all)', async () => {
     await TestBed.inject(Router).navigateByUrl(
-      '/crm/leads?office=warsaw&callStatus=none&clientStatus=active&days=all',
+      '/leads?office=warsaw&callStatus=none&clientStatus=active&days=all',
     );
 
     const fixture = TestBed.createComponent(LeadsPage);
@@ -683,7 +683,7 @@ describe('LeadsPage', () => {
   // the literal encoded URL instead of assuming the decode happens.
   it('resolves the digest deep link with a URL-encoded comma (callStatus=no_answer%2Ccallback_undated)', async () => {
     await TestBed.inject(Router).navigateByUrl(
-      '/crm/leads?office=warsaw&callStatus=no_answer%2Ccallback_undated&clientStatus=active&days=all',
+      '/leads?office=warsaw&callStatus=no_answer%2Ccallback_undated&clientStatus=active&days=all',
     );
 
     const fixture = TestBed.createComponent(LeadsPage);
@@ -699,7 +699,7 @@ describe('LeadsPage', () => {
   });
 
   it('reflects a linked "active" client status through the switch, not the dropdown', async () => {
-    await TestBed.inject(Router).navigateByUrl('/crm/leads?clientStatus=active&days=all');
+    await TestBed.inject(Router).navigateByUrl('/leads?clientStatus=active&days=all');
 
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();

@@ -1,6 +1,6 @@
 @if (employee(); as employee) {
   <section class="employee-page" [attr.aria-labelledby]="'employee-' + employee.id">
-    <a class="back-link" routerLink="/crm/accounts/users">
+    <a class="back-link" routerLink="/accounts/users">
       <app-ui-icon name="arrow_back" [size]="17" />
       {{ 'accounts.detail.back' | translate }}
     </a>
@@ -165,7 +165,7 @@
             @for (lead of assignedLeads(); track lead.id) {
               <tr>
                 <td>
-                  <a [routerLink]="['/crm/leads', lead.id]">{{ lead.name }}</a>
+                  <a [routerLink]="['/leads', lead.id]">{{ lead.name }}</a>
                   <small>{{ lead.phone }}</small>
                 </td>
                 <td>
@@ -195,6 +195,6 @@
   <section class="missing-state">
     <app-ui-icon name="inbox" [size]="30" />
     <h1>{{ 'accounts.detail.notFound' | translate }}</h1>
-    <a routerLink="/crm/accounts/users">{{ 'accounts.detail.returnToAccounts' | translate }}</a>
+    <a routerLink="/accounts/users">{{ 'accounts.detail.returnToAccounts' | translate }}</a>
   </section>
 }

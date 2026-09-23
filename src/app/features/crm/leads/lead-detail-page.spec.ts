@@ -1044,7 +1044,7 @@ describe('LeadDetailView', () => {
 
     expect(link?.textContent).toContain('Відкрити в календарі');
     expect(link?.getAttribute('href')).toBe(
-      `/crm/calendar?leadId=${lead.id}&date=2026-08-05&officeId=office-${lead.officeCode}`,
+      `/calendar?leadId=${lead.id}&date=2026-08-05&officeId=office-${lead.officeCode}`,
     );
   });
 

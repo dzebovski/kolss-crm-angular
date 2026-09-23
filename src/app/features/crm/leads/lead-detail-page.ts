@@ -370,7 +370,7 @@ export class LeadDetailView {
     try {
       await this.leadsService.archiveLead(lead.id);
       this.changed.emit();
-      await this.router.navigate(['/crm/leads']);
+      await this.router.navigate(['/leads']);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'error.leadArchiveFailed';
       this.actionError.set(this.i18n.localizeError(message));
@@ -416,7 +416,7 @@ export class LeadDetailView {
     try {
       await this.leadsService.deleteLeadPermanently(lead.id);
       this.changed.emit();
-      await this.router.navigate(['/crm/leads']);
+      await this.router.navigate(['/leads']);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'error.actionFailed';
       this.actionError.set(this.i18n.localizeError(message));

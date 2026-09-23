@@ -11,9 +11,9 @@
 | Supabase client   | `src/app/core/supabase/supabase.service.ts` | Singleton auth-клієнт `@supabase/auth-js` (тільки автентифікація; бізнес-дані йдуть через `api.kolss.eu`) |
 | Auth service      | `src/app/core/auth/auth.service.ts`         | Сесія, профіль, signIn/signOut                                                                            |
 | Session service   | `src/app/core/session/session.service.ts`   | Офіси користувача, view-as                                                                                |
-| Auth guard        | `src/app/core/auth/auth.guard.ts`           | Захист `/crm/*`, redirect на `/login`                                                                     |
+| Auth guard        | `src/app/core/auth/auth.guard.ts`           | Захист робочих route families, redirect на `/login`                                                       |
 | Guest guard       | `src/app/core/auth/auth.guard.ts`           | Redirect залогіненого з `/login`                                                                          |
-| Role guard        | `src/app/core/auth/role.guard.ts`           | `superAdminGuard` для `/crm/accounts`                                                                     |
+| Role guard        | `src/app/core/auth/role.guard.ts`           | `superAdminGuard` для `/accounts/*`                                                                       |
 | Моделі            | `src/app/models/database.ts`                | TypeScript-типи сутностей                                                                                 |
 | Ролі              | `src/app/core/roles/roles.ts`               | `canManageUsers`, `hasOfficeLeadFilter`                                                                   |
 | Login             | `src/app/features/auth/login/login-page.ts` | Екран входу                                                                                               |
@@ -61,21 +61,22 @@ Authentication → URL Configuration:
 
 ## 3. Маршрути
 
-| Шлях             | Guard                           | Статус                                   |
-| ---------------- | ------------------------------- | ---------------------------------------- |
-| `/`              | —                               | Redirect → `/login` або `/crm/dashboard` |
-| `/login`         | `guestGuard`                    | Готово                                   |
-| `/design`        | —                               | Дизайн-каталог (без auth)                |
-| `/crm`           | `authGuard`                     | CRM shell                                |
-| `/crm/dashboard` | `authGuard`                     | Placeholder                              |
-| `/crm/leads`     | `authGuard`                     | Placeholder → **Фаза 2**                 |
-| `/crm/leads/:id` | `authGuard`                     | **Фаза 2** (ще не створено)              |
-| `/crm/reports`   | `authGuard`                     | Placeholder → **Фаза 2**                 |
-| `/crm/accounts`  | `authGuard` + `superAdminGuard` | Placeholder → **Фаза 3**                 |
+| Шлях                                 | Guard                           | Статус                                     |
+| ------------------------------------ | ------------------------------- | ------------------------------------------ |
+| `/`                                  | —                               | Redirect → `/login` або `/leads`           |
+| `/login`                             | `guestGuard`                    | Готово                                     |
+| `/design`                            | `superAdminGuard`               | Дизайн-каталог для super admin             |
+| `/dashboard`, `/dashboard/reminders` | `authGuard`                     | Готово                                     |
+| `/leads`, `/leads/:id`               | `authGuard`                     | Готово                                     |
+| `/projects`, `/clients`              | `authGuard`                     | Placeholder                                |
+| `/calendar`                          | `authGuard`                     | Готово                                     |
+| `/reports`, `/reports/*`             | `authGuard`                     | Готово                                     |
+| `/accounts`, `/accounts/*`           | `authGuard` + `superAdminGuard` | Готово                                     |
+| `/crm`, `/crm/*`                     | —                               | Compatibility redirect до canonical routes |
 
 Query params:
 
-- `/login?next=/crm/leads` — redirect після входу (лише шляхи `/crm/*`)
+- `/login?next=/leads` — redirect після входу (лише відомі захищені route families)
 - `/login?error=deactivated` — деактивований акаунт
 - `/login?error=session` — не вдалося завантажити офіси
 
@@ -95,7 +96,7 @@ sequenceDiagram
   SB-->>Auth: session JWT
   Auth->>DB: select profiles
   DB-->>Auth: role, is_active
-  Note over App: User navigates to /crm/*
+  Note over App: User navigates to a protected route
   App->>Auth: authGuard checks isAuthenticated + is_active
   App->>SessionService: loadOfficeContext()
 ```
@@ -137,14 +138,14 @@ await auth.signOut();
 
 | Роль у БД (`profiles.role`) | UI label    | Доступ                         |
 | --------------------------- | ----------- | ------------------------------ |
-| `super_admin`               | Супер-адмін | Всі офіси, `/crm/accounts`     |
+| `super_admin`               | Супер-адмін | Всі офіси, `/accounts`         |
 | `curator`                   | Куратор     | Кілька офісів, фільтр по офісу |
 | `office_admin`              | Адмін офісу | Офіси з memberships            |
 | `office_member`             | Менеджер    | Офіси з memberships            |
 
 **RLS у Supabase** обмежує дані на рівні БД. Фронтенд додатково:
 
-- ховає `/crm/accounts` для не-super_admin (`superAdminGuard`)
+- ховає `/accounts` для користувачів без `canManageUsers` (`superAdminGuard`)
 - показує office filter лише якщо `session.officeContext()?.canUseOfficeFilter`
 
 ### View-as (super_admin)
@@ -385,7 +386,7 @@ const MOCK_OFFICES = [
 
 - [ ] Заповнити `environment.development.ts` (supabaseUrl, supabaseAnonKey)
 - [ ] Додати redirect URLs у Supabase Auth
-- [ ] Перевірити вхід тестовим користувачем (`/login` → `/crm/dashboard`)
+- [ ] Перевірити вхід тестовим користувачем (`/login` → `/leads`)
 - [ ] Переконатися, що `profiles.is_active = true` для тестового user
 - [ ] Для curator/member: є рядки в `user_office_memberships`
 
@@ -393,7 +394,7 @@ const MOCK_OFFICES = [
 
 ```bash
 npm start
-# http://localhost:4200 → redirect /login або /crm/dashboard
+# http://localhost:4200 → redirect /login або /leads
 ```
 
 ### Валідація

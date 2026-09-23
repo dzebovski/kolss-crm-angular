@@ -147,7 +147,7 @@ describe('AppointmentDrawer', () => {
         ?.textContent,
     ).toContain(lead.referenceId);
     expect(clientLink?.textContent).toContain('Відкрити картку клієнта');
-    expect(clientLink?.getAttribute('href')).toBe(`/crm/leads/${lead.id}`);
+    expect(clientLink?.getAttribute('href')).toBe(`/leads/${lead.id}`);
     (fixture.nativeElement as HTMLElement).querySelector<HTMLFormElement>('form')!.requestSubmit();
     await fixture.whenStable();
 
@@ -240,7 +240,7 @@ describe('AppointmentDrawer', () => {
     expect(element.querySelector('.terminal-status')?.textContent).toContain('Відвідав');
     expect(element.querySelector<HTMLInputElement>('input[type="date"]')?.disabled).toBe(false);
     expect(element.textContent).toContain('Зберегти');
-    expect(element.querySelector('.client-link')?.getAttribute('href')).toBe('/crm/leads/lead-1');
+    expect(element.querySelector('.client-link')?.getAttribute('href')).toBe('/leads/lead-1');
 
     element.querySelector<HTMLFormElement>('form')!.requestSubmit();
     await fixture.whenStable();
@@ -392,7 +392,7 @@ describe('AppointmentDrawer', () => {
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
       '.client-link',
     )!;
-    expect(link.getAttribute('href')).toBe(`/crm/leads/${lead.id}`);
+    expect(link.getAttribute('href')).toBe(`/leads/${lead.id}`);
     expect(link.closest('.drawer-actions__leading')).not.toBeNull();
     expect(link.closest('.drawer-body')).toBeNull();
     // Invoke the template click handler without triggering async RouterLink navigation

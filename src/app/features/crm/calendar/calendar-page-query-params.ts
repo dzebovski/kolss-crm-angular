@@ -30,8 +30,8 @@ export const CALENDAR_REMINDER_FILTER_KIND_MAP: Record<
 
 /**
  * Deep-link state the digest carries into the calendar, e.g.
- * `/crm/calendar?office=kyiv&date=2026-08-17&kind=callback` (day + kind
- * groups) or `/crm/calendar?office=warsaw&due=overdue` (overdue, no date).
+ * `/calendar?office=kyiv&date=2026-08-17&kind=callback` (day + kind
+ * groups) or `/calendar?office=warsaw&due=overdue` (overdue, no date).
  */
 export interface CalendarPageQueryState {
   /** Office *code*; `null` = no office param (or one the caller can't see). */

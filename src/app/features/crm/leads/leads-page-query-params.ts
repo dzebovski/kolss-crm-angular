@@ -14,7 +14,7 @@ import {
 
 /**
  * Full leads-list state that a shareable link carries, e.g.
- * `/crm/leads?office=warsaw&clientStatus=new_lead&days=30`.
+ * `/leads?office=warsaw&clientStatus=new_lead&days=30`.
  */
 export interface LeadsPageQueryState {
   /** Office *code* (`SessionService` filters by code); `null` = no office param. */
@@ -107,7 +107,7 @@ export function serializeLeadsPageQuery(state: LeadsPageQueryState): Record<stri
   return params;
 }
 
-/** Seed for a plain visit to `/crm/leads`, where filters come from local storage. */
+/** Seed for a plain visit to `/leads`, where filters come from local storage. */
 export function leadsPageQueryStateFromPreferences(
   preferences: LeadsPagePreferences,
 ): LeadsPageQueryState {

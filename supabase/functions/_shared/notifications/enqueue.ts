@@ -35,7 +35,7 @@ export async function enqueueLeadNotifications(
     client_info: lead.source_note ?? lead.order_comment ?? null,
     source_system: lead.source_system,
     office_code: officeCode,
-    crm_url: siteUrl ? `${siteUrl}/crm/leads/${lead.id}` : null,
+    crm_url: siteUrl ? `${siteUrl}/leads/${lead.id}` : null,
   };
 
   if (telegramConfigured(officeCode)) {

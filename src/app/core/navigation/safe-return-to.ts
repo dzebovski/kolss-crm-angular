@@ -1,20 +1,44 @@
-const CRM_FALLBACK = '/crm/dashboard';
+const APP_FALLBACK = '/dashboard';
+const PROTECTED_ROUTE_PREFIXES = [
+  '/dashboard',
+  '/leads',
+  '/projects',
+  '/clients',
+  '/calendar',
+  '/reports',
+  '/accounts',
+] as const;
 
-export function safeCrmReturnTo(value: string | null | undefined, fallback = CRM_FALLBACK): string {
+export function safeAppReturnTo(value: string | null | undefined, fallback = APP_FALLBACK): string {
   if (!value || value.startsWith('//') || value.includes('\\') || hasControlChars(value)) {
     return fallback;
   }
 
   const base = 'http://kolss.local';
-  const parsed = new URL(value, base);
+  let parsed: URL;
+  try {
+    parsed = new URL(value, base);
+  } catch {
+    return fallback;
+  }
+
+  if (parsed.origin !== base) return fallback;
+
+  const pathname = canonicalPathname(parsed.pathname);
   if (
-    parsed.origin !== base ||
-    (parsed.pathname !== '/crm' && !parsed.pathname.startsWith('/crm/'))
+    !PROTECTED_ROUTE_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
   ) {
     return fallback;
   }
 
-  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  return `${pathname}${parsed.search}${parsed.hash}`;
+}
+
+function canonicalPathname(pathname: string): string {
+  if (pathname === '/crm') return '/leads';
+  return pathname.startsWith('/crm/') ? pathname.slice('/crm'.length) : pathname;
 }
 
 function hasControlChars(value: string): boolean {

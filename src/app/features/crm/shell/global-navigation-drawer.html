@@ -1,0 +1,190 @@
+<div
+  class="global-navigation"
+  [class.global-navigation--open]="open()"
+  [attr.aria-hidden]="open() ? null : 'true'"
+>
+  <button
+    type="button"
+    class="global-navigation__backdrop"
+    tabindex="-1"
+    [attr.aria-label]="'nav.closeMenu' | translate"
+    (click)="close()"
+  ></button>
+
+  <div
+    id="global-navigation-drawer"
+    class="global-navigation__drawer"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="open() ? 'global-navigation-title' : null"
+    [attr.inert]="open() ? null : ''"
+    [cdkTrapFocus]="open()"
+    [cdkTrapFocusAutoCapture]="open()"
+  >
+    <div class="global-navigation__header">
+      <div>
+        <span class="global-navigation__eyebrow">KOLSS CRM</span>
+        <h2 id="global-navigation-title">{{ 'nav.menu' | translate }}</h2>
+      </div>
+      <button
+        type="button"
+        class="global-navigation__close"
+        [attr.aria-label]="'nav.closeMenu' | translate"
+        (click)="close()"
+      >
+        <app-ui-icon name="close" [size]="21" />
+      </button>
+    </div>
+
+    <nav class="global-navigation__nav" [attr.aria-label]="'nav.main' | translate">
+      <a
+        class="global-navigation__link global-navigation__link--primary"
+        routerLink="/dashboard"
+        [class.global-navigation__link--current]="isCurrent('/dashboard')"
+        [attr.aria-current]="isCurrent('/dashboard', true) ? 'page' : null"
+        (click)="close()"
+      >
+        <span class="global-navigation__icon"><app-ui-icon name="dashboard" [size]="20" /></span>
+        <span>{{ 'nav.dashboard' | translate }}</span>
+        <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+      </a>
+
+      <section class="global-navigation__section" [attr.aria-labelledby]="'navigation-sales-title'">
+        <h3 id="navigation-sales-title">{{ 'nav.sales' | translate }}</h3>
+        <a
+          class="global-navigation__link"
+          routerLink="/leads"
+          [class.global-navigation__link--current]="isCurrent('/leads')"
+          [attr.aria-current]="isCurrent('/leads', true) ? 'page' : null"
+          (click)="close()"
+        >
+          <span class="global-navigation__icon"
+            ><app-ui-icon name="view_kanban" [size]="20"
+          /></span>
+          <span>{{ 'nav.leads' | translate }}</span>
+          <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+        </a>
+        <a
+          class="global-navigation__link"
+          routerLink="/projects"
+          [class.global-navigation__link--current]="isCurrent('/projects')"
+          [attr.aria-current]="isCurrent('/projects', true) ? 'page' : null"
+          (click)="close()"
+        >
+          <span class="global-navigation__icon"
+            ><app-ui-icon name="business_center" [size]="20"
+          /></span>
+          <span>{{ 'nav.projects' | translate }}</span>
+          <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+        </a>
+        <a
+          class="global-navigation__link"
+          routerLink="/clients"
+          [class.global-navigation__link--current]="isCurrent('/clients')"
+          [attr.aria-current]="isCurrent('/clients', true) ? 'page' : null"
+          (click)="close()"
+        >
+          <span class="global-navigation__icon"><app-ui-icon name="handshake" [size]="20" /></span>
+          <span>{{ 'nav.clients' | translate }}</span>
+          <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+        </a>
+      </section>
+
+      <a
+        class="global-navigation__link global-navigation__link--primary"
+        routerLink="/calendar"
+        [class.global-navigation__link--current]="isCurrent('/calendar')"
+        [attr.aria-current]="isCurrent('/calendar', true) ? 'page' : null"
+        (click)="close()"
+      >
+        <span class="global-navigation__icon"
+          ><app-ui-icon name="calendar_month" [size]="20"
+        /></span>
+        <span>{{ 'nav.calendar' | translate }}</span>
+        <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+      </a>
+
+      <section
+        class="global-navigation__section"
+        [attr.aria-labelledby]="'navigation-reports-title'"
+      >
+        <a
+          id="navigation-reports-title"
+          class="global-navigation__link global-navigation__link--primary"
+          routerLink="/reports"
+          [class.global-navigation__link--ancestor]="isCurrent('/reports')"
+          [attr.aria-current]="isCurrent('/reports', true) ? 'page' : null"
+          (click)="close()"
+        >
+          <span class="global-navigation__icon"><app-ui-icon name="bar_chart" [size]="20" /></span>
+          <span>{{ 'nav.reports' | translate }}</span>
+          <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+        </a>
+        <div class="global-navigation__children">
+          <a
+            routerLink="/reports/leads-status"
+            [class.global-navigation__child--current]="isCurrent('/reports/leads-status')"
+            [attr.aria-current]="isCurrent('/reports/leads-status') ? 'page' : null"
+            (click)="close()"
+          >
+            {{ 'nav.leadReporting' | translate }}
+            <app-ui-icon name="chevron_right" [size]="17" />
+          </a>
+          <a
+            routerLink="/reports/sales-funnel"
+            [class.global-navigation__child--current]="isCurrent('/reports/sales-funnel')"
+            [attr.aria-current]="isCurrent('/reports/sales-funnel') ? 'page' : null"
+            (click)="close()"
+          >
+            {{ 'nav.funnelReporting' | translate }}
+            <app-ui-icon name="chevron_right" [size]="17" />
+          </a>
+        </div>
+      </section>
+
+      @if (canManageAccounts()) {
+        <section
+          class="global-navigation__section"
+          [attr.aria-labelledby]="'navigation-accounts-title'"
+        >
+          <a
+            id="navigation-accounts-title"
+            class="global-navigation__link global-navigation__link--primary"
+            routerLink="/accounts"
+            [class.global-navigation__link--ancestor]="isCurrent('/accounts')"
+            [attr.aria-current]="isCurrent('/accounts', true) ? 'page' : null"
+            (click)="close()"
+          >
+            <span class="global-navigation__icon"><app-ui-icon name="history" [size]="20" /></span>
+            <span>{{ 'nav.accountsAndSettings' | translate }}</span>
+            <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+          </a>
+          <div class="global-navigation__children">
+            <a
+              routerLink="/accounts/users"
+              [class.global-navigation__child--current]="isCurrent('/accounts/users')"
+              [attr.aria-current]="isCurrent('/accounts/users') ? 'page' : null"
+              (click)="close()"
+            >
+              {{ 'nav.accounts' | translate }}
+              <app-ui-icon name="chevron_right" [size]="17" />
+            </a>
+            <a
+              routerLink="/accounts/settings"
+              [class.global-navigation__child--current]="isCurrent('/accounts/settings')"
+              [attr.aria-current]="isCurrent('/accounts/settings') ? 'page' : null"
+              (click)="close()"
+            >
+              {{ 'nav.settings' | translate }}
+              <app-ui-icon name="chevron_right" [size]="17" />
+            </a>
+          </div>
+        </section>
+      }
+    </nav>
+
+    <footer class="global-navigation__footer">
+      <ng-content select="[navigation-office]" />
+    </footer>
+  </div>
+</div>

@@ -23,8 +23,8 @@ describe('AccountsHubPage', () => {
 
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Accounts and settings');
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/crm/accounts/users',
-      '/crm/accounts/settings',
+      '/accounts/users',
+      '/accounts/settings',
     ]);
   });
 
