@@ -1,4 +1,12 @@
-import { Component, computed, inject, input, resource, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  resource,
+  signal,
+  type WritableSignal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -28,6 +36,7 @@ import { V2LeadActionPanel, type V2CallResult, type V2StatusChange } from './v2-
 import { V2CommentDialog, type V2CommentData } from './v2-comment-dialog';
 import { V2CurrentStatusCard } from './v2-current-status-card';
 import { V2LeadInfoDialog, type V2LeadInfoData } from './v2-lead-info-dialog';
+import { V2StatusDialog, type V2StatusDialogData } from './v2-status-dialog';
 import { V2EditContactDialog, type V2EditContactData } from './v2-edit-contact-dialog';
 import { V2LeadCardHeader } from './v2-lead-card-header';
 import { V2LeadDocumentsCard } from './v2-lead-documents-card';
@@ -213,7 +222,7 @@ export class V2LeadCardPage {
     const lead = this.loaded()?.lead;
     // The API answers 409 rating_unchanged for the same value; the design ignores that click.
     if (!lead || !this.actionsEnabled() || rating === this.card()?.rating) return;
-    await this.runAction(() => this.service.setRating(lead.id, rating));
+    await this.run(this.actionPending, () => this.service.setRating(lead.id, rating));
   }
 
   protected async openComment(): Promise<void> {
@@ -230,18 +239,23 @@ export class V2LeadCardPage {
     if (await firstValueFrom(ref.closed)) this.leadResource.reload();
   }
 
-  protected openCallResult(result: V2CallResult): void {
-    // TODO(C3): call result popups.
-    void result;
+  /** Call result and lead status buttons open their popup (C3); the popup saves. */
+  protected async openStatusDialog(kind: V2CallResult | V2StatusChange): Promise<void> {
+    const loaded = this.loaded();
+    if (!loaded || !this.actionsEnabled()) return;
+    const ref = this.dialogs.open<boolean, V2StatusDialogData>(V2StatusDialog, {
+      kind,
+      lead: loaded.lead,
+      columns: loaded.columns,
+      employees: this.employees(),
+      now: this.now(),
+    });
+    if (await firstValueFrom(ref.closed)) this.leadResource.reload();
   }
 
-  protected openStatusChange(status: V2StatusChange): void {
-    // TODO(C3): lead status popups.
-    void status;
-  }
-
-  private async runAction(action: () => Promise<void>): Promise<void> {
-    this.actionPending.set(true);
+  /** Runs a card request with its pending flag, then reloads the lead or shows the error. */
+  private async run(pending: WritableSignal<boolean>, action: () => Promise<void>): Promise<void> {
+    pending.set(true);
     this.actionError.set('');
     try {
       await action();
@@ -251,25 +265,14 @@ export class V2LeadCardPage {
         this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
       );
     } finally {
-      this.actionPending.set(false);
+      pending.set(false);
     }
   }
 
   protected async completeTask(kind: LeadReminderKind): Promise<void> {
     const lead = this.loaded()?.lead;
     if (!lead || !this.canCompleteTasks() || this.taskPending()) return;
-    this.taskPending.set(true);
-    this.actionError.set('');
-    try {
-      await this.service.completeReminder(lead.id, kind);
-      this.leadResource.reload();
-    } catch (error) {
-      this.actionError.set(
-        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
-      );
-    } finally {
-      this.taskPending.set(false);
-    }
+    await this.run(this.taskPending, () => this.service.completeReminder(lead.id, kind));
   }
 
   protected async editEntry(event: LeadEvent): Promise<void> {
@@ -280,7 +283,7 @@ export class V2LeadCardPage {
     });
     const comment = await firstValueFrom(ref.closed);
     if (!comment || comment === event.comment?.trim()) return;
-    await this.runEntryAction(() => this.service.updateEntry(lead.id, event.id, comment));
+    await this.run(this.entryPending, () => this.service.updateEntry(lead.id, event.id, comment));
   }
 
   protected async deleteEntry(event: LeadEvent): Promise<void> {
@@ -290,7 +293,7 @@ export class V2LeadCardPage {
       officeWork: event.type === 'office_work',
     });
     if (!(await firstValueFrom(ref.closed))) return;
-    await this.runEntryAction(() => this.service.deleteEntry(lead.id, event.id));
+    await this.run(this.entryPending, () => this.service.deleteEntry(lead.id, event.id));
   }
 
   protected async translateEntry(event: LeadEvent): Promise<void> {
@@ -309,21 +312,6 @@ export class V2LeadCardPage {
         next.delete(event.id);
         return next;
       });
-    }
-  }
-
-  private async runEntryAction(action: () => Promise<void>): Promise<void> {
-    this.entryPending.set(true);
-    this.actionError.set('');
-    try {
-      await action();
-      this.leadResource.reload();
-    } catch (error) {
-      this.actionError.set(
-        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
-      );
-    } finally {
-      this.entryPending.set(false);
     }
   }
 

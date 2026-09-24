@@ -1,0 +1,92 @@
+<app-v2-dialog
+  [title]="copy.title | translate"
+  [subtitle]="copy.subtitle | translate"
+  [hint]="hint()"
+  [saveLabel]="copy.save | translate"
+  [saveDisabled]="!canSave()"
+  (save)="save()"
+>
+  @if (error(); as message) {
+    <p class="v2-status__error" role="alert">{{ message }}</p>
+  }
+
+  @if (kind === 'success') {
+    <div class="v2-status__pair">
+      <app-v2-form-field [label]="'v2.card.budget' | translate">
+        <input
+          cdkFocusInitial
+          autocomplete="off"
+          [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
+          [formField]="status.budget"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'v2.card.location' | translate">
+        <input
+          autocomplete="off"
+          [placeholder]="'v2.leadInfo.locationPlaceholder' | translate"
+          [formField]="status.location"
+        />
+      </app-v2-form-field>
+    </div>
+    <app-v2-product-chips [(selected)]="products" />
+    <app-v2-form-field [label]="'v2.current.nextAction' | translate">
+      <input
+        autocomplete="off"
+        [placeholder]="'v2.popup.success.nextActionPlaceholder' | translate"
+        [formField]="status.nextAction"
+      />
+    </app-v2-form-field>
+  }
+
+  @if (copy.date; as dateLabel) {
+    <app-v2-form-field [label]="dateLabel | translate" [required]="copy.dateRequired ?? false">
+      <input
+        type="datetime-local"
+        [attr.cdkFocusInitial]="kind === 'success' ? null : ''"
+        [attr.aria-required]="copy.dateRequired ?? false"
+        [formField]="status.date"
+      />
+    </app-v2-form-field>
+  }
+
+  @if (kind === 'invited') {
+    <app-v2-form-field [label]="'v2.current.designer' | translate" [required]="true">
+      <select aria-required="true" [formField]="status.designerId">
+        <option value="" disabled>{{ 'v2.popup.invited.chooseDesigner' | translate }}</option>
+        @for (designer of designers(); track designer.id) {
+          <option [value]="designer.id">{{ designer.name }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+    <p class="v2-status__note">{{ calendarNote() }}</p>
+  }
+
+  @if (kind === 'lost') {
+    <div class="v2-status__reasons" role="group" aria-labelledby="v2-status-reason">
+      <span class="v2-status__label" id="v2-status-reason"
+        >{{ 'v2.current.reason' | translate }} <span aria-hidden="true">*</span></span
+      >
+      <div class="v2-status__chips">
+        @for (option of lossReasons(); track option.id) {
+          <button
+            type="button"
+            class="v2-status__chip"
+            [class.v2-status__chip--on]="reason() === option.id"
+            [attr.aria-pressed]="reason() === option.id"
+            (click)="pickReason(option.id)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <app-v2-form-field [label]="'v2.timeline.comment' | translate">
+    <textarea
+      rows="3"
+      [placeholder]="'v2.popup.commentPlaceholder' | translate"
+      [formField]="status.comment"
+    ></textarea>
+  </app-v2-form-field>
+</app-v2-dialog>

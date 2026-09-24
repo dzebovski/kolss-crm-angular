@@ -1,0 +1,70 @@
+// Popup body of lead card v1.3; the reason chips are the design system toggle chips
+// (32px pill, `surface` + `line-strong`, `ink` fill when on), as the product chips.
+.v2-status__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--v2-space-3);
+}
+
+.v2-status__note {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.v2-status__reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+}
+
+.v2-status__label {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-status__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.v2-status__chip {
+  height: var(--v2-control-sm);
+  padding: 0 var(--v2-space-3);
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-status__chip--on {
+  border-color: var(--v2-ink);
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+}
+
+.v2-status__error {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-danger-bg);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-danger);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .v2-status__pair {
+    grid-template-columns: 1fr;
+  }
+}
