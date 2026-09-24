@@ -1,0 +1,88 @@
+// KOLSS CRM v2 design tokens as CSS custom properties.
+// Source: design system "KOLSS CRM" project/tokens.json (artifact version 1790234639-bed7,
+// https://claude.ai/code/artifact/f6c57ac9-aa3a-4b58-bb7c-0c99cc5f569c). Names match the
+// token names with a `--v2-` prefix. Keep in sync by hand when the design system changes.
+//
+// Include once on the v2 shell host (`.v2-root`) and on v2 CDK overlay panels, which render
+// outside the shell. v1 `--ui-*` tokens are untouched.
+@mixin tokens {
+  // Color
+  --v2-ground: #f6f6f4;
+  --v2-surface: #ffffff;
+  --v2-surface-sunk: #f0efeb;
+  --v2-line: #e6e5e1;
+  --v2-line-strong: #d9d8d3;
+  --v2-line-soft: #efeeea;
+  --v2-ink: #17171a;
+  --v2-ink-2: #33332f;
+  --v2-muted: #6b6b64;
+  --v2-subtle: #8a8a82;
+  --v2-faint: #b5b4ae;
+  --v2-on-ink: #ffffff;
+
+  --v2-status-new: #8a8a82;
+  --v2-status-later: #2563a8;
+  --v2-status-noanswer: #b42318;
+  --v2-status-success: #1f7a4d;
+  --v2-status-thinking: #a15c07;
+  --v2-status-invited: #6d4ab8;
+  --v2-status-lost: #8a8a82;
+  --v2-status-project: #17171a;
+
+  --v2-rating-cold: #1f5c99;
+  --v2-rating-cold-bg: #e8f0fa;
+  --v2-rating-medium: #8a5a00;
+  --v2-rating-medium-bg: #fdf3d8;
+  --v2-rating-hot: #b4410c;
+  --v2-rating-hot-bg: #fde8dd;
+
+  --v2-danger: var(--v2-status-noanswer);
+  --v2-danger-bg: #fdecea;
+  --v2-success-bg: #e8f5ee;
+  --v2-success-ink: #1f6b45;
+  --v2-calendar-bg: #f1edfa;
+  --v2-calendar-ink: #4b2f8a;
+  --v2-scrim: rgba(23, 23, 26, 0.32);
+
+  // Type families (self-hosted npm font packages, see angular.json styles)
+  --v2-font-sans: 'Onest Variable', 'Onest', system-ui, sans-serif;
+  --v2-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  // Spacing
+  --v2-space-1: 4px;
+  --v2-space-2: 8px;
+  --v2-space-3: 12px;
+  --v2-space-4: 16px;
+  --v2-space-5: 24px;
+  --v2-space-6: 32px;
+  --v2-space-7: 40px;
+
+  // Radius
+  --v2-radius-xs: 6px;
+  --v2-radius-sm: 8px;
+  --v2-radius-md: 10px;
+  --v2-radius-lg: 16px;
+  --v2-radius-pill: 999px;
+
+  // Shadow
+  --v2-shadow-control: 0 1px 2px rgba(23, 23, 26, 0.06);
+  --v2-shadow-menu: 0 12px 32px rgba(23, 23, 26, 0.12);
+  --v2-shadow-modal: 0 24px 64px rgba(23, 23, 26, 0.24);
+
+  // Size
+  --v2-control-sm: 32px;
+  --v2-control-md: 40px;
+  --v2-control-lg: 48px;
+  --v2-page-width: 1440px;
+}
+
+// Base text setup for a v2 root: ground, ink and the body style.
+@mixin root {
+  @include tokens;
+
+  background: var(--v2-ground);
+  color: var(--v2-ink);
+  font-family: var(--v2-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
