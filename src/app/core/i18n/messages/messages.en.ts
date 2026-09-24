@@ -284,6 +284,8 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.popup.lost.title': 'Lost lead',
   'v2.popup.lost.subtitle': 'Closes the lead',
   'v2.popup.lost.save': 'Mark as lost',
+  'v2.action.reopen': 'Reopen lead',
+  'v2.timeline.reopened': 'Lead reopened',
   'v2.timeline.leadInfoUpdated': 'Lead info updated',
   'v2.timeline.materials': 'Materials',
   'v2.timeline.leadTime': 'Lead time',

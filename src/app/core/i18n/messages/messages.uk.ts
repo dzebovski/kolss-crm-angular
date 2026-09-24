@@ -283,6 +283,8 @@ export const messagesUk = {
   'v2.popup.lost.title': 'Втрачений лід',
   'v2.popup.lost.subtitle': 'Закриває лід',
   'v2.popup.lost.save': 'Позначити втраченим',
+  'v2.action.reopen': 'Відкрити лід знову',
+  'v2.timeline.reopened': 'Лід відкрито знову',
   'v2.timeline.leadInfoUpdated': 'Інформацію про лід оновлено',
   'v2.timeline.materials': 'Матеріали',
   'v2.timeline.leadTime': 'Термін',
