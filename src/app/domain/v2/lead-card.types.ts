@@ -23,6 +23,12 @@ export interface V2LeadColumns {
   readonly noAnswerAttempts: number;
   readonly estimatedBudgetText: string | null;
   readonly products: readonly V2LeadProduct[];
+  /** Lead info (W7). */
+  readonly materialFronts: string | null;
+  readonly materialWorktop: string | null;
+  readonly materialAppliances: string | null;
+  readonly expectedLeadTime: string | null;
+  readonly preferredMeasurementAt: string | null;
 }
 
 export interface V2LeadBudget {

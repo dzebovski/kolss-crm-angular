@@ -1,6 +1,12 @@
 import { inject, Service } from '@angular/core';
 
 import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
+import type {
+  LeadRating,
+  RatingActivityRequest,
+  UpdateLeadInfoRequest,
+  V2StatusActivityRequest,
+} from '@core/api/generated/kolss-api.types';
 import type { LeadReminderKind } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
 import { v2LeadColumnsFromRow } from '@domain/v2/lead-card.mapper';
@@ -96,5 +102,33 @@ export class V2LeadCardService {
   /** English translation of an entry's text (D6, as v1). */
   async translateEntry(leadId: string, eventId: string): Promise<void> {
     await this.leads.translateHistoryEvent(leadId, eventId);
+  }
+
+  /** Call result or lead status popup (`v2_status` activity, contract §3.2). */
+  async recordStatus(
+    leadId: string,
+    request: Omit<V2StatusActivityRequest, 'type'>,
+  ): Promise<void> {
+    await this.api.leadActivity(leadId, { type: 'v2_status', ...request });
+  }
+
+  /** RatingSwitch: one click, no popup (`rating` activity). */
+  async setRating(leadId: string, rating: LeadRating): Promise<void> {
+    const request: RatingActivityRequest = { type: 'rating', rating };
+    await this.api.leadActivity(leadId, request);
+  }
+
+  /** Add comment popup: a comment with an optional reminder (no assignee, decision D5). */
+  async addComment(leadId: string, comment: string, dueAt: string | null): Promise<void> {
+    await this.api.leadActivity(leadId, {
+      type: 'comment',
+      comment: comment.trim(),
+      ...(dueAt ? { dueAt } : {}),
+    });
+  }
+
+  /** Lead info popup (`PATCH /v1/leads/{id}/info`, W7): only the sent fields change. */
+  async updateLeadInfo(lead: Lead, request: UpdateLeadInfoRequest): Promise<void> {
+    await this.api.updateLeadInfo(lead.id, lead.version ?? 1, request);
   }
 }

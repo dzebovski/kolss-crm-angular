@@ -73,7 +73,25 @@
       (editContact)="openEditContact()"
     />
 
-    <!-- TODO(C2): action panel (call results, lead status, rating, comment, lead info). -->
+    @if (suggestion(); as suggestion) {
+      <app-v2-lead-action-panel
+        [suggestion]="suggestion"
+        [now]="now()"
+        [rating]="lead.rating"
+        [actionsEnabled]="actionsEnabled()"
+        [commentEnabled]="commentEnabled()"
+        [pending]="actionPending()"
+        (callResult)="openCallResult($event)"
+        (statusChange)="openStatusChange($event)"
+        (ratingSelect)="setRating($event)"
+        (addComment)="openComment()"
+        (fillInfo)="openLeadInfo()"
+      />
+    }
+
+    @if (actionError(); as message) {
+      <p class="v2-card__action-error" role="alert">{{ message }}</p>
+    }
 
     <div class="v2-card__info">
       <app-v2-current-status-card
@@ -95,10 +113,6 @@
       />
       <app-v2-lead-documents-card [attachments]="attachments()" [now]="now()" />
     </div>
-
-    @if (actionError(); as message) {
-      <p class="v2-card__action-error" role="alert">{{ message }}</p>
-    }
 
     <app-v2-lead-timeline
       [items]="timeline()"

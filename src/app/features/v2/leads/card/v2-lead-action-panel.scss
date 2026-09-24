@@ -1,0 +1,125 @@
+@use '../../../../../styles/v2/type';
+
+// Values from lead card v1.3 (Actions panel) and design system ActionPanel. The 22/20px and
+// 16/20px row paddings, 20/28px gaps and the 14px status button padding are board values
+// without a token.
+:host {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--v2-space-5);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-action__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+  padding: 22px 0 20px;
+  border-bottom: 1px solid var(--v2-line-strong);
+}
+
+.v2-action__suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+  min-width: 0;
+}
+
+.v2-action__label {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-action__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 20px;
+}
+
+.v2-action__title {
+  @include type.text(suggestion);
+
+  color: var(--v2-ink);
+}
+
+.v2-action__title--quiet {
+  color: var(--v2-muted);
+}
+
+.v2-action__on {
+  color: var(--v2-ink-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-action__on--overdue {
+  color: var(--v2-danger);
+}
+
+.v2-action__caption {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-action__calls {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+}
+
+.v2-action__calls-label {
+  margin-right: var(--v2-space-2);
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-action__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+  padding: var(--v2-space-4) 0 20px;
+}
+
+.v2-action__groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 28px;
+}
+
+.v2-action__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.v2-action__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.v2-action__extra {
+  gap: var(--v2-space-2);
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.v2-action__status {
+  padding: 0 14px;
+}

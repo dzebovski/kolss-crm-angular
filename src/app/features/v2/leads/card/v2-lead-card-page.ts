@@ -11,9 +11,11 @@ import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import { formatV2CardDate, formatV2DayRecency, formatV2Time } from '@domain/v2/date-format';
 import { leadIsTerminal, type LeadReminderKind } from '@domain/lead.rules';
+import { v2ActionSuggestion } from '@domain/v2/lead-action';
 import { v2CurrentStatus, v2LeadTasks } from '@domain/v2/lead-card-status';
 import type { LeadEvent } from '@domain/lead.types';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
+import type { V2LeadRating } from '@domain/v2/lead-view.types';
 import { v2LeadTimeline } from '@domain/v2/lead-timeline';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
@@ -22,7 +24,10 @@ import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import { V2Button } from '../../ui/v2-button';
 import { V2EmptyState } from '../../ui/v2-empty-state';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
+import { V2LeadActionPanel, type V2CallResult, type V2StatusChange } from './v2-lead-action-panel';
+import { V2CommentDialog, type V2CommentData } from './v2-comment-dialog';
 import { V2CurrentStatusCard } from './v2-current-status-card';
+import { V2LeadInfoDialog, type V2LeadInfoData } from './v2-lead-info-dialog';
 import { V2EditContactDialog, type V2EditContactData } from './v2-edit-contact-dialog';
 import { V2LeadCardHeader } from './v2-lead-card-header';
 import { V2LeadDocumentsCard } from './v2-lead-documents-card';
@@ -46,6 +51,7 @@ import {
     V2Button,
     V2CurrentStatusCard,
     V2EmptyState,
+    V2LeadActionPanel,
     V2LeadCardHeader,
     V2LeadDocumentsCard,
     V2LeadTasksCard,
@@ -142,6 +148,26 @@ export class V2LeadCardPage {
     return Boolean(lead && !lead.archivedAt && !leadIsTerminal(lead));
   });
   protected readonly taskPending = signal(false);
+  protected readonly actionPending = signal(false);
+
+  protected readonly suggestion = computed(() => {
+    const lead = this.loaded()?.lead;
+    const card = this.card();
+    return lead && card ? v2ActionSuggestion(lead, card.status, this.tasks(), this.now()) : null;
+  });
+
+  /** Office access on a live lead; the API refuses activities on closed leads (reopen first). */
+  private readonly canRecord = computed(() => {
+    const lead = this.loaded()?.lead;
+    return Boolean(
+      lead && leadPolicy.canRecordLeadActivity(this.policyContext(), lead) && !leadIsTerminal(lead),
+    );
+  });
+  /** Design: a project locks every lead action except Add comment. */
+  protected readonly actionsEnabled = computed(
+    () => this.canRecord() && this.card()?.status !== 'project',
+  );
+  protected readonly commentEnabled = this.canRecord;
   protected readonly entryPending = signal(false);
   protected readonly translatingIds = signal<ReadonlySet<string>>(new Set());
 
@@ -181,6 +207,52 @@ export class V2LeadCardPage {
 
   protected retry(): void {
     this.leadResource.reload();
+  }
+
+  protected async setRating(rating: V2LeadRating): Promise<void> {
+    const lead = this.loaded()?.lead;
+    // The API answers 409 rating_unchanged for the same value; the design ignores that click.
+    if (!lead || !this.actionsEnabled() || rating === this.card()?.rating) return;
+    await this.runAction(() => this.service.setRating(lead.id, rating));
+  }
+
+  protected async openComment(): Promise<void> {
+    const lead = this.loaded()?.lead;
+    if (!lead || !this.commentEnabled()) return;
+    const ref = this.dialogs.open<boolean, V2CommentData>(V2CommentDialog, { leadId: lead.id });
+    if (await firstValueFrom(ref.closed)) this.leadResource.reload();
+  }
+
+  protected async openLeadInfo(): Promise<void> {
+    const loaded = this.loaded();
+    if (!loaded || !this.actionsEnabled()) return;
+    const ref = this.dialogs.open<boolean, V2LeadInfoData>(V2LeadInfoDialog, loaded);
+    if (await firstValueFrom(ref.closed)) this.leadResource.reload();
+  }
+
+  protected openCallResult(result: V2CallResult): void {
+    // TODO(C3): call result popups.
+    void result;
+  }
+
+  protected openStatusChange(status: V2StatusChange): void {
+    // TODO(C3): lead status popups.
+    void status;
+  }
+
+  private async runAction(action: () => Promise<void>): Promise<void> {
+    this.actionPending.set(true);
+    this.actionError.set('');
+    try {
+      await action();
+      this.leadResource.reload();
+    } catch (error) {
+      this.actionError.set(
+        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
+      );
+    } finally {
+      this.actionPending.set(false);
+    }
   }
 
   protected async completeTask(kind: LeadReminderKind): Promise<void> {
