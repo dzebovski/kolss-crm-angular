@@ -11,6 +11,8 @@ export const LEAD_FIELD_KEYS = [
   'closeReason',
   'message',
   'type',
+  // CRM v2 lead channel (Edit contact info); v1 only shows it in the audit.
+  'channel',
 ] as const;
 
 export type LeadFieldKey = (typeof LEAD_FIELD_KEYS)[number];
