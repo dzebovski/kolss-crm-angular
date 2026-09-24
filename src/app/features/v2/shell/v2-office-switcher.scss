@@ -1,0 +1,118 @@
+// Values from Main.dc.html (office switcher button, menu and MENU_ITEM).
+:host {
+  position: relative;
+  display: block;
+}
+
+svg {
+  display: block;
+  flex-shrink: 0;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-office__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  height: var(--v2-control-md);
+  padding: 0 var(--v2-space-3) 0 10px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.v2-office__icon {
+  stroke: var(--v2-muted);
+  stroke-width: 1.75;
+}
+
+.v2-office__chevron {
+  stroke: var(--v2-muted);
+  stroke-width: 2;
+}
+
+.v2-office__prefix {
+  color: var(--v2-muted);
+}
+
+.v2-office__panel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 240px;
+  padding: 6px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+  box-shadow: var(--v2-shadow-menu);
+}
+
+.v2-office__panel--visible {
+  display: flex;
+}
+
+.v2-office__heading {
+  padding: var(--v2-space-2) 10px 6px;
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-office__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--v2-control-md);
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--v2-surface-sunk);
+  }
+}
+
+.v2-office__item--current {
+  background: var(--v2-surface-sunk);
+  font-weight: 600;
+}
+
+.v2-office__label {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.v2-office__hint {
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.v2-office__check {
+  stroke: var(--v2-ink);
+  stroke-width: 2.25;
+}
+
+.v2-office__trigger:focus-visible,
+.v2-office__item:focus-visible {
+  outline: 2px solid var(--v2-ink);
+  outline-offset: 2px;
+}
