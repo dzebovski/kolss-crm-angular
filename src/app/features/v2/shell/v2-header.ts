@@ -8,6 +8,7 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { ROLE_OFFICE_MEMBER } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import { V2OfficeSwitcher } from './v2-office-switcher';
+import { V2_SIDE_MENU_ID } from './v2-side-menu';
 
 // Header from the "KOLSS CRM v2" canvas (Main.dc.html, HEADER): menu toggle, logo, CRM chip,
 // office switcher, divider, current user. Not fixed: it scrolls with the page.
@@ -21,6 +22,7 @@ import { V2OfficeSwitcher } from './v2-office-switcher';
         class="v2-header__toggle"
         [attr.aria-label]="(menuOpen() ? 'v2.header.closeMenu' : 'v2.header.openMenu') | translate"
         [attr.aria-expanded]="menuOpen()"
+        [attr.aria-controls]="sideMenuId"
         (click)="menuToggle.emit()"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
@@ -71,6 +73,8 @@ export class V2Header {
 
   readonly menuOpen = input.required<boolean>();
   readonly menuToggle = output<void>();
+
+  protected readonly sideMenuId = V2_SIDE_MENU_ID;
 
   protected readonly showOfficeSwitcher = this.session.showOfficeFilter;
 

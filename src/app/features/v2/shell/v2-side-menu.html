@@ -1,0 +1,78 @@
+<nav class="v2-menu" [id]="menuId" [attr.aria-label]="'v2.nav.main' | translate" [inert]="!open()">
+  <div class="v2-menu__inner">
+    @for (group of groups(); track group.section?.id ?? 'footer') {
+      @if (group.section; as section) {
+        <div class="v2-menu__section" [id]="menuId + '-' + section.id">
+          {{ section.labelKey | translate }}
+        </div>
+      } @else {
+        <div class="v2-menu__divider"></div>
+      }
+
+      <div
+        class="v2-menu__group"
+        role="group"
+        [attr.aria-labelledby]="group.section ? menuId + '-' + group.section.id : null"
+      >
+        @for (item of group.items; track item.id) {
+          @if (item.kind === 'link') {
+            <a
+              class="v2-menu__item"
+              [routerLink]="item.route"
+              routerLinkActive="v2-menu__item--active"
+              ariaCurrentWhenActive="page"
+            >
+              <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
+              <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
+            </a>
+          } @else if (item.action === 'language') {
+            <button
+              #languageTrigger
+              type="button"
+              class="v2-menu__item"
+              [attr.aria-expanded]="languagesOpen()"
+              [attr.aria-controls]="languagesOpen() ? languagesId : null"
+              (click)="toggleLanguages()"
+            >
+              <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
+              <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
+              <span class="v2-menu__value">{{ languageName() }}</span>
+            </button>
+            @if (languagesOpen()) {
+              <div class="v2-menu__group" [id]="languagesId">
+                @for (language of languages; track language.code) {
+                  <button
+                    type="button"
+                    class="v2-menu__item v2-menu__item--sub"
+                    [class.v2-menu__item--current]="language.code === locale()"
+                    [attr.aria-pressed]="language.code === locale()"
+                    [attr.lang]="language.code"
+                    (click)="selectLanguage(language.code)"
+                  >
+                    <span class="v2-menu__label">{{ language.name }}</span>
+                    @if (language.code === locale()) {
+                      <svg
+                        class="v2-menu__check"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 12l5 5L19 7" />
+                      </svg>
+                    }
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <button type="button" class="v2-menu__item" (click)="action.emit(item.action)">
+              <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
+              <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
+            </button>
+          }
+        }
+      </div>
+    }
+  </div>
+</nav>

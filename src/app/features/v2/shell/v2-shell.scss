@@ -11,6 +11,7 @@
 // Body and main frame from the "KOLSS CRM v2" canvas (Main.dc.html). The 28/48px main
 // padding are board values without a design token.
 .v2-shell__body {
+  position: relative;
   display: flex;
   flex-grow: 1;
   align-items: stretch;

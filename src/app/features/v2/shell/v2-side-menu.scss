@@ -1,0 +1,149 @@
+@use '../../../../styles/v2/type';
+
+// Values from Main.dc.html (SIDE MENU): 280px wide, width transition .22s ease, inner padding
+// 20/16/32, 2px between rows, 40px items. The 20px gap above a section label and the 13px
+// language value are board values without a design token.
+:host {
+  flex-shrink: 0;
+  width: 0;
+  overflow: hidden;
+  background: var(--v2-surface);
+  transition: width 0.22s ease;
+}
+
+:host(.v2-menu--open) {
+  width: 280px;
+  border-right: 1px solid var(--v2-line);
+}
+
+.v2-menu__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 280px;
+  padding: 20px var(--v2-space-4) var(--v2-space-6);
+}
+
+.v2-menu__section {
+  @include type.text(eyebrow);
+
+  padding: 20px var(--v2-space-3) var(--v2-space-2);
+  color: var(--v2-muted);
+
+  &:first-child {
+    padding-top: var(--v2-space-1);
+  }
+}
+
+.v2-menu__group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.v2-menu__divider {
+  height: 1px;
+  margin: var(--v2-space-2) var(--v2-space-3);
+  background: var(--v2-line-soft);
+}
+
+.v2-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--v2-control-md);
+  padding: 0 var(--v2-space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink-2);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: normal;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  // Hover is not drawn; the office switcher's menu-item hover is reused.
+  &:hover {
+    background: var(--v2-surface-sunk);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: -2px;
+  }
+}
+
+.v2-menu__item--active {
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink);
+  font-weight: 600;
+}
+
+.v2-menu__item--sub {
+  // Text lines up with the item labels: 12px padding + 18px icon + 12px gap.
+  padding-left: 42px;
+}
+
+.v2-menu__item--current {
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink);
+  font-weight: 600;
+}
+
+.v2-menu__check {
+  flex-shrink: 0;
+  fill: none;
+  stroke: var(--v2-ink);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-menu__icon {
+  color: var(--v2-muted);
+
+  .v2-menu__item--active & {
+    color: currentColor;
+  }
+}
+
+.v2-menu__label {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-menu__value {
+  flex-shrink: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    transition: none;
+  }
+}
+
+// The board is desktop-only (1440). On narrow screens a pushed 280px column would squeeze the
+// page, so the open menu covers the content instead.
+@media (max-width: 640px) {
+  :host {
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    z-index: 10;
+  }
+
+  :host(.v2-menu--open) {
+    box-shadow: var(--v2-shadow-menu);
+  }
+}
