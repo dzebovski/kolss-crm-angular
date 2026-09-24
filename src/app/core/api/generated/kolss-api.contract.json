@@ -1,6 +1,6 @@
 {
-  "version": "2.24.0",
-  "sha256": "e58422b4b10915f5dd9377ad16bcec700a2c377059c5edba607a408969ed0576",
+  "version": "2.25.0",
+  "sha256": "977d107b820ac9065eee3a4597967569fd2dce8794a86c3a7d3d0ae679c84046",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -13,6 +13,7 @@
     "createLead",
     "getLead",
     "updateLead",
+    "updateLeadInfo",
     "setLeadMarker",
     "deleteLeadMarker",
     "updateLeadEvent",

@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.24.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.25.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -29,6 +29,7 @@ import type {
   UpdateLeadQuestionAnswerResponse,
   UpdateAppointmentRequest,
   UpdateCurrencyRatesRequest,
+  UpdateLeadInfoRequest,
   UsersResponse,
 } from './kolss-api.types';
 
@@ -78,6 +79,17 @@ export class KolssApiClient {
 
   updateLead(id: string, version: number, body: unknown): Promise<{ readonly version: number }> {
     return this.patch(`/v1/leads/${encodeURIComponent(id)}`, body, { 'If-Match': String(version) });
+  }
+
+  /** CRM v2 "Lead info" popup: partial update; omitted fields stay as they are (2.25.0). */
+  updateLeadInfo(
+    id: string,
+    version: number,
+    body: UpdateLeadInfoRequest,
+  ): Promise<{ readonly version: number }> {
+    return this.patch(`/v1/leads/${encodeURIComponent(id)}/info`, body, {
+      'If-Match': String(version),
+    });
   }
 
   setLeadMarker(id: string, kind: 'reviewed' | 'manager_aware'): Promise<LeadMarkerResponse> {
