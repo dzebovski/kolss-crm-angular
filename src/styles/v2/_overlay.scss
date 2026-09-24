@@ -1,0 +1,17 @@
+@use './tokens';
+
+// v2 popups (K3, `V2DialogService`) render in the CDK overlay container outside `.v2-root`,
+// so the panel carries the v2 tokens and base text itself. Values from lead card v1.3 (Modal).
+.v2-dialog-backdrop.cdk-overlay-backdrop {
+  // = --v2-scrim (tokens aren't defined on the backdrop).
+  background: rgba(23, 23, 26, 0.32);
+}
+
+.v2-dialog-panel {
+  @include tokens.tokens;
+
+  color: var(--v2-ink);
+  font-family: var(--v2-font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
