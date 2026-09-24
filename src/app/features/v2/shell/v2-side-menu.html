@@ -1,0 +1,41 @@
+<nav class="v2-menu" [id]="menuId" [attr.aria-label]="'v2.nav.main' | translate" [inert]="!open()">
+  <div class="v2-menu__inner">
+    @for (group of groups(); track group.section?.id ?? 'footer') {
+      @if (group.section; as section) {
+        <div class="v2-menu__section" [id]="menuId + '-' + section.id">
+          {{ section.labelKey | translate }}
+        </div>
+      } @else {
+        <div class="v2-menu__divider"></div>
+      }
+
+      <div
+        class="v2-menu__group"
+        role="group"
+        [attr.aria-labelledby]="group.section ? menuId + '-' + group.section.id : null"
+      >
+        @for (item of group.items; track item.id) {
+          @if (item.kind === 'link') {
+            <a
+              class="v2-menu__item"
+              [routerLink]="item.route"
+              routerLinkActive="v2-menu__item--active"
+              ariaCurrentWhenActive="page"
+            >
+              <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
+              <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
+            </a>
+          } @else {
+            <button type="button" class="v2-menu__item" (click)="action.emit(item.action)">
+              <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
+              <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
+              @if (item.action === 'language') {
+                <span class="v2-menu__value">{{ languageName() }}</span>
+              }
+            </button>
+          }
+        }
+      </div>
+    }
+  </div>
+</nav>

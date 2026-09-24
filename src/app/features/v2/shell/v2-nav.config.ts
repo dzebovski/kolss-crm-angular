@@ -1,4 +1,5 @@
 import type { MessageKey } from '@core/i18n/messages';
+import type { LocaleCode } from '@domain/i18n.types';
 
 // v2 side menu from the "KOLSS CRM v2" canvas (Main.dc.html, SIDE MENU). The menu markup
 // (N2) renders these arrays; it never hardcodes items. Order here is the order on screen.
@@ -232,3 +233,13 @@ export function buildV2Nav(
   if (footer.length > 0) groups.push({ section: null, items: footer });
   return groups;
 }
+
+/**
+ * Languages of the Language item, in list order (user, 2026-09-24: uk / pl / en). Names are
+ * autonyms, the same in every UI language, as in the v1 user menu.
+ */
+export const V2_LANGUAGES: readonly { readonly code: LocaleCode; readonly name: string }[] = [
+  { code: 'uk', name: 'Українська' },
+  { code: 'pl', name: 'Polski' },
+  { code: 'en', name: 'English' },
+];
