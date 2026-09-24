@@ -65,12 +65,39 @@
         <span class="v2-card__project-link">{{ 'v2.card.openProject' | translate }}</span>
       </div>
     }
-  }
 
-  <app-v2-lead-card-header
-    [card]="lead"
-    [managerName]="managerName()"
-    [canEdit]="canEdit()"
-    (editContact)="openEditContact()"
-  />
+    <app-v2-lead-card-header
+      [card]="lead"
+      [managerName]="managerName()"
+      [canEdit]="canEdit()"
+      (editContact)="openEditContact()"
+    />
+
+    <!-- TODO(C2): action panel (call results, lead status, rating, comment, lead info). -->
+
+    @if (actionError(); as message) {
+      <p class="v2-card__action-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="v2-card__info">
+      <app-v2-current-status-card
+        [status]="lead.status"
+        [current]="currentStatus()"
+        [now]="now()"
+        [officeKey]="meta.officeKey"
+        [personName]="personName"
+      />
+      <app-v2-lead-tasks-card
+        [tasks]="tasks()"
+        [now]="now()"
+        [leadName]="lead.name"
+        [personName]="personName"
+        [needsNextStep]="needsNextStep()"
+        [canComplete]="canCompleteTasks()"
+        [pending]="taskPending()"
+        (complete)="completeTask($event)"
+      />
+      <app-v2-lead-documents-card [attachments]="attachments()" [now]="now()" />
+    </div>
+  }
 }

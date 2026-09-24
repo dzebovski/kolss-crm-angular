@@ -50,6 +50,11 @@ export function formatV2MonthYear(value: V2DateInput, locale: LocaleCode): strin
   return `${capitalize(month)} ${date.getFullYear()}`;
 }
 
+/** Short weekday for date tiles: `Sat` (the tile shows it uppercase). */
+export function formatV2Weekday(value: V2DateInput, locale: LocaleCode): string {
+  return part(nameFormat(locale, true).formatToParts(toDate(value)), 'weekday');
+}
+
 /** 24-hour time: `12:00`. */
 export function formatV2Time(value: V2DateInput): string {
   const date = toDate(value);

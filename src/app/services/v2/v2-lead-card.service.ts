@@ -1,10 +1,12 @@
 import { inject, Service } from '@angular/core';
 
 import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
+import type { LeadReminderKind } from '@domain/lead.rules';
 import type { Lead } from '@domain/lead.types';
 import { v2LeadColumnsFromRow } from '@domain/v2/lead-card.mapper';
 import type { V2LeadColumns } from '@domain/v2/lead-card.types';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
+import { LeadActivitiesService } from '@services/lead-activities.service';
 import { mapLeadDetail } from '@services/leads.mapper';
 
 /** A loaded lead: the shared v1 model plus the v2 columns the v1 model doesn't carry. */
@@ -34,6 +36,7 @@ export type V2ContactField = 'name' | 'phone' | 'email' | 'manager' | 'channel';
 @Service()
 export class V2LeadCardService {
   private readonly api = inject(KolssApiClient);
+  private readonly activities = inject(LeadActivitiesService);
 
   /** Null when the lead doesn't exist (404). */
   async load(leadId: string): Promise<V2LoadedLead | null> {
@@ -71,5 +74,10 @@ export class V2LeadCardService {
       channel: update.channel,
       editedFields: [...editedFields],
     });
+  }
+
+  /** Reminders & tasks "Mark as done": clears the reminder as v1 does (`clear_reminder`). */
+  completeReminder(leadId: string, kind: LeadReminderKind): Promise<void> {
+    return this.activities.clearReminder(leadId, kind);
   }
 }

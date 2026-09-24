@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, resource } from '@angular/core';
+import { Component, computed, inject, input, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
@@ -10,6 +10,8 @@ import * as leadPolicy from '@core/policy/lead.policy';
 import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import { formatV2CardDate, formatV2DayRecency, formatV2Time } from '@domain/v2/date-format';
+import { leadIsTerminal, type LeadReminderKind } from '@domain/lead.rules';
+import { v2CurrentStatus, v2LeadTasks } from '@domain/v2/lead-card-status';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
@@ -18,15 +20,27 @@ import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import { V2Button } from '../../ui/v2-button';
 import { V2EmptyState } from '../../ui/v2-empty-state';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
+import { V2CurrentStatusCard } from './v2-current-status-card';
 import { V2EditContactDialog, type V2EditContactData } from './v2-edit-contact-dialog';
 import { V2LeadCardHeader } from './v2-lead-card-header';
+import { V2LeadDocumentsCard } from './v2-lead-documents-card';
+import { V2LeadTasksCard } from './v2-lead-tasks-card';
 
 // Lead card v1.3 (`/v2/leads/:leadId`): breadcrumb, meta row, project banner, header card (C1).
 // The action panel (C2), info cards (C4) and timeline (C5) follow below the header. Data comes
 // from `GET /v1/leads/{id}` (shared v1 mapping + the v2 columns).
 @Component({
   selector: 'app-v2-lead-card-page',
-  imports: [RouterLink, TranslatePipe, V2Button, V2EmptyState, V2LeadCardHeader],
+  imports: [
+    RouterLink,
+    TranslatePipe,
+    V2Button,
+    V2CurrentStatusCard,
+    V2EmptyState,
+    V2LeadCardHeader,
+    V2LeadDocumentsCard,
+    V2LeadTasksCard,
+  ],
   templateUrl: './v2-lead-card-page.html',
   styleUrl: './v2-lead-card-page.scss',
 })
@@ -80,12 +94,45 @@ export class V2LeadCardPage {
     return loaded ? toV2LeadCard(loaded.lead, loaded.columns) : null;
   });
 
+  private readonly employeeNames = computed(
+    () => new Map(this.employees().map((employee) => [employee.id, employee.displayName])),
+  );
+  /** Bound field so presentational cards can call it detached from `this`. */
+  protected readonly personName = (id: string): string | null =>
+    this.employeeNames().get(id) ?? null;
+
   protected readonly managerName = computed(() => {
     const id = this.card()?.managerId;
-    return id
-      ? (this.employees().find((employee) => employee.id === id)?.displayName ?? null)
-      : null;
+    return id ? this.personName(id) : null;
   });
+
+  protected readonly currentStatus = computed(() => {
+    const loaded = this.loaded();
+    const card = this.card();
+    if (!loaded || !card) return null;
+    return v2CurrentStatus(loaded.lead, card.status, loaded.columns.noAnswerAttempts);
+  });
+
+  protected readonly attachments = computed(() => this.loaded()?.lead.attachments ?? []);
+
+  protected readonly tasks = computed(() => {
+    const lead = this.loaded()?.lead;
+    return lead ? v2LeadTasks(lead, this.now()) : [];
+  });
+
+  /** Lost and project leads need no next step (design: no "No next step planned" notice). */
+  protected readonly needsNextStep = computed(() => {
+    const status = this.card()?.status;
+    return status !== 'lost' && status !== 'project' && !this.card()?.archived;
+  });
+
+  /** v1 rule: reminders of archived or closed leads can't be cleared. */
+  protected readonly canCompleteTasks = computed(() => {
+    const lead = this.loaded()?.lead;
+    return Boolean(lead && !lead.archivedAt && !leadIsTerminal(lead));
+  });
+  protected readonly taskPending = signal(false);
+  protected readonly actionError = signal('');
 
   protected readonly canEdit = computed(() => {
     const lead = this.loaded()?.lead;
@@ -112,6 +159,23 @@ export class V2LeadCardPage {
 
   protected retry(): void {
     this.leadResource.reload();
+  }
+
+  protected async completeTask(kind: LeadReminderKind): Promise<void> {
+    const lead = this.loaded()?.lead;
+    if (!lead || !this.canCompleteTasks() || this.taskPending()) return;
+    this.taskPending.set(true);
+    this.actionError.set('');
+    try {
+      await this.service.completeReminder(lead.id, kind);
+      this.leadResource.reload();
+    } catch (error) {
+      this.actionError.set(
+        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
+      );
+    } finally {
+      this.taskPending.set(false);
+    }
   }
 
   protected async openEditContact(): Promise<void> {
