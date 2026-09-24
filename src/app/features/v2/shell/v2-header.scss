@@ -1,0 +1,152 @@
+// Values from Main.dc.html (HEADER). 64px height, 20px start padding, 3px chip padding,
+// 28px divider and 36px avatar are board values without a design token.
+:host {
+  display: block;
+  flex-shrink: 0;
+}
+
+.v2-header {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-4);
+  box-sizing: border-box;
+  height: 64px;
+  padding: 0 var(--v2-space-5) 0 20px;
+  background: var(--v2-surface);
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-header__toggle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--v2-control-md);
+  height: var(--v2-control-md);
+  padding: 0;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  cursor: pointer;
+
+  svg {
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.v2-header__logo {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: var(--v2-control-md);
+  padding: 0 var(--v2-space-1);
+
+  img {
+    display: block;
+    width: auto;
+    height: 20px;
+  }
+}
+
+.v2-header__product {
+  padding: 3px var(--v2-space-2);
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-xs);
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: normal;
+  letter-spacing: 0.06em;
+}
+
+.v2-header__spacer {
+  flex-grow: 1;
+}
+
+.v2-header__divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 28px;
+  background: var(--v2-line);
+}
+
+.v2-header__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: var(--v2-control-lg);
+  padding: 0 var(--v2-space-2) 0 var(--v2-space-1);
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.v2-header__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.v2-header__user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v2-header__user-name,
+.v2-header__user-role {
+  overflow: hidden;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-header__user-name {
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-header__user-role {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-header__toggle:focus-visible,
+.v2-header__logo:focus-visible,
+.v2-header__user:focus-visible {
+  outline: 2px solid var(--v2-ink);
+  outline-offset: 2px;
+}
+
+// The board is desktop-only (1440). On narrow screens keep the header on one line:
+// the user's name and role give way to the avatar.
+@media (max-width: 640px) {
+  .v2-header {
+    gap: var(--v2-space-3);
+    padding: 0 var(--v2-space-4);
+  }
+
+  .v2-header__user-text,
+  .v2-header__product {
+    display: none;
+  }
+}
