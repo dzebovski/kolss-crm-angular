@@ -1,0 +1,107 @@
+// Page frame from lead card v1.3: the sections stack with the shell's 16px gap.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+}
+
+// Breadcrumb. `#55554f` (link) is a board value without a token.
+.v2-card__breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+  font-size: 14px;
+}
+
+.v2-card__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #55554f;
+  text-decoration: none;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    color: var(--v2-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-card__crumb-divider {
+  color: var(--v2-faint);
+}
+
+.v2-card__crumb-current {
+  font-weight: 500;
+}
+
+// Meta row.
+.v2-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-2) var(--v2-space-5);
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-card__meta-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-1) var(--v2-space-5);
+}
+
+.v2-card__meta-strong {
+  color: var(--v2-ink);
+  font-weight: 500;
+}
+
+.v2-card__meta-value {
+  color: var(--v2-ink);
+}
+
+// Project banner: 14/20px padding and 12px radius are board values without a token.
+.v2-card__project-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-4);
+  padding: 14px 20px;
+  border-radius: 12px;
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+  font-size: 14px;
+}
+
+.v2-card__project-link {
+  flex-shrink: 0;
+  color: var(--v2-on-ink);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+// Loading and error are not drawn; they reuse the leads list states.
+.v2-card__loading {
+  margin: 0;
+  padding: var(--v2-space-6) 20px;
+  color: var(--v2-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.v2-card__retry {
+  margin-top: var(--v2-space-2);
+}

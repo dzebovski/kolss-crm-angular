@@ -1,0 +1,108 @@
+@let lead = card();
+
+<div class="v2-card-header__top">
+  <div class="v2-card-header__identity">
+    <span class="v2-card-header__avatar" aria-hidden="true">{{ lead.initials }}</span>
+    <div class="v2-card-header__names">
+      <span class="v2-card-header__eyebrow">{{ 'v2.card.eyebrow' | translate }}</span>
+      <h1 class="v2-card-header__name">{{ lead.name || ('v2.card.noName' | translate) }}</h1>
+      <div class="v2-card-header__pills">
+        <app-v2-rating-pill [rating]="lead.rating" />
+        <app-v2-status-pill [status]="lead.status" />
+        @if (lead.code) {
+          <app-v2-code-chip [code]="lead.code" />
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="v2-card-header__actions">
+    <!-- TODO(v2): the Project entity and the Create project flow come later (roadmap "Later"). -->
+    <button
+      type="button"
+      appV2Button
+      variant="primary"
+      size="lg"
+      class="v2-card-header__action"
+      aria-disabled="true"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        class="v2-card-header__plus"
+        aria-hidden="true"
+      >
+        <path d="M12 5v14" />
+        <path d="M5 12h14" />
+      </svg>
+      {{ 'v2.card.createProject' | translate }}
+    </button>
+    <button
+      type="button"
+      appV2Button
+      size="sm"
+      class="v2-card-header__action"
+      [disabled]="!canEdit()"
+      (click)="editContact.emit()"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+      {{ 'v2.card.editContact' | translate }}
+    </button>
+  </div>
+</div>
+
+<dl class="v2-card-header__grid">
+  <div class="v2-card-header__contacts">
+    <dt>{{ 'v2.card.phone' | translate }}</dt>
+    <dd>
+      @if (lead.phoneHref) {
+        <a class="v2-card-header__phone" [href]="lead.phoneHref">{{ lead.phone }}</a>
+      } @else {
+        <span class="v2-card-header__unset">{{ 'v2.card.notSet' | translate }}</span>
+      }
+    </dd>
+    <dt>{{ 'v2.card.email' | translate }}</dt>
+    <dd [class.v2-card-header__unset]="!lead.email">
+      {{ lead.email ?? ('v2.card.notSet' | translate) }}
+    </dd>
+    <dt>{{ 'v2.card.location' | translate }}</dt>
+    <dd [class.v2-card-header__unset]="!lead.location">
+      {{ lead.location ?? ('v2.card.notSet' | translate) }}
+    </dd>
+  </div>
+
+  <div class="v2-card-header__field">
+    <dt>{{ 'v2.card.budget' | translate }}</dt>
+    <dd class="v2-card-header__value" [class.v2-card-header__unset]="!budgetText()">
+      {{ budgetText() ?? ('v2.card.notSet' | translate) }}
+    </dd>
+  </div>
+
+  <div class="v2-card-header__field">
+    <dt>{{ 'v2.card.product' | translate }}</dt>
+    <dd class="v2-card-header__tags">
+      @for (product of lead.products; track product) {
+        <span class="v2-card-header__tag">{{ productLabels[product] | translate }}</span>
+      } @empty {
+        @if (lead.productText) {
+          <span class="v2-card-header__tag">{{ lead.productText }}</span>
+        } @else {
+          <span class="v2-card-header__value v2-card-header__unset">{{
+            'v2.card.notSet' | translate
+          }}</span>
+        }
+      }
+    </dd>
+  </div>
+
+  <div class="v2-card-header__field">
+    <dt>{{ 'v2.card.manager' | translate }}</dt>
+    <dd class="v2-card-header__value" [class.v2-card-header__unset]="!managerName()">
+      {{ managerName() ?? ('common.unassigned' | translate) }}
+    </dd>
+  </div>
+</dl>

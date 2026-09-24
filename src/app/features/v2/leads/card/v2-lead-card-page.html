@@ -1,0 +1,76 @@
+<nav class="v2-card__breadcrumb" [attr.aria-label]="'v2.card.breadcrumb' | translate">
+  <a class="v2-card__back" routerLink="/v2/leads">
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19 12H5" />
+      <path d="m11 18-6-6 6-6" />
+    </svg>
+    {{ 'v2.card.back' | translate }}
+  </a>
+  @if (card(); as lead) {
+    <span class="v2-card__crumb-divider" aria-hidden="true">/</span>
+    <span class="v2-card__crumb-current" aria-current="page">
+      {{ lead.name || ('v2.card.noName' | translate) }}
+      @if (lead.code) {
+        · {{ lead.code }}
+      }
+    </span>
+  }
+</nav>
+
+@if (loading()) {
+  <p class="v2-card__loading" role="status">{{ 'v2.card.loading' | translate }}</p>
+} @else if (loadError(); as message) {
+  <app-v2-empty-state
+    layout="list"
+    role="alert"
+    [title]="'v2.card.error.title' | translate"
+    [hint]="message"
+  >
+    <button type="button" appV2Button size="sm" class="v2-card__retry" (click)="retry()">
+      {{ 'v2.leads.retry' | translate }}
+    </button>
+  </app-v2-empty-state>
+} @else if (notFound()) {
+  <app-v2-empty-state
+    layout="list"
+    [title]="'v2.card.notFound.title' | translate"
+    [hint]="'v2.card.notFound.hint' | translate"
+  />
+} @else if (card(); as lead) {
+  @if (meta(); as meta) {
+    <div class="v2-card__meta">
+      <div class="v2-card__meta-group">
+        <span class="v2-card__meta-strong">{{ meta.recency }}</span>
+        <span>{{
+          'v2.card.lastUpdate' | translate: { date: meta.updated, name: meta.updatedBy }
+        }}</span>
+        <span>{{ 'v2.card.created' | translate: { date: meta.created } }}</span>
+      </div>
+      <div class="v2-card__meta-group">
+        <span
+          >{{ 'v2.card.channelLabel' | translate }}
+          <span class="v2-card__meta-value">{{ meta.channelKey | translate }}</span></span
+        >
+        <span
+          >{{ 'v2.card.officeLabel' | translate }}
+          <span class="v2-card__meta-value">{{ meta.officeKey | translate }}</span></span
+        >
+      </div>
+    </div>
+
+    @if (meta.projectDate; as projectDate) {
+      <div class="v2-card__project-banner">
+        <span>{{ 'v2.card.projectBanner' | translate: { date: projectDate } }}</span>
+        <!-- TODO(v2): the Project entity doesn't exist yet; the link has no target. -->
+        <span class="v2-card__project-link">{{ 'v2.card.openProject' | translate }}</span>
+      </div>
+    }
+  }
+
+  <app-v2-lead-card-header
+    [card]="lead"
+    [managerName]="managerName()"
+    [canEdit]="canEdit()"
+    (editContact)="openEditContact()"
+  />
+}
