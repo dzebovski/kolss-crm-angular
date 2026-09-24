@@ -13,6 +13,7 @@ import {
   sumContractsByCurrency,
   validateCloseLead,
   validateSuccessfulLead,
+  callbackReminderDueAt,
 } from './lead.rules';
 import type { ContractCurrency, Lead } from './lead.types';
 
@@ -300,5 +301,37 @@ describe('crm helpers', () => {
         comment: '',
       }),
     ).toBe('validation.contractCurrency');
+  });
+});
+
+describe('callbackReminderDueAt', () => {
+  const due = '2026-09-25T09:00:00.000Z';
+  const callContext = (statusCode: string) => ({ category: 'call_status', statusCode });
+
+  it('treats a v1 callback and a dated v2 no answer / follow-up as a callback reminder', () => {
+    expect(callbackReminderDueAt({ callStatus: 'callback_requested', callbackDueAt: due })).toBe(
+      due,
+    );
+    for (const status of ['no_answer', 'reached']) {
+      expect(
+        callbackReminderDueAt({
+          callStatus: status,
+          callbackDueAt: due,
+          callbackDueContext: callContext(status),
+        }),
+      ).toBe(due);
+    }
+  });
+
+  it('leaves a thinking date on a no-answer lead to the thinking reminder', () => {
+    const lead = {
+      callStatus: 'no_answer',
+      clientStatus: 'thinking',
+      callbackDueAt: due,
+      commentReminderDueAt: null,
+      callbackDueContext: { category: 'client_status', statusCode: 'thinking' },
+    };
+    expect(callbackReminderDueAt(lead)).toBeNull();
+    expect(activeRemindersForLead(lead).map((reminder) => reminder.kind)).toEqual(['thinking']);
   });
 });

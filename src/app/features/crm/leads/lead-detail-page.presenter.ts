@@ -98,7 +98,11 @@ export function eventDueDate(
   const isComment =
     event.category === 'comment' || event.type === 'comment' || event.type === 'comment_added';
   const isScheduledStatus =
-    (event.category === 'call_status' && event.statusCode === 'callback_requested') ||
+    // no_answer / reached carry a date only when set in CRM v2 (next attempt / follow-up).
+    (event.category === 'call_status' &&
+      (event.statusCode === 'callback_requested' ||
+        event.statusCode === 'no_answer' ||
+        event.statusCode === 'reached')) ||
     (event.category === 'client_status' &&
       (event.statusCode === 'thinking' ||
         event.statusCode === 'postponed' ||

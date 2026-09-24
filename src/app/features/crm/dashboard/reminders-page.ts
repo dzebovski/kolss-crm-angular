@@ -12,6 +12,7 @@ import {
   groupLeadsForDashboard,
   commentDueAtForLead,
   showroomDueAtForLead,
+  callbackReminderDueAt,
 } from '@domain/lead.rules';
 import type { LeadMarkerKind, Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
@@ -109,6 +110,7 @@ export class RemindersPage {
 
   protected readonly commentDueAtForLead = commentDueAtForLead;
   protected readonly showroomDueAtForLead = showroomDueAtForLead;
+  protected readonly callbackReminderDueAt = callbackReminderDueAt;
 
   protected pendingMarker(leadId: string): LeadMarkerKind | null {
     const prefix = `${leadId}:`;

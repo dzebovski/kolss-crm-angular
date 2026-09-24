@@ -20,6 +20,7 @@ import {
   groupLeadsByYearMonth,
   leadIsInWork,
   showroomDueAtForLead,
+  callbackReminderDueAt,
 } from '@domain/lead.rules';
 import type { CallStatus, ClientStatus, LeadEventCategory, Lead } from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
@@ -357,6 +358,7 @@ export class LeadsPage {
 
   protected readonly commentDueAtForLead = commentDueAtForLead;
   protected readonly showroomDueAtForLead = showroomDueAtForLead;
+  protected readonly callbackReminderDueAt = callbackReminderDueAt;
 
   protected formatMoney(value: number, currency: string): string {
     return this.i18n.formatMoney(value, currency);
