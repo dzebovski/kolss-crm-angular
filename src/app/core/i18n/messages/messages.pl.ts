@@ -338,6 +338,8 @@ export const messagesPl: Record<MessageKey, string> = {
   'event.reopened': 'Lead otwarty ponownie',
   'event.attachment': 'Załącznik',
   'event.lead_assigned': 'Lead przypisany',
+  'event.rating_changed': 'Zmieniono ocenę',
+  'event.ratingChanged': '{from} → {to}',
   'event.leadCreatedManual': 'Lead utworzony ręcznie. Źródło: {source}.',
   'event.leadEdited': 'Dane leada edytowane: {fields}. Edytował: {editor}.',
   'event.auditEdited': 'Edytowano: {fields}. Edytował: {editor} · {date}',

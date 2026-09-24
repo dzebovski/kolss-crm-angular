@@ -335,6 +335,8 @@ export const messagesUk = {
   'event.reopened': 'Лід відкрито знову',
   'event.attachment': 'Вкладення',
   'event.lead_assigned': 'Лід призначено',
+  'event.rating_changed': 'Рейтинг змінено',
+  'event.ratingChanged': '{from} → {to}',
   'event.leadCreatedManual': 'Лід створено вручну. Джерело: {source}.',
   'event.leadEdited': 'Дані ліда відредаговано: {fields}. Редагував: {editor}.',
   'event.auditEdited': 'Відредаговано: {fields}. Редагував: {editor} · {date}',

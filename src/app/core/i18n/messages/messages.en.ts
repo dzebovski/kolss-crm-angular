@@ -337,6 +337,8 @@ export const messagesEn: Record<MessageKey, string> = {
   'event.reopened': 'Lead reopened',
   'event.attachment': 'Attachment',
   'event.lead_assigned': 'Lead assigned',
+  'event.rating_changed': 'Rating changed',
+  'event.ratingChanged': '{from} → {to}',
   'event.leadCreatedManual': 'Lead created manually. Source: {source}.',
   'event.leadEdited': 'Lead data edited: {fields}. Edited by: {editor}.',
   'event.auditEdited': 'Edited: {fields}. Edited by: {editor} · {date}',
