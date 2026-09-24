@@ -1,0 +1,130 @@
+// Values from lead card v1.3 (Reminders & tasks). The 4px card gap, 6px margin under the title
+// (on the list / notice here), 10px row
+// padding, 32px done button and 12/14px notice padding are board values without a token.
+:host {
+  display: flex;
+}
+
+.v2-tasks {
+  flex-grow: 1;
+  gap: var(--v2-space-1);
+  min-height: 272px;
+}
+
+.v2-tasks__summary {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-tasks__overdue {
+  color: var(--v2-danger);
+  font-weight: 600;
+}
+
+.v2-tasks__list {
+  display: flex;
+  flex-direction: column;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v2-tasks__row {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-tasks__text {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.v2-tasks__title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-tasks__when {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-tasks__when--overdue {
+  color: var(--v2-danger);
+}
+
+.v2-tasks__done {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1.5px solid var(--v2-line-strong);
+  border-radius: 50%;
+  background: var(--v2-surface);
+  color: var(--v2-subtle);
+  cursor: pointer;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover {
+    border-color: var(--v2-ink);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-tasks__more {
+  align-self: flex-start;
+  height: var(--v2-control-sm);
+  margin-top: var(--v2-space-2);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-ground);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-tasks__empty {
+  margin: 6px 0 0;
+  padding: var(--v2-space-3) 14px;
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-danger-bg);
+  color: var(--v2-danger);
+  font-size: 14px;
+  line-height: 1.45;
+}

@@ -1,0 +1,116 @@
+@use '../../../../../styles/v2/type';
+
+// Timeline card from lead card v1.3: 18/24px head, 4/24/16px list padding, 30px filter tabs
+// (6px radius, 3px track padding) are board values without a token.
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-timeline__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  padding: 18px var(--v2-space-5);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-timeline__title {
+  @include type.text(section-title);
+
+  margin: 0;
+}
+
+.v2-timeline__tabs {
+  display: flex;
+  gap: var(--v2-space-1);
+  padding: 3px;
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-ground);
+}
+
+.v2-timeline__tab {
+  height: 30px;
+  padding: 0 var(--v2-space-3);
+  border: 0;
+  border-radius: var(--v2-radius-xs);
+  background: transparent;
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-timeline__tab--on {
+  background: var(--v2-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.v2-timeline__count {
+  color: var(--v2-muted);
+  font-weight: 400;
+}
+
+.v2-timeline__list {
+  padding: var(--v2-space-1) var(--v2-space-5) var(--v2-space-4);
+}
+
+// Not drawn: the English translation (v1 feature) under the text, as a caption.
+.v2-timeline__translation {
+  max-width: 860px;
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.v2-timeline__translation-label {
+  font-weight: 600;
+}
+
+// Not drawn (D6): small text actions under the entry.
+.v2-timeline__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-3);
+}
+
+.v2-timeline__action {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--v2-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--v2-ink);
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+// The board is desktop only; below 720px the entry's 150px date column is not adapted (K4 gap).

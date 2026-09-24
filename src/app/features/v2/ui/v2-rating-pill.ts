@@ -6,7 +6,7 @@ import { V2_RATING_LABEL } from './v2-tone';
 
 // Rating pill (design system components/StatusPill, rating row): `rating-*` text and dot on
 // `rating-*-bg`, no border. `md` = lead card header, `sm` = next to the name in the leads list
-// (Main.dc.html, 22px).
+// (Main.dc.html, 22px). `null` = the lead card's "No rating" pill (`muted` on `surface-sunk`).
 @Component({
   selector: 'app-v2-rating-pill',
   imports: [TranslatePipe],
@@ -59,10 +59,19 @@ import { V2_RATING_LABEL } from './v2-tone';
   `,
 })
 export class V2RatingPill {
-  readonly rating = input.required<V2LeadRating>();
+  readonly rating = input.required<V2LeadRating | null>();
   readonly size = input<'sm' | 'md'>('md');
 
-  protected readonly labelKey = computed(() => V2_RATING_LABEL[this.rating()]);
-  protected readonly fg = computed(() => `var(--v2-rating-${this.rating()})`);
-  protected readonly bg = computed(() => `var(--v2-rating-${this.rating()}-bg)`);
+  protected readonly labelKey = computed(() => {
+    const rating = this.rating();
+    return rating ? V2_RATING_LABEL[rating] : 'v2.rating.none';
+  });
+  protected readonly fg = computed(() => {
+    const rating = this.rating();
+    return rating ? `var(--v2-rating-${rating})` : 'var(--v2-muted)';
+  });
+  protected readonly bg = computed(() => {
+    const rating = this.rating();
+    return rating ? `var(--v2-rating-${rating}-bg)` : 'var(--v2-surface-sunk)';
+  });
 }

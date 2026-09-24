@@ -1,0 +1,58 @@
+<app-v2-info-card class="v2-tasks" [title]="'v2.tasks.title' | translate">
+  @if (tasks().length) {
+    <span v2CardAside class="v2-tasks__summary">
+      {{ 'v2.tasks.open' | translate: { count: tasks().length } }}
+      @if (overdueCount()) {
+        <span class="v2-tasks__overdue">{{
+          'v2.tasks.overdueCount' | translate: { count: overdueCount() }
+        }}</span>
+      }
+    </span>
+  }
+
+  @if (rows().length) {
+    <ul class="v2-tasks__list">
+      @for (row of rows(); track row.kind) {
+        <li class="v2-tasks__row">
+          <app-v2-date-tile [weekday]="row.weekday" [day]="row.day" [tone]="row.tone" />
+          <div class="v2-tasks__text">
+            <span class="v2-tasks__title">{{ row.title }}</span>
+            <span class="v2-tasks__when" [class.v2-tasks__when--overdue]="row.overdue"
+              >{{ row.when }} · {{ row.who }}</span
+            >
+          </div>
+          @if (canComplete()) {
+            <button
+              type="button"
+              class="v2-tasks__done"
+              [attr.aria-label]="'v2.tasks.markDone' | translate"
+              [title]="'v2.tasks.markDone' | translate"
+              [disabled]="pending()"
+              (click)="complete.emit(row.kind)"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+    @if (more() > 0) {
+      <button
+        type="button"
+        class="v2-tasks__more"
+        [attr.aria-expanded]="expanded()"
+        (click)="toggle()"
+      >
+        {{
+          expanded()
+            ? ('v2.tasks.showLess' | translate)
+            : ('v2.tasks.showAll' | translate: { count: tasks().length, more: more() })
+        }}
+      </button>
+    }
+  } @else if (needsNextStep()) {
+    <p class="v2-tasks__empty">{{ 'v2.tasks.empty' | translate }}</p>
+  }
+</app-v2-info-card>
