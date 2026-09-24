@@ -13,6 +13,8 @@ export type V2DateInput = Date | string;
 const DAY_MS = 86_400_000;
 /** Dates closer than this many calendar days (back or forward) show the weekday. */
 const WEEKDAY_WINDOW_DAYS = 7;
+/** Recency switches from days to months after this many days. */
+const MAX_DAYS_BEFORE_MONTHS = 31;
 
 /** Intl locales for weekday/month names; `en-US` gives the design's `Sep` (en-GB gives `Sept`). */
 const NAME_LOCALE: Record<LocaleCode, string> = { en: 'en-US', uk: 'uk-UA', pl: 'pl-PL' };
@@ -54,7 +56,7 @@ export function formatV2TimeRange(start: V2DateInput, end: V2DateInput): string 
 
 /**
  * Recency: `35 min ago` (at least 1), `2 hrs ago` while on the same calendar day,
- * then calendar days: `1 day ago`, `5 days ago`.
+ * then calendar days: `1 day ago`, `5 days ago`, and months after 31 days: `1 month ago`.
  */
 export function formatV2RelativeTime(value: V2DateInput, now: Date, locale: LocaleCode): string {
   const date = toDate(value);
@@ -72,15 +74,28 @@ export function formatV2RelativeTime(value: V2DateInput, now: Date, locale: Loca
     if (locale === 'en') return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ago`;
     return relative(locale, 'short').format(-hours, 'hour');
   }
-  return relative(locale, 'long').format(-daysAgo, 'day');
+  return daysOrMonthsAgo(date, now, daysAgo, locale);
 }
 
 /** Day-level recency for the lead card meta row: `Today` · `Yesterday` · `3 days ago`. */
 export function formatV2DayRecency(value: V2DateInput, now: Date, locale: LocaleCode): string {
-  const daysAgo = -calendarDayDiff(toDate(value), now);
+  const date = toDate(value);
+  const daysAgo = -calendarDayDiff(date, now);
   if (daysAgo <= 0) return capitalize(relative(locale, 'long', 'auto').format(0, 'day'));
   if (daysAgo === 1) return capitalize(relative(locale, 'long', 'auto').format(-1, 'day'));
-  return relative(locale, 'long').format(-daysAgo, 'day');
+  return daysOrMonthsAgo(date, now, daysAgo, locale);
+}
+
+/** `N days ago` up to 31 days, then whole calendar months: `1 month ago`, `2 months ago` (user rule 2026-09-24). */
+function daysOrMonthsAgo(date: Date, now: Date, daysAgo: number, locale: LocaleCode): string {
+  if (daysAgo <= MAX_DAYS_BEFORE_MONTHS) return relative(locale, 'long').format(-daysAgo, 'day');
+  return relative(locale, 'long').format(-Math.max(wholeMonthsBetween(date, now), 1), 'month');
+}
+
+function wholeMonthsBetween(from: Date, to: Date): number {
+  let months = (to.getFullYear() - from.getFullYear()) * 12 + to.getMonth() - from.getMonth();
+  if (to.getDate() < from.getDate()) months -= 1;
+  return months;
 }
 
 /** Whole calendar days from `now`'s date to `date`'s date (negative = past). */

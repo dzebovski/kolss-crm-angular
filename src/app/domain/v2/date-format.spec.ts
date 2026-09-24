@@ -43,6 +43,10 @@ describe('v2 date format', () => {
     expect(formatV2RelativeTime(at(9, 23, 11, 50), now, 'en')).toBe('2 hrs ago');
     expect(formatV2RelativeTime(at(9, 22, 17, 30), now, 'en')).toBe('1 day ago');
     expect(formatV2RelativeTime(at(9, 18), now, 'en')).toBe('5 days ago');
+    expect(formatV2RelativeTime(at(8, 23), now, 'en')).toBe('31 days ago');
+    expect(formatV2RelativeTime(at(8, 22), now, 'en')).toBe('1 month ago');
+    expect(formatV2RelativeTime(at(7, 19), now, 'en')).toBe('2 months ago');
+    expect(formatV2DayRecency(at(8, 15), now, 'en')).toBe('1 month ago');
     expect(formatV2DayRecency(at(9, 23, 8), now, 'en')).toBe('Today');
     expect(formatV2DayRecency(at(9, 22), now, 'en')).toBe('Yesterday');
     expect(formatV2DayRecency(at(9, 20), now, 'en')).toBe('3 days ago');
