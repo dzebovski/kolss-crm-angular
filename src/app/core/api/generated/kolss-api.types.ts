@@ -7,7 +7,16 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.19.0' as const;
+export const API_CONTRACT_VERSION = '2.20.0' as const;
+
+/** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
+export type LeadRating = 'cold' | 'medium' | 'hot';
+
+/** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
+export interface RatingActivityRequest {
+  readonly type: 'rating';
+  readonly rating: LeadRating;
+}
 
 export type MoneyCurrency = 'UAH' | 'USD' | 'EUR' | 'PLN';
 
