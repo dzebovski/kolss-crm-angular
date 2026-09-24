@@ -30,4 +30,18 @@
   <span class="v2-leads__result-context">{{ shownContext() }}</span>
 </div>
 
-<app-v2-leads-table [leads]="leads()" [now]="now()" />
+<app-v2-leads-filters
+  [search]="searchText()"
+  [period]="query().period"
+  [periodOptions]="periodOptions()"
+  [rangeLabel]="rangeLabel()"
+  [statusChips]="statusChips()"
+  [ratingChips]="ratingChips"
+  [filtersActive]="filtersActive()"
+  (searchChange)="onSearch($event)"
+  (periodChange)="onPeriod($event)"
+  (statusToggle)="toggleStatus($event)"
+  (clear)="clearFilters()"
+/>
+
+<app-v2-leads-table [leads]="shownLeads()" [now]="now()" />
