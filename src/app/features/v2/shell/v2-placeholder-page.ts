@@ -2,22 +2,23 @@ import { Component, input } from '@angular/core';
 
 import type { MessageKey } from '@core/i18n/messages';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { V2EmptyState } from '../ui/v2-empty-state';
 
 // Page for a v2 section that isn't designed yet: section eyebrow + title from the Leads
-// title row (Main.dc.html) and the dashed empty state from the lead card v1.3.
+// title row (Main.dc.html) and the dashed empty state (`V2EmptyState`).
 // `sectionKey` and `titleKey` come from the route `data`.
 @Component({
   selector: 'app-v2-placeholder-page',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, V2EmptyState],
   template: `
     <header class="v2-placeholder__title-row">
       <p class="v2-placeholder__eyebrow">{{ sectionKey() | translate }}</p>
       <h1 class="v2-placeholder__title">{{ titleKey() | translate }}</h1>
     </header>
-    <section class="v2-placeholder__empty">
-      <p class="v2-placeholder__empty-title">{{ 'v2.placeholder.title' | translate }}</p>
-      <p class="v2-placeholder__empty-hint">{{ 'v2.placeholder.hint' | translate }}</p>
-    </section>
+    <app-v2-empty-state
+      [title]="'v2.placeholder.title' | translate"
+      [hint]="'v2.placeholder.hint' | translate"
+    />
   `,
   styles: `
     :host {
@@ -51,26 +52,6 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
       font-weight: 600;
       line-height: 1.1;
       letter-spacing: -0.01em;
-    }
-
-    .v2-placeholder__empty {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding: 18px;
-      border: 1px dashed var(--v2-line-strong);
-      border-radius: 12px;
-    }
-
-    .v2-placeholder__empty-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .v2-placeholder__empty-hint {
-      color: var(--v2-muted);
-      font-size: 13px;
-      line-height: 1.45;
     }
   `,
 })

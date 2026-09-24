@@ -1,0 +1,54 @@
+<div class="v2-timeline-entry__when">
+  <span class="v2-timeline-entry__date">{{ date() }}</span>
+  <span class="v2-timeline-entry__time">{{ time() }}</span>
+</div>
+
+<div class="v2-timeline-entry__rail" aria-hidden="true">
+  <span class="v2-timeline-entry__dot" [style.background]="dotColor()"></span>
+  <span class="v2-timeline-entry__line"></span>
+</div>
+
+<div class="v2-timeline-entry__content">
+  <div class="v2-timeline-entry__head">
+    <span class="v2-timeline-entry__title">{{ title() }}</span>
+    @if (author()) {
+      <span class="v2-timeline-entry__author">{{ author() }}</span>
+    }
+  </div>
+
+  @if (change(); as change) {
+    <div class="v2-timeline-entry__change">
+      <span class="v2-timeline-entry__pill">
+        <span class="v2-timeline-entry__pill-dot" [style.background]="fromColor()"></span>
+        {{ change.from.label }}
+      </span>
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 12h14" />
+        <path d="m13 6 6 6-6 6" />
+      </svg>
+      <span class="v2-timeline-entry__pill v2-timeline-entry__pill--to">
+        <span class="v2-timeline-entry__pill-dot" [style.background]="toColor()"></span>
+        {{ change.to.label }}
+      </span>
+    </div>
+  }
+
+  @if (quote(); as quote) {
+    <blockquote class="v2-timeline-entry__quote">“{{ quote }}”</blockquote>
+  }
+
+  @if (rows().length) {
+    <div class="v2-timeline-entry__rows">
+      @for (row of rows(); track $index) {
+        <span>
+          <span class="v2-timeline-entry__key">{{ row.key }}:</span>
+          {{ row.value }}
+        </span>
+      }
+    </div>
+  }
+
+  @if (text(); as text) {
+    <p class="v2-timeline-entry__text">{{ text }}</p>
+  }
+</div>

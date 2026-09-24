@@ -1,0 +1,37 @@
+<form class="v2-dialog" novalidate (submit)="submit($event)">
+  <header class="v2-dialog__header">
+    <div class="v2-dialog__heading">
+      <h2 class="v2-dialog__title" [attr.id]="titleId">{{ title() }}</h2>
+      @if (subtitle()) {
+        <p class="v2-dialog__subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="v2-dialog__close"
+      [attr.aria-label]="'v2.dialog.close' | translate"
+      (click)="close()"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </svg>
+    </button>
+  </header>
+
+  <div class="v2-dialog__body">
+    <ng-content />
+  </div>
+
+  <footer class="v2-dialog__footer">
+    <span class="v2-dialog__hint">{{ hint() }}</span>
+    <div class="v2-dialog__actions">
+      <button type="button" appV2Button (click)="close()">
+        {{ 'v2.dialog.cancel' | translate }}
+      </button>
+      <button type="submit" appV2Button variant="primary" [disabled]="saveDisabled()">
+        {{ saveLabel() }}
+      </button>
+    </div>
+  </footer>
+</form>
