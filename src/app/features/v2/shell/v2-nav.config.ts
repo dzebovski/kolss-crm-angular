@@ -22,11 +22,17 @@ export type V2NavIcon =
   | 'logout';
 
 /** Menu actions that are not navigation. Their behaviour is N3. */
-export type V2NavAction = 'language' | 'impersonate' | 'logout';
+export type V2NavAction = 'language' | 'impersonate' | 'stop-impersonation' | 'logout';
 
-/** What the menu may know about the viewer to decide visibility. */
+/**
+ * What the menu may know about the viewer to decide visibility. The shell fills it from
+ * `/v1/me` permissions (`canManageUsers`, as `superAdminGuard`), `isSuperAdminRole` for
+ * impersonation (as v1) and `ImpersonationService.isActive`.
+ */
 export interface V2NavAccess {
-  readonly isSuperAdmin: boolean;
+  readonly canManageUsers: boolean;
+  readonly canImpersonate: boolean;
+  readonly isImpersonating: boolean;
 }
 
 interface V2NavItemBase {
@@ -59,7 +65,7 @@ export interface V2NavSection {
   readonly labelKey: MessageKey;
 }
 
-const superAdminOnly = (access: V2NavAccess): boolean => access.isSuperAdmin;
+const canManageUsers = (access: V2NavAccess): boolean => access.canManageUsers;
 
 export const V2_NAV_SECTIONS: readonly V2NavSection[] = [
   { id: 'sales', labelKey: 'v2.nav.section.sales' },
@@ -106,14 +112,14 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     v1: true,
   },
   {
-    // v1 has no Tasks page; its dashboard holds the manager tasks.
+    // Placeholder page until Tasks is redesigned (user, 2026-09-24).
     id: 'tasks',
     kind: 'link',
     section: 'planning',
     labelKey: 'v2.nav.tasks',
     icon: 'tasks',
-    route: '/dashboard',
-    v1: true,
+    route: '/v2/tasks',
+    v1: false,
   },
   {
     id: 'lead-reports',
@@ -141,7 +147,7 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     icon: 'accounts',
     route: '/accounts/users',
     v1: true,
-    visible: superAdminOnly,
+    visible: canManageUsers,
   },
   {
     id: 'platform-settings',
@@ -151,7 +157,7 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     icon: 'platform-settings',
     route: '/accounts/settings',
     v1: true,
-    visible: superAdminOnly,
+    visible: canManageUsers,
   },
   {
     id: 'language',
@@ -162,14 +168,24 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     action: 'language',
   },
   {
-    // Impersonation is super admin only in the API and in v1.
     id: 'impersonate',
     kind: 'action',
     section: 'settings',
     labelKey: 'v2.nav.impersonate',
     icon: 'impersonate',
     action: 'impersonate',
-    visible: superAdminOnly,
+    visible: (access) => access.canImpersonate && !access.isImpersonating,
+  },
+  {
+    // Replaces "Log in as another user" while impersonating, as in v1. Not drawn in the
+    // design; styled like the other items (user, 2026-09-24).
+    id: 'stop-impersonation',
+    kind: 'action',
+    section: 'settings',
+    labelKey: 'v2.nav.returnToAdmin',
+    icon: 'impersonate',
+    action: 'stop-impersonation',
+    visible: (access) => access.isImpersonating,
   },
   {
     id: 'design-system',
@@ -177,9 +193,9 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     section: 'settings',
     labelKey: 'v2.nav.designSystem',
     icon: 'design-system',
-    route: '/design',
-    v1: true,
-    visible: superAdminOnly,
+    route: '/v2/design',
+    v1: false,
+    visible: canManageUsers,
   },
   {
     id: 'logout',

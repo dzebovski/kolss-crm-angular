@@ -1,10 +1,12 @@
 import { buildV2Nav } from './v2-nav.config';
 
-const ids = (isSuperAdmin: boolean) =>
-  buildV2Nav({ isSuperAdmin }).map((group) => ({
-    section: group.section?.id ?? null,
-    items: group.items.map((item) => item.id),
-  }));
+const ids = (superAdmin: boolean, isImpersonating = false) =>
+  buildV2Nav({ canManageUsers: superAdmin, canImpersonate: superAdmin, isImpersonating }).map(
+    (group) => ({
+      section: group.section?.id ?? null,
+      items: group.items.map((item) => item.id),
+    }),
+  );
 
 describe('buildV2Nav', () => {
   it('shows every item in design order to a super admin', () => {
@@ -28,5 +30,12 @@ describe('buildV2Nav', () => {
       { section: 'settings', items: ['language'] },
       { section: null, items: ['logout'] },
     ]);
+  });
+
+  it('offers the way back instead of impersonation while impersonating', () => {
+    expect(ids(false, true)).toContainEqual({
+      section: 'settings',
+      items: ['language', 'stop-impersonation'],
+    });
   });
 });
