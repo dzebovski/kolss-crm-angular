@@ -81,4 +81,15 @@ describe('event-presenter', () => {
     );
     expect(body).toContain('legacy_channel');
   });
+
+  it('renders the v2 rating change with localized labels', () => {
+    expect(presentEventTitle('rating_changed', messagesUk)).toBe('Рейтинг змінено');
+    const row = (from: string | null) => ({
+      event_type: 'rating_changed',
+      comment: null,
+      new_value: { from, to: 'hot' },
+    });
+    expect(presentEventBody(row('cold'), messagesEn)).toBe('Cold → Hot');
+    expect(presentEventBody(row(null), messagesEn)).toBe('Hot');
+  });
 });

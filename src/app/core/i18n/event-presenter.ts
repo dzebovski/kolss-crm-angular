@@ -119,6 +119,15 @@ export function presentEventBody(row: RawLeadEventRow, bundle: MessageBundle | n
     return '';
   }
 
+  // CRM v2 rating (Cold / Medium / Hot), written by the v2 `rating` activity. v1 only shows it.
+  if (eventType === 'rating_changed') {
+    if (!isRecord(row.new_value)) return '';
+    const to = ratingLabel(row.new_value['to'], bundle);
+    const from = ratingLabel(row.new_value['from'], bundle);
+    if (!to) return '';
+    return from ? translate(bundle, 'event.ratingChanged', { from, to }) : to;
+  }
+
   if (eventType === 'lead_reopened') {
     return translate(bundle, 'clientStatus.new_lead');
   }
@@ -185,6 +194,12 @@ export function presentHistoryAuditText(
     editor: event.editAudit.editedByName,
     date: formatDateTime(event.editAudit.editedAt),
   });
+}
+
+function ratingLabel(value: unknown, bundle: MessageBundle | null): string {
+  if (typeof value !== 'string' || !value) return '';
+  const key = `v2.rating.${value}`;
+  return hasKey(bundle, key) ? translate(bundle, key) : value;
 }
 
 function extractCreatedSource(newValue: unknown): string | null {
