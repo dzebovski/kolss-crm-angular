@@ -22,6 +22,8 @@ export interface OfficeConfig {
   readonly currency: ContractCurrency;
   readonly timeZone: string;
   readonly defaultLocale: LocaleCode;
+  /** First letter of the office's lead codes (`leads.reference_id`, shown uppercase: K0418, W0231). */
+  readonly referencePrefix: string;
   /** Stable display/priority order across office pickers and filters. */
   readonly sortOrder: number;
 }
@@ -35,6 +37,7 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
     currency: 'UAH',
     timeZone: 'Europe/Kyiv',
     defaultLocale: 'uk',
+    referencePrefix: 'K',
     sortOrder: 0,
   },
   warsaw: {
@@ -45,6 +48,7 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
     currency: 'PLN',
     timeZone: 'Europe/Warsaw',
     defaultLocale: 'pl',
+    referencePrefix: 'W',
     sortOrder: 1,
   },
 };
