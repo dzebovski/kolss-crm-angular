@@ -36,6 +36,7 @@ const FILTERS: readonly { readonly id: V2TimelineFilter; readonly label: Message
 ];
 
 const TITLE_KEY: Record<Extract<V2TimelineTitle, { kind: 'key' }>['key'], MessageKey> = {
+  leadInfoUpdated: 'v2.timeline.leadInfoUpdated',
   firstMessage: 'v2.timeline.firstMessage',
   leadCreated: 'v2.timeline.leadCreated',
   lost: 'v2.timeline.lost',
@@ -62,6 +63,9 @@ const ROW_LABEL: Record<V2TimelineRowLabel, MessageKey> = {
   assignedTo: 'v2.timeline.assignedTo',
   channel: 'v2.editContact.channel',
   answer: 'v2.timeline.answer',
+  materials: 'v2.timeline.materials',
+  leadTime: 'v2.timeline.leadTime',
+  measurement: 'v2.timeline.measurement',
 };
 
 // Timeline card from lead card v1.3: title + All / Calls / Status / Comments filter with counts,

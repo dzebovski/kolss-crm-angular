@@ -53,6 +53,17 @@ export function canAnswerLeadQuestion(
   return !lead.archivedAt && inUserOffice(context, lead.officeCode);
 }
 
+/**
+ * Can the current user log call results, statuses, rating and comments on this lead (CRM v2
+ * action panel). The API allows activities to anyone with access to the lead's office.
+ */
+export function canRecordLeadActivity(
+  context: LeadPolicyContext,
+  lead: Pick<Lead, 'archivedAt' | 'officeCode'>,
+): boolean {
+  return !lead.archivedAt && inUserOffice(context, lead.officeCode);
+}
+
 /** Can the current user archive this lead (only once it is lost/closed). */
 export function canArchiveLead(
   context: LeadPolicyContext,

@@ -51,6 +51,11 @@ export function v2LeadColumnsFromRow(row: unknown): V2LeadColumns {
     products: Array.isArray(products)
       ? V2_LEAD_PRODUCTS.filter((product) => products.includes(product))
       : [],
+    materialFronts: text(record['material_fronts']),
+    materialWorktop: text(record['material_worktop']),
+    materialAppliances: text(record['material_appliances']),
+    expectedLeadTime: text(record['expected_lead_time']),
+    preferredMeasurementAt: text(record['preferred_measurement_at']),
   };
 }
 

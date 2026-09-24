@@ -13,12 +13,14 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
     <!-- The projected control is inside the label (implicit association). -->
     <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
     <label class="v2-field">
-      <span class="v2-field__label">
-        {{ label() }}
-        @if (required()) {
-          <span aria-hidden="true">*</span>
-        }
-      </span>
+      @if (label()) {
+        <span class="v2-field__label">
+          {{ label() }}
+          @if (required()) {
+            <span aria-hidden="true">*</span>
+          }
+        </span>
+      }
       <ng-content />
     </label>
   `,
@@ -67,6 +69,7 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
   `,
 })
 export class V2FormField {
-  readonly label = input.required<string>();
+  /** Empty = no visible label (the control then needs its own `aria-label`). */
+  readonly label = input('');
   readonly required = input(false);
 }

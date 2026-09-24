@@ -74,8 +74,8 @@
                 {
                   "type": "bundle",
                   "name": "messages-uk",
-                  "maximumWarning": "100kB",
-                  "maximumError": "140kB"
+                  "maximumWarning": "150kB",
+                  "maximumError": "180kB"
                 }
               ],
               "outputHashing": "all"

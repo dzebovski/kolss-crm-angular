@@ -24,6 +24,11 @@ describe('v2 lead card mapper', () => {
       noAnswerAttempts: 2,
       estimatedBudgetText: '20 000 – 25 000',
       products: ['kitchen', 'bathroom'],
+      materialFronts: null,
+      materialWorktop: null,
+      materialAppliances: null,
+      expectedLeadTime: null,
+      preferredMeasurementAt: null,
     });
   });
 
@@ -36,6 +41,11 @@ describe('v2 lead card mapper', () => {
       noAnswerAttempts: 0,
       estimatedBudgetText: null,
       products: [],
+      materialFronts: null,
+      materialWorktop: null,
+      materialAppliances: null,
+      expectedLeadTime: null,
+      preferredMeasurementAt: null,
     });
   });
 

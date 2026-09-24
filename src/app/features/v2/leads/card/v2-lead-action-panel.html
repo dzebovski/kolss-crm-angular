@@ -1,0 +1,101 @@
+<div class="v2-action__top">
+  <div class="v2-action__suggestion">
+    <span class="v2-action__label">{{ 'v2.action.suggestion' | translate }}</span>
+    <div class="v2-action__headline">
+      <span class="v2-action__title" [class.v2-action__title--quiet]="suggestion().quiet">{{
+        title() | translate
+      }}</span>
+      @if (on(); as on) {
+        <span class="v2-action__on" [class.v2-action__on--overdue]="suggestion().overdue">{{
+          on
+        }}</span>
+      }
+    </div>
+    <span class="v2-action__caption">{{ caption() }}</span>
+  </div>
+
+  <div class="v2-action__calls" role="group" [attr.aria-label]="'v2.action.callResult' | translate">
+    <span class="v2-action__calls-label" aria-hidden="true">{{
+      'v2.action.callResult' | translate
+    }}</span>
+    @for (result of callResults; track result) {
+      <button
+        type="button"
+        appV2Button
+        variant="call-result"
+        [dot]="result"
+        [disabled]="!actionsEnabled() || pending()"
+        (click)="callResult.emit(result)"
+      >
+        {{ statusLabels[result] | translate }}
+      </button>
+    }
+  </div>
+</div>
+
+<div class="v2-action__bottom">
+  <div class="v2-action__groups">
+    <div
+      class="v2-action__group"
+      role="group"
+      [attr.aria-label]="'v2.action.leadStatus' | translate"
+    >
+      <span class="v2-action__label" aria-hidden="true">{{
+        'v2.action.leadStatus' | translate
+      }}</span>
+      <div class="v2-action__buttons">
+        @for (status of statusChanges; track status) {
+          <button
+            type="button"
+            appV2Button
+            class="v2-action__status"
+            [dot]="status"
+            [disabled]="!actionsEnabled() || pending()"
+            (click)="statusChange.emit(status)"
+          >
+            {{ statusLabels[status] | translate }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="v2-action__group">
+      <span class="v2-action__label" aria-hidden="true">{{ 'v2.action.rating' | translate }}</span>
+      <app-v2-rating-switch
+        [value]="rating()"
+        [ariaLabel]="'v2.action.rating' | translate"
+        [disabled]="!actionsEnabled() || pending()"
+        (ratingSelect)="ratingSelect.emit($event)"
+      />
+    </div>
+  </div>
+
+  <div class="v2-action__buttons v2-action__extra">
+    <button
+      type="button"
+      appV2Button
+      [disabled]="!commentEnabled() || pending()"
+      (click)="addComment.emit()"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+      {{ 'v2.action.addComment' | translate }}
+    </button>
+    <button
+      type="button"
+      appV2Button
+      variant="outlined"
+      [disabled]="!actionsEnabled() || pending()"
+      (click)="fillInfo.emit()"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+        <path d="M14 3v6h6" />
+        <path d="M8 13h8" />
+        <path d="M8 17h5" />
+      </svg>
+      {{ 'v2.action.fillInfo' | translate }}
+    </button>
+  </div>
+</div>

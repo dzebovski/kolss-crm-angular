@@ -15,6 +15,7 @@ export type V2TimelineTitle =
   | {
       readonly kind: 'key';
       readonly key:
+        | 'leadInfoUpdated'
         | 'firstMessage'
         | 'leadCreated'
         | 'lost'
@@ -42,7 +43,10 @@ export type V2TimelineRowLabel =
   | 'reminder'
   | 'assignedTo'
   | 'channel'
-  | 'answer';
+  | 'answer'
+  | 'materials'
+  | 'leadTime'
+  | 'measurement';
 
 export type V2TimelineRowValue =
   | V2CurrentStatusValue
@@ -283,6 +287,15 @@ function otherItem(event: LeadEvent): V2TimelineItem {
       text: event.comment?.trim() || null,
     };
   }
+  if (EDITED_TYPES.has(event.rawType) && isRecord(value['info'])) {
+    return {
+      ...base(event),
+      category: 'status',
+      title: { kind: 'key', key: 'leadInfoUpdated' },
+      tone: 'faint',
+      rows: leadInfoRows(record(value['info'])),
+    };
+  }
   if (EDITED_TYPES.has(event.rawType)) {
     const fields = value['fields'];
     return {
@@ -315,6 +328,41 @@ function base(event: LeadEvent | null): V2TimelineItem {
     text: null,
     changedFields: null,
   };
+}
+
+/** `lead_edited` from `PATCH /v1/leads/{id}/info` (W7): the new values; a cleared one is Not set. */
+function leadInfoRows(info: Record<string, unknown>): V2TimelineRow[] {
+  const rows: V2TimelineRow[] = [];
+  const notSet: V2TimelineRowValue = { kind: 'notSet' };
+  if ('budget' in info) rows.push({ label: 'budget', value: budget(info['budget']) ?? notSet });
+  if ('city_region' in info) {
+    rows.push({ label: 'location', value: text(info['city_region']) ?? notSet });
+  }
+  if ('products' in info) {
+    rows.push({ label: 'product', value: products(info['products']) ?? notSet });
+  }
+  if ('materials' in info) {
+    const materials = record(info['materials']);
+    const list = ['fronts', 'worktop', 'appliances']
+      .map((key) => stringValue(materials[key]))
+      .filter((item): item is string => item !== null);
+    rows.push({
+      label: 'materials',
+      value: list.length ? { kind: 'text', text: list.join(', ') } : notSet,
+    });
+  }
+  if ('expected_lead_time' in info) {
+    rows.push({ label: 'leadTime', value: text(info['expected_lead_time']) ?? notSet });
+  }
+  if ('preferred_measurement_at' in info) {
+    const at = stringValue(info['preferred_measurement_at']);
+    rows.push({ label: 'measurement', value: at ? { kind: 'dateTime', at } : notSet });
+  }
+  return rows;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function budget(value: unknown): V2TimelineRowValue | null {
