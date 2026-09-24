@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.22.0' as const;
+export const API_CONTRACT_VERSION = '2.23.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -15,6 +15,28 @@ export type LeadRating = 'cold' | 'medium' | 'hot';
 /** CRM v2 lead channel (`leads.channel`, OpenAPI `LeadChannel`, 2.21.0). */
 export type LeadChannel =
   'referral' | 'phone' | 'office' | 'website' | 'meta_ads' | 'google_ads' | 'other';
+
+/** CRM v2 lead status (`leads.v2_status`, OpenAPI `V2LeadStatus`, 2.23.0). */
+export type ApiV2LeadStatus =
+  'new' | 'later' | 'noanswer' | 'success' | 'thinking' | 'invited' | 'lost' | 'project';
+
+/** Lead products (`leads.products`, OpenAPI `LeadProduct`, 2.23.0). */
+export type LeadProduct = 'kitchen' | 'wardrobe' | 'furniture' | 'bathroom' | 'hallway' | 'other';
+
+/** `POST /v1/leads/{leadId}/activities` with `type: v2_status` (2.23.0: call results). */
+export interface V2StatusActivityRequest {
+  readonly type: 'v2_status';
+  readonly status: 'success' | 'later' | 'noanswer';
+  readonly comment?: string;
+  /** later / noanswer: required; success: optional follow-up date. */
+  readonly dueAt?: string;
+  /** success only: one number or a range, e.g. `20 000 – 25 000`. */
+  readonly estimatedBudgetText?: string;
+  readonly estimatedBudgetCurrency?: MoneyCurrency;
+  readonly cityRegion?: string;
+  readonly products?: readonly LeadProduct[];
+  readonly nextAction?: string;
+}
 
 /** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
 export interface RatingActivityRequest {
