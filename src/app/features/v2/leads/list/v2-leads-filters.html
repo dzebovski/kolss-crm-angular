@@ -1,0 +1,75 @@
+<section class="v2-filters" [attr.aria-label]="'v2.leads.filters' | translate">
+  <div class="v2-filters__row">
+    <app-v2-search-field
+      class="v2-filters__search"
+      [value]="search()"
+      [ariaLabel]="'v2.leads.search' | translate"
+      [placeholder]="'v2.leads.searchPlaceholder' | translate"
+      (valueChange)="searchChange.emit($event)"
+    />
+
+    <app-v2-segmented-control
+      [options]="periodOptions()"
+      [value]="period()"
+      [ariaLabel]="'v2.leads.period' | translate"
+      (valueChange)="periodChange.emit($event)"
+    />
+
+    <span class="v2-filters__range">{{ rangeLabel() }}</span>
+  </div>
+
+  <div class="v2-filters__row v2-filters__chips-row">
+    <span class="v2-filters__label" id="v2-filters-status">{{
+      'v2.leads.statusFilter' | translate
+    }}</span>
+    <div class="v2-filters__chips" role="group" aria-labelledby="v2-filters-status">
+      @for (chip of statusChips(); track chip.value) {
+        <button
+          type="button"
+          appV2FilterChip
+          [selected]="chip.selected"
+          [tone]="chip.value"
+          [count]="chip.count"
+          (click)="statusToggle.emit(chip.value)"
+        >
+          {{ chip.labelKey | translate }}
+        </button>
+      }
+    </div>
+
+    <div class="v2-filters__divider"></div>
+
+    <div class="v2-filters__rating">
+      <span class="v2-filters__label" id="v2-filters-rating">{{
+        'v2.leads.ratingFilter' | translate
+      }}</span>
+      <!-- TODO(W2): enable once the API stores the rating (roadmap L2). -->
+      <div
+        class="v2-filters__chips v2-filters__chips--nowrap"
+        role="group"
+        aria-labelledby="v2-filters-rating"
+      >
+        @for (chip of ratingChips(); track chip.value) {
+          <button
+            type="button"
+            appV2FilterChip
+            disabled
+            [selected]="chip.selected"
+            [tone]="chip.value"
+            [count]="chip.count"
+          >
+            {{ chip.labelKey | translate }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="v2-filters__spacer"></div>
+
+    @if (filtersActive()) {
+      <button type="button" class="v2-filters__clear" (click)="clear.emit()">
+        {{ 'v2.leads.clearFilters' | translate }}
+      </button>
+    }
+  </div>
+</section>

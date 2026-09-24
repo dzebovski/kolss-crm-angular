@@ -3,6 +3,8 @@ import { Component, input, model } from '@angular/core';
 export interface V2SegmentOption<T extends string> {
   readonly value: T;
   readonly label: string;
+  /** One segment that can't be picked yet (e.g. an unfinished option). */
+  readonly disabled?: boolean;
 }
 
 // Segmented control from the Leads board (Main.dc.html, Period group: SEG / SEG_ON / SEG_OFF).
@@ -16,7 +18,7 @@ export interface V2SegmentOption<T extends string> {
         class="v2-segmented__segment"
         [class.v2-segmented__segment--selected]="option.value === value()"
         [attr.aria-pressed]="option.value === value()"
-        [disabled]="disabled()"
+        [disabled]="disabled() || option.disabled"
         (click)="value.set(option.value)"
       >
         {{ option.label }}

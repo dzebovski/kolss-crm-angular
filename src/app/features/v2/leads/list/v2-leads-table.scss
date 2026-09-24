@@ -1,0 +1,217 @@
+// Values from Main.dc.html (Table). Column widths 124 / 1.3fr / 184 / 2fr / 172 with a 24px
+// gap, 44px header and group rows, 14/20px row padding, 22px group count pill and 28px avatar
+// are board values without a token.
+:host {
+  display: block;
+}
+
+.v2-table {
+  overflow: hidden;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+// The board is desktop only; below its width the table scrolls sideways inside the card.
+.v2-table__scroll {
+  overflow-x: auto;
+}
+
+.v2-table__row {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1.3fr) 184px minmax(0, 2fr) 172px;
+  align-items: center;
+  column-gap: var(--v2-space-5);
+  box-sizing: border-box;
+  min-width: 920px;
+  padding: 0 20px;
+}
+
+.v2-table__head {
+  height: 44px;
+  border-bottom: 1px solid var(--v2-line);
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.v2-table__sorted {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-1);
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+}
+
+.v2-table__group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 920px;
+  height: 44px;
+  padding: 0 20px;
+  background: var(--v2-ground);
+  border: 0;
+  border-bottom: 1px solid var(--v2-line);
+  color: var(--v2-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: -2px;
+  }
+}
+
+.v2-table__chevron {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s ease;
+
+  .v2-table__group--collapsed & {
+    transform: rotate(-90deg);
+  }
+}
+
+.v2-table__month {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.v2-table__count {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--v2-space-2);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.v2-table__lead {
+  padding-block: 14px;
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-table__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-table__date {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-table__muted {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-table__client {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+  min-width: 0;
+}
+
+.v2-table__line {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  min-width: 0;
+}
+
+.v2-table__name {
+  overflow: hidden;
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  // Hover is not drawn; the underline marks the link to the card.
+  &:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  &:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-table__phone {
+  color: var(--v2-muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.v2-table__comment-text {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--v2-ink-2);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.v2-table__age {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-table__manager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.v2-table__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.v2-table__manager-name {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-table__chevron {
+    transition: none;
+  }
+}

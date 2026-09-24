@@ -1,0 +1,72 @@
+<div class="v2-leads__title-row">
+  <div class="v2-leads__title">
+    <div class="v2-leads__eyebrow">{{ 'v2.nav.section.sales' | translate }}</div>
+    <nav class="v2-leads__tabs" [attr.aria-label]="'v2.leads.salesSections' | translate">
+      @for (tab of tabs; track tab.id; let first = $first) {
+        <a
+          class="v2-leads__tab"
+          [class.v2-leads__tab--current]="first"
+          [routerLink]="tab.route"
+          [attr.aria-current]="first ? 'page' : null"
+          >{{ tab.labelKey | translate }}</a
+        >
+      }
+    </nav>
+  </div>
+
+  <!-- TODO(v2): the create-lead popup is not in the v2 design yet. -->
+  <button type="button" appV2Button variant="primary" class="v2-leads__create" aria-disabled="true">
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+    {{ 'v2.leads.create' | translate }}
+  </button>
+</div>
+
+<div class="v2-leads__result" aria-live="polite">
+  @if (loaded()) {
+    <span class="v2-leads__result-count">{{ shownCount() }}</span>
+    <span class="v2-leads__result-noun">{{ shownNoun() }}</span>
+    <span class="v2-leads__result-context">{{ shownContext() }}</span>
+  }
+</div>
+
+<app-v2-leads-filters
+  [search]="searchText()"
+  [period]="query().period"
+  [periodOptions]="periodOptions()"
+  [rangeLabel]="rangeLabel()"
+  [statusChips]="statusChips()"
+  [ratingChips]="ratingChips"
+  [filtersActive]="filtersActive()"
+  (searchChange)="onSearch($event)"
+  (periodChange)="onPeriod($event)"
+  (statusToggle)="toggleStatus($event)"
+  (clear)="clearFilters()"
+/>
+
+<app-v2-leads-table [leads]="shownLeads()" [now]="now()" [busy]="loading()">
+  @if (loading()) {
+    <p class="v2-leads__loading" role="status">{{ 'v2.leads.loading' | translate }}</p>
+  } @else if (loadError(); as message) {
+    <app-v2-empty-state
+      class="v2-leads__state"
+      layout="list"
+      role="alert"
+      [title]="'v2.leads.error.title' | translate"
+      [hint]="message"
+    >
+      <button type="button" appV2Button size="sm" class="v2-leads__retry" (click)="retry()">
+        {{ 'v2.leads.retry' | translate }}
+      </button>
+    </app-v2-empty-state>
+  } @else if (loaded() && shownCount() === 0) {
+    <app-v2-empty-state
+      class="v2-leads__state"
+      layout="list"
+      [title]="'v2.leads.empty.title' | translate"
+      [hint]="'v2.leads.empty.hint' | translate"
+    />
+  }
+</app-v2-leads-table>

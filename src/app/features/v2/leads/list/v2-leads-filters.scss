@@ -1,0 +1,99 @@
+// Values from Main.dc.html (Filters). 20px side padding, 14px row gap, 300px search, 44px
+// label column, 24px divider and the 32px Clear filters button are board values without a token.
+:host {
+  display: block;
+}
+
+.v2-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--v2-space-4) 20px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-filters__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-4);
+}
+
+.v2-filters__search {
+  width: 300px;
+  max-width: 100%;
+}
+
+.v2-filters__range {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-filters__chips-row {
+  gap: var(--v2-space-3);
+  padding-top: 14px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.v2-filters__label {
+  width: 44px;
+  color: var(--v2-muted);
+  font-size: 12px;
+
+  .v2-filters__rating & {
+    width: auto;
+  }
+}
+
+.v2-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+}
+
+.v2-filters__chips--nowrap {
+  flex-wrap: nowrap;
+}
+
+.v2-filters__divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 var(--v2-space-1);
+  background: var(--v2-line);
+}
+
+.v2-filters__rating {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--v2-space-3);
+  white-space: nowrap;
+}
+
+.v2-filters__spacer {
+  flex-grow: 1;
+}
+
+.v2-filters__clear {
+  display: flex;
+  align-items: center;
+  height: var(--v2-control-sm);
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}

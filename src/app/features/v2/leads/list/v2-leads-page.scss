@@ -1,0 +1,110 @@
+@use '../../../../../styles/v2/type';
+
+// Values from Main.dc.html (PAGE). The 28px gap between tabs, the 3px tab underline and the
+// -6px pull of the result count are board values without a token.
+:host {
+  display: contents;
+}
+
+.v2-leads__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+}
+
+.v2-leads__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+}
+
+.v2-leads__eyebrow {
+  @include type.text(eyebrow);
+
+  color: var(--v2-muted);
+}
+
+.v2-leads__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  column-gap: 28px;
+}
+
+.v2-leads__tab {
+  @include type.text(lead-name);
+
+  padding-bottom: var(--v2-space-2);
+  border-bottom: 3px solid transparent;
+  color: var(--v2-muted);
+  font-weight: 500;
+  text-decoration: none;
+
+  &:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-leads__tab--current {
+  border-bottom-color: var(--v2-ink);
+  color: var(--v2-ink);
+  font-weight: 600;
+}
+
+.v2-leads__create {
+  gap: var(--v2-space-2);
+  margin-bottom: var(--v2-space-2);
+  padding: 0 18px 0 14px;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+}
+
+.v2-leads__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: -6px;
+}
+
+.v2-leads__result-count {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.v2-leads__result-noun {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-leads__result-context {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+// States inside the table card. The empty box is the board's (24px / 20px margin); loading and
+// error are not drawn and reuse its spacing.
+.v2-leads__state {
+  margin: var(--v2-space-5) 20px;
+}
+
+.v2-leads__loading {
+  margin: 0;
+  padding: var(--v2-space-6) 20px;
+  color: var(--v2-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.v2-leads__retry {
+  margin-top: var(--v2-space-2);
+}
