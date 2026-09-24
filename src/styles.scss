@@ -1,6 +1,7 @@
 @use '@angular/material' as mat;
 @use './styles/radial-menu-overlay';
 @use './styles/lead-detail-drawer';
+@use './styles/v2/overlay' as v2-overlay;
 
 html {
   @include mat.theme(

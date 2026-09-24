@@ -1,0 +1,110 @@
+@use '../../../../../styles/v2/type';
+
+// Values from lead card v1.3 (Modal). The 820px body cap is the board value; on shorter
+// viewports the body shrinks so header and footer stay on screen (top offset x2 + ~154px
+// header/footer).
+:host {
+  display: block;
+}
+
+.v2-dialog {
+  display: flex;
+  flex-direction: column;
+  background: var(--v2-surface);
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow-modal);
+}
+
+.v2-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  padding: 20px var(--v2-space-5);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-dialog__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-dialog__title {
+  @include type.text(modal-title);
+
+  margin: 0;
+}
+
+.v2-dialog__subtitle {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-dialog__close {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--v2-control-md);
+  height: var(--v2-control-md);
+  padding: 0;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  cursor: pointer;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+}
+
+.v2-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+  max-height: min(820px, calc(100dvh - 2 * clamp(24px, 15vh, 150px) - 154px));
+  padding: 20px var(--v2-space-5);
+  overflow: auto;
+
+  // #e0dfda thumb is the board value (`.scroll`), no token.
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #e0dfda;
+    border-radius: var(--v2-radius-sm);
+  }
+}
+
+.v2-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-4) var(--v2-space-5);
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.v2-dialog__hint {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-dialog__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--v2-space-2);
+}

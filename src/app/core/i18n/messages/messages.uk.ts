@@ -108,6 +108,8 @@ export const messagesUk = {
   'v2.rating.cold': 'Холодний',
   'v2.rating.medium': 'Середній',
   'v2.rating.hot': 'Гарячий',
+  'v2.dialog.cancel': 'Скасувати',
+  'v2.dialog.close': 'Закрити',
   'impersonation.banner': 'Ви увійшли як {name}',
   'impersonation.dialogTitle': 'Увійти як менеджер',
   'impersonation.dialogHint':

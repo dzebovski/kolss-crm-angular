@@ -1,0 +1,154 @@
+@use '../../../../styles/v2/type';
+
+// Values from lead card v1.3 (Timeline) and design system components/TimelineEntry. The
+// 150/20px columns, 10px dot, 7px pill dots, 3×9px pill padding and 860px text width are board
+// values without a token. The separator is `line-soft` (the card board uses #f2f1ed).
+:host {
+  display: grid;
+  grid-template-columns: 150px 20px minmax(0, 1fr);
+  gap: var(--v2-space-4);
+}
+
+.v2-timeline-entry__when {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--v2-space-4);
+  font-size: 13px;
+}
+
+.v2-timeline-entry__date {
+  font-weight: 500;
+}
+
+.v2-timeline-entry__time {
+  color: var(--v2-muted);
+}
+
+.v2-timeline-entry__rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.v2-timeline-entry__dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  margin-top: 20px;
+  border-radius: var(--v2-radius-pill);
+  box-shadow: 0 0 0 4px var(--v2-surface);
+}
+
+.v2-timeline-entry__line {
+  flex-grow: 1;
+  width: 1px;
+  background: var(--v2-line);
+}
+
+.v2-timeline-entry__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+  min-width: 0;
+  padding: 14px 0 var(--v2-space-4);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+:host(.v2-timeline-entry--last) {
+  .v2-timeline-entry__line {
+    background: transparent;
+  }
+
+  .v2-timeline-entry__content {
+    border-bottom-color: transparent;
+  }
+}
+
+.v2-timeline-entry__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+}
+
+.v2-timeline-entry__title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.v2-timeline-entry__author {
+  flex-shrink: 0;
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-timeline-entry__change {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+  font-size: 13px;
+
+  svg {
+    fill: none;
+    stroke: var(--v2-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.v2-timeline-entry__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-muted);
+}
+
+.v2-timeline-entry__pill--to {
+  border-color: var(--v2-ink);
+  color: var(--v2-ink);
+  font-weight: 500;
+}
+
+.v2-timeline-entry__pill-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--v2-radius-pill);
+}
+
+.v2-timeline-entry__quote {
+  @include type.text(quote);
+
+  max-width: 860px;
+  margin: 0;
+  padding: 14px var(--v2-space-4);
+  background: var(--v2-ground);
+  border-radius: 12px;
+  color: var(--v2-ink);
+}
+
+.v2-timeline-entry__rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-1) var(--v2-space-5);
+  font-size: 13px;
+}
+
+.v2-timeline-entry__key {
+  color: var(--v2-muted);
+}
+
+.v2-timeline-entry__text {
+  max-width: 860px;
+  margin: 0;
+  color: var(--v2-ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}

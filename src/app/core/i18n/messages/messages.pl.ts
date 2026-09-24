@@ -110,6 +110,8 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.rating.cold': 'Zimny',
   'v2.rating.medium': 'Średni',
   'v2.rating.hot': 'Gorący',
+  'v2.dialog.cancel': 'Anuluj',
+  'v2.dialog.close': 'Zamknij',
   'impersonation.banner': 'Jesteś zalogowany jako {name}',
   'impersonation.dialogTitle': 'Zaloguj jako menedżer',
   'impersonation.dialogHint':
