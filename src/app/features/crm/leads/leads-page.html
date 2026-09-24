@@ -233,8 +233,8 @@
                         {{ actor.actorName }}
                       </small>
                     }
-                    @if (status === 'callback_requested' && lead.callbackDueAt) {
-                      <app-lead-due-date class="status-due" [date]="lead.callbackDueAt" />
+                    @if (callbackReminderDueAt(lead); as callbackDueAt) {
+                      <app-lead-due-date class="status-due" [date]="callbackDueAt" />
                     }
                   } @else {
                     <span class="muted">{{ 'leads.notRecordedYet' | translate }}</span>

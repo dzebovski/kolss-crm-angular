@@ -237,7 +237,11 @@ export function groupLeadsForDashboard(leads: readonly Lead[]): readonly Dashboa
       calculation.push(lead);
     } else if (lead.clientStatus === 'thinking') {
       negotiating.push(lead);
-    } else if (lead.callStatus === 'no_answer' || lead.callStatus === 'callback_requested') {
+    } else if (
+      lead.callStatus === 'no_answer' ||
+      lead.callStatus === 'callback_requested' ||
+      callbackReminderDueAt(lead)
+    ) {
       callback.push(lead);
     } else if (lead.clientStatus === 'new_lead' && lead.callStatus === null) {
       newLeads.push(lead);
@@ -331,6 +335,26 @@ export interface LeadActiveReminder {
 }
 
 /**
+ * callbackDueAt when it is a callback reminder: a v1 callback, or a CRM v2 call result that
+ * carries its own date (No answer → next attempt, Successful call → follow-up). The API
+ * reminder cohorts use the same rule (leadcohorts.CallbackReminderStatusCodesSQL).
+ */
+export function callbackReminderDueAt(lead: {
+  callStatus: string | null;
+  callbackDueAt: string | null;
+  callbackDueContext?: { category: string; statusCode: string | null } | null;
+}): string | null {
+  if (!lead.callbackDueAt) return null;
+  if (lead.callStatus === 'callback_requested') return lead.callbackDueAt;
+  const context = lead.callbackDueContext;
+  const datedCallResult =
+    context?.category === 'call_status' &&
+    (context.statusCode === 'no_answer' || context.statusCode === 'reached') &&
+    context.statusCode === lead.callStatus;
+  return datedCallResult ? lead.callbackDueAt : null;
+}
+
+/**
  * Active due-dated reminders shown at the top of the lead card.
  * Callback, thinking, and postponed share leads.callbackDueAt; comment uses
  * the derived field; showroom uses the scheduled visit date. Closed leads
@@ -349,8 +373,9 @@ export function activeRemindersForLead(lead: {
   if (clientStatusIsTerminal(lead.clientStatus)) return [];
 
   const reminders: LeadActiveReminder[] = [];
-  if (lead.callStatus === 'callback_requested' && lead.callbackDueAt) {
-    reminders.push({ kind: 'callback', dueAt: lead.callbackDueAt });
+  const callbackDueAt = callbackReminderDueAt(lead);
+  if (callbackDueAt) {
+    reminders.push({ kind: 'callback', dueAt: callbackDueAt });
   }
   if (lead.clientStatus === 'thinking' && lead.callbackDueAt) {
     reminders.push({ kind: 'thinking', dueAt: lead.callbackDueAt });
