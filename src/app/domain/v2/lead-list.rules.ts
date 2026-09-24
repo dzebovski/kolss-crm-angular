@@ -48,8 +48,12 @@ export const V2_LEAD_PERIOD_DAYS: Readonly<Record<V2LeadPeriod, number | null>> 
 
 export const V2_DEFAULT_LEAD_PERIOD: V2LeadPeriod = 'd40';
 
-/** Status chips in board order. New, Project and the legacy statuses have no chip. */
+/**
+ * Status chips: New (user, 2026-09-24; not on the board) first, then the board order.
+ * Project and the legacy statuses have no chip.
+ */
 export const V2_LEAD_STATUS_FILTERS: readonly V2LeadStatus[] = [
+  'new',
   'success',
   'later',
   'noanswer',

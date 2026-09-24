@@ -76,13 +76,20 @@ describe('matchesV2LeadSearch', () => {
 });
 
 describe('countV2LeadChips', () => {
-  it('counts chip statuses only and skips statuses without a chip', () => {
+  it('counts chip statuses, New included, and skips statuses without a chip', () => {
     const at = '2026-09-23T10:00:00Z';
     const { statuses } = countV2LeadChips(
-      [lead('a', at, 'later'), lead('b', at, 'later'), lead('c', at, 'new'), lead('d', at, 'lost')],
+      [
+        lead('a', at, 'later'),
+        lead('b', at, 'later'),
+        lead('c', at, 'new'),
+        lead('d', at, 'lost'),
+        lead('e', at, 'contract_signed'),
+      ],
       { statuses: [], ratings: [] },
     );
     expect(statuses).toEqual({
+      new: 1,
       success: 0,
       later: 2,
       noanswer: 0,
