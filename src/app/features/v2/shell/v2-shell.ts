@@ -4,7 +4,9 @@ import { Router, RouterOutlet } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 import { ImpersonationService } from '@core/auth/impersonation.service';
 import { I18nService } from '@core/i18n/i18n.service';
+import { V2DialogService } from '../ui/dialog/v2-dialog.service';
 import { V2Header } from './v2-header';
+import { V2ImpersonationDialog } from './v2-impersonation-dialog';
 import { V2ImpersonationBanner } from './v2-impersonation-banner';
 import { readV2MenuOpen, writeV2MenuOpen } from './v2-menu.storage';
 import type { V2NavAction } from './v2-nav.config';
@@ -36,6 +38,7 @@ export class V2Shell {
   private readonly impersonation = inject(ImpersonationService);
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+  private readonly dialogs = inject(V2DialogService);
 
   // Closed by default, as on the Main board; then the viewer's last choice.
   protected readonly menuOpen = signal(readV2MenuOpen());
@@ -56,7 +59,7 @@ export class V2Shell {
   protected async runNavAction(action: Exclude<V2NavAction, 'language'>): Promise<void> {
     switch (action) {
       case 'impersonate':
-        // TODO(v2, N3): open the v2 impersonation popup once the K3 dialog shell is merged.
+        this.startImpersonation();
         return;
       case 'stop-impersonation':
         this.stopImpersonation();
@@ -66,6 +69,15 @@ export class V2Shell {
         await this.router.navigateByUrl('/login');
         return;
     }
+  }
+
+  // As v1: once a user is picked, the session reloads and every request goes as that user.
+  private startImpersonation(): void {
+    this.dialogs.open<string>(V2ImpersonationDialog).closed.subscribe((userId) => {
+      if (!userId) return;
+      this.impersonation.start(userId);
+      globalThis.location.reload();
+    });
   }
 
   // As v1: the session reloads so every resource refetches as the real user.
