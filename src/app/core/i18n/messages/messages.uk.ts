@@ -82,6 +82,9 @@ export const messagesUk = {
   'v2.nav.impersonate': 'Увійти як інший користувач',
   'v2.nav.designSystem': 'Дизайн-система',
   'v2.nav.logout': 'Вийти',
+  'v2.nav.returnToAdmin': 'Повернутися до супер-адміна',
+  'v2.placeholder.title': 'У розробці',
+  'v2.placeholder.hint': 'Цей розділ ще створюється для нової CRM.',
   'impersonation.banner': 'Ви увійшли як {name}',
   'impersonation.dialogTitle': 'Увійти як менеджер',
   'impersonation.dialogHint':

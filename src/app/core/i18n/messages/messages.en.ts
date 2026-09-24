@@ -84,6 +84,9 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.nav.impersonate': 'Log in as another user',
   'v2.nav.designSystem': 'Design system',
   'v2.nav.logout': 'Log out',
+  'v2.nav.returnToAdmin': 'Return to super admin',
+  'v2.placeholder.title': 'In development',
+  'v2.placeholder.hint': 'This section is being built for the new CRM.',
   'impersonation.banner': 'You are logged in as {name}',
   'impersonation.dialogTitle': 'Login as manager',
   'impersonation.dialogHint':

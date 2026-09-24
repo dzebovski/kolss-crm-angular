@@ -84,6 +84,9 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.nav.impersonate': 'Zaloguj jako inny użytkownik',
   'v2.nav.designSystem': 'System projektowy',
   'v2.nav.logout': 'Wyloguj',
+  'v2.nav.returnToAdmin': 'Wróć do super-admina',
+  'v2.placeholder.title': 'W przygotowaniu',
+  'v2.placeholder.hint': 'Ta sekcja jest jeszcze tworzona dla nowego CRM.',
   'impersonation.banner': 'Jesteś zalogowany jako {name}',
   'impersonation.dialogTitle': 'Zaloguj jako menedżer',
   'impersonation.dialogHint':
