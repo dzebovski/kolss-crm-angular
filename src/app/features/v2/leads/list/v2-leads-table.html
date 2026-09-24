@@ -1,0 +1,90 @@
+<section class="v2-table" [attr.aria-label]="'v2.leads.list' | translate">
+  <div class="v2-table__scroll">
+    <div class="v2-table__row v2-table__head">
+      <span class="v2-table__sorted">
+        {{ 'v2.leads.col.date' | translate }}
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14" />
+          <path d="M6 13l6 6 6-6" />
+        </svg>
+      </span>
+      <span>{{ 'v2.leads.col.client' | translate }}</span>
+      <span>{{ 'v2.leads.col.status' | translate }}</span>
+      <span>{{ 'v2.leads.col.comment' | translate }}</span>
+      <span>{{ 'v2.leads.col.manager' | translate }}</span>
+    </div>
+
+    @for (group of groups(); track group.key) {
+      <button
+        type="button"
+        class="v2-table__group"
+        [class.v2-table__group--collapsed]="!group.open"
+        [attr.aria-expanded]="group.open"
+        (click)="toggle(group.key)"
+      >
+        <svg
+          class="v2-table__chevron"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+        <span class="v2-table__month">{{ group.label }}</span>
+        <span class="v2-table__count">{{ group.countLabel }}</span>
+      </button>
+
+      @if (group.open) {
+        @for (row of group.rows; track row.lead.id) {
+          <div class="v2-table__row v2-table__lead">
+            <div class="v2-table__stack">
+              <span class="v2-table__date">{{ row.date }}</span>
+              <span class="v2-table__muted">{{ row.time }}</span>
+            </div>
+
+            <div class="v2-table__client">
+              <div class="v2-table__line">
+                <a class="v2-table__name" [routerLink]="['/v2/leads', row.lead.id]">{{
+                  row.lead.name
+                }}</a>
+                @if (row.lead.rating; as rating) {
+                  <app-v2-rating-pill [rating]="rating" size="sm" />
+                }
+              </div>
+              <div class="v2-table__line">
+                <app-v2-code-chip [code]="row.lead.code" size="sm" />
+                <span class="v2-table__phone">{{ row.lead.phone }}</span>
+              </div>
+            </div>
+
+            <div>
+              <app-v2-status-pill [status]="row.lead.status" size="sm" />
+            </div>
+
+            <div class="v2-table__stack v2-table__comment">
+              @if (row.lead.lastComment; as comment) {
+                <span class="v2-table__comment-text">{{ comment.text }}</span>
+                <span class="v2-table__age">{{ row.commentAge }}</span>
+              } @else {
+                <span class="v2-table__muted" aria-hidden="true">—</span>
+              }
+            </div>
+
+            <div class="v2-table__manager">
+              <span class="v2-table__avatar" aria-hidden="true">{{ row.managerInitials }}</span>
+              <div class="v2-table__stack v2-table__manager-text">
+                <span class="v2-table__manager-name">{{
+                  row.lead.managerName ?? ('common.unassigned' | translate)
+                }}</span>
+                <span class="v2-table__age">{{ row.officeKey | translate }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    }
+
+    <ng-content />
+  </div>
+</section>

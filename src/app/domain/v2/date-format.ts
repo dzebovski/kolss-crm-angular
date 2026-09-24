@@ -43,6 +43,13 @@ export function formatV2ReportDate(value: V2DateInput): string {
   return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`;
 }
 
+/** Month group heading: `September 2026` (standalone month name, capitalized). */
+export function formatV2MonthYear(value: V2DateInput, locale: LocaleCode): string {
+  const date = toDate(value);
+  const month = new Intl.DateTimeFormat(NAME_LOCALE[locale], { month: 'long' }).format(date);
+  return `${capitalize(month)} ${date.getFullYear()}`;
+}
+
 /** 24-hour time: `12:00`. */
 export function formatV2Time(value: V2DateInput): string {
   const date = toDate(value);
