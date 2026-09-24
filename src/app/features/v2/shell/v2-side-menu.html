@@ -25,13 +25,50 @@
               <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
               <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
             </a>
+          } @else if (item.action === 'language') {
+            <button
+              #languageTrigger
+              type="button"
+              class="v2-menu__item"
+              [attr.aria-expanded]="languagesOpen()"
+              [attr.aria-controls]="languagesOpen() ? languagesId : null"
+              (click)="toggleLanguages()"
+            >
+              <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
+              <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
+              <span class="v2-menu__value">{{ languageName() }}</span>
+            </button>
+            @if (languagesOpen()) {
+              <div class="v2-menu__group" [id]="languagesId">
+                @for (language of languages; track language.code) {
+                  <button
+                    type="button"
+                    class="v2-menu__item v2-menu__item--sub"
+                    [class.v2-menu__item--current]="language.code === locale()"
+                    [attr.aria-pressed]="language.code === locale()"
+                    [attr.lang]="language.code"
+                    (click)="selectLanguage(language.code)"
+                  >
+                    <span class="v2-menu__label">{{ language.name }}</span>
+                    @if (language.code === locale()) {
+                      <svg
+                        class="v2-menu__check"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 12l5 5L19 7" />
+                      </svg>
+                    }
+                  </button>
+                }
+              </div>
+            }
           } @else {
             <button type="button" class="v2-menu__item" (click)="action.emit(item.action)">
               <app-v2-nav-icon class="v2-menu__icon" [name]="item.icon" />
               <span class="v2-menu__label">{{ item.labelKey | translate }}</span>
-              @if (item.action === 'language') {
-                <span class="v2-menu__value">{{ languageName() }}</span>
-              }
             </button>
           }
         }

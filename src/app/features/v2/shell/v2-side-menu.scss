@@ -85,6 +85,26 @@
   font-weight: 600;
 }
 
+.v2-menu__item--sub {
+  // Text lines up with the item labels: 12px padding + 18px icon + 12px gap.
+  padding-left: 42px;
+}
+
+.v2-menu__item--current {
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink);
+  font-weight: 600;
+}
+
+.v2-menu__check {
+  flex-shrink: 0;
+  fill: none;
+  stroke: var(--v2-ink);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .v2-menu__icon {
   color: var(--v2-muted);
 
