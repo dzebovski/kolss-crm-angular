@@ -1,0 +1,83 @@
+<div class="v2-timeline__head">
+  <h2 class="v2-timeline__title">{{ 'v2.timeline.title' | translate }}</h2>
+  <div class="v2-timeline__tabs" role="group" [attr.aria-label]="'v2.timeline.filter' | translate">
+    @for (tab of tabs(); track tab.id) {
+      <button
+        type="button"
+        class="v2-timeline__tab"
+        [class.v2-timeline__tab--on]="filter() === tab.id"
+        [attr.aria-pressed]="filter() === tab.id"
+        (click)="filter.set(tab.id)"
+      >
+        {{ tab.label | translate }} <span class="v2-timeline__count">{{ tab.count }}</span>
+      </button>
+    }
+  </div>
+</div>
+
+<div class="v2-timeline__list">
+  @for (entry of entries(); track entry.id; let last = $last) {
+    <app-v2-timeline-entry
+      [date]="entry.date"
+      [time]="entry.time"
+      [title]="entry.title"
+      [author]="entry.author"
+      [tone]="entry.tone"
+      [last]="last"
+      [change]="entry.change"
+      [quote]="entry.quote"
+      [rows]="entry.rows"
+      [text]="entry.text"
+    >
+      @if (entry.translation) {
+        <p class="v2-timeline__translation">
+          <span class="v2-timeline__translation-label">{{
+            'v2.timeline.translation' | translate
+          }}</span>
+          {{ entry.translation }}
+        </p>
+      }
+      @if (entry.event; as event) {
+        @if (entry.canEdit || entry.canDelete || entry.canTranslate) {
+          <div class="v2-timeline__actions">
+            @if (entry.canTranslate) {
+              <button
+                type="button"
+                class="v2-timeline__action"
+                [disabled]="translating().has(event.id)"
+                (click)="translateRequested.emit(event)"
+              >
+                {{
+                  (translating().has(event.id)
+                    ? 'v2.timeline.translating'
+                    : 'v2.timeline.translate'
+                  ) | translate
+                }}
+              </button>
+            }
+            @if (entry.canEdit) {
+              <button
+                type="button"
+                class="v2-timeline__action"
+                [disabled]="pending()"
+                (click)="editRequested.emit(event)"
+              >
+                {{ 'v2.timeline.edit' | translate }}
+              </button>
+            }
+            @if (entry.canDelete) {
+              <button
+                type="button"
+                class="v2-timeline__action"
+                [disabled]="pending()"
+                (click)="deleteRequested.emit(event)"
+              >
+                {{ 'v2.timeline.delete' | translate }}
+              </button>
+            }
+          </div>
+        }
+      }
+    </app-v2-timeline-entry>
+  }
+</div>

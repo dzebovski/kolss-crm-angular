@@ -12,7 +12,9 @@ import { SessionService } from '@core/session/session.service';
 import { formatV2CardDate, formatV2DayRecency, formatV2Time } from '@domain/v2/date-format';
 import { leadIsTerminal, type LeadReminderKind } from '@domain/lead.rules';
 import { v2CurrentStatus, v2LeadTasks } from '@domain/v2/lead-card-status';
+import type { LeadEvent } from '@domain/lead.types';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
+import { v2LeadTimeline } from '@domain/v2/lead-timeline';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2_NOW } from '../../core/v2-clock';
@@ -25,6 +27,13 @@ import { V2EditContactDialog, type V2EditContactData } from './v2-edit-contact-d
 import { V2LeadCardHeader } from './v2-lead-card-header';
 import { V2LeadDocumentsCard } from './v2-lead-documents-card';
 import { V2LeadTasksCard } from './v2-lead-tasks-card';
+import { V2LeadTimeline } from './v2-lead-timeline';
+import {
+  V2DeleteEntryDialog,
+  V2EditEntryDialog,
+  type V2DeleteEntryData,
+  type V2EditEntryData,
+} from './v2-timeline-entry-dialogs';
 
 // Lead card v1.3 (`/v2/leads/:leadId`): breadcrumb, meta row, project banner, header card (C1).
 // The action panel (C2), info cards (C4) and timeline (C5) follow below the header. Data comes
@@ -40,6 +49,7 @@ import { V2LeadTasksCard } from './v2-lead-tasks-card';
     V2LeadCardHeader,
     V2LeadDocumentsCard,
     V2LeadTasksCard,
+    V2LeadTimeline,
   ],
   templateUrl: './v2-lead-card-page.html',
   styleUrl: './v2-lead-card-page.scss',
@@ -132,6 +142,18 @@ export class V2LeadCardPage {
     return Boolean(lead && !lead.archivedAt && !leadIsTerminal(lead));
   });
   protected readonly taskPending = signal(false);
+  protected readonly entryPending = signal(false);
+  protected readonly translatingIds = signal<ReadonlySet<string>>(new Set());
+
+  protected readonly timeline = computed(() => {
+    const lead = this.loaded()?.lead;
+    const card = this.card();
+    return lead && card ? v2LeadTimeline(lead, card.channel) : [];
+  });
+
+  /** Bound field: v1 rule (own entries, or any for a super admin; none on archived leads). */
+  protected readonly canMutateEntry = (event: LeadEvent): boolean =>
+    !this.card()?.archived && leadPolicy.canMutateEvent(this.policyContext(), event);
   protected readonly actionError = signal('');
 
   protected readonly canEdit = computed(() => {
@@ -175,6 +197,61 @@ export class V2LeadCardPage {
       );
     } finally {
       this.taskPending.set(false);
+    }
+  }
+
+  protected async editEntry(event: LeadEvent): Promise<void> {
+    const lead = this.loaded()?.lead;
+    if (!lead || !this.canMutateEntry(event) || this.entryPending()) return;
+    const ref = this.dialogs.open<string, V2EditEntryData>(V2EditEntryDialog, {
+      comment: event.comment ?? '',
+    });
+    const comment = await firstValueFrom(ref.closed);
+    if (!comment || comment === event.comment?.trim()) return;
+    await this.runEntryAction(() => this.service.updateEntry(lead.id, event.id, comment));
+  }
+
+  protected async deleteEntry(event: LeadEvent): Promise<void> {
+    const lead = this.loaded()?.lead;
+    if (!lead || !this.canMutateEntry(event) || this.entryPending()) return;
+    const ref = this.dialogs.open<boolean, V2DeleteEntryData>(V2DeleteEntryDialog, {
+      officeWork: event.type === 'office_work',
+    });
+    if (!(await firstValueFrom(ref.closed))) return;
+    await this.runEntryAction(() => this.service.deleteEntry(lead.id, event.id));
+  }
+
+  protected async translateEntry(event: LeadEvent): Promise<void> {
+    const lead = this.loaded()?.lead;
+    if (!lead || this.translatingIds().has(event.id)) return;
+    this.translatingIds.update((ids) => new Set(ids).add(event.id));
+    this.actionError.set('');
+    try {
+      await this.service.translateEntry(lead.id, event.id);
+      this.leadResource.reload();
+    } catch {
+      this.actionError.set(this.i18n.t('leadDetail.translationFailed'));
+    } finally {
+      this.translatingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(event.id);
+        return next;
+      });
+    }
+  }
+
+  private async runEntryAction(action: () => Promise<void>): Promise<void> {
+    this.entryPending.set(true);
+    this.actionError.set('');
+    try {
+      await action();
+      this.leadResource.reload();
+    } catch (error) {
+      this.actionError.set(
+        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
+      );
+    } finally {
+      this.entryPending.set(false);
     }
   }
 

@@ -75,10 +75,6 @@
 
     <!-- TODO(C2): action panel (call results, lead status, rating, comment, lead info). -->
 
-    @if (actionError(); as message) {
-      <p class="v2-card__action-error" role="alert">{{ message }}</p>
-    }
-
     <div class="v2-card__info">
       <app-v2-current-status-card
         [status]="lead.status"
@@ -99,5 +95,21 @@
       />
       <app-v2-lead-documents-card [attachments]="attachments()" [now]="now()" />
     </div>
+
+    @if (actionError(); as message) {
+      <p class="v2-card__action-error" role="alert">{{ message }}</p>
+    }
+
+    <app-v2-lead-timeline
+      [items]="timeline()"
+      [now]="now()"
+      [personName]="personName"
+      [canMutate]="canMutateEntry"
+      [pending]="entryPending()"
+      [translating]="translatingIds()"
+      (editRequested)="editEntry($event)"
+      (deleteRequested)="deleteEntry($event)"
+      (translateRequested)="translateEntry($event)"
+    />
   }
 }

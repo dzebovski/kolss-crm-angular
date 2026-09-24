@@ -25,7 +25,8 @@ export interface V2TimelineRow {
 // TimelineEntry (design system components/TimelineEntry; values from lead card v1.3,
 // Timeline): date column, dot on a rail, then title + author, an optional change, the client
 // quote, Key: value rows and the comment text. Labels and dates arrive formatted (D2 rules).
-// `last` = the oldest entry: no rail below and no separator.
+// `last` = the oldest entry: no rail below and no separator. Projected content goes at the end
+// of the entry (the card adds the translation and the edit / delete / translate actions).
 @Component({
   selector: 'app-v2-timeline-entry',
   templateUrl: './v2-timeline-entry.html',

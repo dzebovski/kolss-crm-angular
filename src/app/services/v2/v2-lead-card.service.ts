@@ -8,6 +8,7 @@ import type { V2LeadColumns } from '@domain/v2/lead-card.types';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { mapLeadDetail } from '@services/leads.mapper';
+import { LeadsService } from '@services/leads.service';
 
 /** A loaded lead: the shared v1 model plus the v2 columns the v1 model doesn't carry. */
 export interface V2LoadedLead {
@@ -37,6 +38,7 @@ export type V2ContactField = 'name' | 'phone' | 'email' | 'manager' | 'channel';
 export class V2LeadCardService {
   private readonly api = inject(KolssApiClient);
   private readonly activities = inject(LeadActivitiesService);
+  private readonly leads = inject(LeadsService);
 
   /** Null when the lead doesn't exist (404). */
   async load(leadId: string): Promise<V2LoadedLead | null> {
@@ -79,5 +81,20 @@ export class V2LeadCardService {
   /** Reminders & tasks "Mark as done": clears the reminder as v1 does (`clear_reminder`). */
   completeReminder(leadId: string, kind: LeadReminderKind): Promise<void> {
     return this.activities.clearReminder(leadId, kind);
+  }
+
+  /** Timeline entry text edit (D6, as v1). */
+  async updateEntry(leadId: string, eventId: string, comment: string): Promise<void> {
+    await this.leads.updateHistoryEvent(leadId, eventId, { comment });
+  }
+
+  /** Timeline entry delete (D6, as v1). */
+  deleteEntry(leadId: string, eventId: string): Promise<void> {
+    return this.leads.deleteHistoryEvent(leadId, eventId);
+  }
+
+  /** English translation of an entry's text (D6, as v1). */
+  async translateEntry(leadId: string, eventId: string): Promise<void> {
+    await this.leads.translateHistoryEvent(leadId, eventId);
   }
 }

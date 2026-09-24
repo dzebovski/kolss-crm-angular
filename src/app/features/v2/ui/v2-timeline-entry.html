@@ -51,4 +51,7 @@
   @if (text(); as text) {
     <p class="v2-timeline-entry__text">{{ text }}</p>
   }
+
+  <!-- Extra content under the entry (e.g. a translation, entry actions). -->
+  <ng-content />
 </div>
