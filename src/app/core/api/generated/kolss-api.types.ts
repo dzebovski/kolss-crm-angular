@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.24.0' as const;
+export const API_CONTRACT_VERSION = '2.25.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -51,6 +51,24 @@ export interface V2StatusActivityRequest {
   readonly designerId?: string;
   /** lost only, required. */
   readonly lossReason?: V2LossReason;
+}
+
+/**
+ * `PATCH /v1/leads/{leadId}/info` (2.25.0), the "Lead info" popup. Omitted = unchanged;
+ * `''` clears a text, `[]` clears products, `null` clears the measurement date.
+ */
+export interface UpdateLeadInfoRequest {
+  /** One number or a range, e.g. `20 000 – 25 000`; `''` clears the budget. */
+  readonly estimatedBudgetText?: string;
+  readonly estimatedBudgetCurrency?: MoneyCurrency;
+  readonly cityRegion?: string;
+  readonly products?: readonly LeadProduct[];
+  readonly materialFronts?: string;
+  readonly materialWorktop?: string;
+  readonly materialAppliances?: string;
+  readonly expectedLeadTime?: string;
+  /** ISO date-time. */
+  readonly preferredMeasurementAt?: string | null;
 }
 
 /** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
