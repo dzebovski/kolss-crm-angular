@@ -13,6 +13,10 @@ export const LEAD_FIELD_KEYS = [
   'type',
   // CRM v2 lead channel (Edit contact info); v1 only shows it in the audit.
   'channel',
+  // CRM v2 Lead info (PATCH /v1/leads/{leadId}/info); v1 only shows them in the audit.
+  'materials',
+  'expectedLeadTime',
+  'preferredMeasurement',
 ] as const;
 
 export type LeadFieldKey = (typeof LEAD_FIELD_KEYS)[number];
