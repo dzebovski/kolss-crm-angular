@@ -16,8 +16,13 @@ export type V2LeadDisplayStatus = V2LeadStatus | V2LegacyLeadStatus;
 /** Rating badge next to the client name (decision D3); stays null until W2 adds the field. */
 export type V2LeadRating = 'cold' | 'medium' | 'hot';
 
-/** Channels from the design system vocabulary; W3 adds the real field. */
-export type V2LeadChannel = 'referral' | 'phone' | 'office' | 'website' | 'meta_ads' | 'google_ads';
+/**
+ * Channels from the design system vocabulary, plus `other` for the old Google Sheet
+ * import leads (display only, not offered for new leads; user decision 2026-09-24).
+ * W3 adds the real field.
+ */
+export type V2LeadChannel =
+  'referral' | 'phone' | 'office' | 'website' | 'meta_ads' | 'google_ads' | 'other';
 
 export interface V2LeadLastComment {
   readonly text: string;
@@ -39,7 +44,7 @@ export interface V2LeadListItem {
   readonly phone: string;
   readonly status: V2LeadDisplayStatus;
   readonly rating: V2LeadRating | null;
-  readonly channel: V2LeadChannel | null;
+  readonly channel: V2LeadChannel;
   readonly officeId: OfficeId;
   readonly managerId: string | null;
   readonly managerName: string | null;

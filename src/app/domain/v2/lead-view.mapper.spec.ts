@@ -22,6 +22,6 @@ describe('v2 lead view mapper', () => {
     expect(channelFromSource('website')).toBe('website');
     expect(channelFromSource('facebook')).toBe('meta_ads');
     expect(channelFromSource('office')).toBe('office');
-    expect(channelFromSource('other')).toBeNull();
+    expect(channelFromSource('other')).toBe('other');
   });
 });

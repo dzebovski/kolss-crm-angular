@@ -79,8 +79,11 @@ export function deriveV2LeadStatus(
   }
 }
 
-/** v1 `source` → v2 channel. `other` has no v2 channel yet (logged as a design gap). */
-export function channelFromSource(source: LeadSource): V2LeadChannel | null {
+/**
+ * v1 `source` → v2 channel. v1 already maps manually created leads to `office`;
+ * v2 keeps that until W3 (user decision 2026-09-24).
+ */
+export function channelFromSource(source: LeadSource): V2LeadChannel {
   switch (source) {
     case 'website':
       return 'website';
@@ -89,6 +92,6 @@ export function channelFromSource(source: LeadSource): V2LeadChannel | null {
     case 'office':
       return 'office';
     case 'other':
-      return null;
+      return 'other';
   }
 }
