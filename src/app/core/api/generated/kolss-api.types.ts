@@ -7,10 +7,14 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.20.0' as const;
+export const API_CONTRACT_VERSION = '2.21.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
+
+/** CRM v2 lead channel (`leads.channel`, OpenAPI `LeadChannel`, 2.21.0). */
+export type LeadChannel =
+  'referral' | 'phone' | 'office' | 'website' | 'meta_ads' | 'google_ads' | 'other';
 
 /** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
 export interface RatingActivityRequest {
