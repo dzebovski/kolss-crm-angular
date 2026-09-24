@@ -1,6 +1,6 @@
 {
-  "version": "2.23.0",
-  "sha256": "dd0f90a9a827ae57578959ae41bdd0f3bcdffa9083d60bdc0ebbe9f845d211a8",
+  "version": "2.24.0",
+  "sha256": "e58422b4b10915f5dd9377ad16bcec700a2c377059c5edba607a408969ed0576",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -9,6 +9,7 @@
     "listLossReasons",
     "translateText",
     "listLeads",
+    "getLeadFacets",
     "createLead",
     "getLead",
     "updateLead",

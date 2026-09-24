@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.23.0' as const;
+export const API_CONTRACT_VERSION = '2.24.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -23,12 +23,23 @@ export type ApiV2LeadStatus =
 /** Lead products (`leads.products`, OpenAPI `LeadProduct`, 2.23.0). */
 export type LeadProduct = 'kitchen' | 'wardrobe' | 'furniture' | 'bathroom' | 'hallway' | 'other';
 
-/** `POST /v1/leads/{leadId}/activities` with `type: v2_status` (2.23.0: call results). */
+/** v2 Lost reasons (`V2StatusActivityRequest.lossReason`, 2.24.0). */
+export type V2LossReason =
+  'bought_elsewhere' | 'out_of_budget' | 'not_relevant' | 'cant_reach_client' | 'other';
+
+/** `GET /v1/leads/facets` (2.24.0): chip counts; missing keys mean 0. */
+export interface LeadFacetsResponse {
+  readonly total: number;
+  readonly v2Status: Readonly<Partial<Record<ApiV2LeadStatus, number>>>;
+  readonly rating: Readonly<Partial<Record<LeadRating, number>>>;
+}
+
+/** `POST /v1/leads/{leadId}/activities` with `type: v2_status` (2.24.0). */
 export interface V2StatusActivityRequest {
   readonly type: 'v2_status';
-  readonly status: 'success' | 'later' | 'noanswer';
+  readonly status: 'success' | 'later' | 'noanswer' | 'thinking' | 'invited' | 'lost';
   readonly comment?: string;
-  /** later / noanswer: required; success: optional follow-up date. */
+  /** later / noanswer / thinking / invited: required; success: optional; lost: not allowed. */
   readonly dueAt?: string;
   /** success only: one number or a range, e.g. `20 000 – 25 000`. */
   readonly estimatedBudgetText?: string;
@@ -36,6 +47,10 @@ export interface V2StatusActivityRequest {
   readonly cityRegion?: string;
   readonly products?: readonly LeadProduct[];
   readonly nextAction?: string;
+  /** invited only, required: an active member of the lead's office. */
+  readonly designerId?: string;
+  /** lost only, required. */
+  readonly lossReason?: V2LossReason;
 }
 
 /** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
