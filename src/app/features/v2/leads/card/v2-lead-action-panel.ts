@@ -45,11 +45,14 @@ export class V2LeadActionPanel {
   /** Add comment stays open on a project (design); off on lost or read-only leads. */
   readonly commentEnabled = input(false);
   readonly pending = input(false);
+  /** A lost lead: the call results give way to Reopen lead (not drawn; v1 behaviour). */
+  readonly canReopen = input(false);
   readonly callResult = output<V2CallResult>();
   readonly statusChange = output<V2StatusChange>();
   readonly ratingSelect = output<V2LeadRating>();
   readonly addComment = output<void>();
   readonly fillInfo = output<void>();
+  readonly reopen = output<void>();
 
   protected readonly callResults: readonly V2CallResult[] = ['success', 'later', 'noanswer'];
   protected readonly statusChanges: readonly V2StatusChange[] = ['thinking', 'invited', 'lost'];

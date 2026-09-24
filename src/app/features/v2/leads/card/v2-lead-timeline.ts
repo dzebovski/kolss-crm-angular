@@ -37,6 +37,7 @@ const FILTERS: readonly { readonly id: V2TimelineFilter; readonly label: Message
 
 const TITLE_KEY: Record<Extract<V2TimelineTitle, { kind: 'key' }>['key'], MessageKey> = {
   leadInfoUpdated: 'v2.timeline.leadInfoUpdated',
+  reopened: 'v2.timeline.reopened',
   firstMessage: 'v2.timeline.firstMessage',
   leadCreated: 'v2.timeline.leadCreated',
   lost: 'v2.timeline.lost',

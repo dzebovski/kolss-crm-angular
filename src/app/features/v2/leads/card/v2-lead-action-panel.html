@@ -14,23 +14,38 @@
     <span class="v2-action__caption">{{ caption() }}</span>
   </div>
 
-  <div class="v2-action__calls" role="group" [attr.aria-label]="'v2.action.callResult' | translate">
-    <span class="v2-action__calls-label" aria-hidden="true">{{
-      'v2.action.callResult' | translate
-    }}</span>
-    @for (result of callResults; track result) {
-      <button
-        type="button"
-        appV2Button
-        variant="call-result"
-        [dot]="result"
-        [disabled]="!actionsEnabled() || pending()"
-        (click)="callResult.emit(result)"
-      >
-        {{ statusLabels[result] | translate }}
-      </button>
-    }
-  </div>
+  @if (canReopen()) {
+    <!-- Not drawn: v1 Reopen, back to New (user request 2026-09-24). -->
+    <button type="button" appV2Button size="lg" [disabled]="pending()" (click)="reopen.emit()">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+      {{ 'v2.action.reopen' | translate }}
+    </button>
+  } @else {
+    <div
+      class="v2-action__calls"
+      role="group"
+      [attr.aria-label]="'v2.action.callResult' | translate"
+    >
+      <span class="v2-action__calls-label" aria-hidden="true">{{
+        'v2.action.callResult' | translate
+      }}</span>
+      @for (result of callResults; track result) {
+        <button
+          type="button"
+          appV2Button
+          variant="call-result"
+          [dot]="result"
+          [disabled]="!actionsEnabled() || pending()"
+          (click)="callResult.emit(result)"
+        >
+          {{ statusLabels[result] | translate }}
+        </button>
+      }
+    </div>
+  }
 </div>
 
 <div class="v2-action__bottom">

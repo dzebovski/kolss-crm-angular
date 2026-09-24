@@ -131,4 +131,9 @@ export class V2LeadCardService {
   async updateLeadInfo(lead: Lead, request: UpdateLeadInfoRequest): Promise<void> {
     await this.api.updateLeadInfo(lead.id, lead.version ?? 1, request);
   }
+
+  /** Reopen a lost lead (v1 `reopen` activity): back to New, call status and reminders cleared. */
+  async reopen(leadId: string): Promise<void> {
+    await this.api.leadActivity(leadId, { type: 'reopen' });
+  }
 }
