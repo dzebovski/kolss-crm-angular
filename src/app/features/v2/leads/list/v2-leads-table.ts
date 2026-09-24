@@ -49,6 +49,8 @@ export class V2LeadsTable {
 
   readonly leads = input.required<readonly V2LeadListItem[]>();
   readonly now = input.required<Date>();
+  /** Marks the list busy while the leads load; the state message is projected. */
+  readonly busy = input(false);
 
   private readonly collapsed = signal(readV2CollapsedMonths());
 

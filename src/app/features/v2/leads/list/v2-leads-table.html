@@ -1,4 +1,8 @@
-<section class="v2-table" [attr.aria-label]="'v2.leads.list' | translate">
+<section
+  class="v2-table"
+  [attr.aria-label]="'v2.leads.list' | translate"
+  [attr.aria-busy]="busy() || null"
+>
   <div class="v2-table__scroll">
     <div class="v2-table__row v2-table__head">
       <span class="v2-table__sorted">

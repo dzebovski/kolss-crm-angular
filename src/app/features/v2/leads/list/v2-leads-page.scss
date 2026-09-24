@@ -90,3 +90,21 @@
   color: var(--v2-muted);
   font-size: 13px;
 }
+
+// States inside the table card. The empty box is the board's (24px / 20px margin); loading and
+// error are not drawn and reuse its spacing.
+.v2-leads__state {
+  margin: var(--v2-space-5) 20px;
+}
+
+.v2-leads__loading {
+  margin: 0;
+  padding: var(--v2-space-6) 20px;
+  color: var(--v2-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.v2-leads__retry {
+  margin-top: var(--v2-space-2);
+}

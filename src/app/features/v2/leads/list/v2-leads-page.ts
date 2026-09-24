@@ -33,6 +33,7 @@ import { UsersService } from '@services/users.service';
 import { V2_NOW } from '../../core/v2-clock';
 import { V2_NAV_ITEMS, type V2NavLinkItem } from '../../shell/v2-nav.config';
 import { V2Button } from '../../ui/v2-button';
+import { V2EmptyState } from '../../ui/v2-empty-state';
 import type { V2SegmentOption } from '../../ui/v2-segmented-control';
 import { V2_RATING_LABEL, V2_STATUS_LABEL } from '../../ui/v2-tone';
 import { V2LeadsFilters, type V2LeadChip } from './v2-leads-filters';
@@ -60,7 +61,7 @@ const salesTab = (id: string): V2NavLinkItem =>
 // and the period total; filter state lives in the query params.
 @Component({
   selector: 'app-v2-leads-page',
-  imports: [RouterLink, TranslatePipe, V2Button, V2LeadsFilters, V2LeadsTable],
+  imports: [RouterLink, TranslatePipe, V2Button, V2EmptyState, V2LeadsFilters, V2LeadsTable],
   templateUrl: './v2-leads-page.html',
   styleUrl: './v2-leads-page.scss',
 })
@@ -111,15 +112,31 @@ export class V2LeadsPage {
 
   /** Taken when the leads arrive, so ages stay stable between reloads. */
   protected readonly now = computed(() => {
-    this.leadsResource.value();
+    this.leadsResource.status();
     return this.clock();
+  });
+
+  /** First load or a new office/period: no rows to keep showing. */
+  protected readonly loading = computed(
+    () => this.leadsResource.isLoading() && !this.leadsResource.hasValue(),
+  );
+  protected readonly loaded = computed(() => this.leadsResource.hasValue());
+
+  protected readonly loadError = computed(() => {
+    if (this.leadsResource.status() !== 'error') return '';
+    const error = this.leadsResource.error();
+    return error instanceof Error ? this.i18n.localizeError(error.message) : '';
   });
 
   protected readonly leads = computed(() => {
     const names = new Map(
-      (this.employeesResource.value() ?? []).map((employee) => [employee.id, employee.displayName]),
+      (this.employeesResource.hasValue() ? this.employeesResource.value() : []).map((employee) => [
+        employee.id,
+        employee.displayName,
+      ]),
     );
-    return (this.leadsResource.value() ?? []).map((lead) =>
+    const leads = this.leadsResource.hasValue() ? this.leadsResource.value() : [];
+    return leads.map((lead) =>
       toV2LeadListItem(lead, { managerName: (id) => names.get(id) ?? null }),
     );
   });
@@ -197,6 +214,10 @@ export class V2LeadsPage {
     const filter = this.session.officeFilter();
     return this.i18n.t(isOfficeId(filter) ? OFFICE_CONFIG[filter].nameKey : 'office.all');
   });
+
+  protected retry(): void {
+    this.leadsResource.reload();
+  }
 
   constructor() {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.searchTimer));

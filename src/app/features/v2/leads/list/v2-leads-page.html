@@ -25,9 +25,11 @@
 </div>
 
 <div class="v2-leads__result" aria-live="polite">
-  <span class="v2-leads__result-count">{{ shownCount() }}</span>
-  <span class="v2-leads__result-noun">{{ shownNoun() }}</span>
-  <span class="v2-leads__result-context">{{ shownContext() }}</span>
+  @if (loaded()) {
+    <span class="v2-leads__result-count">{{ shownCount() }}</span>
+    <span class="v2-leads__result-noun">{{ shownNoun() }}</span>
+    <span class="v2-leads__result-context">{{ shownContext() }}</span>
+  }
 </div>
 
 <app-v2-leads-filters
@@ -44,4 +46,27 @@
   (clear)="clearFilters()"
 />
 
-<app-v2-leads-table [leads]="shownLeads()" [now]="now()" />
+<app-v2-leads-table [leads]="shownLeads()" [now]="now()" [busy]="loading()">
+  @if (loading()) {
+    <p class="v2-leads__loading" role="status">{{ 'v2.leads.loading' | translate }}</p>
+  } @else if (loadError(); as message) {
+    <app-v2-empty-state
+      class="v2-leads__state"
+      layout="list"
+      role="alert"
+      [title]="'v2.leads.error.title' | translate"
+      [hint]="message"
+    >
+      <button type="button" appV2Button size="sm" class="v2-leads__retry" (click)="retry()">
+        {{ 'v2.leads.retry' | translate }}
+      </button>
+    </app-v2-empty-state>
+  } @else if (loaded() && shownCount() === 0) {
+    <app-v2-empty-state
+      class="v2-leads__state"
+      layout="list"
+      [title]="'v2.leads.empty.title' | translate"
+      [hint]="'v2.leads.empty.hint' | translate"
+    />
+  }
+</app-v2-leads-table>
