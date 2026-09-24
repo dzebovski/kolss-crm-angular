@@ -16,6 +16,7 @@ export type V2TimelineTitle =
       readonly kind: 'key';
       readonly key:
         | 'leadInfoUpdated'
+        | 'reopened'
         | 'firstMessage'
         | 'leadCreated'
         | 'lost'
@@ -105,6 +106,7 @@ const CLIENT_STATUSES: readonly ClientStatus[] = [
 const RATINGS: readonly V2LeadRating[] = ['cold', 'medium', 'hot'];
 const COMMENT_TYPES = new Set(['comment', 'comment_added']);
 const CREATED_TYPE = 'created';
+const REOPENED_TYPE = 'lead_reopened';
 const EDITED_TYPES = new Set(['lead_edited']);
 
 /**
@@ -129,6 +131,16 @@ export function v2LeadTimeline(lead: Lead, channel: V2LeadChannel): readonly V2T
     if (event.category === 'call_status' && isCallStatus(event.statusCode)) {
       callStatus = event.statusCode;
       items.push(callItem(event, CALL_STATUS[event.statusCode]));
+      continue;
+    }
+    if (event.rawType === REOPENED_TYPE) {
+      // Reopen: back to New, the call status is cleared (API `reopen` activity).
+      clientStatus = 'new_lead';
+      callStatus = null;
+      items.push({
+        ...statusItem(event, before, 'new'),
+        title: { kind: 'key', key: 'reopened' },
+      });
       continue;
     }
     if (event.category === 'client_status' && isClientStatus(event.statusCode)) {

@@ -177,6 +177,16 @@ export class V2LeadCardPage {
     () => this.canRecord() && this.card()?.status !== 'project',
   );
   protected readonly commentEnabled = this.canRecord;
+  /** A lost lead can be reopened (v1 rule: office access, not archived). */
+  protected readonly canReopen = computed(() => {
+    const lead = this.loaded()?.lead;
+    return Boolean(
+      lead &&
+      this.card()?.status === 'lost' &&
+      leadIsTerminal(lead) &&
+      leadPolicy.canRecordLeadActivity(this.policyContext(), lead),
+    );
+  });
   protected readonly entryPending = signal(false);
   protected readonly translatingIds = signal<ReadonlySet<string>>(new Set());
 
@@ -223,6 +233,12 @@ export class V2LeadCardPage {
     // The API answers 409 rating_unchanged for the same value; the design ignores that click.
     if (!lead || !this.actionsEnabled() || rating === this.card()?.rating) return;
     await this.run(this.actionPending, () => this.service.setRating(lead.id, rating));
+  }
+
+  protected async reopenLead(): Promise<void> {
+    const lead = this.loaded()?.lead;
+    if (!lead || !this.canReopen() || this.actionPending()) return;
+    await this.run(this.actionPending, () => this.service.reopen(lead.id));
   }
 
   protected async openComment(): Promise<void> {

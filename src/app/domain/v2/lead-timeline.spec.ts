@@ -83,4 +83,39 @@ describe('v2 lead timeline', () => {
     expect(shown('comment')).toEqual(['first-message']);
     expect(matchesV2TimelineFilter({ category: 'system' }, 'status')).toBe(true);
   });
+
+  it('shows a reopen as Lost → New and replays from New afterwards', () => {
+    const reopened: Lead = {
+      ...lead,
+      events: [
+        event({
+          id: 'lost',
+          rawType: 'client_status_changed',
+          category: 'client_status',
+          statusCode: 'closed_lost',
+          occurredAt: '2026-09-22T09:00:00.000Z',
+        }),
+        event({
+          id: 'reopen',
+          rawType: 'lead_reopened',
+          category: 'system',
+          statusCode: 'new_lead',
+          occurredAt: '2026-09-23T09:00:00.000Z',
+        }),
+        event({
+          id: 'thinking',
+          rawType: 'client_status_changed',
+          category: 'client_status',
+          statusCode: 'thinking',
+          occurredAt: '2026-09-24T09:00:00.000Z',
+        }),
+      ],
+    };
+    const [thinking, reopen] = v2LeadTimeline(reopened, 'office');
+    expect(reopen).toMatchObject({
+      title: { kind: 'key', key: 'reopened' },
+      change: { from: { kind: 'status', status: 'lost' }, to: { kind: 'status', status: 'new' } },
+    });
+    expect(thinking.change?.from).toEqual({ kind: 'status', status: 'new' });
+  });
 });

@@ -120,6 +120,14 @@
   }
 }
 
+.v2-action__top svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .v2-action__status {
   padding: 0 14px;
 }

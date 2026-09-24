@@ -81,6 +81,8 @@
         [actionsEnabled]="actionsEnabled()"
         [commentEnabled]="commentEnabled()"
         [pending]="actionPending()"
+        [canReopen]="canReopen()"
+        (reopen)="reopenLead()"
         (callResult)="openStatusDialog($event)"
         (statusChange)="openStatusDialog($event)"
         (ratingSelect)="setRating($event)"

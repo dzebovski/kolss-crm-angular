@@ -284,6 +284,8 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.popup.lost.title': 'Utracony lead',
   'v2.popup.lost.subtitle': 'Zamyka leada',
   'v2.popup.lost.save': 'Oznacz jako utracony',
+  'v2.action.reopen': 'Otwórz leada ponownie',
+  'v2.timeline.reopened': 'Lead otwarty ponownie',
   'v2.timeline.leadInfoUpdated': 'Zaktualizowano informacje o leadzie',
   'v2.timeline.materials': 'Materiały',
   'v2.timeline.leadTime': 'Czas realizacji',
