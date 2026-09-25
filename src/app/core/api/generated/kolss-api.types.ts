@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.25.0' as const;
+export const API_CONTRACT_VERSION = '2.26.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -69,6 +69,33 @@ export interface UpdateLeadInfoRequest {
   readonly expectedLeadTime?: string;
   /** ISO date-time. */
   readonly preferredMeasurementAt?: string | null;
+}
+
+/**
+ * `POST /v1/leads` body. `channel`, `referredBy`, `products`, `estimatedBudgetText` and
+ * `aboutClient` are CRM v2 "Create lead" popup fields (2.26.0), all optional; v1 keeps working
+ * unchanged when they are omitted.
+ */
+export interface CreateLeadRequest {
+  readonly officeId: string;
+  readonly source: 'website' | 'facebook' | 'office' | 'other';
+  readonly name: string;
+  readonly phone: string;
+  readonly email?: string | null;
+  readonly cityRegion: string;
+  readonly productInterest: string;
+  readonly estimatedBudget?: number | null;
+  readonly estimatedBudgetCurrency?: MoneyCurrency;
+  readonly initialMessage: string;
+  /** Lead source date/time in the selected office's local timezone, e.g. `2026-07-20T12:00`. */
+  readonly sourceCreatedAtLocal: string;
+  /** "other" is not accepted here; omitted defaults the channel from `source` as before. */
+  readonly channel?: LeadChannel;
+  readonly referredBy?: string;
+  readonly products?: readonly LeadProduct[];
+  /** One number or a range, e.g. `20 000 – 25 000`; its lower bound overrides `estimatedBudget`. */
+  readonly estimatedBudgetText?: string;
+  readonly aboutClient?: string;
 }
 
 /** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
