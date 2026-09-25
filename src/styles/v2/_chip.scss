@@ -1,0 +1,41 @@
+@use './interactive';
+
+// Shared toggle-chip look for the G3 form controls (`v2-chip-select`, `v2-chip-group`) and the
+// popup kit's own chip rows (product/source/reason chips): Create-lead.dc.html `CHIP` +
+// `chipStyle()` — 32px pill, `surface` + `line-strong` border off, `ink` fill on. `--v2-field-tone`
+// (set by a wrapping `app-v2-field-group` once Save is pressed with nothing picked) replaces the
+// off-state border colour only, per Popup-rules.dc.html "No layout jumps": "Groups … use the
+// same reserved [message] line and only change their border colour."
+@mixin base {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  box-sizing: border-box;
+  height: var(--v2-control-sm);
+  padding: 0 var(--v2-space-3);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-field-tone, var(--v2-line-strong));
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include interactive.states(surface);
+}
+
+@mixin on {
+  background: var(--v2-ink);
+  border-color: var(--v2-ink);
+  color: var(--v2-on-ink);
+
+  &:hover#{interactive.$enabled} {
+    @include interactive.hover(ink);
+  }
+
+  &:active#{interactive.$enabled} {
+    @include interactive.pressed(ink);
+  }
+}

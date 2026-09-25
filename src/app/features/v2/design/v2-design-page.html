@@ -321,6 +321,135 @@
   </div>
 </section>
 
+<!-- Form controls (G3) -->
+<section id="form-controls" class="v2-ds__card" aria-labelledby="v2-ds-form-controls">
+  <div class="v2-ds__card-head">
+    <h2 id="v2-ds-form-controls" class="v2-ds__section-title">Form controls (Popup-rules)</h2>
+    <p class="v2-ds__note">
+      Presentational only here — not wired into a popup yet (C7–C13). Office switches the phone
+      code/placeholder and the budget's default currency.
+    </p>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Office (demo only)</span>
+    <div class="v2-ds__row">
+      <button
+        type="button"
+        appV2Button
+        [variant]="demoOfficeId() === 'warsaw' ? 'primary' : 'secondary'"
+        (click)="pickDemoOffice('warsaw')"
+      >
+        Warsaw
+      </button>
+      <button
+        type="button"
+        appV2Button
+        [variant]="demoOfficeId() === 'kyiv' ? 'primary' : 'secondary'"
+        (click)="pickDemoOffice('kyiv')"
+      >
+        Kyiv
+      </button>
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">PhoneInput</span>
+    <app-v2-form-field
+      class="v2-ds__field"
+      label="Phone"
+      [required]="true"
+      [hint]="demoPhoneHint()"
+      [error]="demoPhoneError()"
+    >
+      <app-v2-phone-input
+        [(value)]="demoPhone"
+        [countryCode]="demoOffice().phoneCountryCode"
+        [placeholder]="demoOffice().phonePlaceholder"
+        (touch)="demoPhoneTouched.set(true)"
+      />
+    </app-v2-form-field>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Email (blur-time check)</span>
+    <app-v2-form-field
+      class="v2-ds__field"
+      label="Email"
+      [hint]="'v2.form.email.hint' | translate"
+      [error]="demoEmailError()"
+    >
+      <input
+        type="email"
+        [value]="demoEmail()"
+        (input)="onDemoEmailInput($event)"
+        (blur)="demoEmailTouched.set(true)"
+      />
+    </app-v2-form-field>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">BudgetInput</span>
+    <app-v2-form-field
+      class="v2-ds__field"
+      label="Budget"
+      [hint]="'v2.form.budget.hint' | translate"
+      [error]="demoBudgetError()"
+    >
+      <app-v2-budget-input
+        [(value)]="demoBudget"
+        [(currency)]="demoBudgetCurrency"
+        [placeholder]="'v2.form.budget.placeholder' | translate"
+        [currencyLabel]="'v2.form.budget.currencyLabel' | translate"
+      />
+    </app-v2-form-field>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">DateTimeInput · quick chips + past-time error</span>
+    <app-v2-form-field
+      class="v2-ds__field"
+      label="Call back on"
+      [required]="true"
+      [error]="demoDateError()"
+    >
+      <app-v2-date-time-input [(value)]="demoDateTime" (touch)="demoDateTouched.set(true)" />
+    </app-v2-form-field>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">CardSelect · showroom</span>
+    <app-v2-field-group label="Showroom" [required]="true">
+      <app-v2-card-select [options]="showroomOptions()" [(value)]="demoShowroomId" />
+    </app-v2-field-group>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">ChipSelect · single (lead source)</span>
+    <app-v2-chip-select ariaLabel="Lead source" [options]="sourceOptions" [(value)]="demoSource" />
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">ChipGroup · multi (products)</span>
+    <app-v2-chip-group
+      ariaLabel="Product · one or more"
+      [options]="productOptions"
+      [(value)]="demoProducts"
+    />
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Select · 16px chevron</span>
+    <div style="width: 88px">
+      <app-v2-select
+        ariaLabel="Currency"
+        [options]="demoSelectOptions"
+        [(value)]="demoSelectValue"
+      />
+    </div>
+  </div>
+</section>
+
 <!-- Status, rating and code -->
 <section id="pills" class="v2-ds__card" aria-labelledby="v2-ds-pills">
   <h2 id="v2-ds-pills" class="v2-ds__section-title">{{ 'v2.design.section.pills' | translate }}</h2>

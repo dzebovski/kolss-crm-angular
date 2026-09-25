@@ -147,15 +147,17 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
       resize: vertical;
     }
 
-    // Select: the native arrow is replaced by the 14px chevron of the board's dropdown
-    // triggers (Main.dc.html, Set call result: m6 9 6 6 6-6, stroke 2), 14px from the right
-    // edge. The stroke is ink (#17171a); a data URI can't read the custom property.
+    // Select: the native arrow is replaced by a chevron, per Popup-rules.dc.html "Masks and
+    // formats" — "native arrow hidden; one 16px chevron inside the field, 12px from the right
+    // edge, text padding 12px left / 36px right — same everywhere in the system" (this
+    // supersedes the 14px/14px/38px value G2 sourced from Main.dc.html's dropdown triggers).
+    // The stroke is ink (#17171a); a data URI can't read the custom property.
     app-v2-form-field select {
-      padding-right: 38px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2317171a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-      background-position: right 14px center;
+      padding-right: 36px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2317171a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-position: right 12px center;
       background-repeat: no-repeat;
-      background-size: 14px;
+      background-size: 16px;
       appearance: none;
       text-overflow: ellipsis;
       cursor: pointer;
