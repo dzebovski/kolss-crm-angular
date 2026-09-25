@@ -1,5 +1,6 @@
+import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import type { MessageKey } from '@core/i18n/messages';
@@ -37,7 +38,9 @@ interface Group {
 }
 
 // Leads table from the "KOLSS CRM v2" canvas (Main.dc.html, Table): column header, month
-// groups (collapsible, newest first) and lead rows. The name opens the v2 lead card.
+// groups (collapsible, newest first) and lead rows. The whole row opens the v2 lead card (not
+// drawn; user request 2026-09-25), except after selecting its text, so text stays copyable; the
+// name stays the link for the keyboard and screen readers.
 @Component({
   selector: 'app-v2-leads-table',
   imports: [RouterLink, TranslatePipe, V2CodeChip, V2RatingPill, V2StatusPill],
@@ -46,11 +49,32 @@ interface Group {
 })
 export class V2LeadsTable {
   private readonly i18n = inject(I18nService);
+  private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
 
   readonly leads = input.required<readonly V2LeadListItem[]>();
   readonly now = input.required<Date>();
   /** Marks the list busy while the leads load; the state message is projected. */
   readonly busy = input(false);
+
+  /**
+   * Row click → the lead card. Skipped when the click ends a text selection, or lands on a link
+   * or button (they do their own thing). Ctrl / ⌘ / Shift click and the middle button open a
+   * new tab, as the name link would.
+   */
+  protected openRow(event: MouseEvent, leadId: string): void {
+    if (event.button > 1) return;
+    const target = event.target as Element | null;
+    if (target?.closest('a, button')) return;
+    if (this.document.getSelection()?.toString().trim()) return;
+    const commands = ['/v2/leads', leadId];
+    if (event.button === 1 || event.ctrlKey || event.metaKey || event.shiftKey) {
+      const url = this.router.serializeUrl(this.router.createUrlTree(commands));
+      this.document.defaultView?.open(url, '_blank', 'noopener');
+      return;
+    }
+    void this.router.navigate(commands);
+  }
 
   /** Skeleton rows while loading; varied widths (% of the column) read as text. */
   protected readonly skeletonRows = [

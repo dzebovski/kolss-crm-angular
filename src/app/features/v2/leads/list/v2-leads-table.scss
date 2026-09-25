@@ -108,6 +108,15 @@
   border-bottom: 1px solid var(--v2-line-soft);
 }
 
+// Row link (not drawn): pointer and a `ground` hover; text can still be selected by dragging.
+.v2-table__lead--link {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--v2-ground);
+  }
+}
+
 .v2-table__stack {
   display: flex;
   flex-direction: column;
