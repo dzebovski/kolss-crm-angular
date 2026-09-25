@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
       "port": 4200
+    },
+    {
+      "name": "crm-local-stack",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/start-local-stack.sh"],
+      "port": 4202
     }
   ]
 }

@@ -41,6 +41,7 @@ testem.log
 __screenshots__/
 src/environments/environment.local.ts
 src/environments/environment.prod.ts
+src/environments/environment.stack.ts
 supabase/.temp/
 
 # System files

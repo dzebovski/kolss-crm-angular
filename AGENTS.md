@@ -25,6 +25,8 @@ KOLSS CRM Angular frontend application.
 | `npm run format:check` | Check formatting without writing         |
 | `npm run check`        | Full validation: typecheck + lint + test |
 
+Authenticated browser checks run only on the local stack (`npm run start:local-stack`, `http://localhost:4202`, local Supabase + fictional seed users). Agents never log into production and never type passwords: the user signs in once in the browser pane. Full rules: `../.agents/skills/how-to-dev-kolss/references/local-stack.md`.
+
 ## Project Layout
 
 ```

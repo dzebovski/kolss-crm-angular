@@ -90,6 +90,17 @@
                   "with": "src/environments/environment.local.ts"
                 }
               ]
+            },
+            "local-stack": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.stack.ts"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -102,6 +113,9 @@
             },
             "development": {
               "buildTarget": "kolss-crm-angular:build:development"
+            },
+            "local-stack": {
+              "buildTarget": "kolss-crm-angular:build:local-stack"
             }
           },
           "defaultConfiguration": "development"

@@ -5,6 +5,7 @@
     "ng": "ng",
     "prestart": "node scripts/sync-env.mjs",
     "start": "ng serve",
+    "start:local-stack": "bash scripts/start-local-stack.sh",
     "prebuild": "node scripts/sync-env.mjs --prod",
     "build": "ng build",
     "prewatch": "node scripts/sync-env.mjs",
