@@ -1,10 +1,17 @@
 <app-v2-dialog
   [title]="copy.title | translate"
   [subtitle]="copy.subtitle | translate"
+  [statusDot]="kind"
+  width="status"
   [hint]="hint()"
   [saveLabel]="copy.save | translate"
-  [saveDisabled]="!canSave()"
+  [primaryVariant]="primaryVariant"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
   (save)="save()"
+  (invalidAttempt)="touched.set(true)"
 >
   @if (error(); as message) {
     <p class="v2-status__error" role="alert">{{ message }}</p>
@@ -12,7 +19,10 @@
 
   @if (kind === 'success') {
     <div class="v2-status__pair">
-      <app-v2-form-field [label]="'v2.card.budget' | translate">
+      <app-v2-form-field
+        [label]="'v2.card.budget' | translate"
+        [error]="budgetValid() ? '' : error() || ''"
+      >
         <input
           cdkFocusInitial
           autocomplete="off"
@@ -39,7 +49,11 @@
   }
 
   @if (copy.date; as dateLabel) {
-    <app-v2-form-field [label]="dateLabel | translate" [required]="copy.dateRequired ?? false">
+    <app-v2-form-field
+      [label]="dateLabel | translate"
+      [required]="copy.dateRequired ?? false"
+      [error]="dateError()"
+    >
       <input
         type="datetime-local"
         [attr.cdkFocusInitial]="kind === 'success' ? null : ''"
@@ -50,7 +64,11 @@
   }
 
   @if (kind === 'invited') {
-    <app-v2-form-field [label]="'v2.current.designer' | translate" [required]="true">
+    <app-v2-form-field
+      [label]="'v2.current.designer' | translate"
+      [required]="true"
+      [error]="designerError()"
+    >
       <select aria-required="true" [formField]="status.designerId">
         <option value="" disabled>{{ 'v2.popup.invited.chooseDesigner' | translate }}</option>
         @for (designer of designers(); track designer.id) {
@@ -62,10 +80,11 @@
   }
 
   @if (kind === 'lost') {
-    <div class="v2-status__reasons" role="group" aria-labelledby="v2-status-reason">
-      <span class="v2-status__label" id="v2-status-reason"
-        >{{ 'v2.current.reason' | translate }} <span aria-hidden="true">*</span></span
-      >
+    <app-v2-field-group
+      [label]="'v2.current.reason' | translate"
+      [required]="true"
+      [error]="reasonError()"
+    >
       <div class="v2-status__chips">
         @for (option of lossReasons(); track option.id) {
           <button
@@ -79,7 +98,7 @@
           </button>
         }
       </div>
-    </div>
+    </app-v2-field-group>
   }
 
   <app-v2-form-field [label]="'v2.timeline.comment' | translate">

@@ -233,6 +233,15 @@
       </button>
     </div>
   </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label"><code class="v2-ds__code">variant="danger"</code></span>
+    <div class="v2-ds__row">
+      <button type="button" appV2Button variant="danger">
+        {{ 'v2.popup.lost.save' | translate }}
+      </button>
+    </div>
+  </div>
 </section>
 
 <!-- Chips and inputs -->
@@ -301,7 +310,9 @@
   </div>
 
   <div class="v2-ds__demo">
-    <span class="v2-ds__demo-label">Dialog · FormField</span>
+    <span class="v2-ds__demo-label"
+      >Dialog · header lead context, reserved message line, footer discard/error states</span
+    >
     <div class="v2-ds__row">
       <button type="button" appV2Button (click)="openDemoDialog()">
         {{ 'v2.design.openDialog' | translate }}

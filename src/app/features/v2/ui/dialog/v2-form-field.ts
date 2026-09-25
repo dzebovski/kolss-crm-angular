@@ -1,8 +1,11 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 
-// Popup field from lead card v1.3: 12px `muted` label over the control, 6px gap; required
-// fields end with `*` (design system README). The label wraps the projected control, so no
-// `for`/`id` pairing is needed; set `required` on the control itself for assistive tech.
+// Popup field anatomy (Popup-rules.dc.html "No layout jumps" / "Validation"): 12px `muted`
+// label over the control, 6px gap, then a reserved 18px message line that holds either the
+// hint or the error — same height in both states, so the field never jumps. Required fields
+// end with `*` (design system README). The label wraps the projected control, so no
+// `for`/`id` pairing is needed; set `required`/`aria-invalid` on the control itself for
+// assistive tech.
 //
 // Encapsulation is off because the control is projected content: emulated styles can't reach
 // it. Every selector is scoped under `app-v2-form-field`, so nothing leaks outside the field.
@@ -12,7 +15,11 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
   template: `
     <!-- The projected control is inside the label (implicit association). -->
     <!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
-    <label class="v2-field">
+    <label
+      class="v2-field"
+      [class.v2-field--invalid]="invalid()"
+      [attr.data-v2-invalid]="invalid() ? '' : null"
+    >
       @if (label()) {
         <span class="v2-field__label">
           {{ label() }}
@@ -22,6 +29,31 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
         </span>
       }
       <ng-content />
+      @if (hint() || errorText()) {
+        <span
+          class="v2-field__message"
+          [class.v2-field__message--err]="invalid()"
+          aria-live="polite"
+        >
+          @if (invalid()) {
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7.5v5.5" />
+              <path d="M12 16.5h.01" />
+            </svg>
+          }
+          <span>{{ invalid() ? errorText() : hint() }}</span>
+        </span>
+      }
     </label>
   `,
   styles: `
@@ -40,6 +72,27 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
     app-v2-form-field .v2-field__label {
       color: var(--v2-muted);
       font-size: 12px;
+    }
+
+    // Board .msg: reserved 18px line, hint and error share the same slot.
+    app-v2-form-field .v2-field__message {
+      display: flex;
+      min-height: 18px;
+      align-items: flex-start;
+      gap: 6px;
+      margin-top: -2px;
+      color: var(--v2-muted);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    app-v2-form-field .v2-field__message svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    app-v2-form-field .v2-field__message--err {
+      color: var(--v2-danger);
     }
 
     // Board .fld class. :where() keeps its specificity at the element level, so the
@@ -70,6 +123,19 @@ import { Component, input, ViewEncapsulation } from '@angular/core';
         border-color: var(--v2-ink);
         outline: 2px solid var(--v2-ink);
         outline-offset: -1px;
+      }
+    }
+
+    // Board .fld-err: red border + tinted background, and the focus ring turns red too.
+    app-v2-form-field
+      .v2-field--invalid
+      :where(input:not([type='checkbox'], [type='radio']), select, textarea) {
+      border-color: var(--v2-danger);
+      background-color: #fffafa;
+
+      &:focus {
+        border-color: var(--v2-danger);
+        outline-color: var(--v2-danger);
       }
     }
 
@@ -104,4 +170,11 @@ export class V2FormField {
   /** Empty = no visible label (the control then needs its own `aria-label`). */
   readonly label = input('');
   readonly required = input(false);
+  /** Shown in the reserved message line while the field is valid. */
+  readonly hint = input('');
+  /** Non-empty switches the field to its error look and shows this text instead of the hint. */
+  readonly error = input('');
+
+  protected readonly invalid = computed(() => this.error() !== '');
+  protected readonly errorText = computed(() => this.error());
 }

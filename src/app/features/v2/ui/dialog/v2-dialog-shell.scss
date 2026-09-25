@@ -1,9 +1,10 @@
 @use '../../../../../styles/v2/interactive';
 @use '../../../../../styles/v2/type';
 
-// Values from lead card v1.3 (Modal). The 820px body cap is the board value; on shorter
-// viewports the body shrinks so header and footer stay on screen (top offset x2 + ~154px
-// header/footer).
+// Values from Popup-rules.dc.html and the example boards (Lost.dc.html, Create-lead.dc.html):
+// header 22px 24px 18px padding, body 20px 24px 24px with a 20px section gap, footer fixed
+// 72px with 14px 24px padding, 44px footer buttons. Named widths (640/560/600) and
+// "max height = window − 64px" are Popup-rules.dc.html "Closing and unsaved data".
 :host {
   display: block;
 }
@@ -11,25 +12,49 @@
 .v2-dialog {
   display: flex;
   flex-direction: column;
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 64px);
   background: var(--v2-surface);
   border-radius: var(--v2-radius-lg);
   box-shadow: var(--v2-shadow-modal);
 }
 
+.v2-dialog[data-width='status'] {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.v2-dialog[data-width='documents'] {
+  width: min(600px, calc(100vw - 32px));
+}
+
 .v2-dialog__header {
   display: flex;
-  align-items: center;
+  flex-shrink: 0;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: var(--v2-space-3);
-  padding: 20px var(--v2-space-5);
+  gap: var(--v2-space-4);
+  padding: 22px var(--v2-space-5) 18px;
   border-bottom: 1px solid var(--v2-line-soft);
 }
 
 .v2-dialog__heading {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
+}
+
+.v2-dialog__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v2-dialog__title-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--v2-radius-pill);
 }
 
 .v2-dialog__title {
@@ -40,8 +65,41 @@
 
 .v2-dialog__subtitle {
   margin: 0;
+  max-width: 500px;
   color: var(--v2-muted);
   font-size: 13px;
+  line-height: 1.45;
+}
+
+.v2-dialog__lead-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.v2-dialog__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-ink-2);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.v2-dialog__lead-name {
+  font-weight: 500;
+}
+
+.v2-dialog__lead-phone {
+  color: var(--v2-muted);
 }
 
 .v2-dialog__close {
@@ -70,10 +128,11 @@
 
 .v2-dialog__body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--v2-space-4);
-  max-height: min(820px, calc(100dvh - 2 * clamp(24px, 15vh, 150px) - 154px));
-  padding: 20px var(--v2-space-5);
+  gap: 20px;
+  min-height: 0;
+  padding: 20px var(--v2-space-5) var(--v2-space-5);
   overflow: auto;
 
   // #e0dfda thumb is the board value (`.scroll`), no token.
@@ -89,20 +148,54 @@
 
 .v2-dialog__footer {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
-  gap: var(--v2-space-3);
-  padding: var(--v2-space-4) var(--v2-space-5);
+  gap: var(--v2-space-4);
+  box-sizing: border-box;
+  min-height: 72px;
+  padding: 14px var(--v2-space-5);
   border-top: 1px solid var(--v2-line-soft);
 }
 
-.v2-dialog__hint {
+.v2-dialog__status {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
   color: var(--v2-muted);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.v2-dialog__status svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.v2-dialog__status--err {
+  color: var(--v2-danger);
+  font-weight: 500;
 }
 
 .v2-dialog__actions {
   display: flex;
   flex-shrink: 0;
   gap: var(--v2-space-2);
+}
+
+// Footer buttons are the board's own size (44px height, 8px radius, 14px/500 label) — none of
+// V2Button's sm/md/lg presets match it exactly, so it's set locally instead of adding a
+// fourth button size used only here.
+.v2-dialog__actions [appV2Button] {
+  height: 44px;
+  padding: 0 var(--v2-space-4);
+  border-radius: var(--v2-radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-dialog__actions [appV2Button][data-variant='primary'],
+.v2-dialog__actions [appV2Button][data-variant='danger'] {
+  padding: 0 18px;
 }

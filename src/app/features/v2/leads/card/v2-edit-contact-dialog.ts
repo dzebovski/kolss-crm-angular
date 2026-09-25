@@ -62,15 +62,27 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       [subtitle]="'v2.editContact.subtitle' | translate"
       [hint]="'v2.dialog.autoAuthor' | translate"
       [saveLabel]="'v2.editContact.save' | translate"
-      [saveDisabled]="!contact().valid() || saving()"
+      [saveDisabled]="saving()"
+      [invalid]="invalid()"
+      [errorCount]="errorCount()"
+      [hasUnsavedInput]="hasUnsavedInput()"
       (save)="save()"
+      (invalidAttempt)="touched.set(true)"
     >
       @if (error(); as message) {
         <p class="v2-edit-contact__error" role="alert">{{ message }}</p>
       }
 
       <div class="v2-edit-contact__pair">
-        <app-v2-form-field [label]="'v2.editContact.firstName' | translate" [required]="true">
+        <app-v2-form-field
+          [label]="'v2.editContact.firstName' | translate"
+          [required]="true"
+          [error]="
+            touched() && contact.first().errors().length
+              ? ('v2.dialog.fieldRequired' | translate)
+              : ''
+          "
+        >
           <input cdkFocusInitial autocomplete="off" [formField]="contact.first" />
         </app-v2-form-field>
         <app-v2-form-field [label]="'v2.editContact.lastName' | translate">
@@ -79,7 +91,15 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       </div>
 
       <div class="v2-edit-contact__pair">
-        <app-v2-form-field [label]="'v2.card.phone' | translate" [required]="true">
+        <app-v2-form-field
+          [label]="'v2.card.phone' | translate"
+          [required]="true"
+          [error]="
+            touched() && contact.phone().errors().length
+              ? ('v2.dialog.fieldRequired' | translate)
+              : ''
+          "
+        >
           <input type="tel" autocomplete="off" [formField]="contact.phone" />
         </app-v2-form-field>
         <app-v2-form-field [label]="'v2.card.email' | translate">
@@ -167,6 +187,17 @@ export class V2EditContactDialog {
 
   protected readonly saving = signal(false);
   protected readonly error = signal('');
+  /** Set once Save is pressed while invalid; required-field errors stay hidden until then. */
+  protected readonly touched = signal(false);
+  protected readonly errorCount = computed(
+    () =>
+      [this.contact.first, this.contact.phone].filter((field) => field().errors().length > 0)
+        .length,
+  );
+  protected readonly invalid = computed(() => this.errorCount() > 0);
+  protected readonly hasUnsavedInput = computed(
+    () => JSON.stringify(this.model()) !== JSON.stringify(this.initial),
+  );
 
   /**
    * Active staff of the lead's office (as the v1 manager picker), plus the current manager and
