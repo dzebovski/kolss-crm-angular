@@ -23,6 +23,7 @@ function permissions(
     canArchiveLeads: false,
     canRestoreLeads: false,
     canAskLeadQuestions: false,
+    canChangeLeadManager: false,
     ...overrides,
   };
 }

@@ -50,6 +50,7 @@ describe('LeadDetailDrawer', () => {
                 canArchiveLeads: false,
                 canRestoreLeads: false,
                 canAskLeadQuestions: false,
+                canChangeLeadManager: false,
               },
             }),
           },
