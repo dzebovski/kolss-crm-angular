@@ -29,6 +29,9 @@
     <span class="v2-leads__result-count">{{ shownCount() }}</span>
     <span class="v2-leads__result-noun">{{ shownNoun() }}</span>
     <span class="v2-leads__result-context">{{ shownContext() }}</span>
+  } @else if (loading()) {
+    <!-- Keeps the row's height while the leads load, so the page below doesn't jump. -->
+    <span class="v2-leads__result-skeleton" aria-hidden="true"></span>
   }
 </div>
 
