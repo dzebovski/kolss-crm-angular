@@ -1,3 +1,5 @@
+@use '../../../../../styles/v2/interactive';
+
 // Values from lead card v1.3 (Reminders & tasks). The 4px card gap, 6px margin under the title
 // (on the list / notice here), 10px row
 // padding, 32px done button and 12/14px notice padding are board values without a token.
@@ -76,6 +78,8 @@
   color: var(--v2-subtle);
   cursor: pointer;
 
+  @include interactive.states(ghost);
+
   svg {
     fill: none;
     stroke: currentColor;
@@ -84,18 +88,10 @@
     stroke-linejoin: round;
   }
 
-  &:hover {
+  // Hover previews "done": `ink` ring and tick.
+  &:hover#{interactive.$enabled} {
     border-color: var(--v2-ink);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
+    color: var(--v2-ink);
   }
 }
 
@@ -113,10 +109,7 @@
   font-weight: 500;
   cursor: pointer;
 
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
-  }
+  @include interactive.states(ghost);
 }
 
 .v2-tasks__empty {

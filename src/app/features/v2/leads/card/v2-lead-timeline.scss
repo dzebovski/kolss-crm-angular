@@ -1,3 +1,4 @@
+@use '../../../../../styles/v2/interactive';
 @use '../../../../../styles/v2/type';
 
 // Timeline card from lead card v1.3: 18/24px head, 4/24/16px list padding, 30px filter tabs
@@ -46,15 +47,17 @@
   font-weight: 500;
   cursor: pointer;
 
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
-  }
+  @include interactive.states(ghost);
 }
 
 .v2-timeline__tab--on {
   background: var(--v2-surface);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+
+  // Already chosen: no hover tint.
+  &:hover {
+    background-image: none;
+  }
 }
 
 .v2-timeline__count {
@@ -97,20 +100,7 @@
   font-weight: 500;
   cursor: pointer;
 
-  &:hover {
-    color: var(--v2-ink);
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
-  }
+  @include interactive.states(link);
 }
 
 // The board is desktop only; below 720px the entry's 150px date column is not adapted (K4 gap).

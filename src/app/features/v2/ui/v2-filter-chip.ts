@@ -23,6 +23,8 @@ import { v2ToneColor, type V2Tone } from './v2-tone';
     '[attr.aria-pressed]': 'selected()',
   },
   styles: `
+    @use '../../../../styles/v2/interactive';
+
     :host {
       display: flex;
       align-items: center;
@@ -40,22 +42,22 @@ import { v2ToneColor, type V2Tone } from './v2-tone';
       line-height: normal;
       white-space: nowrap;
       cursor: pointer;
+
+      @include interactive.states(surface);
     }
 
     :host(.v2-filter-chip--selected) {
       background: var(--v2-ink);
       border-color: var(--v2-ink);
       color: var(--v2-on-ink);
-    }
 
-    :host(:disabled) {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+      &:hover#{interactive.$enabled} {
+        @include interactive.hover(ink);
+      }
 
-    :host(:focus-visible) {
-      outline: 2px solid var(--v2-ink);
-      outline-offset: 2px;
+      &:active#{interactive.$enabled} {
+        @include interactive.pressed(ink);
+      }
     }
 
     .v2-filter-chip__dot {

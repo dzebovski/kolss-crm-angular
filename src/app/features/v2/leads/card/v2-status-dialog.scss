@@ -1,3 +1,5 @@
+@use '../../../../../styles/v2/interactive';
+
 // Popup body of lead card v1.3; the reason chips are the design system toggle chips
 // (32px pill, `surface` + `line-strong`, `ink` fill when on), as the product chips.
 .v2-status__pair {
@@ -41,16 +43,21 @@
   font-size: 13px;
   cursor: pointer;
 
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
-  }
+  @include interactive.states(surface);
 }
 
 .v2-status__chip--on {
   border-color: var(--v2-ink);
   background: var(--v2-ink);
   color: var(--v2-on-ink);
+
+  &:hover#{interactive.$enabled} {
+    @include interactive.hover(ink);
+  }
+
+  &:active#{interactive.$enabled} {
+    @include interactive.pressed(ink);
+  }
 }
 
 .v2-status__error {

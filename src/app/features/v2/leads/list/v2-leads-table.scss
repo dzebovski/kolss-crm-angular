@@ -1,3 +1,5 @@
+@use '../../../../../styles/v2/interactive';
+
 // Values from Main.dc.html (Table). Column widths 124 / 1.3fr / 184 / 2fr / 172 with a 24px
 // gap, 44px header and group rows, 14/20px row padding, 22px group count pill and 28px avatar
 // are board values without a token.
@@ -65,10 +67,7 @@
   text-align: left;
   cursor: pointer;
 
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: -2px;
-  }
+  @include interactive.states(ghost, $focus-offset: -2px);
 }
 
 .v2-table__chevron {
@@ -112,8 +111,10 @@
 .v2-table__lead--link {
   cursor: pointer;
 
+  @include interactive.transition;
+
   &:hover {
-    background: var(--v2-ground);
+    background-color: var(--v2-ground);
   }
 }
 
@@ -229,6 +230,11 @@
 // viewer prefers reduced motion. Bar heights follow the text lines they stand for.
 .v2-table__group--skeleton {
   cursor: default;
+
+  &:hover,
+  &:active {
+    background-image: none;
+  }
 }
 
 .v2-table__skeleton-stack {

@@ -30,6 +30,8 @@ let nextId = 0;
     </div>
   `,
   styles: `
+    @use '../../../../../styles/v2/interactive';
+
     :host {
       display: flex;
       flex-direction: column;
@@ -58,16 +60,21 @@ let nextId = 0;
       font-size: 13px;
       cursor: pointer;
 
-      &:focus-visible {
-        outline: 2px solid var(--v2-ink);
-        outline-offset: 2px;
-      }
+      @include interactive.states(surface);
     }
 
     .v2-products__chip--on {
       border-color: var(--v2-ink);
       background: var(--v2-ink);
       color: var(--v2-on-ink);
+
+      &:hover#{interactive.$enabled} {
+        @include interactive.hover(ink);
+      }
+
+      &:active#{interactive.$enabled} {
+        @include interactive.pressed(ink);
+      }
     }
   `,
 })

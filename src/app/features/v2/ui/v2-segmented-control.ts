@@ -27,6 +27,8 @@ export interface V2SegmentOption<T extends string> {
   `,
   host: { role: 'group', '[attr.aria-label]': 'ariaLabel()' },
   styles: `
+    @use '../../../../styles/v2/interactive';
+
     :host {
       display: flex;
       gap: 2px;
@@ -47,6 +49,12 @@ export interface V2SegmentOption<T extends string> {
       font-weight: 500;
       white-space: nowrap;
       cursor: pointer;
+
+      @include interactive.states(ghost);
+    }
+
+    .v2-segmented__segment:hover#{interactive.$enabled} {
+      color: var(--v2-ink);
     }
 
     .v2-segmented__segment--selected {
@@ -58,14 +66,9 @@ export interface V2SegmentOption<T extends string> {
         0 0 0 1px var(--v2-line);
     }
 
-    .v2-segmented__segment:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .v2-segmented__segment:focus-visible {
-      outline: 2px solid var(--v2-ink);
-      outline-offset: 2px;
+    // The raised segment is already chosen: no hover tint on it.
+    .v2-segmented__segment--selected:hover {
+      background-image: none;
     }
   `,
 })

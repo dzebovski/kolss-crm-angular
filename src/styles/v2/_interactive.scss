@@ -1,0 +1,97 @@
+// Interaction states for v2 controls: hover, pressed, focus, disabled.
+//
+// The design system fixes focus (2px `ink` outline, 2px offset) and disabled (40% opacity);
+// hover and pressed come from the state tokens in `_tokens.scss`. Include `states(<kind>)`
+// inside the control's own rule (`&` = the control; works on `:host` too):
+//
+//   .my-button { @include interactive.states(surface); }
+//
+// Kinds:
+// - `surface` — bordered `surface` controls (secondary buttons, chips, inputs' triggers):
+//   the border darkens to `line-hover` and the fill takes the hover / pressed overlay.
+// - `ink` — the `ink`-filled control (primary button, selected chip): `ink-hover` / `ink-pressed`.
+// - `ghost` — borderless controls on any fill (menu items, tabs, segments, text buttons):
+//   the hover / pressed overlay only.
+// - `link` — text links: `ink` text and an underline on hover.
+// - `none` — focus, disabled and the transition only (for controls with their own look).
+
+// Only enabled controls react to hover and press.
+$enabled: ':not(:disabled, [aria-disabled="true"])';
+
+$duration: 0.12s;
+
+@mixin transition {
+  transition:
+    background-color $duration ease,
+    background-image $duration ease,
+    border-color $duration ease,
+    color $duration ease,
+    box-shadow $duration ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+@mixin focus-ring($offset: 2px, $color: var(--v2-ink)) {
+  outline: 2px solid $color;
+  outline-offset: $offset;
+}
+
+@mixin disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+// An overlay tints the control's current fill without replacing it.
+@mixin overlay($token) {
+  background-image: linear-gradient(var(#{$token}), var(#{$token}));
+}
+
+@mixin hover($kind) {
+  @if $kind == surface {
+    border-color: var(--v2-line-hover);
+    @include overlay(--v2-hover-overlay);
+  } @else if $kind == ink {
+    background-color: var(--v2-ink-hover);
+    border-color: var(--v2-ink-hover);
+  } @else if $kind == ghost {
+    @include overlay(--v2-hover-overlay);
+  } @else if $kind == link {
+    color: var(--v2-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+@mixin pressed($kind) {
+  @if $kind == surface or $kind == ghost {
+    @include overlay(--v2-pressed-overlay);
+  } @else if $kind == ink {
+    background-color: var(--v2-ink-pressed);
+    border-color: var(--v2-ink-pressed);
+  }
+}
+
+@mixin states($kind: surface, $focus-offset: 2px) {
+  @include transition;
+
+  @if $kind != none {
+    &:hover#{$enabled} {
+      @include hover($kind);
+    }
+
+    &:active#{$enabled} {
+      @include pressed($kind);
+    }
+  }
+
+  &:focus-visible {
+    @include focus-ring($focus-offset);
+  }
+
+  &:disabled,
+  &[aria-disabled='true'] {
+    @include disabled;
+  }
+}

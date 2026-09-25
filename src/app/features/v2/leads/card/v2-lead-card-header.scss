@@ -1,3 +1,4 @@
+@use '../../../../../styles/v2/interactive';
 @use '../../../../../styles/v2/type';
 
 // Values from lead card v1.3 (Header card). 20px avatar text, 64px avatar, 28/32px card
@@ -123,14 +124,7 @@ dd {
   color: inherit;
   text-decoration: none;
 
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
-  }
+  @include interactive.states(link);
 }
 
 .v2-card-header__field {

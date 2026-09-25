@@ -1,0 +1,336 @@
+@use '../../../../styles/v2/interactive';
+@use '../../../../styles/v2/type';
+
+// Design system page. Not drawn on a board: built from the design system's own rules
+// (cards on `ground`, `space-4` between blocks, `card-label` / `section-title` headings).
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+}
+
+p,
+h1,
+h2,
+h3,
+ul {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+// Title row, as on the other v2 pages.
+.v2-ds__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+
+  a svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.v2-ds__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+  max-width: 720px;
+}
+
+.v2-ds__eyebrow {
+  @include type.text(eyebrow);
+
+  color: var(--v2-muted);
+}
+
+.v2-ds__heading {
+  @include type.text(lead-name);
+}
+
+.v2-ds__intro {
+  @include type.text(body);
+
+  color: var(--v2-muted);
+}
+
+.v2-ds__toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    height: var(--v2-control-sm);
+    padding: 0 var(--v2-space-3);
+    background: var(--v2-surface);
+    border: 1px solid var(--v2-line-strong);
+    border-radius: var(--v2-radius-pill);
+    color: var(--v2-ink);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+
+    @include interactive.states(surface);
+  }
+}
+
+.v2-ds__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-5);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+  scroll-margin-top: var(--v2-space-4);
+}
+
+.v2-ds__card-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+}
+
+.v2-ds__section-title {
+  @include type.text(section-title);
+}
+
+.v2-ds__group-title {
+  @include type.text(card-label);
+
+  margin-top: var(--v2-space-2);
+  color: var(--v2-muted);
+}
+
+.v2-ds__note {
+  @include type.text(caption);
+
+  color: var(--v2-muted);
+}
+
+.v2-ds__token {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-ds__code {
+  @include type.text(code);
+
+  color: var(--v2-ink);
+}
+
+.v2-ds__value {
+  @include type.text(label);
+
+  color: var(--v2-muted);
+  overflow-wrap: anywhere;
+}
+
+.v2-ds__usage {
+  @include type.text(caption);
+
+  color: var(--v2-muted);
+}
+
+// Colour swatches.
+.v2-ds__swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--v2-space-3);
+}
+
+.v2-ds__swatch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+  padding: var(--v2-space-3);
+  border: 1px solid var(--v2-line-soft);
+  border-radius: var(--v2-radius-md);
+}
+
+.v2-ds__swatch-color {
+  height: 56px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-ds-swatch);
+}
+
+// State overlays are translucent: show them over `surface` and `ground` side by side.
+.v2-ds__swatch-color--overlay {
+  background:
+    linear-gradient(var(--v2-ds-swatch), var(--v2-ds-swatch)),
+    linear-gradient(90deg, var(--v2-surface) 50%, var(--v2-ground) 50%);
+}
+
+// Type specimens: one class per style of `_type.scss`.
+@each $name, $style in type.$styles {
+  .v2-ds__type--#{$name} {
+    @include type.text($name);
+  }
+}
+
+.v2-ds__type--card-label,
+.v2-ds__type--eyebrow,
+.v2-ds__type--label {
+  color: var(--v2-muted);
+}
+
+.v2-ds__type--quote {
+  padding: 14px var(--v2-space-4);
+  background: var(--v2-ground);
+  border-radius: var(--v2-radius-md);
+}
+
+.v2-ds__type--code {
+  justify-self: start;
+  padding: 1px 6px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-xs);
+}
+
+.v2-ds__type-list,
+.v2-ds__scale {
+  display: flex;
+  flex-direction: column;
+}
+
+.v2-ds__type-row,
+.v2-ds__scale-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 180px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-3) 0;
+  border-bottom: 1px solid var(--v2-line-soft);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.v2-ds__scale-row {
+  grid-template-columns: 180px 200px minmax(0, 1fr);
+}
+
+.v2-ds__space-bar {
+  height: 16px;
+  border-radius: 2px;
+  background: var(--v2-faint);
+}
+
+.v2-ds__size-bar {
+  width: 120px;
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface);
+}
+
+// Radius and shadow tiles.
+.v2-ds__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--v2-space-3);
+}
+
+.v2-ds__tiles--ground {
+  padding: var(--v2-space-4);
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-ground);
+}
+
+.v2-ds__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+}
+
+.v2-ds__radius-box {
+  width: 72px;
+  height: 72px;
+  border: 1.5px solid var(--v2-ink);
+  background: var(--v2-surface-sunk);
+}
+
+.v2-ds__shadow-box {
+  height: 72px;
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-surface);
+}
+
+// Live component demos.
+.v2-ds__demo {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-3) 0;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.v2-ds__demo-label {
+  @include type.text(label);
+
+  color: var(--v2-muted);
+}
+
+.v2-ds__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+}
+
+.v2-ds__search {
+  width: 300px;
+  max-width: 100%;
+}
+
+.v2-ds__divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 var(--v2-space-1);
+  background: var(--v2-line);
+}
+
+.v2-ds__patterns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-4);
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-ground);
+}
+
+.v2-ds__timeline {
+  padding: var(--v2-space-1) var(--v2-space-5) var(--v2-space-4);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+@media (max-width: 1100px) {
+  .v2-ds__patterns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .v2-ds__type-row,
+  .v2-ds__scale-row,
+  .v2-ds__demo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--v2-space-2);
+  }
+}

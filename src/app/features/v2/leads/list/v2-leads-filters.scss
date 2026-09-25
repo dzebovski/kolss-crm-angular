@@ -1,3 +1,5 @@
+@use '../../../../../styles/v2/interactive';
+
 // Values from Main.dc.html (Filters). 20px side padding, 14px row gap, 300px search, 44px
 // label column, 24px divider and the 32px Clear filters button are board values without a token.
 :host {
@@ -92,8 +94,5 @@
   text-underline-offset: 3px;
   cursor: pointer;
 
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
-  }
+  @include interactive.states(ghost);
 }

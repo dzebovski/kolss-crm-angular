@@ -14,6 +14,8 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
     <button type="button" (click)="stop.emit()">{{ 'v2.nav.returnToAdmin' | translate }}</button>
   `,
   styles: `
+    @use '../../../../styles/v2/interactive';
+
     :host {
       display: flex;
       flex-shrink: 0;
@@ -44,9 +46,15 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
       text-underline-offset: 3px;
       cursor: pointer;
 
+      @include interactive.transition;
+
+      // On the ink strip: a thicker underline instead of the overlay.
+      &:hover {
+        text-decoration-thickness: 2px;
+      }
+
       &:focus-visible {
-        outline: 2px solid var(--v2-on-ink);
-        outline-offset: 2px;
+        @include interactive.focus-ring($color: var(--v2-on-ink));
       }
     }
   `,

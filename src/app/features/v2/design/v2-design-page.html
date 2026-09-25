@@ -1,0 +1,411 @@
+<header class="v2-ds__title-row">
+  <div class="v2-ds__title">
+    <p class="v2-ds__eyebrow">{{ 'v2.nav.section.settings' | translate }}</p>
+    <h1 class="v2-ds__heading">{{ 'v2.nav.designSystem' | translate }}</h1>
+    <p class="v2-ds__intro">{{ 'v2.design.intro' | translate }}</p>
+  </div>
+  <a appV2Button [href]="sourceUrl" target="_blank" rel="noopener">
+    {{ 'v2.design.source' | translate }}
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
+    </svg>
+  </a>
+</header>
+
+<nav class="v2-ds__toc" [attr.aria-label]="'v2.design.contents' | translate">
+  <a href="/v2/design#colors">{{ 'v2.design.section.colors' | translate }}</a>
+  <a href="/v2/design#type">{{ 'v2.design.section.type' | translate }}</a>
+  <a href="/v2/design#layout">{{ 'v2.design.section.layout' | translate }}</a>
+  <a href="/v2/design#buttons">{{ 'v2.design.section.buttons' | translate }}</a>
+  <a href="/v2/design#controls">{{ 'v2.design.section.controls' | translate }}</a>
+  <a href="/v2/design#pills">{{ 'v2.design.section.pills' | translate }}</a>
+  <a href="/v2/design#patterns">{{ 'v2.design.section.patterns' | translate }}</a>
+</nav>
+
+<!-- Colours -->
+<section id="colors" class="v2-ds__card" aria-labelledby="v2-ds-colors">
+  <div class="v2-ds__card-head">
+    <h2 id="v2-ds-colors" class="v2-ds__section-title">
+      {{ 'v2.design.section.colors' | translate }}
+    </h2>
+    <p class="v2-ds__note">{{ 'v2.design.sourceNote' | translate }}</p>
+  </div>
+  @for (group of colorGroups; track group.id) {
+    <h3 class="v2-ds__group-title">{{ group.titleKey | translate }}</h3>
+    @if (group.id === 'states') {
+      <p class="v2-ds__note">{{ 'v2.design.statesNote' | translate }}</p>
+    }
+    <ul class="v2-ds__swatches">
+      @for (token of group.tokens; track token.name) {
+        <li class="v2-ds__swatch">
+          <span
+            class="v2-ds__swatch-color"
+            [class.v2-ds__swatch-color--overlay]="group.id === 'states'"
+            [style.--v2-ds-swatch]="'var(--v2-' + token.name + ')'"
+            aria-hidden="true"
+          ></span>
+          <span class="v2-ds__token">
+            <code class="v2-ds__code">{{ token.name }}</code>
+            <span class="v2-ds__value">{{ values()[token.name] }}</span>
+          </span>
+          <span class="v2-ds__usage">{{ token.usage }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<!-- Typography -->
+<section id="type" class="v2-ds__card" aria-labelledby="v2-ds-type">
+  <div class="v2-ds__card-head">
+    <h2 id="v2-ds-type" class="v2-ds__section-title">{{ 'v2.design.section.type' | translate }}</h2>
+    <p class="v2-ds__note">{{ 'v2.design.typeNote' | translate }}</p>
+  </div>
+  @for (group of typeGroups; track group.name) {
+    <h3 class="v2-ds__group-title">{{ group.name }}</h3>
+    <ul class="v2-ds__type-list">
+      @for (style of group.styles; track style.name) {
+        <li class="v2-ds__type-row">
+          <span
+            class="v2-ds__type-sample"
+            [class]="'v2-ds__type--' + style.name"
+            [attr.data-type-sample]="style.name"
+            >{{ style.sample }}</span
+          >
+          <span class="v2-ds__token">
+            <code class="v2-ds__code">{{ style.name }}</code>
+            <span class="v2-ds__value">{{ typeSpecs()[style.name] }}</span>
+          </span>
+          <span class="v2-ds__usage">{{ style.usage }}</span>
+        </li>
+      }
+    </ul>
+  }
+</section>
+
+<!-- Spacing, radius, shadow, size -->
+<section id="layout" class="v2-ds__card" aria-labelledby="v2-ds-layout">
+  <h2 id="v2-ds-layout" class="v2-ds__section-title">
+    {{ 'v2.design.section.layout' | translate }}
+  </h2>
+
+  <h3 class="v2-ds__group-title">{{ 'v2.design.group.spacing' | translate }}</h3>
+  <ul class="v2-ds__scale">
+    @for (token of spacing; track token.name) {
+      <li class="v2-ds__scale-row">
+        <span class="v2-ds__token">
+          <code class="v2-ds__code">{{ token.name }}</code>
+          <span class="v2-ds__value">{{ values()[token.name] }}</span>
+        </span>
+        <span
+          class="v2-ds__space-bar"
+          [style.width]="'var(--v2-' + token.name + ')'"
+          aria-hidden="true"
+        ></span>
+        <span class="v2-ds__usage">{{ token.usage }}</span>
+      </li>
+    }
+  </ul>
+
+  <h3 class="v2-ds__group-title">{{ 'v2.design.group.radius' | translate }}</h3>
+  <ul class="v2-ds__tiles">
+    @for (token of radii; track token.name) {
+      <li class="v2-ds__tile">
+        <span
+          class="v2-ds__radius-box"
+          [style.border-radius]="'var(--v2-' + token.name + ')'"
+          aria-hidden="true"
+        ></span>
+        <span class="v2-ds__token">
+          <code class="v2-ds__code">{{ token.name }}</code>
+          <span class="v2-ds__value">{{ values()[token.name] }}</span>
+        </span>
+        <span class="v2-ds__usage">{{ token.usage }}</span>
+      </li>
+    }
+  </ul>
+
+  <h3 class="v2-ds__group-title">{{ 'v2.design.group.shadow' | translate }}</h3>
+  <ul class="v2-ds__tiles v2-ds__tiles--ground">
+    @for (token of shadows; track token.name) {
+      <li class="v2-ds__tile">
+        <span
+          class="v2-ds__shadow-box"
+          [style.box-shadow]="'var(--v2-' + token.name + ')'"
+          aria-hidden="true"
+        ></span>
+        <span class="v2-ds__token">
+          <code class="v2-ds__code">{{ token.name }}</code>
+          <span class="v2-ds__value">{{ values()[token.name] }}</span>
+        </span>
+        <span class="v2-ds__usage">{{ token.usage }}</span>
+      </li>
+    }
+  </ul>
+
+  <h3 class="v2-ds__group-title">{{ 'v2.design.group.size' | translate }}</h3>
+  <ul class="v2-ds__scale">
+    @for (token of sizes; track token.name) {
+      <li class="v2-ds__scale-row">
+        <span class="v2-ds__token">
+          <code class="v2-ds__code">{{ token.name }}</code>
+          <span class="v2-ds__value">{{ values()[token.name] }}</span>
+        </span>
+        @if (token.name !== 'page-width') {
+          <span
+            class="v2-ds__size-bar"
+            [style.height]="'var(--v2-' + token.name + ')'"
+            aria-hidden="true"
+          ></span>
+        } @else {
+          <span></span>
+        }
+        <span class="v2-ds__usage">{{ token.usage }}</span>
+      </li>
+    }
+  </ul>
+</section>
+
+<!-- Buttons -->
+<section id="buttons" class="v2-ds__card" aria-labelledby="v2-ds-buttons">
+  <div class="v2-ds__card-head">
+    <h2 id="v2-ds-buttons" class="v2-ds__section-title">
+      {{ 'v2.design.section.buttons' | translate }}
+    </h2>
+    <p class="v2-ds__note">{{ 'v2.design.tryStates' | translate }}</p>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label"><code class="v2-ds__code">variant="primary"</code></span>
+    <div class="v2-ds__row">
+      <button type="button" appV2Button variant="primary" size="lg">
+        {{ 'v2.card.createProject' | translate }}
+      </button>
+      <button type="button" appV2Button variant="primary">
+        {{ 'v2.leads.create' | translate }}
+      </button>
+      <button type="button" appV2Button variant="primary" disabled>
+        {{ 'v2.design.disabled' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label"><code class="v2-ds__code">variant="secondary"</code></span>
+    <div class="v2-ds__row">
+      <button type="button" appV2Button size="lg">{{ 'v2.action.reopen' | translate }}</button>
+      <button type="button" appV2Button>{{ 'v2.action.addComment' | translate }}</button>
+      <button type="button" appV2Button size="sm">{{ 'v2.card.editContact' | translate }}</button>
+      <button type="button" appV2Button [dot]="'thinking'">
+        {{ 'v2.status.thinking' | translate }}
+      </button>
+      <button type="button" appV2Button disabled>{{ 'v2.design.disabled' | translate }}</button>
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label"><code class="v2-ds__code">variant="outlined"</code></span>
+    <div class="v2-ds__row">
+      <button type="button" appV2Button variant="outlined">
+        {{ 'v2.action.fillInfo' | translate }}
+      </button>
+      <button type="button" appV2Button variant="outlined" disabled>
+        {{ 'v2.design.disabled' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label"><code class="v2-ds__code">variant="call-result"</code></span>
+    <div class="v2-ds__row">
+      <button type="button" appV2Button variant="call-result" [dot]="'success'">
+        {{ 'v2.status.success' | translate }}
+      </button>
+      <button type="button" appV2Button variant="call-result" [dot]="'later'">
+        {{ 'v2.status.later' | translate }}
+      </button>
+      <button type="button" appV2Button variant="call-result" [dot]="'noanswer'">
+        {{ 'v2.status.noanswer' | translate }}
+      </button>
+      <button type="button" appV2Button variant="call-result" [dot]="'noanswer'" disabled>
+        {{ 'v2.design.disabled' | translate }}
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Chips and inputs -->
+<section id="controls" class="v2-ds__card" aria-labelledby="v2-ds-controls">
+  <div class="v2-ds__card-head">
+    <h2 id="v2-ds-controls" class="v2-ds__section-title">
+      {{ 'v2.design.section.controls' | translate }}
+    </h2>
+    <p class="v2-ds__note">{{ 'v2.design.tryStates' | translate }}</p>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">FilterChip</span>
+    <div class="v2-ds__row">
+      @for (status of chipStatuses; track status) {
+        <button
+          type="button"
+          appV2FilterChip
+          [tone]="status"
+          [count]="12"
+          [selected]="selectedChips().has(status)"
+          (click)="toggleChip(status)"
+        >
+          {{ statusLabels[status] | translate }}
+        </button>
+      }
+      <button type="button" appV2FilterChip disabled [tone]="'hot'" [count]="3">
+        {{ 'v2.rating.hot' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">SegmentedControl</span>
+    <app-v2-segmented-control
+      [options]="periodOptions()"
+      [(value)]="period"
+      [ariaLabel]="'v2.leads.period' | translate"
+    />
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">RatingSwitch</span>
+    <div class="v2-ds__row">
+      <app-v2-rating-switch
+        [value]="rating()"
+        [ariaLabel]="'v2.action.rating' | translate"
+        (ratingSelect)="rating.set($event)"
+      />
+      <app-v2-rating-switch
+        [value]="'hot'"
+        [ariaLabel]="'v2.design.disabled' | translate"
+        [disabled]="true"
+      />
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">SearchField</span>
+    <app-v2-search-field
+      class="v2-ds__search"
+      [(value)]="search"
+      [ariaLabel]="'v2.leads.search' | translate"
+      [placeholder]="'v2.leads.searchPlaceholder' | translate"
+    />
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Dialog · FormField</span>
+    <div class="v2-ds__row">
+      <button type="button" appV2Button (click)="openDemoDialog()">
+        {{ 'v2.design.openDialog' | translate }}
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Status, rating and code -->
+<section id="pills" class="v2-ds__card" aria-labelledby="v2-ds-pills">
+  <h2 id="v2-ds-pills" class="v2-ds__section-title">{{ 'v2.design.section.pills' | translate }}</h2>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">StatusPill · <code class="v2-ds__code">md</code></span>
+    <div class="v2-ds__row">
+      @for (status of statuses; track status) {
+        <app-v2-status-pill [status]="status" />
+      }
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">StatusPill · <code class="v2-ds__code">sm</code></span>
+    <div class="v2-ds__row">
+      @for (status of statuses; track status) {
+        <app-v2-status-pill [status]="status" size="sm" />
+      }
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">{{ 'v2.design.legacyStatuses' | translate }}</span>
+    <div class="v2-ds__row">
+      @for (status of legacyStatuses; track status) {
+        <app-v2-status-pill [status]="status" />
+      }
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">RatingPill · CodeChip</span>
+    <div class="v2-ds__row">
+      @for (value of ratings; track value) {
+        <app-v2-rating-pill [rating]="value" />
+      }
+      <app-v2-rating-pill [rating]="null" />
+      <app-v2-code-chip code="W0142" />
+      <span class="v2-ds__divider" aria-hidden="true"></span>
+      @for (value of ratings; track value) {
+        <app-v2-rating-pill [rating]="value" size="sm" />
+      }
+      <app-v2-code-chip code="K0418" size="sm" />
+    </div>
+  </div>
+</section>
+
+<!-- Cards and patterns -->
+<section id="patterns" class="v2-ds__card" aria-labelledby="v2-ds-patterns">
+  <h2 id="v2-ds-patterns" class="v2-ds__section-title">
+    {{ 'v2.design.section.patterns' | translate }}
+  </h2>
+
+  <div class="v2-ds__patterns">
+    <app-v2-info-card [title]="'v2.current.title' | translate">
+      <app-v2-empty-state
+        [title]="'v2.current.empty.title' | translate"
+        [hint]="'v2.current.empty.hint' | translate"
+      />
+    </app-v2-info-card>
+
+    <app-v2-info-card [title]="'v2.design.dateTiles' | translate">
+      <div class="v2-ds__row">
+        <app-v2-date-tile weekday="Mon" [day]="21" tone="overdue" />
+        <app-v2-date-tile weekday="Wed" [day]="23" tone="today" />
+        <app-v2-date-tile weekday="Sat" [day]="26" />
+      </div>
+      <code class="v2-ds__code">tone="overdue" · "today" · "default"</code>
+    </app-v2-info-card>
+
+    <app-v2-empty-state
+      layout="list"
+      [title]="'v2.leads.empty.title' | translate"
+      [hint]="'v2.leads.empty.hint' | translate"
+    />
+  </div>
+
+  <div class="v2-ds__timeline">
+    <app-v2-timeline-entry
+      date="Mon 21 Sep"
+      time="10:24"
+      [title]="'v2.status.invited' | translate"
+      author="Danuta Longshadow"
+      tone="invited"
+      [change]="timelineChange()"
+      [rows]="timelineRows()"
+    />
+    <app-v2-timeline-entry
+      date="12 Sep"
+      time="10:24"
+      [title]="'v2.timeline.firstMessage' | translate"
+      [author]="'v2.timeline.metaForm' | translate"
+      tone="ink"
+      [last]="true"
+      quote="Hi! I’d like a quote for a kitchen with an island for a new flat."
+    />
+  </div>
+</section>

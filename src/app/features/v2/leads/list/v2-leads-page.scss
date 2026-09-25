@@ -1,3 +1,4 @@
+@use '../../../../../styles/v2/interactive';
 @use '../../../../../styles/v2/type';
 
 // Values from Main.dc.html (PAGE). The 28px gap between tabs, the 3px tab underline and the
@@ -42,10 +43,16 @@
   font-weight: 500;
   text-decoration: none;
 
+  @include interactive.transition;
+
+  // Hover is not drawn: the tab text darkens towards the current tab.
+  &:hover {
+    color: var(--v2-ink);
+  }
+
   &:focus-visible {
     border-radius: 2px;
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
+    @include interactive.focus-ring;
   }
 }
 

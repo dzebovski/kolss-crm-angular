@@ -1,3 +1,5 @@
+@use '../../../../styles/v2/interactive';
+
 // Values from Main.dc.html (HEADER). 64px height, 20px start padding, 3px chip padding,
 // 28px divider and 36px avatar are board values without a design token.
 :host {
@@ -29,6 +31,8 @@
   border-radius: var(--v2-radius-sm);
   color: var(--v2-ink);
   cursor: pointer;
+
+  @include interactive.states(surface);
 
   svg {
     display: block;
@@ -89,6 +93,8 @@
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+
+  @include interactive.states(ghost);
 }
 
 .v2-header__avatar {
@@ -130,11 +136,8 @@
   font-size: 12px;
 }
 
-.v2-header__toggle:focus-visible,
-.v2-header__logo:focus-visible,
-.v2-header__user:focus-visible {
-  outline: 2px solid var(--v2-ink);
-  outline-offset: 2px;
+.v2-header__logo:focus-visible {
+  @include interactive.focus-ring;
 }
 
 // The board is desktop-only (1440). On narrow screens keep the header on one line:

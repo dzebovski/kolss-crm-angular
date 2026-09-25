@@ -1,3 +1,5 @@
+@use '../../../../styles/v2/interactive';
+
 // Values from design system components/Button and lead card v1.3 (Create project, Edit contact
 // info, Call result, Add comment, Fill lead info, popup Cancel / Save) and the Leads board
 // (Create lead). 36/44px heights and the 18/20px paddings are board values without a token.
@@ -21,6 +23,9 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
+
+  // Secondary, outlined and call-result: bordered `surface` states.
+  @include interactive.states(surface);
 }
 
 :host([data-size='sm']) {
@@ -42,6 +47,14 @@
   background: var(--v2-ink);
   border-color: var(--v2-ink);
   color: var(--v2-on-ink);
+
+  &:hover#{interactive.$enabled} {
+    @include interactive.hover(ink);
+  }
+
+  &:active#{interactive.$enabled} {
+    @include interactive.pressed(ink);
+  }
 }
 
 :host([data-variant='primary'][data-size='md']) {
@@ -51,6 +64,11 @@
 :host([data-variant='outlined']) {
   border-color: var(--v2-ink);
   font-weight: 600;
+
+  // The `ink` border is the point of this variant; hover keeps it.
+  &:hover#{interactive.$enabled} {
+    border-color: var(--v2-ink);
+  }
 }
 
 :host([data-variant='call-result']) {
@@ -61,17 +79,6 @@
   box-shadow: var(--v2-shadow-control);
   font-size: 14px;
   font-weight: 600;
-}
-
-:host(:disabled),
-:host([aria-disabled='true']) {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-:host(:focus-visible) {
-  outline: 2px solid var(--v2-ink);
-  outline-offset: 2px;
 }
 
 .v2-button__dot {

@@ -25,12 +25,10 @@ const V2_ROUTES: Routes = [
         data: { sectionKey: 'v2.nav.section.planning', titleKey: 'v2.nav.tasks' },
       },
       {
-        // The v2 design system page; its content is not defined yet.
+        // The v2 design system: tokens and the live UI kit.
         path: 'design',
         canActivate: [superAdminGuard],
-        loadComponent: () =>
-          import('./shell/v2-placeholder-page').then((page) => page.V2PlaceholderPage),
-        data: { sectionKey: 'v2.nav.section.settings', titleKey: 'v2.nav.designSystem' },
+        loadComponent: () => import('./design/v2-design-page').then((page) => page.V2DesignPage),
       },
       { path: '**', redirectTo: 'leads' },
     ],

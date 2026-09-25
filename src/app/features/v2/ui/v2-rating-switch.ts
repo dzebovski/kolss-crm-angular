@@ -39,6 +39,8 @@ const SEGMENTS: readonly RatingSegment[] = (['cold', 'medium', 'hot'] as const).
   `,
   host: { role: 'group', '[attr.aria-label]': 'ariaLabel()' },
   styles: `
+    @use '../../../../styles/v2/interactive';
+
     :host {
       display: inline-flex;
       gap: 3px;
@@ -63,22 +65,14 @@ const SEGMENTS: readonly RatingSegment[] = (['cold', 'medium', 'hot'] as const).
       font-weight: 600;
       white-space: nowrap;
       cursor: pointer;
+
+      @include interactive.states(ghost);
     }
 
     .v2-rating-switch__segment--selected {
       background: var(--v2-rating-switch-bg);
       color: var(--v2-rating-switch-fg);
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--v2-rating-switch-fg) 20%, transparent);
-    }
-
-    .v2-rating-switch__segment:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .v2-rating-switch__segment:focus-visible {
-      outline: 2px solid var(--v2-ink);
-      outline-offset: 2px;
     }
 
     .v2-rating-switch__dot {

@@ -1,3 +1,4 @@
+@use '../../../../styles/v2/interactive';
 @use '../../../../styles/v2/type';
 
 // Values from Main.dc.html (SIDE MENU): 280px wide, width transition .22s ease, inner padding
@@ -68,14 +69,15 @@
   text-decoration: none;
   cursor: pointer;
 
+  @include interactive.states(none, $focus-offset: -2px);
+
   // Hover is not drawn; the office switcher's menu-item hover is reused.
   &:hover {
-    background: var(--v2-surface-sunk);
+    background-color: var(--v2-surface-sunk);
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: -2px;
+  &:active {
+    @include interactive.pressed(ghost);
   }
 }
 

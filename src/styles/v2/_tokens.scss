@@ -44,6 +44,16 @@
   --v2-calendar-ink: #4b2f8a;
   --v2-scrim: rgba(23, 23, 26, 0.32);
 
+  // Interaction states. Not in the design system (it defines only focus = 2px `ink` and
+  // disabled = 40%): derived from `ink` so they read on `surface`, `ground` and tinted fills
+  // alike. Overlays tint whatever fill a control has; `ink-*` darken/lighten the one filled
+  // button. Used through `styles/v2/_interactive.scss`.
+  --v2-hover-overlay: rgba(23, 23, 26, 0.04);
+  --v2-pressed-overlay: rgba(23, 23, 26, 0.08);
+  --v2-line-hover: #b5b4ae;
+  --v2-ink-hover: #2e2e33;
+  --v2-ink-pressed: #000000;
+
   // Type families (self-hosted npm font packages, see angular.json styles)
   --v2-font-sans: 'Onest Variable', 'Onest', system-ui, sans-serif;
   --v2-font-mono: 'JetBrains Mono', ui-monospace, monospace;

@@ -1,3 +1,5 @@
+@use '../../../../../styles/v2/interactive';
+
 // Page frame from lead card v1.3: the sections stack with the shell's 16px gap.
 :host {
   display: flex;
@@ -21,6 +23,8 @@
   color: #55554f;
   text-decoration: none;
 
+  @include interactive.states(none);
+
   svg {
     fill: none;
     stroke: currentColor;
@@ -31,11 +35,6 @@
 
   &:hover {
     color: var(--v2-ink);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--v2-ink);
-    outline-offset: 2px;
   }
 }
 
@@ -91,6 +90,14 @@
   color: var(--v2-on-ink);
   font-weight: 600;
   text-decoration: underline;
+
+  &:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  &:focus-visible {
+    @include interactive.focus-ring($color: var(--v2-on-ink));
+  }
 }
 
 // Loading and error are not drawn; they reuse the leads list states.

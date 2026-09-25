@@ -19,6 +19,8 @@ import { Component, input, model } from '@angular/core';
     />
   `,
   styles: `
+    @use '../../../../styles/v2/interactive';
+
     :host {
       position: relative;
       display: flex;
@@ -47,12 +49,20 @@ import { Component, input, model } from '@angular/core';
       font-family: inherit;
       font-size: 14px;
 
+      @include interactive.transition;
+
       &::placeholder {
         color: var(--v2-muted);
       }
 
+      &:hover {
+        border-color: var(--v2-line-hover);
+      }
+
       &:focus-visible {
+        border-color: var(--v2-ink);
         outline: 2px solid var(--v2-ink);
+        outline-offset: -1px;
       }
     }
   `,
