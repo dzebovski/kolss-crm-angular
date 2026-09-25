@@ -78,7 +78,7 @@ export class V2LeadCardService {
       estimatedBudget: lead.estimatedBudget,
       estimatedBudgetCurrency: lead.estimatedBudgetCurrency,
       initialMessage: lead.initialMessage,
-      assignedToId: update.managerId,
+      assignedToId: assignedToIdForUpdate(update.managerId, editedFields),
       channel: update.channel,
       editedFields: [...editedFields],
     });
@@ -136,4 +136,19 @@ export class V2LeadCardService {
   async reopen(leadId: string): Promise<void> {
     await this.api.leadActivity(leadId, { type: 'reopen' });
   }
+}
+
+/**
+ * Maps the dialog's "Unassigned" pick to the wire value `PATCH /v1/leads/{id}` expects (2.27.0,
+ * task G4/D9): for a non-super-admin actor, an omitted/`null` `assignedToId` now *keeps* the
+ * current manager instead of clearing it, so an explicit clear must be sent as `""`. Only the
+ * "manager" field being in `editedFields` means the user actually picked "Unassigned"; otherwise
+ * `managerId` is just the lead's unchanged current value (already `null` when it has no
+ * manager), which is safe to resend as-is for every actor, super admin included.
+ */
+function assignedToIdForUpdate(
+  managerId: string | null,
+  editedFields: readonly V2ContactField[],
+): string | null {
+  return editedFields.includes('manager') && managerId === null ? '' : managerId;
 }

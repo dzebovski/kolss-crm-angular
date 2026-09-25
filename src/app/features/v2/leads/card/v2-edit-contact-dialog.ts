@@ -24,7 +24,7 @@ export interface V2EditContactData {
   readonly lead: Lead;
   readonly card: V2LeadCard;
   readonly employees: readonly CrmEmployee[];
-  /** The API lets only a super admin change the manager (`lead_assign_forbidden`). */
+  /** Any user who can edit the lead may also reassign its manager (D9, task G4). */
   readonly canAssignManager: boolean;
 }
 
