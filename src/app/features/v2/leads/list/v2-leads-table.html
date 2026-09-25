@@ -89,6 +89,44 @@
       }
     }
 
+    @if (busy() && !groups().length) {
+      <!-- Not drawn: a loading skeleton with the real rows' grid and height, so the page
+           doesn't jump when the leads arrive. -->
+      <div class="v2-table__skeleton" aria-hidden="true">
+        <div class="v2-table__group v2-table__group--skeleton">
+          <span class="v2-table__bar" style="width: 16px"></span>
+          <span class="v2-table__bar" style="width: 120px"></span>
+          <span class="v2-table__bar v2-table__bar--pill" style="width: 64px"></span>
+        </div>
+        @for (row of skeletonRows; track $index) {
+          <div class="v2-table__row v2-table__lead">
+            <div class="v2-table__stack v2-table__skeleton-stack">
+              <span class="v2-table__bar" style="width: 72px"></span>
+              <span class="v2-table__bar v2-table__bar--sm" style="width: 40px"></span>
+            </div>
+            <div class="v2-table__stack v2-table__skeleton-stack">
+              <span class="v2-table__bar" [style.width.%]="row.name"></span>
+              <span class="v2-table__bar v2-table__bar--sm" style="width: 150px"></span>
+            </div>
+            <div>
+              <span class="v2-table__bar v2-table__bar--pill" style="width: 112px"></span>
+            </div>
+            <div class="v2-table__stack v2-table__skeleton-stack">
+              <span class="v2-table__bar" [style.width.%]="row.comment"></span>
+              <span class="v2-table__bar v2-table__bar--sm" style="width: 64px"></span>
+            </div>
+            <div class="v2-table__manager">
+              <span class="v2-table__avatar"></span>
+              <div class="v2-table__stack v2-table__skeleton-stack">
+                <span class="v2-table__bar" style="width: 96px"></span>
+                <span class="v2-table__bar v2-table__bar--sm" style="width: 48px"></span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
     <ng-content />
   </div>
 </section>

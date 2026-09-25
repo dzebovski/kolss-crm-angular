@@ -51,7 +51,8 @@
 
 <app-v2-leads-table [leads]="shownLeads()" [now]="now()" [busy]="loading()">
   @if (loading()) {
-    <p class="v2-leads__loading" role="status">{{ 'v2.leads.loading' | translate }}</p>
+    <!-- The table draws the skeleton; this tells screen readers. -->
+    <p class="v2-leads__sr-only" role="status">{{ 'v2.leads.loading' | translate }}</p>
   } @else if (loadError(); as message) {
     <app-v2-empty-state
       class="v2-leads__state"

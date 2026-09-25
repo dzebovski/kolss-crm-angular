@@ -215,3 +215,56 @@
     transition: none;
   }
 }
+
+// Loading skeleton (not drawn): `surface-sunk` bars in the real rows' grid, pulsing unless the
+// viewer prefers reduced motion. Bar heights follow the text lines they stand for.
+.v2-table__group--skeleton {
+  cursor: default;
+}
+
+.v2-table__skeleton-stack {
+  gap: 6px;
+}
+
+.v2-table__bar {
+  display: block;
+  max-width: 100%;
+  height: 12px;
+  border-radius: var(--v2-radius-xs);
+  background: var(--v2-surface-sunk);
+  animation: v2-table-skeleton 1.2s ease-in-out infinite;
+}
+
+.v2-table__bar--sm {
+  height: 10px;
+}
+
+.v2-table__bar--pill {
+  height: 26px;
+  border-radius: var(--v2-radius-pill);
+}
+
+.v2-table__group--skeleton .v2-table__bar {
+  background: var(--v2-line);
+}
+
+.v2-table__group--skeleton .v2-table__bar--pill {
+  height: 22px;
+}
+
+.v2-table__skeleton .v2-table__avatar {
+  animation: v2-table-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes v2-table-skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-table__bar,
+  .v2-table__skeleton .v2-table__avatar {
+    animation: none;
+  }
+}
