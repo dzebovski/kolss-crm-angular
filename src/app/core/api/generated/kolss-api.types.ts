@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.26.0' as const;
+export const API_CONTRACT_VERSION = '2.27.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -198,6 +198,12 @@ export interface MeResponse {
     readonly canArchiveLeads: boolean;
     readonly canRestoreLeads: boolean;
     readonly canAskLeadQuestions: boolean;
+    /**
+     * Same office scope as `canEditLeadFields`; the actual gate is `PATCH /v1/leads/{leadId}`
+     * (2.27.0, task G4). v1's "Assign manager" dialog does not read this flag — only CRM v2 UI
+     * is meant to use it. Not consumed anywhere yet.
+     */
+    readonly canChangeLeadManager: boolean;
   };
 }
 
