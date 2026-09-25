@@ -43,7 +43,6 @@
       <span class="v2-filters__label" id="v2-filters-rating">{{
         'v2.leads.ratingFilter' | translate
       }}</span>
-      <!-- TODO(W2): enable once the API stores the rating (roadmap L2). -->
       <div
         class="v2-filters__chips v2-filters__chips--nowrap"
         role="group"
@@ -53,10 +52,10 @@
           <button
             type="button"
             appV2FilterChip
-            disabled
             [selected]="chip.selected"
             [tone]="chip.value"
             [count]="chip.count"
+            (click)="ratingToggle.emit(chip.value)"
           >
             {{ chip.labelKey | translate }}
           </button>

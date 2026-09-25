@@ -41,11 +41,12 @@
   [periodOptions]="periodOptions()"
   [rangeLabel]="rangeLabel()"
   [statusChips]="statusChips()"
-  [ratingChips]="ratingChips"
+  [ratingChips]="ratingChips()"
   [filtersActive]="filtersActive()"
   (searchChange)="onSearch($event)"
   (periodChange)="onPeriod($event)"
   (statusToggle)="toggleStatus($event)"
+  (ratingToggle)="toggleRating($event)"
   (clear)="clearFilters()"
 />
 
@@ -74,3 +75,20 @@
     />
   }
 </app-v2-leads-table>
+
+@if (hasMore()) {
+  <!-- Not drawn on the board (design gap): secondary button, centred under the table, in the
+       kit style. Appends the next 30-row page (D10, provisional). -->
+  <div class="v2-leads__more">
+    <button
+      type="button"
+      appV2Button
+      variant="secondary"
+      [attr.aria-busy]="loadingMore() || null"
+      [disabled]="loadingMore()"
+      (click)="showMore()"
+    >
+      {{ 'v2.leads.showMore' | translate }}
+    </button>
+  </div>
+}

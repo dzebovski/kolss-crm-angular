@@ -143,3 +143,9 @@
 .v2-leads__retry {
   margin-top: var(--v2-space-2);
 }
+
+// Not drawn on the board (design gap): "Show more" centred under the table.
+.v2-leads__more {
+  display: flex;
+  justify-content: center;
+}

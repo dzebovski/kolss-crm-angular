@@ -3,22 +3,25 @@ import type { Params } from '@angular/router';
 import {
   V2_DEFAULT_LEAD_PERIOD,
   V2_LEAD_PERIOD_DAYS,
+  V2_LEAD_RATING_FILTERS,
   V2_LEAD_STATUS_FILTERS,
   type V2LeadPeriod,
 } from '@domain/v2/lead-list.rules';
-import type { V2LeadStatus } from '@domain/v2/lead-view.types';
+import type { V2LeadRating, V2LeadStatus } from '@domain/v2/lead-view.types';
 
-/** Deep-linkable list filters: `?q=…&period=week&status=later,noanswer`. */
+/** Deep-linkable list filters: `?q=…&period=week&status=later,noanswer&rating=hot`. */
 export interface V2LeadsQuery {
   readonly q: string;
   readonly period: V2LeadPeriod;
   readonly statuses: readonly V2LeadStatus[];
+  readonly ratings: readonly V2LeadRating[];
 }
 
 export interface V2LeadsRawQuery {
   readonly q?: string | null;
   readonly period?: string | null;
   readonly status?: string | null;
+  readonly rating?: string | null;
 }
 
 /** Unknown values fall back to the defaults; `custom` too, until its range picker exists. */
@@ -29,6 +32,11 @@ export function parseV2LeadsQuery(raw: V2LeadsRawQuery): V2LeadsQuery {
     .filter((value): value is V2LeadStatus =>
       V2_LEAD_STATUS_FILTERS.includes(value as V2LeadStatus),
     );
+  const ratings = (raw.rating ?? '')
+    .split(',')
+    .filter((value): value is V2LeadRating =>
+      V2_LEAD_RATING_FILTERS.includes(value as V2LeadRating),
+    );
   return {
     q: raw.q ?? '',
     period:
@@ -36,6 +44,7 @@ export function parseV2LeadsQuery(raw: V2LeadsRawQuery): V2LeadsQuery {
         ? (period as V2LeadPeriod)
         : V2_DEFAULT_LEAD_PERIOD,
     statuses: V2_LEAD_STATUS_FILTERS.filter((status) => statuses.includes(status)),
+    ratings: V2_LEAD_RATING_FILTERS.filter((rating) => ratings.includes(rating)),
   };
 }
 
@@ -45,5 +54,6 @@ export function toV2LeadsQueryParams(query: V2LeadsQuery): Params {
     q: query.q.trim() || null,
     period: query.period === V2_DEFAULT_LEAD_PERIOD ? null : query.period,
     status: query.statuses.length > 0 ? query.statuses.join(',') : null,
+    rating: query.ratings.length > 0 ? query.ratings.join(',') : null,
   };
 }

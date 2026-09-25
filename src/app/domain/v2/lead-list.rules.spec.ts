@@ -1,10 +1,5 @@
 import { OFFICE_CONFIG } from '@core/office/office.config';
-import {
-  countV2LeadChips,
-  groupV2LeadsByMonth,
-  matchesV2LeadSearch,
-  v2Initials,
-} from './lead-list.rules';
+import { groupV2LeadsByMonth, v2Initials } from './lead-list.rules';
 import type { V2LeadDisplayStatus, V2LeadListItem } from './lead-view.types';
 import { v2PluralCategory } from './plural';
 
@@ -62,40 +57,5 @@ describe('v2PluralCategory', () => {
       'few',
     ]);
     expect([1, 2].map((n) => v2PluralCategory('en', n))).toEqual(['one', 'other']);
-  });
-});
-
-describe('matchesV2LeadSearch', () => {
-  it('matches name, code, or at least three phone digits', () => {
-    const item = lead('a', '2026-09-23T10:00:00Z');
-    expect(matchesV2LeadSearch(item, ' melnyk ')).toBe(true);
-    expect(matchesV2LeadSearch(item, 'k00')).toBe(true);
-    expect(matchesV2LeadSearch(item, '214 58')).toBe(true);
-    expect(matchesV2LeadSearch(item, '21')).toBe(false);
-  });
-});
-
-describe('countV2LeadChips', () => {
-  it('counts chip statuses, New included, and skips statuses without a chip', () => {
-    const at = '2026-09-23T10:00:00Z';
-    const { statuses } = countV2LeadChips(
-      [
-        lead('a', at, 'later'),
-        lead('b', at, 'later'),
-        lead('c', at, 'new'),
-        lead('d', at, 'lost'),
-        lead('e', at, 'contract_signed'),
-      ],
-      { statuses: [], ratings: [] },
-    );
-    expect(statuses).toEqual({
-      new: 1,
-      success: 0,
-      later: 2,
-      noanswer: 0,
-      thinking: 0,
-      invited: 0,
-      lost: 1,
-    });
   });
 });
