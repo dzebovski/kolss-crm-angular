@@ -15,10 +15,7 @@ export interface V2CommentData {
 
 // Add comment popup from lead card v1.3 (Modal `comment`): Remind on (optional date and time)
 // and Comment *. No "Assign to" field (decision D5). Closes with `true` after a save.
-// TODO(G2): Popup-rules.dc.html names widths only for "forms" (640), "status" (560) and
-// "documents/timeline" (600); there is no Add-comment board to say which bucket it belongs
-// to, so it stays on the shell's `form` (640) default. Confirm the width once that board
-// exists.
+// Width 560 (Add-comment.dc.html).
 @Component({
   selector: 'app-v2-comment-dialog',
   imports: [FormField, TranslatePipe, V2DialogShell, V2FormField],
@@ -26,6 +23,7 @@ export interface V2CommentData {
     <app-v2-dialog
       [title]="'v2.comment.title' | translate"
       [subtitle]="'v2.comment.subtitle' | translate"
+      width="status"
       [hint]="hint() | translate"
       [saveLabel]="'v2.comment.save' | translate"
       [saveDisabled]="saving()"
