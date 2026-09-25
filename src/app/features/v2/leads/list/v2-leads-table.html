@@ -41,7 +41,13 @@
 
       @if (group.open) {
         @for (row of group.rows; track row.lead.id) {
-          <div class="v2-table__row v2-table__lead">
+          <!-- The row is a mouse shortcut; the name link is the accessible way in. -->
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <div
+            class="v2-table__row v2-table__lead v2-table__lead--link"
+            (click)="openRow($event, row.lead.id)"
+            (auxclick)="openRow($event, row.lead.id)"
+          >
             <div class="v2-table__stack">
               <span class="v2-table__date">{{ row.date }}</span>
               <span class="v2-table__muted">{{ row.time }}</span>
