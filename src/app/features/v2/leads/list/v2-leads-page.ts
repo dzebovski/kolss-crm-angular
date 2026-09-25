@@ -22,7 +22,7 @@ import {
   v2PeriodStart,
   type V2LeadPeriod,
 } from '@domain/v2/lead-list.rules';
-import type { V2LeadRating, V2LeadStatus } from '@domain/v2/lead-view.types';
+import type { V2LeadListItem, V2LeadRating, V2LeadStatus } from '@domain/v2/lead-view.types';
 import { v2PluralCategory } from '@domain/v2/plural';
 import { V2LeadsListService, type V2LeadsListFilters } from '@services/v2/v2-leads-list.service';
 import { UsersService } from '@services/users.service';
@@ -116,19 +116,42 @@ export class V2LeadsPage {
     ratings: [],
   }));
 
-  /**
-   * How many 30-row pages to show. Reset to 1 whenever the filters change identity (a new
-   * search/period/chip selection); "Show more" bumps it without resetting.
-   */
-  private readonly requestedPages = linkedSignal<V2LeadsListFilters, number>({
-    source: () => this.filters(),
-    computation: () => 1,
+  /** The first page (30 rows). Reloads whenever the filters change; discards stale in-flight loads. */
+  private readonly leadsResource = resource({
+    params: () => this.filters(),
+    loader: ({ params }) => this.leadsList.list(params, ''),
   });
 
-  private readonly leadsResource = resource({
-    params: () => ({ filters: this.filters(), pages: this.requestedPages() }),
-    loader: ({ params }) => this.leadsList.listPages(params.filters, params.pages),
+  /**
+   * Extra rows appended by "Show more", and the cursor to continue from. Both reset to their
+   * defaults whenever `filters()` changes identity, alongside the "show more" busy/error state,
+   * so a filter change can never leave a stale cursor, a stuck spinner or an old error behind.
+   */
+  private readonly moreItems = linkedSignal<V2LeadsListFilters, readonly V2LeadListItem[]>({
+    source: () => this.filters(),
+    computation: () => [],
   });
+  /** `null` = no "Show more" fetched yet for these filters; fall back to the first page's cursor. */
+  private readonly moreCursor = linkedSignal<V2LeadsListFilters, string | null>({
+    source: () => this.filters(),
+    computation: () => null,
+  });
+  protected readonly loadingMore = linkedSignal<V2LeadsListFilters, boolean>({
+    source: () => this.filters(),
+    computation: () => false,
+  });
+  protected readonly moreError = linkedSignal<V2LeadsListFilters, string>({
+    source: () => this.filters(),
+    computation: () => '',
+  });
+
+  /** The cursor "Show more" would use next; empty once the list has no further pages. */
+  private readonly nextCursor = computed(() => {
+    const manual = this.moreCursor();
+    if (manual !== null) return manual;
+    return this.leadsResource.hasValue() ? this.leadsResource.value().nextCursor : '';
+  });
+  protected readonly hasMore = computed(() => this.nextCursor() !== '');
 
   // Manager names come from the employees list, as in v1; resolved here rather than baked into
   // the service's mapping, so a page fetched before the employees list arrives still gets names
@@ -164,13 +187,6 @@ export class V2LeadsPage {
     () => this.leadsResource.isLoading() && !this.leadsResource.hasValue(),
   );
   protected readonly loaded = computed(() => this.leadsResource.hasValue());
-  /** "Show more" was clicked and the next page hasn't arrived yet. */
-  protected readonly loadingMore = computed(
-    () => this.leadsResource.isLoading() && this.leadsResource.hasValue(),
-  );
-  protected readonly hasMore = computed(() =>
-    this.leadsResource.hasValue() ? this.leadsResource.value().hasMore : false,
-  );
 
   protected readonly loadError = computed(() => {
     if (this.leadsResource.status() !== 'error') return '';
@@ -180,7 +196,8 @@ export class V2LeadsPage {
 
   protected readonly shownLeads = computed(() => {
     const names = this.managerNames();
-    const items = this.leadsResource.hasValue() ? this.leadsResource.value().items : [];
+    const firstPage = this.leadsResource.hasValue() ? this.leadsResource.value().items : [];
+    const items = [...firstPage, ...this.moreItems()];
     return items.map((item) =>
       item.managerId ? { ...item, managerName: names.get(item.managerId) ?? null } : item,
     );
@@ -260,8 +277,34 @@ export class V2LeadsPage {
     this.periodFacetsResource.reload();
   }
 
+  /**
+   * One `GET /v1/leads` request at the current cursor, appended to the accumulated rows. Guards
+   * against a double click while a request is in flight, and discards the response if the
+   * filters changed while it was in flight (the `filters()` computed then returns a new object,
+   * so the identity check below fails and the stale response is dropped instead of applied).
+   */
   protected showMore(): void {
-    this.requestedPages.update((pages) => pages + 1);
+    if (this.loadingMore()) return;
+    const cursor = this.nextCursor();
+    if (!cursor) return;
+    const requestFilters = this.filters();
+    this.loadingMore.set(true);
+    this.moreError.set('');
+    this.leadsList.list(requestFilters, cursor).then(
+      (page) => {
+        const stale = requestFilters !== this.filters();
+        this.loadingMore.set(false);
+        if (stale) return;
+        this.moreItems.update((items) => [...items, ...page.items]);
+        this.moreCursor.set(page.nextCursor);
+      },
+      (error: unknown) => {
+        const stale = requestFilters !== this.filters();
+        this.loadingMore.set(false);
+        if (stale) return;
+        this.moreError.set(error instanceof Error ? this.i18n.localizeError(error.message) : '');
+      },
+    );
   }
 
   constructor() {

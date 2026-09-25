@@ -25,11 +25,6 @@ export interface V2LeadsPage {
   readonly nextCursor: string;
 }
 
-export interface V2LeadsAccumulated {
-  readonly items: readonly V2LeadListItem[];
-  readonly hasMore: boolean;
-}
-
 /**
  * Data access for the v2 leads list (L4). Reads `GET /v1/leads` (paged, 30/request) and
  * `GET /v1/leads/facets` (chip counts + totals), mapping rows to the v2 view model here so
@@ -52,24 +47,6 @@ export class V2LeadsListService {
       ),
       nextCursor: response.nextCursor,
     };
-  }
-
-  /**
-   * Fetches `pages` pages from the start (re-fetching earlier pages too): "Show more" asks for
-   * one more page than before, so the whole accumulated list is always internally consistent —
-   * no client-side merge to get wrong. Active lead counts are in the low hundreds per office
-   * (see `LeadsService`), so re-fetching a handful of 30-row pages on each click is cheap.
-   */
-  async listPages(filters: V2LeadsListFilters, pages: number): Promise<V2LeadsAccumulated> {
-    const items: V2LeadListItem[] = [];
-    let cursor = '';
-    for (let page = 0; page < pages; page += 1) {
-      const result = await this.list(filters, cursor);
-      items.push(...result.items);
-      cursor = result.nextCursor;
-      if (!cursor) break;
-    }
-    return { items, hasMore: cursor !== '' };
   }
 
   /** Chip counts and total for the current filters (no cursor/limit: it ignores paging). */
