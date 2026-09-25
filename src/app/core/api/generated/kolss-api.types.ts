@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.28.0' as const;
+export const API_CONTRACT_VERSION = '2.29.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -34,6 +34,20 @@ export type V2LossReason =
  */
 export type ProjectType = 'express' | 'measure' | 'contract';
 
+/**
+ * `GET /v1/loss-reasons` row (`public.loss_reasons`, OpenAPI `LossReason`). `is_v2` (2.29.0, task
+ * W10, decision D12) gates whether the CRM v2 "Lost" popup may offer/accept this code —
+ * data-driven so the list can grow without a deploy; not every row is a v1 code either.
+ */
+export interface LossReason {
+  readonly code: string;
+  readonly label_uk: string;
+  readonly label_pl: string;
+  /** Set for the codes of the CRM v2 Lost list. */
+  readonly label_en: string | null;
+  readonly is_v2: boolean;
+}
+
 /** `GET /v1/leads/facets` (2.24.0): chip counts; missing keys mean 0. */
 export interface LeadFacetsResponse {
   readonly total: number;
@@ -56,8 +70,15 @@ export interface V2StatusActivityRequest {
   readonly nextAction?: string;
   /** invited only, required: an active member of the lead's office. */
   readonly designerId?: string;
-  /** lost only, required. */
+  /** lost only. Required unless `lossReasons` is sent instead (send exactly one of the two). */
   readonly lossReason?: V2LossReason;
+  /**
+   * lost only (2.29.0, task W10, decision D12): an alternative to `lossReason` for several
+   * reasons; not allowed together with it. `minItems: 1`. Each code must be a
+   * `public.loss_reasons` row with `is_v2 = true`. `comment` is required only when `'other'` is
+   * among the reasons.
+   */
+  readonly lossReasons?: readonly string[];
 }
 
 /**
