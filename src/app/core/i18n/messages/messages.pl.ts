@@ -325,6 +325,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.leads.loading': 'Ładowanie leadów…',
   'v2.leads.error.title': 'Nie udało się wczytać leadów',
   'v2.leads.retry': 'Spróbuj ponownie',
+  'v2.leads.showMore': 'Pokaż więcej',
   'v2.design.intro':
     'Tokeny i komponenty nowego CRM na żywo. Najedź, kliknij lub przejdź Tabem po kontrolkach, aby zobaczyć ich stany.',
   'v2.design.source': 'Otwórz w Claude Design',

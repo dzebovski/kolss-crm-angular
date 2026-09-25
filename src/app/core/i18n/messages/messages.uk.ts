@@ -324,6 +324,7 @@ export const messagesUk = {
   'v2.leads.loading': 'Завантаження лідів…',
   'v2.leads.error.title': 'Не вдалося завантажити ліди',
   'v2.leads.retry': 'Спробувати ще раз',
+  'v2.leads.showMore': 'Показати ще',
   'v2.design.intro':
     'Токени й компоненти нової CRM наживо. Наведіть, натисніть або пройдіть Tab по елементах, щоб побачити їхні стани.',
   'v2.design.source': 'Відкрити в Claude Design',

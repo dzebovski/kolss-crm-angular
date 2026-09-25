@@ -325,6 +325,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.leads.loading': 'Loading leads…',
   'v2.leads.error.title': 'Could not load leads',
   'v2.leads.retry': 'Try again',
+  'v2.leads.showMore': 'Show more',
   'v2.design.intro':
     'Tokens and components of the new CRM, live. Hover, press and Tab through the controls to see their states.',
   'v2.design.source': 'Open in Claude Design',
