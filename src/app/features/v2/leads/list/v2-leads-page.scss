@@ -123,12 +123,14 @@
   margin: var(--v2-space-5) 20px;
 }
 
-.v2-leads__loading {
-  margin: 0;
-  padding: var(--v2-space-6) 20px;
-  color: var(--v2-muted);
-  font-size: 13px;
-  text-align: center;
+.v2-leads__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .v2-leads__retry {

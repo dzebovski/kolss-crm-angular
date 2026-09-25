@@ -52,6 +52,18 @@ export class V2LeadsTable {
   /** Marks the list busy while the leads load; the state message is projected. */
   readonly busy = input(false);
 
+  /** Skeleton rows while loading; varied widths (% of the column) read as text. */
+  protected readonly skeletonRows = [
+    { name: 60, comment: 85 },
+    { name: 45, comment: 70 },
+    { name: 70, comment: 90 },
+    { name: 50, comment: 60 },
+    { name: 65, comment: 80 },
+    { name: 40, comment: 75 },
+    { name: 55, comment: 65 },
+    { name: 60, comment: 85 },
+  ];
+
   private readonly collapsed = signal(readV2CollapsedMonths());
 
   protected readonly groups = computed<readonly Group[]>(() => {
