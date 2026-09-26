@@ -143,3 +143,17 @@
 .v2-leads__retry {
   margin-top: var(--v2-space-2);
 }
+
+// Not drawn on the board (design gap): "Show more" centred under the table.
+.v2-leads__more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--v2-space-2);
+}
+
+.v2-leads__more-error {
+  margin: 0;
+  color: var(--v2-danger);
+  font-size: 13px;
+}

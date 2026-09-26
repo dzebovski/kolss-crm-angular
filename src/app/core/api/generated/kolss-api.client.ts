@@ -17,6 +17,7 @@ import type {
   CurrencyRateSet,
   LeadDetailResponse,
   LeadEventTranslationResponse,
+  LeadFacetsResponse,
   LeadMarkerResponse,
   LeadListResponse,
   LeadReportQuery,
@@ -71,6 +72,13 @@ export class KolssApiClient {
 
   lead(id: string): Promise<LeadDetailResponse> {
     return this.get(`/v1/leads/${encodeURIComponent(id)}`);
+  }
+
+  /** CRM v2 leads list chip counts and total (2.24.0); takes the `listLeads` filters. */
+  leadFacets(
+    query: Readonly<Record<string, string | number | readonly string[] | null | undefined>>,
+  ): Promise<LeadFacetsResponse> {
+    return this.get('/v1/leads/facets', query);
   }
 
   createLead<T>(body: unknown): Promise<T> {

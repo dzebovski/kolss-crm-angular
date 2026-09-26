@@ -1,4 +1,11 @@
-import { channelFromSource, deriveV2LeadStatus, isV2LegacyLeadStatus } from './lead-view.mapper';
+import { FIXTURE_LEADS } from '@testing/fixtures/leads.fixture';
+import { v2LeadColumnsFromRow } from './lead-card.mapper';
+import {
+  channelFromSource,
+  deriveV2LeadStatus,
+  isV2LegacyLeadStatus,
+  toV2LeadListItem,
+} from './lead-view.mapper';
 
 describe('v2 lead view mapper', () => {
   it('derives the v2 status from v1 fields (D1b)', () => {
@@ -23,5 +30,30 @@ describe('v2 lead view mapper', () => {
     expect(channelFromSource('facebook')).toBe('meta_ads');
     expect(channelFromSource('office')).toBe('office');
     expect(channelFromSource('other')).toBe('other');
+  });
+});
+
+describe('toV2LeadListItem', () => {
+  const lead = FIXTURE_LEADS[0];
+
+  it('prefers the v2 columns (rating, channel, v2Status) over the v1 fallback', () => {
+    const columns = v2LeadColumnsFromRow({
+      v2_status: 'invited',
+      rating: 'hot',
+      channel: 'referral',
+    });
+    const item = toV2LeadListItem(lead, columns);
+    expect(item.status).toBe('invited');
+    expect(item.rating).toBe('hot');
+    expect(item.channel).toBe('referral');
+    expect(item.managerName).toBeNull();
+  });
+
+  it('falls back to the v1-derived status and source channel when the v2 columns are unset', () => {
+    const columns = v2LeadColumnsFromRow({});
+    const item = toV2LeadListItem(lead, columns);
+    expect(item.status).toBe(deriveV2LeadStatus(lead.clientStatus, lead.callStatus));
+    expect(item.rating).toBeNull();
+    expect(item.channel).toBe(channelFromSource(lead.source));
   });
 });

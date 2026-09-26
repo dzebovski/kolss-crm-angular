@@ -36,5 +36,6 @@ export class V2LeadsFilters {
   readonly searchChange = output<string>();
   readonly periodChange = output<V2LeadPeriod>();
   readonly statusToggle = output<V2LeadStatus>();
+  readonly ratingToggle = output<V2LeadRating>();
   readonly clear = output<void>();
 }

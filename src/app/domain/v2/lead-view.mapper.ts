@@ -1,5 +1,6 @@
 import { formatPhoneDisplay } from '@core/phone/phone';
 import type { CallStatus, ClientStatus, Lead, LeadSource } from '@domain/lead.types';
+import type { V2LeadColumns } from './lead-card.types';
 import type {
   V2LeadChannel,
   V2LeadDisplayStatus,
@@ -7,26 +8,25 @@ import type {
   V2LegacyLeadStatus,
 } from './lead-view.types';
 
-export interface V2LeadMapContext {
-  /** Display name of an active manager, or null when unknown or inactive. */
-  readonly managerName: (managerId: string) => string | null;
-}
-
-export function toV2LeadListItem(lead: Lead, context: V2LeadMapContext): V2LeadListItem {
+/**
+ * `lead` and `columns` come from the same raw `GET /v1/leads` row (v1 fields mapped by
+ * `mapLeadListRow`, v2 columns read by `v2LeadColumnsFromRow`; the v2 leads list service
+ * combines them, mirroring `toV2LeadCard`). `managerName` is resolved separately by the page
+ * from the employees list (as v1), so it always starts `null` here.
+ */
+export function toV2LeadListItem(lead: Lead, columns: V2LeadColumns): V2LeadListItem {
   const latest = lead.latestTimelineComment;
   return {
     id: lead.id,
     code: lead.referenceId.toUpperCase(),
     name: lead.name,
     phone: formatPhoneDisplay(lead.phone, lead.officeCode),
-    status: deriveV2LeadStatus(lead.clientStatus, lead.callStatus),
-    // TODO(W2): read the rating field once the API exposes it.
-    rating: null,
-    // TODO(W3): read the channel field once the API exposes it.
-    channel: channelFromSource(lead.source),
+    status: columns.v2Status ?? deriveV2LeadStatus(lead.clientStatus, lead.callStatus),
+    rating: columns.rating,
+    channel: columns.channel ?? channelFromSource(lead.source),
     officeId: lead.officeCode,
     managerId: lead.assignedToId,
-    managerName: lead.assignedToId ? context.managerName(lead.assignedToId) : null,
+    managerName: null,
     createdAt: lead.sourceCreatedAt,
     lastComment: latest ? { text: latest.comment, at: latest.occurredAt } : null,
   };

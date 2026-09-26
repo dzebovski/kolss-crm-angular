@@ -41,11 +41,12 @@
   [periodOptions]="periodOptions()"
   [rangeLabel]="rangeLabel()"
   [statusChips]="statusChips()"
-  [ratingChips]="ratingChips"
+  [ratingChips]="ratingChips()"
   [filtersActive]="filtersActive()"
   (searchChange)="onSearch($event)"
   (periodChange)="onPeriod($event)"
   (statusToggle)="toggleStatus($event)"
+  (ratingToggle)="toggleRating($event)"
   (clear)="clearFilters()"
 />
 
@@ -74,3 +75,25 @@
     />
   }
 </app-v2-leads-table>
+
+@if (hasMore()) {
+  <!-- Not drawn on the board (design gap): secondary button, centred under the table, in the
+       kit style. Appends the next 30-row page by cursor (D10, provisional). On error, the rows
+       stay and the same message/button pair from the list error state reappears here; clicking
+       the button again retries from the same cursor. -->
+  <div class="v2-leads__more">
+    @if (moreError(); as message) {
+      <p class="v2-leads__more-error" role="alert">{{ message }}</p>
+    }
+    <button
+      type="button"
+      appV2Button
+      variant="secondary"
+      [attr.aria-busy]="loadingMore() || null"
+      [disabled]="loadingMore()"
+      (click)="showMore()"
+    >
+      {{ 'v2.leads.showMore' | translate }}
+    </button>
+  </div>
+}
