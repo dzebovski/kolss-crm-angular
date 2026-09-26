@@ -2,6 +2,7 @@ import type { MessageKey } from '@core/i18n/messages';
 import type { LocaleCode } from '@domain/i18n.types';
 import type { ContractCurrency } from '@domain/lead.types';
 import type { OfficeId } from '@domain/office.types';
+import type { V2PhoneCountryCode } from '@domain/v2/phone-mask';
 
 /** Which national phone-number layout an office's numbers are formatted with. */
 export type PhoneFormat = 'ua' | 'pl';
@@ -26,6 +27,26 @@ export interface OfficeConfig {
   readonly referencePrefix: string;
   /** Stable display/priority order across office pickers and filters. */
   readonly sortOrder: number;
+  /**
+   * G3 popup phone mask country code (Popup-rules.dc.html "Masks and formats", Create-lead.dc.html
+   * `SHOWROOMS[].cc`). Distinct from `phoneFormat` above, which drives the v1-compatible
+   * `@core/phone` display format (`+38 0XX…`), not the new masked input's grouping
+   * (`+380 67 214 58 03`).
+   */
+  readonly phoneCountryCode: V2PhoneCountryCode;
+  /** `<app-v2-phone-input>` placeholder (Create-lead.dc.html `phonePh`), a real sample number. */
+  readonly phonePlaceholder: string;
+  /**
+   * Default currency for the G3 budget popup control (Create-lead.dc.html `CURRENCIES` +
+   * `initF().currency`). Deliberately not the same as `currency` above (Kyiv budgets are
+   * quoted in USD on the board, not UAH) — that field is the office's contract currency, this
+   * one is only the budget quick-picker's starting symbol.
+   */
+  readonly defaultBudgetCurrency: ContractCurrency;
+  /** i18n key for the showroom card-select's main label (Create-lead.dc.html `SHOWROOMS[].label`). */
+  readonly showroomCardLabelKey: MessageKey;
+  /** i18n key for the showroom card-select's sub line (Create-lead.dc.html `SHOWROOMS[].sub`). */
+  readonly showroomCardSubKey: MessageKey;
 }
 
 export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
@@ -39,6 +60,11 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
     defaultLocale: 'uk',
     referencePrefix: 'K',
     sortOrder: 0,
+    phoneCountryCode: '+380',
+    phonePlaceholder: '+380 67 214 58 03',
+    defaultBudgetCurrency: 'USD',
+    showroomCardLabelKey: 'v2.form.showroom.kyivLabel',
+    showroomCardSubKey: 'v2.form.showroom.kyivSub',
   },
   warsaw: {
     id: 'warsaw',
@@ -50,6 +76,11 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
     defaultLocale: 'pl',
     referencePrefix: 'W',
     sortOrder: 1,
+    phoneCountryCode: '+48',
+    phonePlaceholder: '+48 601 334 812',
+    defaultBudgetCurrency: 'PLN',
+    showroomCardLabelKey: 'v2.form.showroom.warsawLabel',
+    showroomCardSubKey: 'v2.form.showroom.warsawSub',
   },
 };
 
