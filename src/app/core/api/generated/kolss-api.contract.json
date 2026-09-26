@@ -1,6 +1,6 @@
 {
-  "version": "2.29.0",
-  "sha256": "0bac8b42f2d504716bdb3104a76c78b0c290613fcaf8df4b77bf90e0425484ed",
+  "version": "2.31.0",
+  "sha256": "737f2bed48d69dd10cd4997183924b79171df03f5a11c89217a97916444e1829",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -18,6 +18,7 @@
     "deleteLeadMarker",
     "updateLeadEvent",
     "deleteLeadEvent",
+    "correctLeadEvent",
     "translateLeadEvent",
     "answerLeadQuestion",
     "updateLeadQuestionAnswer",
@@ -44,6 +45,9 @@
     "getSalesFunnelReport",
     "getCurrencyRates",
     "updateCurrencyRates",
+    "createLeadDocumentUpload",
+    "listLeadDocuments",
+    "confirmLeadDocument",
     "createFileDownloadURL",
     "verifyMetaWebhook",
     "receiveMetaWebhook",

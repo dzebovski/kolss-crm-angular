@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.29.0' as const;
+export const API_CONTRACT_VERSION = '2.31.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -460,4 +460,63 @@ export interface ManagerTaskMutationResponse {
   readonly id: string;
   readonly version: number;
   readonly status: ManagerTaskStatus;
+}
+
+/** Add documents board file type tag (2.30.0, task W11). */
+export type LeadDocumentTag = 'plan' | 'photo' | 'drawing' | 'estimate' | 'other';
+
+/** Step 1 of a document upload: the file name decides the type (pdf, jpg, jpeg, png, heic, dwg). */
+export interface CreateLeadDocumentUploadRequest {
+  readonly fileName: string;
+  /** At most 25 MB (26 214 400 bytes). */
+  readonly sizeBytes: number;
+}
+
+/** Presigned direct-to-storage upload: send the bytes with `method`, `uploadUrl` and exactly `headers`. */
+export interface LeadDocumentUpload {
+  readonly attachmentId: string;
+  readonly uploadUrl: string;
+  readonly method: string;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly expiresAt: string;
+}
+
+/** Step 2: confirm the uploaded file; writes one `attachment` timeline event. */
+export interface ConfirmLeadDocumentRequest {
+  readonly attachmentId: string;
+  readonly tag?: LeadDocumentTag | '';
+  /** Optional timeline note, at most 1000 characters. */
+  readonly note?: string;
+}
+
+/** A confirmed lead document; download with `createFileDownloadURL(id)`. */
+export interface LeadDocument {
+  readonly id: string;
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly tag: LeadDocumentTag | null;
+  readonly uploadedBy: string;
+  readonly uploadedByName: string;
+  readonly createdAt: string;
+}
+
+/** Edit timeline entry board (2.31.0, task W12). */
+export type LeadEventCorrectionType = 'success' | 'later' | 'noanswer' | 'thinking' | 'comment';
+
+export interface LeadEventCorrectionRequest {
+  /** New type; must differ from the current one. */
+  readonly type?: LeadEventCorrectionType;
+  /** Required when the type becomes later / noanswer / thinking. */
+  readonly dueAt?: string;
+  readonly comment?: string;
+  /** Required; kept in the entry's edit history. */
+  readonly reason: string;
+}
+
+export interface LeadEventCorrectionResponse {
+  readonly ok: boolean;
+  readonly version: number;
+  /** True when the entry was the latest status entry and the lead's status followed. */
+  readonly leadStatusChanged: boolean;
 }

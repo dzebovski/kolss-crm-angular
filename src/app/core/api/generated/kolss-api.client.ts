@@ -1,11 +1,17 @@
-// Generated contract adapter for api/openapi.yaml v2.29.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.31.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '@env/environment';
 import type {
+  ConfirmLeadDocumentRequest,
+  CreateLeadDocumentUploadRequest,
   CreateManagerTaskRequest,
+  LeadDocument,
+  LeadDocumentUpload,
+  LeadEventCorrectionRequest,
+  LeadEventCorrectionResponse,
   ManagerTaskQuery,
   ManagerTaskListResponse,
   ManagerTaskMutationResponse,
@@ -119,6 +125,35 @@ export class KolssApiClient {
       `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`,
       body,
     );
+  }
+
+  /** CRM v2 Edit timeline entry: type and/or comment with a reason (2.31.0). */
+  correctEvent(
+    id: string,
+    eventId: string,
+    body: LeadEventCorrectionRequest,
+  ): Promise<LeadEventCorrectionResponse> {
+    return this.patch(
+      `/v1/leads/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}/correction`,
+      body,
+    );
+  }
+
+  /** CRM v2 Add documents, step 1: presigned direct upload (2.30.0). */
+  createLeadDocumentUpload(
+    id: string,
+    body: CreateLeadDocumentUploadRequest,
+  ): Promise<LeadDocumentUpload> {
+    return this.post(`/v1/leads/${encodeURIComponent(id)}/documents/uploads`, body);
+  }
+
+  /** Step 2: confirm the uploaded file (writes one timeline event). */
+  confirmLeadDocument(id: string, body: ConfirmLeadDocumentRequest): Promise<LeadDocument> {
+    return this.post(`/v1/leads/${encodeURIComponent(id)}/documents`, body);
+  }
+
+  listLeadDocuments(id: string): Promise<{ readonly items: readonly LeadDocument[] }> {
+    return this.get(`/v1/leads/${encodeURIComponent(id)}/documents`);
   }
 
   deleteEvent(id: string, eventId: string): Promise<void> {
