@@ -32,6 +32,7 @@ function meResponse(overrides: Partial<MeResponse['user']> & { role?: string } =
       canArchiveLeads: false,
       canRestoreLeads: false,
       canAskLeadQuestions: false,
+      canChangeLeadManager: false,
     },
   };
 }

@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.25.0' as const;
+export const API_CONTRACT_VERSION = '2.29.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -26,6 +26,27 @@ export type LeadProduct = 'kitchen' | 'wardrobe' | 'furniture' | 'bathroom' | 'h
 /** v2 Lost reasons (`V2StatusActivityRequest.lossReason`, 2.24.0). */
 export type V2LossReason =
   'bought_elsewhere' | 'out_of_budget' | 'not_relevant' | 'cant_reach_client' | 'other';
+
+/**
+ * Planned project type (`leads.project_type`, OpenAPI `ProjectType`, 2.28.0). "Fill lead info" /
+ * "Create project" boards: express (paid express evaluation), measure (paid measurement and
+ * project design), contract (contract signing).
+ */
+export type ProjectType = 'express' | 'measure' | 'contract';
+
+/**
+ * `GET /v1/loss-reasons` row (`public.loss_reasons`, OpenAPI `LossReason`). `is_v2` (2.29.0, task
+ * W10, decision D12) gates whether the CRM v2 "Lost" popup may offer/accept this code —
+ * data-driven so the list can grow without a deploy; not every row is a v1 code either.
+ */
+export interface LossReason {
+  readonly code: string;
+  readonly label_uk: string;
+  readonly label_pl: string;
+  /** Set for the codes of the CRM v2 Lost list. */
+  readonly label_en: string | null;
+  readonly is_v2: boolean;
+}
 
 /** `GET /v1/leads/facets` (2.24.0): chip counts; missing keys mean 0. */
 export interface LeadFacetsResponse {
@@ -49,13 +70,22 @@ export interface V2StatusActivityRequest {
   readonly nextAction?: string;
   /** invited only, required: an active member of the lead's office. */
   readonly designerId?: string;
-  /** lost only, required. */
+  /** lost only. Required unless `lossReasons` is sent instead (send exactly one of the two). */
   readonly lossReason?: V2LossReason;
+  /**
+   * lost only (2.29.0, task W10, decision D12): an alternative to `lossReason` for several
+   * reasons; not allowed together with it. `minItems: 1`. Each code must be a
+   * `public.loss_reasons` row with `is_v2 = true`. `comment` is required only when `'other'` is
+   * among the reasons.
+   */
+  readonly lossReasons?: readonly string[];
 }
 
 /**
- * `PATCH /v1/leads/{leadId}/info` (2.25.0), the "Lead info" popup. Omitted = unchanged;
- * `''` clears a text, `[]` clears products, `null` clears the measurement date.
+ * `PATCH /v1/leads/{leadId}/info` (2.25.0; extended 2.28.0, task W9), the "Lead info" popup /
+ * "Fill lead info" / "Create project" boards. Omitted = unchanged; `''` clears a text or (W9)
+ * `projectType`/`responsibleManagerId`, `[]` clears products and `null` clears the measurement
+ * date.
  */
 export interface UpdateLeadInfoRequest {
   /** One number or a range, e.g. `20 000 – 25 000`; `''` clears the budget. */
@@ -69,6 +99,56 @@ export interface UpdateLeadInfoRequest {
   readonly expectedLeadTime?: string;
   /** ISO date-time. */
   readonly preferredMeasurementAt?: string | null;
+  /** W9; reuses the W8 "Create lead" column. */
+  readonly aboutClient?: string;
+  /** W9; reuses the W8 "Create lead" column. */
+  readonly referredBy?: string;
+  /** W9 clarification checklist: approximate budget discussed. */
+  readonly checklistBudget?: boolean;
+  /** W9 clarification checklist: project location discussed. */
+  readonly checklistLocation?: boolean;
+  /** W9 clarification checklist: production and installation period discussed. */
+  readonly checklistPeriod?: boolean;
+  /** W9 clarification checklist: materials discussed. */
+  readonly checklistMaterials?: boolean;
+  /** W9 clarification checklist: product type discussed. */
+  readonly checklistProduct?: boolean;
+  /** W9; "Client is informed about the next steps". The popup shows it as required; the API never requires it. */
+  readonly clientInformed?: boolean;
+  /** W9; `''` clears it. Not accepted by the "Successful call" activity — info popup only. */
+  readonly projectType?: ProjectType | '';
+  /**
+   * W9; `''` clears it. Must be an active, non-super_admin member of the lead's office (same rule
+   * as `assignedToId`, task G4) — distinct from the lead's `assignedToId`.
+   */
+  readonly responsibleManagerId?: string;
+}
+
+/**
+ * `POST /v1/leads` body. `channel`, `referredBy`, `products`, `estimatedBudgetText` and
+ * `aboutClient` are CRM v2 "Create lead" popup fields (2.26.0), all optional; v1 keeps working
+ * unchanged when they are omitted.
+ */
+export interface CreateLeadRequest {
+  readonly officeId: string;
+  readonly source: 'website' | 'facebook' | 'office' | 'other';
+  readonly name: string;
+  readonly phone: string;
+  readonly email?: string | null;
+  readonly cityRegion: string;
+  readonly productInterest: string;
+  readonly estimatedBudget?: number | null;
+  readonly estimatedBudgetCurrency?: MoneyCurrency;
+  readonly initialMessage: string;
+  /** Lead source date/time in the selected office's local timezone, e.g. `2026-07-20T12:00`. */
+  readonly sourceCreatedAtLocal: string;
+  /** "other" is not accepted here; omitted defaults the channel from `source` as before. */
+  readonly channel?: LeadChannel;
+  readonly referredBy?: string;
+  readonly products?: readonly LeadProduct[];
+  /** One number or a range, e.g. `20 000 – 25 000`; its lower bound overrides `estimatedBudget`. */
+  readonly estimatedBudgetText?: string;
+  readonly aboutClient?: string;
 }
 
 /** `POST /v1/leads/{leadId}/activities` with `type: rating` (2.20.0). */
@@ -171,6 +251,12 @@ export interface MeResponse {
     readonly canArchiveLeads: boolean;
     readonly canRestoreLeads: boolean;
     readonly canAskLeadQuestions: boolean;
+    /**
+     * Same office scope as `canEditLeadFields`; the actual gate is `PATCH /v1/leads/{leadId}`
+     * (2.27.0, task G4). v1's "Assign manager" dialog does not read this flag — only CRM v2 UI
+     * is meant to use it. Not consumed anywhere yet.
+     */
+    readonly canChangeLeadManager: boolean;
   };
 }
 

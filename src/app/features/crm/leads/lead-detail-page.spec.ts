@@ -170,6 +170,7 @@ describe('LeadDetailView', () => {
       canArchiveLeads: isSuperAdmin || role === 'office_admin',
       canRestoreLeads: isSuperAdmin,
       canAskLeadQuestions: isSuperAdmin || role === 'office_admin' || role === 'curator',
+      canChangeLeadManager: false,
     };
   }
 
