@@ -1,5 +1,5 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { form, FormField, required } from '@angular/forms/signals';
 
 import { TranslatePipe } from '@core/i18n/translate.pipe';
@@ -19,12 +19,20 @@ export interface V2EditEntryData {
     <app-v2-dialog
       [title]="'lead.editHistory' | translate"
       [subtitle]="'lead.editHistoryHint' | translate"
+      width="documents"
       [hint]="'v2.dialog.autoAuthor' | translate"
       [saveLabel]="'common.save' | translate"
-      [saveDisabled]="!entry().valid() || !model().comment.trim()"
+      [invalid]="invalid()"
+      [errorCount]="invalid() ? 1 : 0"
+      [hasUnsavedInput]="hasUnsavedInput()"
       (save)="save()"
+      (invalidAttempt)="touched.set(true)"
     >
-      <app-v2-form-field [label]="'v2.timeline.comment' | translate" [required]="true">
+      <app-v2-form-field
+        [label]="'v2.timeline.comment' | translate"
+        [required]="true"
+        [error]="touched() && invalid() ? ('v2.dialog.fieldRequired' | translate) : ''"
+      >
         <textarea cdkFocusInitial rows="4" [formField]="entry.comment"></textarea>
       </app-v2-form-field>
     </app-v2-dialog>
@@ -38,6 +46,12 @@ export class V2EditEntryDialog {
   protected readonly entry = form(this.model, (path) => {
     required(path.comment);
   });
+  /** Set once Save is pressed while empty; the field only turns red after that. */
+  protected readonly touched = signal(false);
+  protected readonly invalid = computed(() => !this.model().comment.trim());
+  protected readonly hasUnsavedInput = computed(
+    () => this.model().comment.trim() !== this.data.comment.trim(),
+  );
 
   protected save(): void {
     const comment = this.model().comment.trim();
@@ -58,7 +72,9 @@ export interface V2DeleteEntryData {
   template: `
     <app-v2-dialog
       [title]="'leadDetail.deleteEventTitle' | translate"
+      width="status"
       [saveLabel]="'leadDetail.deleteEventConfirmButton' | translate"
+      primaryVariant="danger"
       (save)="dialogRef.close(true)"
     >
       <p class="v2-delete-entry__text">

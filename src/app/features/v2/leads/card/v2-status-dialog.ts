@@ -14,6 +14,7 @@ import type { V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
 import type { CrmEmployee } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
+import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import type { V2CallResult, V2StatusChange } from './v2-lead-action-panel';
 import { V2ProductChips } from './v2-product-chips';
@@ -108,7 +109,7 @@ interface StatusModel {
 // activity and closes with `true`.
 @Component({
   selector: 'app-v2-status-dialog',
-  imports: [FormField, TranslatePipe, V2DialogShell, V2FormField, V2ProductChips],
+  imports: [FormField, TranslatePipe, V2DialogShell, V2FieldGroup, V2FormField, V2ProductChips],
   templateUrl: './v2-status-dialog.html',
   styleUrl: './v2-status-dialog.scss',
 })
@@ -139,6 +140,50 @@ export class V2StatusDialog {
 
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
+  /** Set once Save is pressed while invalid; required-field errors stay hidden until then. */
+  protected readonly touched = signal(false);
+
+  /** Popup-rules.dc.html footer: how many required fields are still missing. */
+  protected readonly missingCount = computed(() => {
+    let count = 0;
+    if (this.copy.dateRequired && !this.dueAt()) count++;
+    if (this.kind === 'invited' && !this.model().designerId) count++;
+    if (this.kind === 'lost' && !this.reason()) count++;
+    if (!this.budgetValid()) count++;
+    return count;
+  });
+  protected readonly invalid = computed(() => this.missingCount() > 0);
+  /** "Lost" is the only red primary button (Popup-rules.dc.html "Button labels"). */
+  protected readonly primaryVariant = this.kind === 'lost' ? 'danger' : 'primary';
+  protected readonly hasUnsavedInput = computed(() => {
+    const value = this.model();
+    return (
+      value.comment.trim() !== '' ||
+      value.date !== '' ||
+      value.nextAction.trim() !== '' ||
+      value.designerId !== '' ||
+      value.budget.trim() !== this.initial.budget.trim() ||
+      value.location.trim() !== this.initial.location.trim() ||
+      this.reason() !== null ||
+      this.products().length !== this.data.columns.products.length
+    );
+  });
+
+  protected readonly dateError = computed(() =>
+    this.touched() && this.copy.dateRequired && !this.dueAt()
+      ? this.i18n.t('v2.dialog.fieldRequired')
+      : '',
+  );
+  protected readonly designerError = computed(() =>
+    this.touched() && this.kind === 'invited' && !this.model().designerId
+      ? this.i18n.t('v2.dialog.fieldRequired')
+      : '',
+  );
+  protected readonly reasonError = computed(() =>
+    this.touched() && this.kind === 'lost' && !this.reason()
+      ? this.i18n.t('v2.dialog.fieldRequired')
+      : '',
+  );
 
   /** Designers: active staff of the lead's office (API rule, contract decision 14). */
   protected readonly designers = computed(() =>
@@ -153,7 +198,7 @@ export class V2StatusDialog {
   );
 
   private readonly dueAt = computed(() => v2LocalDateTimeToIso(this.model().date));
-  private readonly budgetValid = computed(
+  protected readonly budgetValid = computed(
     () => this.kind !== 'success' || isV2BudgetText(this.model().budget),
   );
 

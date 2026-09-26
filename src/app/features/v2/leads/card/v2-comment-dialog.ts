@@ -15,6 +15,7 @@ export interface V2CommentData {
 
 // Add comment popup from lead card v1.3 (Modal `comment`): Remind on (optional date and time)
 // and Comment *. No "Assign to" field (decision D5). Closes with `true` after a save.
+// Width 560 (Add-comment.dc.html).
 @Component({
   selector: 'app-v2-comment-dialog',
   imports: [FormField, TranslatePipe, V2DialogShell, V2FormField],
@@ -22,10 +23,15 @@ export interface V2CommentData {
     <app-v2-dialog
       [title]="'v2.comment.title' | translate"
       [subtitle]="'v2.comment.subtitle' | translate"
+      width="status"
       [hint]="hint() | translate"
       [saveLabel]="'v2.comment.save' | translate"
-      [saveDisabled]="!comment().valid() || !model().text.trim() || saving()"
+      [saveDisabled]="saving()"
+      [invalid]="invalid()"
+      [errorCount]="invalid() ? 1 : 0"
+      [hasUnsavedInput]="hasUnsavedInput()"
       (save)="save()"
+      (invalidAttempt)="touched.set(true)"
     >
       @if (error(); as message) {
         <p class="v2-comment__error" role="alert">{{ message }}</p>
@@ -33,7 +39,11 @@ export interface V2CommentData {
       <app-v2-form-field [label]="'v2.comment.remindOn' | translate">
         <input type="datetime-local" [formField]="comment.remindOn" />
       </app-v2-form-field>
-      <app-v2-form-field [label]="'v2.timeline.comment' | translate" [required]="true">
+      <app-v2-form-field
+        [label]="'v2.timeline.comment' | translate"
+        [required]="true"
+        [error]="touched() && invalid() ? ('v2.dialog.fieldRequired' | translate) : ''"
+      >
         <textarea
           cdkFocusInitial
           rows="3"
@@ -67,6 +77,12 @@ export class V2CommentDialog {
   });
   protected readonly saving = signal(false);
   protected readonly error = signal('');
+  /** Set once Save is pressed while empty; the comment field only turns red after that. */
+  protected readonly touched = signal(false);
+  protected readonly invalid = computed(() => !this.model().text.trim());
+  protected readonly hasUnsavedInput = computed(
+    () => this.model().text.trim() !== '' || this.model().remindOn !== '',
+  );
 
   /** Design footNote: a reminder is created when a date is set, otherwise it's a note. */
   protected readonly hint = computed(() =>

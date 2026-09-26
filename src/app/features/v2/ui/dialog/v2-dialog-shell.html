@@ -1,9 +1,23 @@
-<form class="v2-dialog" novalidate (submit)="submit($event)">
+<form class="v2-dialog" novalidate [attr.data-width]="width()" (submit)="submit($event)">
   <header class="v2-dialog__header">
     <div class="v2-dialog__heading">
-      <h2 class="v2-dialog__title" [attr.id]="titleId">{{ title() }}</h2>
+      <div class="v2-dialog__title-row">
+        @if (dotColor(); as color) {
+          <span class="v2-dialog__title-dot" [style.background]="color" aria-hidden="true"></span>
+        }
+        <h2 class="v2-dialog__title" [attr.id]="titleId">{{ title() }}</h2>
+      </div>
       @if (subtitle()) {
         <p class="v2-dialog__subtitle">{{ subtitle() }}</p>
+      }
+      @if (leadContext(); as ctx) {
+        <div class="v2-dialog__lead-context">
+          <span class="v2-dialog__avatar" aria-hidden="true">{{ ctx.initials }}</span>
+          <span class="v2-dialog__lead-name">{{ ctx.name }}</span>
+          <app-v2-code-chip [code]="ctx.code" size="sm" />
+          <span class="v2-dialog__lead-phone">{{ ctx.phone }}</span>
+          <app-v2-status-pill [status]="ctx.status" size="sm" />
+        </div>
       }
     </div>
     <button
@@ -19,19 +33,53 @@
     </button>
   </header>
 
-  <div class="v2-dialog__body">
+  <div class="v2-dialog__body" #body>
     <ng-content />
   </div>
 
   <footer class="v2-dialog__footer">
-    <span class="v2-dialog__hint">{{ hint() }}</span>
-    <div class="v2-dialog__actions">
-      <button type="button" appV2Button (click)="close()">
-        {{ 'v2.dialog.cancel' | translate }}
-      </button>
-      <button type="submit" appV2Button variant="primary" [disabled]="saveDisabled()">
-        {{ saveLabel() }}
-      </button>
-    </div>
+    @if (!confirming()) {
+      <span
+        class="v2-dialog__status"
+        [class.v2-dialog__status--err]="showErrorStatus()"
+        aria-live="polite"
+      >
+        @if (showErrorStatus()) {
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7.5v5.5" />
+            <path d="M12 16.5h.01" />
+          </svg>
+        }
+        <span>{{ footerText() }}</span>
+      </span>
+      <div class="v2-dialog__actions">
+        <button type="button" appV2Button (click)="close()">
+          {{ cancelLabel() || ('v2.dialog.cancel' | translate) }}
+        </button>
+        <button type="submit" appV2Button [variant]="primaryVariant()" [disabled]="saveDisabled()">
+          {{ saveLabel() }}
+        </button>
+      </div>
+    } @else {
+      <span class="v2-dialog__status">{{ 'v2.dialog.discardTitle' | translate }}</span>
+      <div class="v2-dialog__actions">
+        <button type="button" appV2Button (click)="keepEditing()">
+          {{ 'v2.dialog.keepEditing' | translate }}
+        </button>
+        <button type="button" appV2Button variant="danger" (click)="discard()">
+          {{ 'v2.dialog.discard' | translate }}
+        </button>
+      </div>
+    }
   </footer>
 </form>

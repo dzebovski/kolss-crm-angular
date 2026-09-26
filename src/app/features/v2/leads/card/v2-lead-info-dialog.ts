@@ -41,7 +41,10 @@ interface LeadInfoModel {
       [subtitle]="'v2.leadInfo.subtitle' | translate"
       [hint]="'v2.leadInfo.hint' | translate"
       [saveLabel]="'v2.leadInfo.save' | translate"
-      [saveDisabled]="!info().valid() || saving()"
+      [saveDisabled]="saving()"
+      [invalid]="invalid()"
+      [errorCount]="info.budget().errors().length"
+      [hasUnsavedInput]="hasUnsavedInput()"
       (save)="save()"
     >
       @if (error(); as message) {
@@ -49,7 +52,10 @@ interface LeadInfoModel {
       }
 
       <div class="v2-lead-info__pair">
-        <app-v2-form-field [label]="'v2.card.budget' | translate">
+        <app-v2-form-field
+          [label]="'v2.card.budget' | translate"
+          [error]="info.budget().errors()[0]?.message ?? ''"
+        >
           <input
             cdkFocusInitial
             autocomplete="off"
@@ -189,6 +195,12 @@ export class V2LeadInfoDialog {
 
   protected readonly saving = signal(false);
   private readonly saveError = signal('');
+  protected readonly invalid = computed(() => this.info.budget().errors().length > 0);
+  protected readonly hasUnsavedInput = computed(
+    () =>
+      JSON.stringify(this.model()) !== JSON.stringify(this.initial) ||
+      !sameProducts(this.products(), this.data.columns.products),
+  );
   /** The budget format error as soon as the text is wrong, then any save error. */
   protected readonly error = computed(
     () => this.info.budget().errors()[0]?.message ?? this.saveError(),

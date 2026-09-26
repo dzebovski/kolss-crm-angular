@@ -15,27 +15,19 @@
   line-height: 1.45;
 }
 
-.v2-status__reasons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--v2-space-2);
-}
-
-.v2-status__label {
-  color: var(--v2-muted);
-  font-size: 12px;
-}
-
 .v2-status__chips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
+// `--v2-field-tone` comes from the wrapping `app-v2-field-group`: unset (line-strong) while
+// valid, `--v2-danger` once Save was pressed with no reason picked (Popup-rules.dc.html
+// "Groups ... use the same reserved [message] line and only change their border colour").
 .v2-status__chip {
   height: var(--v2-control-sm);
   padding: 0 var(--v2-space-3);
-  border: 1px solid var(--v2-line-strong);
+  border: 1px solid var(--v2-field-tone, var(--v2-line-strong));
   border-radius: var(--v2-radius-pill);
   background: var(--v2-surface);
   color: var(--v2-ink);

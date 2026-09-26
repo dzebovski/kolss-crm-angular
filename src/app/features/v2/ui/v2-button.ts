@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 
 import { v2ToneColor, type V2Tone } from './v2-tone';
 
-export type V2ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'call-result';
+export type V2ButtonVariant = 'primary' | 'secondary' | 'outlined' | 'call-result' | 'danger';
 export type V2ButtonSize = 'sm' | 'md' | 'lg';
 
 // Button from the design system (components/Button) with the sizes used on the boards:

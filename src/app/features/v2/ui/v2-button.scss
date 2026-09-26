@@ -71,6 +71,29 @@
   }
 }
 
+// Popup-rules.dc.html "Button labels": "Mark as lost (red)" is the only red primary button.
+// #b42318 is `--v2-danger` (= `--v2-status-noanswer`); the hover/pressed shades aren't design
+// tokens, derived the same way as ink-hover/ink-pressed (darken toward black).
+:host([data-variant='danger']) {
+  background: var(--v2-danger);
+  border-color: var(--v2-danger);
+  color: var(--v2-on-ink);
+
+  &:hover#{interactive.$enabled} {
+    background: #9e1e15;
+    border-color: #9e1e15;
+  }
+
+  &:active#{interactive.$enabled} {
+    background: #7f1811;
+    border-color: #7f1811;
+  }
+}
+
+:host([data-variant='danger'][data-size='md']) {
+  padding: 0 18px;
+}
+
 :host([data-variant='call-result']) {
   gap: var(--v2-space-2);
   height: var(--v2-control-lg);
