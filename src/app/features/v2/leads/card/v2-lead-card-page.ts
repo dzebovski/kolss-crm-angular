@@ -15,7 +15,6 @@ import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { OFFICE_CONFIG } from '@core/office/office.config';
 import * as leadPolicy from '@core/policy/lead.policy';
-import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import { formatV2CardDate, formatV2DayRecency, formatV2Time } from '@domain/v2/date-format';
 import { leadIsTerminal, type LeadReminderKind } from '@domain/lead.rules';
@@ -339,7 +338,7 @@ export class V2LeadCardPage {
       lead: loaded.lead,
       card,
       employees: this.employees(),
-      canAssignManager: isSuperAdminRole(this.auth.profile()?.role),
+      canAssignManager: leadPolicy.canChangeLeadManager(this.policyContext(), loaded.lead),
     });
     if (await firstValueFrom(ref.closed)) this.leadResource.reload();
   }

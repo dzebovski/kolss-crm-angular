@@ -3,6 +3,7 @@ import type { Lead, LeadEvent } from '@domain/lead.types';
 import {
   canArchiveLead,
   canAskLeadQuestion,
+  canChangeLeadManager,
   canEditLead,
   canManageArchivedLead,
   canMutateEvent,
@@ -89,6 +90,53 @@ describe('lead.policy', () => {
         userOffices: [{ code: 'kyiv' }],
       });
       expect(canEditLead(ctx, lead())).toBe(false);
+    });
+  });
+
+  describe('canChangeLeadManager', () => {
+    it('allows an office member with canChangeLeadManager in their own office (D9)', () => {
+      const ctx = context({
+        permissions: permissions({ canChangeLeadManager: true }),
+        userOffices: [{ code: 'kyiv' }],
+      });
+      expect(canChangeLeadManager(ctx, lead({ officeCode: 'kyiv' }))).toBe(true);
+    });
+
+    it('denies a user without the flag, even in their own office', () => {
+      // `permissions()` already defaults canChangeLeadManager to false; no override needed.
+      const ctx = context({
+        permissions: permissions(),
+        userOffices: [{ code: 'kyiv' }],
+      });
+      expect(canChangeLeadManager(ctx, lead({ officeCode: 'kyiv' }))).toBe(false);
+    });
+
+    it('denies a user with the flag but no access to the lead office', () => {
+      const ctx = context({
+        permissions: permissions({ canChangeLeadManager: true }),
+        userOffices: [{ code: 'kyiv' }],
+      });
+      expect(canChangeLeadManager(ctx, lead({ officeCode: 'warsaw' }))).toBe(false);
+    });
+
+    it('falls back to super-admin-only when the flag is missing (older API)', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit the key
+      const { canChangeLeadManager: _omit, ...older } = permissions();
+      const olderApiPermissions = older as MeResponse['permissions'];
+      const ctxAdmin = context({ isSuperAdmin: true, permissions: olderApiPermissions });
+      const ctxMember = context({ isSuperAdmin: false, permissions: olderApiPermissions });
+      expect(canChangeLeadManager(ctxAdmin, lead())).toBe(true);
+      expect(canChangeLeadManager(ctxMember, lead())).toBe(false);
+    });
+
+    it('denies once the lead is archived, even with the flag', () => {
+      const ctx = context({
+        isSuperAdmin: true,
+        permissions: permissions({ canChangeLeadManager: true }),
+      });
+      expect(canChangeLeadManager(ctx, lead({ archivedAt: '2026-07-01T00:00:00.000Z' }))).toBe(
+        false,
+      );
     });
   });
 

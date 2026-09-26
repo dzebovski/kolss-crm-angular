@@ -35,6 +35,22 @@ export function canEditLead(
   return inUserOffice(context, lead.officeCode);
 }
 
+/**
+ * Can the current user change this lead's manager (D9, task G4): any actor who can edit the
+ * lead may also reassign it. Falls back to the previous super-admin-only rule when
+ * `canChangeLeadManager` is absent from `/v1/me` (a CRM build running against an API older
+ * than 2.27.0).
+ */
+export function canChangeLeadManager(
+  context: LeadPolicyContext,
+  lead: Pick<Lead, 'archivedAt' | 'officeCode'>,
+): boolean {
+  if (lead.archivedAt) return false;
+  if (context.permissions?.canChangeLeadManager === undefined) return context.isSuperAdmin;
+  if (!context.permissions.canChangeLeadManager) return false;
+  return inUserOffice(context, lead.officeCode);
+}
+
 /** Can the current user ask a question on this non-archived lead. */
 export function canAskLeadQuestion(
   context: LeadPolicyContext,
