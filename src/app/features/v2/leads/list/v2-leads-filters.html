@@ -12,11 +12,31 @@
       [options]="periodOptions()"
       [value]="period()"
       [ariaLabel]="'v2.leads.period' | translate"
-      (valueChange)="periodChange.emit($event)"
+      (valueChange)="pickPeriod($event)"
     />
 
-    <span class="v2-filters__range">{{ rangeLabel() }}</span>
+    @if (period() === 'custom') {
+      <button
+        type="button"
+        class="v2-filters__range v2-filters__range--button"
+        (click)="customOpen.emit()"
+      >
+        {{ rangeLabel() }}
+      </button>
+    } @else {
+      <span class="v2-filters__range">{{ rangeLabel() }}</span>
+    }
   </div>
+
+  @if (rangeOpen()) {
+    <app-v2-date-range-picker
+      [from]="rangeFrom()"
+      [to]="rangeTo()"
+      [today]="today()"
+      (apply)="customApply.emit($event)"
+      (cancel)="customCancel.emit()"
+    />
+  }
 
   <div class="v2-filters__row v2-filters__chips-row">
     <span class="v2-filters__label" id="v2-filters-status">{{

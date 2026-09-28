@@ -7,6 +7,7 @@
 }
 
 .v2-filters {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -31,6 +32,16 @@
 .v2-filters__range {
   color: var(--v2-muted);
   font-size: 13px;
+}
+
+.v2-filters__range--button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 .v2-filters__chips-row {

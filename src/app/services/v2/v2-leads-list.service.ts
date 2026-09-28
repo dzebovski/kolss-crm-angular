@@ -13,8 +13,10 @@ export const V2_LEADS_PAGE_SIZE = 30;
 /** Leads-list filters that go straight to `GET /v1/leads` and `GET /v1/leads/facets`. */
 export interface V2LeadsListFilters {
   readonly officeId: string | null;
-  /** Preset period length in days; `null` = no period filter (only for a future custom range). */
+  /** Preset period length in days; `null` when a custom range is present. */
   readonly days: number | null;
+  readonly createdFrom: string | null;
+  readonly createdTo: string | null;
   readonly search: string;
   readonly statuses: readonly V2LeadStatus[];
   readonly ratings: readonly V2LeadRating[];
@@ -68,6 +70,8 @@ export class V2LeadsListService {
       v2Status: filters.statuses.length > 0 ? filters.statuses : undefined,
       rating: filters.ratings.length > 0 ? filters.ratings : undefined,
       days: filters.days ?? undefined,
+      createdFrom: filters.createdFrom ?? undefined,
+      createdTo: filters.createdTo ?? undefined,
     };
   }
 }

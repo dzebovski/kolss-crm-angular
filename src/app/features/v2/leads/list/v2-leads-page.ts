@@ -6,6 +6,7 @@ import {
   input,
   linkedSignal,
   resource,
+  signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -35,6 +36,7 @@ import { V2EmptyState } from '../../ui/v2-empty-state';
 import type { V2SegmentOption } from '../../ui/v2-segmented-control';
 import { V2_RATING_LABEL, V2_STATUS_LABEL } from '../../ui/v2-tone';
 import { V2LeadsFilters, type V2LeadChip } from './v2-leads-filters';
+import type { V2DateRange } from './v2-date-range-picker';
 import { V2CreateLeadDialog, type V2CreateLeadData } from './v2-create-lead-dialog';
 import { parseV2LeadsQuery, toV2LeadsQueryParams, type V2LeadsQuery } from './v2-leads-query';
 import { V2LeadsTable } from './v2-leads-table';
@@ -77,6 +79,8 @@ export class V2LeadsPage {
   // Query params, bound by `withComponentInputBinding()`.
   readonly q = input<string>();
   readonly period = input<string>();
+  readonly createdFrom = input<string>();
+  readonly createdTo = input<string>();
   readonly status = input<string>();
   readonly rating = input<string>();
 
@@ -84,6 +88,8 @@ export class V2LeadsPage {
     parseV2LeadsQuery({
       q: this.q(),
       period: this.period(),
+      createdFrom: this.createdFrom(),
+      createdTo: this.createdTo(),
       status: this.status(),
       rating: this.rating(),
     }),
@@ -106,6 +112,8 @@ export class V2LeadsPage {
   private readonly filters = computed<V2LeadsListFilters>(() => ({
     officeId: this.session.selectedOfficeId(),
     days: V2_LEAD_PERIOD_DAYS[this.query().period],
+    createdFrom: this.query().createdFrom,
+    createdTo: this.query().createdTo,
     search: this.query().q,
     statuses: this.query().statuses,
     ratings: this.query().ratings,
@@ -115,6 +123,8 @@ export class V2LeadsPage {
   private readonly periodFilters = computed<V2LeadsListFilters>(() => ({
     officeId: this.session.selectedOfficeId(),
     days: V2_LEAD_PERIOD_DAYS[this.query().period],
+    createdFrom: this.query().createdFrom,
+    createdTo: this.query().createdTo,
     search: '',
     statuses: [],
     ratings: [],
@@ -219,12 +229,28 @@ export class V2LeadsPage {
     return (Object.keys(PERIOD_LABEL) as V2LeadPeriod[]).map((value) => ({
       value,
       label: this.i18n.t(PERIOD_LABEL[value]),
-      // TODO(v2): the custom range picker is not in the design yet (L5).
-      disabled: value === 'custom',
     }));
   });
 
+  protected readonly rangeOpen = signal(false);
+  protected readonly displayedPeriod = computed<V2LeadPeriod>(() =>
+    this.rangeOpen() ? 'custom' : this.query().period,
+  );
+  protected readonly rangeFrom = computed(() => {
+    const query = this.query();
+    if (query.period === 'custom' && query.createdFrom) return query.createdFrom;
+    const days = V2_LEAD_PERIOD_DAYS[query.period] ?? V2_LEAD_PERIOD_DAYS.d40!;
+    return isoDate(v2PeriodStart(this.now(), days));
+  });
+  protected readonly rangeTo = computed(() => {
+    const query = this.query();
+    return query.period === 'custom' && query.createdTo ? query.createdTo : isoDate(this.now());
+  });
+
   protected readonly rangeLabel = computed(() => {
+    if (this.query().period === 'custom') {
+      return `${formatV2ReportDate(localDate(this.rangeFrom()))} – ${formatV2ReportDate(localDate(this.rangeTo()))}`;
+    }
     const days = V2_LEAD_PERIOD_DAYS[this.query().period] ?? 0;
     const today = this.now();
     return `${formatV2ReportDate(v2PeriodStart(today, days))} – ${formatV2ReportDate(today)}`;
@@ -333,7 +359,17 @@ export class V2LeadsPage {
   }
 
   protected onPeriod(period: V2LeadPeriod): void {
+    this.rangeOpen.set(false);
     this.navigate({ period });
+  }
+
+  protected openCustomRange(): void {
+    this.rangeOpen.set(true);
+  }
+
+  protected applyCustomRange(range: V2DateRange): void {
+    this.rangeOpen.set(false);
+    this.navigate({ period: 'custom', createdFrom: range.from, createdTo: range.to });
   }
 
   protected toggleStatus(status: V2LeadStatus): void {
@@ -366,4 +402,13 @@ export class V2LeadsPage {
     this.writtenQ = queryParams['q'] ?? '';
     void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
   }
+}
+
+function isoDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function localDate(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
