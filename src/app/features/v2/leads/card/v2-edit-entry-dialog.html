@@ -1,0 +1,90 @@
+<app-v2-dialog
+  [title]="'v2.timelineCorrection.title' | translate"
+  [subtitle]="'v2.timelineCorrection.subtitle' | translate"
+  [leadContext]="leadContext()"
+  width="documents"
+  [hint]="
+    (changed() ? 'v2.timelineCorrection.footer' : 'v2.timelineCorrection.noChanges') | translate
+  "
+  [cancelLabel]="'v2.timelineCorrection.cancel' | translate"
+  [saveLabel]="'v2.timelineCorrection.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-edit-entry__error" role="alert">{{ message }}</p>
+  }
+
+  <div class="v2-edit-entry__original">
+    <div class="v2-edit-entry__original-head">
+      <strong><span class="v2-edit-entry__dot"></span>{{ originalLabel() }}</strong>
+      <span>{{ originalWhen() }} · {{ data.event.actorName }}</span>
+    </div>
+    @if (data.event.comment; as comment) {
+      <p>{{ comment }}</p>
+    }
+    <small>{{ 'v2.timelineCorrection.original' | translate }}</small>
+  </div>
+
+  <app-v2-form-field
+    [label]="'v2.timelineCorrection.type' | translate"
+    [hint]="'v2.timelineCorrection.typeHint' | translate"
+  >
+    <div class="v2-edit-entry__types">
+      @for (type of types; track type) {
+        <button
+          type="button"
+          [class.v2-edit-entry__type--on]="model().type === type"
+          [attr.aria-pressed]="model().type === type"
+          (click)="selectType(type)"
+        >
+          <span [attr.data-tone]="type"></span>{{ typeLabels[type] | translate }}
+        </button>
+      }
+    </div>
+  </app-v2-form-field>
+
+  @if (statusChanges()) {
+    <div class="v2-edit-entry__status-note">
+      <span>{{ 'v2.timelineCorrection.statusChanges' | translate }}</span>
+      <strong>{{ originalLabel() }}</strong>
+      <span aria-hidden="true">→</span>
+      <strong>{{ typeLabels[model().type] | translate }}</strong>
+    </div>
+  }
+
+  @if (needsDate()) {
+    <app-v2-form-field [label]="dueLabel()" [required]="true" [error]="dateError()">
+      <app-v2-date-time-input
+        [value]="model().dueAt"
+        (valueChange)="setDueAt($event)"
+        (touch)="dateTouched.set(true)"
+      />
+    </app-v2-form-field>
+  }
+
+  <app-v2-form-field
+    [label]="'v2.timelineCorrection.comment' | translate"
+    [required]="true"
+    [hint]="'v2.timelineCorrection.commentHint' | translate"
+    [error]="commentError()"
+  >
+    <textarea cdkFocusInitial rows="3" [formField]="entry.comment"></textarea>
+  </app-v2-form-field>
+
+  <app-v2-form-field
+    [label]="'v2.timelineCorrection.reason' | translate"
+    [required]="changed()"
+    [hint]="'v2.timelineCorrection.reasonHint' | translate"
+    [error]="reasonError()"
+  >
+    <input
+      [placeholder]="'v2.timelineCorrection.reasonPlaceholder' | translate"
+      [formField]="entry.reason"
+    />
+  </app-v2-form-field>
+</app-v2-dialog>

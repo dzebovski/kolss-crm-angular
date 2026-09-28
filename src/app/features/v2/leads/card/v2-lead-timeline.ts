@@ -24,6 +24,7 @@ import {
   type V2TimelineSide,
   type V2TimelineTitle,
 } from '@domain/v2/lead-timeline';
+import { v2EventCorrectionType } from '@domain/v2/timeline-correction';
 import { V2_CHANNEL_LABEL, V2_PRODUCT_LABEL } from '../../ui/v2-lead-labels';
 import { V2TimelineEntry, type V2TimelineChangeSide } from '../../ui/v2-timeline-entry';
 import { V2_RATING_LABEL, V2_STATUS_LABEL } from '../../ui/v2-tone';
@@ -130,7 +131,8 @@ export class V2LeadTimeline {
           })),
           text: this.text(item),
           translation: event?.translationEn ?? null,
-          canEdit: mutable && !event?.question,
+          canEdit: mutable && Boolean(event && v2EventCorrectionType(event)),
+          edited: Boolean(event?.editAudit || event?.correctionAudit),
           canDelete: mutable,
           canTranslate: Boolean(event?.comment?.trim() && !event.translationEn),
         };

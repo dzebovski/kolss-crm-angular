@@ -44,6 +44,7 @@ export class V2TimelineEntry {
   readonly quote = input<string | null>(null);
   readonly rows = input<readonly V2TimelineRow[]>([]);
   readonly text = input<string | null>(null);
+  readonly editedLabel = input('');
 
   protected readonly dotColor = computed(() => timelineColor(this.tone()));
   protected readonly fromColor = computed(() => sideColor(this.change()?.from.tone ?? null));

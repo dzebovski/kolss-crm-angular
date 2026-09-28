@@ -2,6 +2,7 @@ import { inject, Service } from '@angular/core';
 
 import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
 import type {
+  LeadEventCorrectionRequest,
   LeadRating,
   LossReason,
   RatingActivityRequest,
@@ -152,8 +153,12 @@ export class V2LeadCardService {
   }
 
   /** Timeline entry text edit (D6, as v1). */
-  async updateEntry(leadId: string, eventId: string, comment: string): Promise<void> {
-    await this.leads.updateHistoryEvent(leadId, eventId, { comment });
+  async correctEntry(
+    leadId: string,
+    eventId: string,
+    request: LeadEventCorrectionRequest,
+  ): Promise<void> {
+    await this.api.correctEvent(leadId, eventId, request);
   }
 
   /** Timeline entry delete (D6, as v1). */

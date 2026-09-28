@@ -20,10 +20,11 @@ import { formatV2CardDate, formatV2DayRecency, formatV2Time } from '@domain/v2/d
 import { leadIsTerminal, type LeadReminderKind } from '@domain/lead.rules';
 import { v2ActionSuggestion } from '@domain/v2/lead-action';
 import { v2CurrentStatus, v2LeadTasks } from '@domain/v2/lead-card-status';
-import type { LeadEvent } from '@domain/lead.types';
+import type { Lead, LeadEvent } from '@domain/lead.types';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import type { V2LeadRating } from '@domain/v2/lead-view.types';
 import { v2LeadTimeline } from '@domain/v2/lead-timeline';
+import { v2EventCorrectionType } from '@domain/v2/timeline-correction';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2_NOW } from '../../core/v2-clock';
@@ -301,14 +302,31 @@ export class V2LeadCardPage {
   }
 
   protected async editEntry(event: LeadEvent): Promise<void> {
-    const lead = this.loaded()?.lead;
-    if (!lead || !this.canMutateEntry(event) || this.entryPending()) return;
-    const ref = this.dialogs.open<string, V2EditEntryData>(V2EditEntryDialog, {
-      comment: event.comment ?? '',
+    const loaded = this.loaded();
+    const lead = loaded?.lead;
+    if (!loaded || !lead || !this.canMutateEntry(event) || this.entryPending()) return;
+    const ref = this.dialogs.open<boolean, V2EditEntryData>(V2EditEntryDialog, {
+      lead,
+      columns: loaded.columns,
+      event,
+      now: this.now(),
+      statusWillFollow: this.correctionChangesStatus(lead, event),
     });
-    const comment = await firstValueFrom(ref.closed);
-    if (!comment || comment === event.comment?.trim()) return;
-    await this.run(this.entryPending, () => this.service.updateEntry(lead.id, event.id, comment));
+    if (await firstValueFrom(ref.closed)) this.leadResource.reload();
+  }
+
+  private correctionChangesStatus(lead: Lead, event: LeadEvent): boolean {
+    if (leadIsTerminal(lead)) return false;
+    const current = v2EventCorrectionType(event);
+    const latestStatus = lead.events
+      .filter((candidate) => {
+        const type = v2EventCorrectionType(candidate);
+        return type && type !== 'comment';
+      })
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+    return current === 'comment'
+      ? !latestStatus || event.occurredAt > latestStatus.occurredAt
+      : latestStatus?.id === event.id;
   }
 
   protected async deleteEntry(event: LeadEvent): Promise<void> {

@@ -398,6 +398,45 @@ describe('mapLeadListRow close', () => {
 });
 
 describe('mapLeadDetail events', () => {
+  it('maps the latest W12 correction audit for the Edited marker', () => {
+    const lead = mapLeadDetail(baseRow, {
+      contactAttempts: [],
+      showroomVisits: [],
+      contracts: [],
+      events: [
+        {
+          id: 'evt-corrected',
+          lead_id: 'lead-1',
+          actor_id: 'user-manager',
+          event_type: 'call_status_changed',
+          event_category: 'call_status',
+          status_code: 'callback_requested',
+          comment: 'Call tomorrow',
+          old_value: null,
+          new_value: {
+            corrections: [
+              {
+                at: '2026-09-25T12:00:00Z',
+                by: 'user-editor',
+                by_name: 'Kasia Nowak',
+                reason: 'Wrong result',
+              },
+            ],
+          },
+          created_at: '2026-09-25T10:00:00Z',
+          profiles: { display_name: 'Kyiv Manager' },
+        },
+      ],
+    });
+
+    expect(lead.events[0].correctionAudit).toEqual({
+      correctedAt: '2026-09-25T12:00:00Z',
+      correctedById: 'user-editor',
+      correctedByName: 'Kasia Nowak',
+      reason: 'Wrong result',
+    });
+  });
+
   it('maps profiles.display_name to actorName and lead_edited to lead_updated', () => {
     const lead = mapLeadDetail(baseRow, {
       contactAttempts: [],

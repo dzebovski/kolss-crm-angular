@@ -111,7 +111,15 @@ export interface LeadEvent {
   readonly category?: LeadEventCategory | null;
   readonly statusCode?: string | null;
   readonly editAudit?: LeadEventEditAudit | null;
+  readonly correctionAudit?: LeadEventCorrectionAudit | null;
   readonly question?: LeadQuestionData | null;
+}
+
+export interface LeadEventCorrectionAudit {
+  readonly correctedAt: string;
+  readonly correctedById: string;
+  readonly correctedByName: string;
+  readonly reason: string;
 }
 
 export interface LeadEventEditAudit {

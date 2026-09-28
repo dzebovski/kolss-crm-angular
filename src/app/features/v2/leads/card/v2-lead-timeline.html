@@ -28,6 +28,7 @@
       [quote]="entry.quote"
       [rows]="entry.rows"
       [text]="entry.text"
+      [editedLabel]="entry.edited ? ('v2.timeline.edited' | translate) : ''"
     >
       @if (entry.translation) {
         <p class="v2-timeline__translation">

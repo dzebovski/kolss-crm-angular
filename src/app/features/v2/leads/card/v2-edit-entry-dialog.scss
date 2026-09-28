@@ -1,0 +1,112 @@
+@use '../../../../../styles/v2/chip';
+@use '../../../../../styles/v2/type';
+
+.v2-edit-entry__error {
+  margin: 0;
+  color: var(--v2-danger);
+  @include type.text(caption);
+}
+
+.v2-edit-entry__original {
+  display: grid;
+  gap: var(--v2-space-2);
+  padding: var(--v2-space-4);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+
+  p,
+  small {
+    margin: 0;
+  }
+
+  p {
+    color: var(--v2-ink-2);
+    @include type.text(body);
+  }
+
+  small {
+    color: var(--v2-muted);
+    @include type.text(label);
+  }
+}
+
+.v2-edit-entry__original-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  color: var(--v2-muted);
+  @include type.text(label);
+
+  strong {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--v2-space-2);
+    color: var(--v2-ink);
+    @include type.text(label);
+  }
+}
+
+.v2-edit-entry__dot,
+.v2-edit-entry__types button > span {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--v2-status-noanswer);
+}
+
+.v2-edit-entry__types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+
+  button {
+    @include chip.base;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--v2-space-2);
+  }
+
+  .v2-edit-entry__type--on {
+    @include chip.on;
+  }
+
+  span[data-tone='success'] {
+    background: var(--v2-status-success);
+  }
+
+  span[data-tone='later'] {
+    background: var(--v2-status-later);
+  }
+
+  span[data-tone='thinking'] {
+    background: var(--v2-status-thinking);
+  }
+
+  span[data-tone='comment'] {
+    background: var(--v2-faint);
+  }
+}
+
+.v2-edit-entry__status-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+  padding: var(--v2-space-3);
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-ground);
+  @include type.text(caption);
+
+  > span:first-child {
+    color: var(--v2-muted);
+  }
+
+  strong {
+    padding: 3px var(--v2-space-2);
+    border: 1px solid var(--v2-line);
+    border-radius: 999px;
+    background: var(--v2-surface);
+    font-weight: 500;
+  }
+}

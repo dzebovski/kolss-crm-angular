@@ -78,9 +78,20 @@
 }
 
 .v2-timeline-entry__author {
+  margin-left: auto;
   flex-shrink: 0;
   color: var(--v2-muted);
   font-size: 12px;
+}
+
+.v2-timeline-entry__edited {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-muted);
+  font-size: 11px;
+  font-weight: 500;
 }
 
 .v2-timeline-entry__change {

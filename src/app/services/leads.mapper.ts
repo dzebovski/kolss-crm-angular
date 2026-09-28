@@ -441,6 +441,7 @@ function mapEvents(events: readonly LeadEventRow[]): readonly LeadEvent[] {
     category: mapEventCategory(event.event_category),
     statusCode: event.status_code ?? null,
     editAudit: eventEditAudit(event.new_value),
+    correctionAudit: eventCorrectionAudit(event.new_value),
     question:
       event.event_category === 'question' && event.status_code === 'status-question'
         ? questionDataFromNewValue(event.new_value)
@@ -475,6 +476,20 @@ function eventEditAudit(value: unknown): LeadEventEditAudit | null {
     editedAt,
     editedById: typeof editedById === 'string' ? editedById : '',
     editedByName: typeof editedByName === 'string' ? editedByName : 'Невідомий',
+  };
+}
+
+function eventCorrectionAudit(value: unknown): LeadEvent['correctionAudit'] {
+  if (!isRecord(value)) return null;
+  const corrections = value['corrections'];
+  if (!Array.isArray(corrections) || corrections.length === 0) return null;
+  const latest = corrections[corrections.length - 1];
+  if (!isRecord(latest) || typeof latest['at'] !== 'string') return null;
+  return {
+    correctedAt: latest['at'],
+    correctedById: typeof latest['by'] === 'string' ? latest['by'] : '',
+    correctedByName: typeof latest['by_name'] === 'string' ? latest['by_name'] : 'Невідомий',
+    reason: typeof latest['reason'] === 'string' ? latest['reason'] : '',
   };
 }
 
