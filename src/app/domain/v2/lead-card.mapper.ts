@@ -56,6 +56,12 @@ export function v2LeadColumnsFromRow(row: unknown): V2LeadColumns {
     materialAppliances: text(record['material_appliances']),
     expectedLeadTime: text(record['expected_lead_time']),
     preferredMeasurementAt: text(record['preferred_measurement_at']),
+    checklistBudget: booleanOrNull(record['checklist_budget']),
+    checklistLocation: booleanOrNull(record['checklist_location']),
+    checklistPeriod: booleanOrNull(record['checklist_period']),
+    checklistMaterials: booleanOrNull(record['checklist_materials']),
+    checklistProduct: booleanOrNull(record['checklist_product']),
+    clientInformed: booleanOrNull(record['client_informed']),
   };
 }
 
@@ -146,6 +152,10 @@ function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | nul
 
 function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function booleanOrNull(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

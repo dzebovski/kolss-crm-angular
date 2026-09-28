@@ -3,8 +3,9 @@
   [subtitle]="copy.subtitle | translate"
   [leadContext]="leadContext()"
   [statusDot]="kind"
-  width="status"
+  [width]="kind === 'success' ? 'form' : 'status'"
   [hint]="hint()"
+  [cancelLabel]="kind === 'success' ? ('v2.popup.success.cancel' | translate) : ''"
   [saveLabel]="copy.save | translate"
   [primaryVariant]="primaryVariant"
   [saveDisabled]="saving()"
@@ -47,16 +48,69 @@
   }
 
   @if (kind === 'success') {
+    <details class="v2-status__contact">
+      <summary>
+        <span>{{ 'v2.popup.success.contactDetails' | translate }}</span>
+        <span>{{ leadContext().name }} · {{ leadContext().phone }}</span>
+      </summary>
+      <div class="v2-status__contact-details">
+        <span>{{ leadContext().name }}</span>
+        <span>{{ data.lead.phone }}</span>
+        @if (data.lead.email) {
+          <span>{{ data.lead.email }}</span>
+        }
+        <span>{{ contactShowroomKey | translate }}</span>
+        <span>{{ channelLabels[leadContext().channel] | translate }}</span>
+      </div>
+      <!-- TODO(v2): C7 owns the contact edit flow. -->
+      <button type="button" class="v2-status__contact-edit" disabled>
+        {{ 'v2.card.editContact' | translate }}
+      </button>
+    </details>
+
+    <app-v2-field-group [label]="'v2.popup.success.rating' | translate">
+      <div
+        class="v2-status__ratings"
+        role="radiogroup"
+        [attr.aria-label]="'v2.popup.success.rating' | translate"
+      >
+        @for (option of ratings; track option.value) {
+          <button
+            type="button"
+            class="v2-status__rating"
+            [class.v2-status__rating--on]="rating() === option.value"
+            [attr.aria-checked]="rating() === option.value"
+            role="radio"
+            (click)="selectRating(option.value)"
+          >
+            {{ option.label | translate }}
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+
+    <app-v2-form-field [label]="'v2.popup.success.callSummary' | translate">
+      <textarea
+        cdkFocusInitial
+        rows="3"
+        [placeholder]="'v2.popup.success.callSummaryPlaceholder' | translate"
+        [formField]="status.comment"
+      ></textarea>
+    </app-v2-form-field>
+
+    <app-v2-product-chips [(selected)]="products" />
     <div class="v2-status__pair">
       <app-v2-form-field
         [label]="'v2.card.budget' | translate"
         [error]="budgetValid() ? '' : error() || ''"
       >
-        <input
-          cdkFocusInitial
-          autocomplete="off"
+        <app-v2-budget-input
+          [value]="model().budget"
+          [currency]="model().currency"
           [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
-          [formField]="status.budget"
+          [currencyLabel]="'v2.popup.success.currency' | translate"
+          (valueChange)="setBudget($event)"
+          (currencyChange)="setBudgetCurrency($event)"
         />
       </app-v2-form-field>
       <app-v2-form-field [label]="'v2.card.location' | translate">
@@ -67,14 +121,49 @@
         />
       </app-v2-form-field>
     </div>
-    <app-v2-product-chips [(selected)]="products" />
-    <app-v2-form-field [label]="'v2.current.nextAction' | translate">
-      <input
-        autocomplete="off"
-        [placeholder]="'v2.popup.success.nextActionPlaceholder' | translate"
-        [formField]="status.nextAction"
-      />
-    </app-v2-form-field>
+
+    <!-- TODO(v2): C12 owns the signed-upload flow; this board only draws its disabled control. -->
+    <section
+      class="v2-status__documents"
+      [attr.aria-label]="'v2.popup.success.documents' | translate"
+    >
+      <div>
+        <strong>{{ 'v2.popup.success.documents' | translate }}</strong>
+        <p>{{ 'v2.popup.success.documentsHint' | translate }}</p>
+      </div>
+      <button type="button" disabled>{{ 'v2.popup.success.addDocuments' | translate }}</button>
+    </section>
+
+    <app-v2-field-group
+      [label]="'v2.popup.success.checklist' | translate"
+      [error]="touched() && !model().clientInformed ? ('v2.dialog.fieldRequired' | translate) : ''"
+    >
+      <p class="v2-status__checklist-progress">
+        {{ 'v2.popup.success.checklistProgress' | translate: { count: checklistDoneCount() } }}
+      </p>
+      <div class="v2-status__checklist">
+        @for (item of checklist; track item.field) {
+          <label class="v2-status__check-item">
+            <input
+              type="checkbox"
+              [checked]="model()[item.field]"
+              (change)="toggleChecklist(item.field)"
+            />
+            <span>{{ item.label | translate }}</span>
+          </label>
+        }
+        <label class="v2-status__check-item v2-status__check-item--required">
+          <input
+            type="checkbox"
+            [checked]="model().clientInformed"
+            (change)="toggleChecklist('clientInformed')"
+          />
+          <span>{{ 'v2.popup.success.clientInformed' | translate }}</span>
+          <b aria-hidden="true">*</b>
+          <small>{{ 'v2.popup.success.clientInformedHint' | translate }}</small>
+        </label>
+      </div>
+    </app-v2-field-group>
   }
 
   @if (copy.date; as dateLabel) {
@@ -83,15 +172,7 @@
       [required]="copy.dateRequired ?? false"
       [error]="dateError()"
     >
-      @if (kind === 'success') {
-        <input
-          type="datetime-local"
-          [attr.aria-required]="copy.dateRequired ?? false"
-          [formField]="status.date"
-        />
-      } @else {
-        <app-v2-date-time-input [formField]="status.date" />
-      }
+      <app-v2-date-time-input [formField]="status.date" />
     </app-v2-form-field>
   }
 
@@ -157,19 +238,21 @@
     </app-v2-field-group>
   }
 
-  <app-v2-form-field
-    [label]="'v2.timeline.comment' | translate"
-    [required]="kind === 'lost' && reasons().includes('other')"
-    [error]="otherCommentError()"
-  >
-    <textarea
-      rows="3"
-      [placeholder]="
-        kind === 'lost'
-          ? ('v2.popup.lost.commentPlaceholder' | translate)
-          : ('v2.popup.commentPlaceholder' | translate)
-      "
-      [formField]="status.comment"
-    ></textarea>
-  </app-v2-form-field>
+  @if (kind !== 'success') {
+    <app-v2-form-field
+      [label]="'v2.timeline.comment' | translate"
+      [required]="kind === 'lost' && reasons().includes('other')"
+      [error]="otherCommentError()"
+    >
+      <textarea
+        rows="3"
+        [placeholder]="
+          kind === 'lost'
+            ? ('v2.popup.lost.commentPlaceholder' | translate)
+            : ('v2.popup.commentPlaceholder' | translate)
+        "
+        [formField]="status.comment"
+      ></textarea>
+    </app-v2-form-field>
+  }
 </app-v2-dialog>

@@ -29,6 +29,12 @@ describe('v2 lead card mapper', () => {
       materialAppliances: null,
       expectedLeadTime: null,
       preferredMeasurementAt: null,
+      checklistBudget: null,
+      checklistLocation: null,
+      checklistPeriod: null,
+      checklistMaterials: null,
+      checklistProduct: null,
+      clientInformed: null,
     });
   });
 
@@ -46,6 +52,32 @@ describe('v2 lead card mapper', () => {
       materialAppliances: null,
       expectedLeadTime: null,
       preferredMeasurementAt: null,
+      checklistBudget: null,
+      checklistLocation: null,
+      checklistPeriod: null,
+      checklistMaterials: null,
+      checklistProduct: null,
+      clientInformed: null,
+    });
+  });
+
+  it('maps the successful-call clarification checklist and acknowledgement', () => {
+    const columns = v2LeadColumnsFromRow({
+      checklist_budget: true,
+      checklist_location: false,
+      checklist_period: true,
+      checklist_materials: false,
+      checklist_product: true,
+      client_informed: true,
+    });
+
+    expect(columns).toMatchObject({
+      checklistBudget: true,
+      checklistLocation: false,
+      checklistPeriod: true,
+      checklistMaterials: false,
+      checklistProduct: true,
+      clientInformed: true,
     });
   });
 

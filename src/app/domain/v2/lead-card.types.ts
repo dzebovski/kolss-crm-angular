@@ -29,6 +29,14 @@ export interface V2LeadColumns {
   readonly materialAppliances: string | null;
   readonly expectedLeadTime: string | null;
   readonly preferredMeasurementAt: string | null;
+  /** W9 clarification checklist; null means the question has not been answered yet. */
+  readonly checklistBudget: boolean | null;
+  readonly checklistLocation: boolean | null;
+  readonly checklistPeriod: boolean | null;
+  readonly checklistMaterials: boolean | null;
+  readonly checklistProduct: boolean | null;
+  /** W9 acknowledgement of the next steps; null means it has not been recorded yet. */
+  readonly clientInformed: boolean | null;
 }
 
 export interface V2LeadBudget {

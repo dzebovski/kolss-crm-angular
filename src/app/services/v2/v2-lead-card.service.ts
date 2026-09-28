@@ -33,6 +33,25 @@ export interface V2ContactUpdate {
   readonly channel: V2LeadChannel;
 }
 
+/** The three persisted parts of Successful call, deliberately ordered for lead-version safety. */
+export interface V2SuccessfulCallUpdate {
+  readonly info: UpdateLeadInfoRequest;
+  readonly rating: LeadRating | null;
+  readonly status: Omit<V2StatusActivityRequest, 'type'>;
+}
+
+/** An earlier request succeeded, so closing the dialog would hide a partial saved result. */
+export class V2SuccessfulCallPartialWriteError extends Error {
+  constructor(
+    readonly completed: 'info' | 'rating',
+    cause: unknown,
+  ) {
+    super('v2.popup.success.partialSave');
+    this.name = 'V2SuccessfulCallPartialWriteError';
+    this.cause = cause;
+  }
+}
+
 /** Audit keys of `lead_edited` (`core/i18n/field-keys.ts`), for the fields the popup changes. */
 export type V2ContactField = 'name' | 'phone' | 'email' | 'manager' | 'channel';
 
@@ -117,6 +136,29 @@ export class V2LeadCardService {
     request: Omit<V2StatusActivityRequest, 'type'>,
   ): Promise<void> {
     await this.api.leadActivity(leadId, { type: 'v2_status', ...request });
+  }
+
+  /**
+   * Successful call has three distinct API mutations. `updateLeadInfo` must run first because it
+   * uses the loaded lead version; activities increment that version. The terminal call result is
+   * intentionally last, so a failure cannot leave a lead marked Successful before its data saves.
+   */
+  async recordSuccessfulCall(lead: Lead, update: V2SuccessfulCallUpdate): Promise<void> {
+    let completed: 'info' | 'rating' | null = null;
+    try {
+      if (Object.keys(update.info).length > 0) {
+        await this.updateLeadInfo(lead, update.info);
+        completed = 'info';
+      }
+      if (update.rating) {
+        await this.setRating(lead.id, update.rating);
+        completed = 'rating';
+      }
+      await this.recordStatus(lead.id, update.status);
+    } catch (error) {
+      if (completed) throw new V2SuccessfulCallPartialWriteError(completed, error);
+      throw error;
+    }
   }
 
   /** RatingSwitch: one click, no popup (`rating` activity). */
