@@ -1,7 +1,7 @@
 import { inject, Service } from '@angular/core';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
-import type { LeadFacetsResponse } from '@core/api/generated/kolss-api.types';
+import type { CreateLeadRequest, LeadFacetsResponse } from '@core/api/generated/kolss-api.types';
 import { v2LeadColumnsFromRow } from '@domain/v2/lead-card.mapper';
 import { toV2LeadListItem } from '@domain/v2/lead-view.mapper';
 import type { V2LeadListItem, V2LeadRating, V2LeadStatus } from '@domain/v2/lead-view.types';
@@ -52,6 +52,11 @@ export class V2LeadsListService {
   /** Chip counts and total for the current filters (no cursor/limit: it ignores paging). */
   facets(filters: V2LeadsListFilters): Promise<LeadFacetsResponse> {
     return this.api.leadFacets(this.filterParams(filters));
+  }
+
+  async create(request: CreateLeadRequest): Promise<string> {
+    const row = await this.api.createLead<{ readonly id: string }>(request);
+    return row.id;
   }
 
   private filterParams(

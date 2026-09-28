@@ -1,0 +1,176 @@
+<app-v2-dialog
+  [title]="'v2.createLead.title' | translate"
+  [subtitle]="'v2.createLead.subtitle' | translate"
+  width="form"
+  [hint]="'v2.createLead.footer' | translate"
+  [cancelLabel]="'v2.createLead.cancel' | translate"
+  [saveLabel]="'v2.createLead.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-create-lead__error" role="alert">{{ message }}</p>
+  }
+
+  <section class="v2-create-lead__section">
+    <h3>{{ 'v2.editContact.contactSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.editContact.fullName' | translate"
+      [required]="true"
+      [hint]="'v2.editContact.fullNameHint' | translate"
+      [error]="nameError()"
+    >
+      <input cdkFocusInitial autocomplete="name" [formField]="lead.name" />
+    </app-v2-form-field>
+    <div class="v2-create-lead__pair">
+      <app-v2-form-field
+        [label]="'v2.card.phone' | translate"
+        [required]="true"
+        [hint]="'v2.editContact.phoneHint' | translate"
+        [error]="phoneError()"
+      >
+        <app-v2-phone-input
+          [value]="model().phone"
+          [countryCode]="selectedConfig().phoneCountryCode"
+          [placeholder]="selectedConfig().phonePlaceholder"
+          (valueChange)="setPhone($event)"
+          (touch)="phoneBlurred.set(true)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field
+        [label]="'v2.card.email' | translate"
+        [hint]="'v2.editContact.emailHint' | translate"
+        [error]="emailError()"
+      >
+        <input
+          type="email"
+          autocomplete="email"
+          [formField]="lead.email"
+          (blur)="emailBlurred.set(true)"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-create-lead__section">
+    <h3>{{ 'v2.editContact.showroomSourceSection' | translate }}</h3>
+    <app-v2-field-group
+      [label]="'v2.editContact.showroom' | translate"
+      [required]="true"
+      [hint]="'v2.createLead.showroomHint' | translate"
+      [error]="showroomError()"
+    >
+      <div class="v2-create-lead__showrooms">
+        @for (showroom of showroomOptions; track showroom.id) {
+          <button
+            type="button"
+            class="v2-create-lead__showroom"
+            [class.v2-create-lead__showroom--on]="model().showroom === showroom.id"
+            [attr.aria-pressed]="model().showroom === showroom.id"
+            (click)="selectShowroom(showroom.id)"
+          >
+            <span aria-hidden="true"></span>
+            <strong>{{ officeConfig[showroom.id].showroomCardLabelKey | translate }}</strong>
+            <small>{{ officeConfig[showroom.id].showroomCardSubKey | translate }}</small>
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+
+    <app-v2-field-group [label]="'v2.editContact.source' | translate">
+      <div class="v2-create-lead__channels">
+        @for (channel of channels; track channel) {
+          <button
+            type="button"
+            class="v2-create-lead__chip"
+            [class.v2-create-lead__chip--on]="model().channel === channel"
+            [attr.aria-pressed]="model().channel === channel"
+            (click)="selectChannel(channel)"
+          >
+            {{ channelLabels[channel] | translate }}
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+    @if (model().channel === 'referral') {
+      <app-v2-form-field
+        [label]="'v2.editContact.referredBy' | translate"
+        [required]="true"
+        [hint]="'v2.editContact.referredByHint' | translate"
+        [error]="referrerError()"
+      >
+        <input autocomplete="off" [formField]="lead.referredBy" />
+      </app-v2-form-field>
+    }
+
+    <app-v2-field-group
+      [label]="'v2.createLead.created' | translate"
+      [required]="true"
+      [hint]="'v2.createLead.createdHint' | translate"
+      [error]="createdError()"
+    >
+      <div class="v2-create-lead__date-time">
+        <input
+          type="date"
+          [attr.aria-label]="'v2.createLead.createdDate' | translate"
+          [value]="model().createdDate"
+          (input)="setCreated('createdDate', $event)"
+        />
+        <input
+          type="time"
+          [attr.aria-label]="'v2.createLead.createdTime' | translate"
+          [value]="model().createdTime"
+          (input)="setCreated('createdTime', $event)"
+        />
+      </div>
+    </app-v2-field-group>
+  </section>
+
+  <section class="v2-create-lead__section">
+    <h3>{{ 'v2.leadInfo.request' | translate }}</h3>
+    <app-v2-product-chips [(selected)]="products" />
+    <div class="v2-create-lead__pair">
+      <app-v2-form-field [label]="'v2.card.budget' | translate" [error]="budgetError()">
+        <app-v2-budget-input
+          [value]="model().budget"
+          [currency]="model().currency"
+          [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
+          [currencyLabel]="'v2.popup.success.currency' | translate"
+          (valueChange)="setBudget($event)"
+          (currencyChange)="setCurrency($event)"
+          (touch)="budgetBlurred.set(true)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'v2.createLead.region' | translate">
+        <input
+          autocomplete="address-level2"
+          [placeholder]="'v2.leadInfo.locationPlaceholder' | translate"
+          [formField]="lead.location"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-create-lead__section">
+    <h3>{{ 'v2.leadInfo.documents' | translate }}</h3>
+    <!-- TODO(v2): C12 owns signed uploads; new-lead upload also needs the created lead id. -->
+    <button type="button" class="v2-create-lead__dropzone" disabled>
+      <strong>{{ 'v2.leadInfo.documentsDrop' | translate }}</strong>
+      <span>{{ 'v2.leadInfo.documentsHint' | translate }}</span>
+    </button>
+  </section>
+
+  <section class="v2-create-lead__section">
+    <h3>{{ 'v2.createLead.requestDetails' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.createLead.clientRequest' | translate"
+      [hint]="'v2.createLead.clientRequestHint' | translate"
+    >
+      <textarea rows="4" [formField]="lead.request"></textarea>
+    </app-v2-form-field>
+  </section>
+</app-v2-dialog>

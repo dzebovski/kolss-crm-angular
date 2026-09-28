@@ -8,6 +8,7 @@ import {
   resource,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import type { MessageKey } from '@core/i18n/messages';
@@ -29,10 +30,12 @@ import { UsersService } from '@services/users.service';
 import { V2_NOW } from '../../core/v2-clock';
 import { V2_NAV_ITEMS, type V2NavLinkItem } from '../../shell/v2-nav.config';
 import { V2Button } from '../../ui/v2-button';
+import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import { V2EmptyState } from '../../ui/v2-empty-state';
 import type { V2SegmentOption } from '../../ui/v2-segmented-control';
 import { V2_RATING_LABEL, V2_STATUS_LABEL } from '../../ui/v2-tone';
 import { V2LeadsFilters, type V2LeadChip } from './v2-leads-filters';
+import { V2CreateLeadDialog, type V2CreateLeadData } from './v2-create-lead-dialog';
 import { parseV2LeadsQuery, toV2LeadsQueryParams, type V2LeadsQuery } from './v2-leads-query';
 import { V2LeadsTable } from './v2-leads-table';
 
@@ -69,6 +72,7 @@ export class V2LeadsPage {
   private readonly clock = inject(V2_NOW);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly dialogs = inject(V2DialogService);
 
   // Query params, bound by `withComponentInputBinding()`.
   readonly q = input<string>();
@@ -275,6 +279,17 @@ export class V2LeadsPage {
     this.leadsResource.reload();
     this.chipFacetsResource.reload();
     this.periodFacetsResource.reload();
+  }
+
+  protected async openCreateLead(): Promise<void> {
+    const filter = this.session.officeFilter();
+    const ref = this.dialogs.open<string, V2CreateLeadData>(V2CreateLeadDialog, {
+      offices: this.session.officeContext()?.filterOffices ?? [],
+      defaultOffice: isOfficeId(filter) ? filter : '',
+      now: this.clock(),
+    });
+    const leadId = await firstValueFrom(ref.closed);
+    if (leadId) void this.router.navigate(['/v2/leads', leadId]);
   }
 
   /**
