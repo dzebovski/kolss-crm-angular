@@ -1,5 +1,11 @@
 import type { Lead } from '@domain/lead.types';
-import type { V2LeadBudget, V2LeadCard, V2LeadColumns, V2LeadProduct } from './lead-card.types';
+import type {
+  V2LeadBudget,
+  V2LeadCard,
+  V2LeadColumns,
+  V2LeadProduct,
+  V2ProjectType,
+} from './lead-card.types';
 import { deriveV2LeadStatus, channelFromSource } from './lead-view.mapper';
 import type { V2LeadChannel, V2LeadRating, V2LeadStatus } from './lead-view.types';
 
@@ -18,6 +24,7 @@ const V2_STATUSES: readonly V2LeadStatus[] = [
   'project',
 ];
 const RATINGS: readonly V2LeadRating[] = ['cold', 'medium', 'hot'];
+const PROJECT_TYPES: readonly V2ProjectType[] = ['express', 'measure', 'contract'];
 const CHANNELS: readonly V2LeadChannel[] = [
   'referral',
   'phone',
@@ -62,6 +69,9 @@ export function v2LeadColumnsFromRow(row: unknown): V2LeadColumns {
     checklistMaterials: booleanOrNull(record['checklist_materials']),
     checklistProduct: booleanOrNull(record['checklist_product']),
     clientInformed: booleanOrNull(record['client_informed']),
+    aboutClient: text(record['about_client']),
+    projectType: oneOf(record['project_type'], PROJECT_TYPES),
+    responsibleManagerId: text(record['responsible_manager_id']),
   };
 }
 

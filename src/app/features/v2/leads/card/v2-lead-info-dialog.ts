@@ -1,213 +1,195 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, computed, inject, signal } from '@angular/core';
-import { form, FormField, validate } from '@angular/forms/signals';
+import { form, FormField } from '@angular/forms/signals';
 
 import type { UpdateLeadInfoRequest } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
+import type { MessageKey } from '@core/i18n/messages';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import type { Lead } from '@domain/lead.types';
-import { isV2BudgetText, v2IsoToLocalDateTime, v2LocalDateTimeToIso } from '@domain/v2/lead-action';
-import type { V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
+import { OFFICE_CONFIG } from '@core/office/office.config';
+import { isSuperAdminRole } from '@core/roles/roles';
+import type { ContractCurrency, Lead } from '@domain/lead.types';
+import { isV2BudgetText } from '@domain/v2/lead-action';
+import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
+import type { V2LeadColumns, V2LeadProduct, V2ProjectType } from '@domain/v2/lead-card.types';
+import type { CrmEmployee } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
+import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
+import { V2BudgetInput } from '../../ui/v2-budget-input';
+import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
 import { V2ProductChips } from './v2-product-chips';
 
 export interface V2LeadInfoData {
   readonly lead: Lead;
   readonly columns: V2LeadColumns;
+  readonly employees: readonly CrmEmployee[];
 }
 
 interface LeadInfoModel {
   budget: string;
+  currency: ContractCurrency;
   location: string;
-  fronts: string;
-  worktop: string;
-  appliances: string;
-  leadTime: string;
-  measurement: string;
+  aboutClient: string;
+  checklistBudget: boolean;
+  checklistLocation: boolean;
+  checklistPeriod: boolean;
+  checklistMaterials: boolean;
+  checklistProduct: boolean;
+  clientInformed: boolean;
+  projectType: V2ProjectType | '';
+  responsibleManagerId: string;
 }
 
-// Lead info popup from lead card v1.3 (Modal `info`): Estimated budget, Location, Product (one
-// or more), Material preferences (fronts / worktop / appliances), Expected lead time, Preferred
-// measurement date. Saves only what changed through `PATCH /v1/leads/{id}/info` (W7); the API
-// logs it in the timeline. Closes with `true` after a save.
+type ChecklistField =
+  | 'checklistBudget'
+  | 'checklistLocation'
+  | 'checklistPeriod'
+  | 'checklistMaterials'
+  | 'checklistProduct'
+  | 'clientInformed';
+
 @Component({
   selector: 'app-v2-lead-info-dialog',
-  imports: [FormField, TranslatePipe, V2DialogShell, V2FormField, V2ProductChips],
-  template: `
-    <app-v2-dialog
-      [title]="'v2.leadInfo.title' | translate"
-      [subtitle]="'v2.leadInfo.subtitle' | translate"
-      [hint]="'v2.leadInfo.hint' | translate"
-      [saveLabel]="'v2.leadInfo.save' | translate"
-      [saveDisabled]="saving()"
-      [invalid]="invalid()"
-      [errorCount]="info.budget().errors().length"
-      [hasUnsavedInput]="hasUnsavedInput()"
-      (save)="save()"
-    >
-      @if (error(); as message) {
-        <p class="v2-lead-info__error" role="alert">{{ message }}</p>
-      }
-
-      <div class="v2-lead-info__pair">
-        <app-v2-form-field
-          [label]="'v2.card.budget' | translate"
-          [error]="info.budget().errors()[0]?.message ?? ''"
-        >
-          <input
-            cdkFocusInitial
-            autocomplete="off"
-            [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
-            [formField]="info.budget"
-          />
-        </app-v2-form-field>
-        <app-v2-form-field [label]="'v2.card.location' | translate">
-          <input
-            autocomplete="off"
-            [placeholder]="'v2.leadInfo.locationPlaceholder' | translate"
-            [formField]="info.location"
-          />
-        </app-v2-form-field>
-      </div>
-
-      <app-v2-product-chips [(selected)]="products" />
-
-      <div class="v2-lead-info__group" role="group" [attr.aria-labelledby]="materialsId">
-        <span class="v2-lead-info__label" [id]="materialsId">{{
-          'v2.leadInfo.materials' | translate
-        }}</span>
-        <div class="v2-lead-info__materials">
-          <app-v2-form-field>
-            <input
-              autocomplete="off"
-              [attr.aria-label]="'v2.leadInfo.fronts' | translate"
-              [placeholder]="'v2.leadInfo.fronts' | translate"
-              [formField]="info.fronts"
-            />
-          </app-v2-form-field>
-          <app-v2-form-field>
-            <input
-              autocomplete="off"
-              [attr.aria-label]="'v2.leadInfo.worktop' | translate"
-              [placeholder]="'v2.leadInfo.worktop' | translate"
-              [formField]="info.worktop"
-            />
-          </app-v2-form-field>
-          <app-v2-form-field>
-            <input
-              autocomplete="off"
-              [attr.aria-label]="'v2.leadInfo.appliances' | translate"
-              [placeholder]="'v2.leadInfo.appliances' | translate"
-              [formField]="info.appliances"
-            />
-          </app-v2-form-field>
-        </div>
-      </div>
-
-      <div class="v2-lead-info__pair">
-        <app-v2-form-field [label]="'v2.leadInfo.leadTime' | translate">
-          <input
-            autocomplete="off"
-            [placeholder]="'v2.leadInfo.leadTimePlaceholder' | translate"
-            [formField]="info.leadTime"
-          />
-        </app-v2-form-field>
-        <app-v2-form-field [label]="'v2.leadInfo.measurement' | translate">
-          <input type="datetime-local" [formField]="info.measurement" />
-        </app-v2-form-field>
-      </div>
-    </app-v2-dialog>
-  `,
-  styles: `
-    :host {
-      display: block;
-    }
-
-    .v2-lead-info__pair {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--v2-space-3);
-    }
-
-    .v2-lead-info__group {
-      display: flex;
-      flex-direction: column;
-      gap: var(--v2-space-2);
-    }
-
-    .v2-lead-info__label {
-      color: var(--v2-muted);
-      font-size: 12px;
-    }
-
-    .v2-lead-info__materials {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--v2-space-2);
-    }
-
-    .v2-lead-info__error {
-      margin: 0;
-      padding: 10px var(--v2-space-3);
-      background: var(--v2-danger-bg);
-      border-radius: var(--v2-radius-sm);
-      color: var(--v2-danger);
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    @media (max-width: 480px) {
-      .v2-lead-info__pair,
-      .v2-lead-info__materials {
-        grid-template-columns: 1fr;
-      }
-    }
-  `,
+  imports: [
+    FormField,
+    TranslatePipe,
+    V2BudgetInput,
+    V2DialogShell,
+    V2FieldGroup,
+    V2FormField,
+    V2ProductChips,
+  ],
+  templateUrl: './v2-lead-info-dialog.html',
+  styleUrl: './v2-lead-info-dialog.scss',
 })
 export class V2LeadInfoDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
   private readonly service = inject(V2LeadCardService);
-  private readonly i18n = inject(I18nService);
-  private readonly data = inject<V2LeadInfoData>(DIALOG_DATA);
+  protected readonly i18n = inject(I18nService);
+  protected readonly data = inject<V2LeadInfoData>(DIALOG_DATA);
 
-  protected readonly materialsId = 'v2-lead-info-materials';
+  protected readonly leadContext = computed(() => toV2LeadCard(this.data.lead, this.data.columns));
+  protected readonly channelLabels = V2_CHANNEL_LABEL;
+  protected readonly showroomLabelKey =
+    OFFICE_CONFIG[this.data.lead.officeCode].showroomCardLabelKey;
 
   private readonly initial: LeadInfoModel = {
     budget: this.data.columns.estimatedBudgetText ?? budgetFromV1(this.data.lead),
+    currency: this.data.lead.estimatedBudgetCurrency,
     location: this.data.lead.cityRegion,
-    fronts: this.data.columns.materialFronts ?? '',
-    worktop: this.data.columns.materialWorktop ?? '',
-    appliances: this.data.columns.materialAppliances ?? '',
-    leadTime: this.data.columns.expectedLeadTime ?? '',
-    measurement: v2IsoToLocalDateTime(this.data.columns.preferredMeasurementAt),
+    aboutClient: this.data.columns.aboutClient ?? '',
+    checklistBudget: this.data.columns.checklistBudget ?? false,
+    checklistLocation: this.data.columns.checklistLocation ?? false,
+    checklistPeriod: this.data.columns.checklistPeriod ?? false,
+    checklistMaterials: this.data.columns.checklistMaterials ?? false,
+    checklistProduct: this.data.columns.checklistProduct ?? false,
+    clientInformed: this.data.columns.clientInformed ?? false,
+    projectType: this.data.columns.projectType ?? '',
+    responsibleManagerId: this.data.columns.responsibleManagerId ?? '',
   };
-  private readonly model = signal<LeadInfoModel>({ ...this.initial });
+  protected readonly model = signal<LeadInfoModel>({ ...this.initial });
+  protected readonly info = form(this.model);
   protected readonly products = signal<readonly V2LeadProduct[]>(this.data.columns.products);
-  protected readonly info = form(this.model, (path) => {
-    validate(path.budget, ({ value }) =>
-      isV2BudgetText(value())
-        ? undefined
-        : { kind: 'budget', message: this.i18n.t('v2.leadInfo.budgetInvalid') },
-    );
-  });
-
   protected readonly saving = signal(false);
-  private readonly saveError = signal('');
-  protected readonly invalid = computed(() => this.info.budget().errors().length > 0);
+  protected readonly saveError = signal('');
+  protected readonly touched = signal(false);
+
+  protected readonly checklist: readonly {
+    readonly field: Exclude<ChecklistField, 'clientInformed'>;
+    readonly label: MessageKey;
+  }[] = [
+    { field: 'checklistBudget', label: 'v2.popup.success.checklistBudget' },
+    { field: 'checklistLocation', label: 'v2.popup.success.checklistLocation' },
+    { field: 'checklistPeriod', label: 'v2.popup.success.checklistPeriod' },
+    { field: 'checklistMaterials', label: 'v2.popup.success.checklistMaterials' },
+    { field: 'checklistProduct', label: 'v2.popup.success.checklistProduct' },
+  ];
+  protected readonly projectTypes: readonly {
+    readonly value: V2ProjectType;
+    readonly label: MessageKey;
+    readonly description: MessageKey;
+  }[] = [
+    {
+      value: 'express',
+      label: 'v2.leadInfo.projectExpress',
+      description: 'v2.leadInfo.projectExpressHint',
+    },
+    {
+      value: 'measure',
+      label: 'v2.leadInfo.projectMeasure',
+      description: 'v2.leadInfo.projectMeasureHint',
+    },
+    {
+      value: 'contract',
+      label: 'v2.leadInfo.projectContract',
+      description: 'v2.leadInfo.projectContractHint',
+    },
+  ];
+
+  protected readonly managers = computed(() =>
+    this.data.employees
+      .filter(
+        (employee) =>
+          employee.status === 'active' &&
+          !isSuperAdminRole(employee.role) &&
+          employee.officeIds.includes(this.data.lead.officeCode),
+      )
+      .map((employee) => ({ id: employee.id, name: employee.displayName })),
+  );
+  protected readonly checklistDoneCount = computed(
+    () => this.checklist.filter((item) => this.model()[item.field]).length,
+  );
+  protected readonly budgetValid = computed(() => isV2BudgetText(this.model().budget));
+  protected readonly missingCount = computed(() => {
+    let count = 0;
+    if (!this.budgetValid()) count++;
+    if (!this.model().clientInformed) count++;
+    if (!this.model().responsibleManagerId) count++;
+    return count;
+  });
+  protected readonly invalid = computed(() => this.missingCount() > 0);
   protected readonly hasUnsavedInput = computed(
     () =>
       JSON.stringify(this.model()) !== JSON.stringify(this.initial) ||
       !sameProducts(this.products(), this.data.columns.products),
   );
-  /** The budget format error as soon as the text is wrong, then any save error. */
-  protected readonly error = computed(
-    () => this.info.budget().errors()[0]?.message ?? this.saveError(),
+  protected readonly budgetError = computed(() =>
+    this.touched() && !this.budgetValid() ? this.i18n.t('v2.leadInfo.budgetInvalid') : '',
+  );
+  protected readonly informedError = computed(() =>
+    this.touched() && !this.model().clientInformed
+      ? this.i18n.t('v2.leadInfo.clientInformedRequired')
+      : '',
+  );
+  protected readonly managerError = computed(() =>
+    this.touched() && !this.model().responsibleManagerId
+      ? this.i18n.t('v2.leadInfo.managerRequired')
+      : '',
   );
 
+  protected setBudget(budget: string): void {
+    this.model.update((value) => ({ ...value, budget }));
+  }
+
+  protected setCurrency(currency: ContractCurrency): void {
+    this.model.update((value) => ({ ...value, currency }));
+  }
+
+  protected toggleChecklist(field: ChecklistField): void {
+    this.model.update((value) => ({ ...value, [field]: !value[field] }));
+  }
+
+  protected toggleProjectType(projectType: V2ProjectType): void {
+    this.model.update((value) => ({
+      ...value,
+      projectType: value.projectType === projectType ? '' : projectType,
+    }));
+  }
+
   protected async save(): Promise<void> {
-    if (this.saving() || !this.info().valid()) return;
+    if (this.saving() || this.invalid()) return;
     const request = this.changes();
     if (!Object.keys(request).length) {
       this.dialogRef.close(false);
@@ -229,28 +211,44 @@ export class V2LeadInfoDialog {
     }
   }
 
-  /** Only the fields the viewer changed (the API keeps the rest). */
   private changes(): UpdateLeadInfoRequest {
     const value = this.model();
     const initial = this.initial;
-    const changed = (key: keyof LeadInfoModel) => value[key].trim() !== initial[key].trim();
     const products = this.products();
     return {
-      ...(changed('budget') ? { estimatedBudgetText: value.budget.trim() } : {}),
-      ...(changed('location') ? { cityRegion: value.location.trim() } : {}),
+      ...(value.budget.trim() !== initial.budget.trim()
+        ? { estimatedBudgetText: value.budget.trim() }
+        : {}),
+      ...(value.currency !== initial.currency ? { estimatedBudgetCurrency: value.currency } : {}),
+      ...(value.location.trim() !== initial.location.trim()
+        ? { cityRegion: value.location.trim() }
+        : {}),
       ...(sameProducts(products, this.data.columns.products) ? {} : { products: [...products] }),
-      ...(changed('fronts') ? { materialFronts: value.fronts.trim() } : {}),
-      ...(changed('worktop') ? { materialWorktop: value.worktop.trim() } : {}),
-      ...(changed('appliances') ? { materialAppliances: value.appliances.trim() } : {}),
-      ...(changed('leadTime') ? { expectedLeadTime: value.leadTime.trim() } : {}),
-      ...(value.measurement !== initial.measurement
-        ? { preferredMeasurementAt: v2LocalDateTimeToIso(value.measurement) }
+      ...(value.aboutClient.trim() !== initial.aboutClient.trim()
+        ? { aboutClient: value.aboutClient.trim() }
+        : {}),
+      ...changedBoolean(value, initial, 'checklistBudget'),
+      ...changedBoolean(value, initial, 'checklistLocation'),
+      ...changedBoolean(value, initial, 'checklistPeriod'),
+      ...changedBoolean(value, initial, 'checklistMaterials'),
+      ...changedBoolean(value, initial, 'checklistProduct'),
+      ...changedBoolean(value, initial, 'clientInformed'),
+      ...(value.projectType !== initial.projectType ? { projectType: value.projectType } : {}),
+      ...(value.responsibleManagerId !== initial.responsibleManagerId
+        ? { responsibleManagerId: value.responsibleManagerId }
         : {}),
     };
   }
 }
 
-/** A v1 lead has only the number: offer it as the starting text. */
+function changedBoolean(
+  value: LeadInfoModel,
+  initial: LeadInfoModel,
+  key: ChecklistField,
+): Partial<Pick<UpdateLeadInfoRequest, ChecklistField>> {
+  return value[key] === initial[key] ? {} : { [key]: value[key] };
+}
+
 function budgetFromV1(lead: Lead): string {
   return lead.estimatedBudget == null ? '' : String(lead.estimatedBudget);
 }

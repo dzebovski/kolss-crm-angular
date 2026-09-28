@@ -1,0 +1,146 @@
+<app-v2-dialog
+  [title]="'v2.leadInfo.title' | translate"
+  [subtitle]="'v2.leadInfo.subtitle' | translate"
+  [leadContext]="leadContext()"
+  width="form"
+  [hint]="'v2.leadInfo.hint' | translate"
+  [cancelLabel]="'v2.leadInfo.cancel' | translate"
+  [saveLabel]="'v2.leadInfo.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="touched.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-lead-info__error" role="alert">{{ message }}</p>
+  }
+
+  <section class="v2-lead-info__section">
+    <h3>{{ 'v2.leadInfo.contact' | translate }}</h3>
+    <details class="v2-lead-info__contact">
+      <summary>
+        <span>{{ leadContext().name }} · {{ leadContext().phone }}</span>
+        <span>
+          {{ data.lead.email || ('v2.leadInfo.noEmail' | translate) }} ·
+          {{ showroomLabelKey | translate }} ·
+          {{ channelLabels[leadContext().channel] | translate }}
+        </span>
+      </summary>
+      <!-- TODO(v2): C7 owns the nested Edit contact flow. -->
+      <button type="button" disabled>{{ 'v2.card.editContact' | translate }}</button>
+    </details>
+  </section>
+
+  <section class="v2-lead-info__section">
+    <h3>{{ 'v2.leadInfo.request' | translate }}</h3>
+    <app-v2-product-chips [(selected)]="products" />
+    <div class="v2-lead-info__pair">
+      <app-v2-form-field [label]="'v2.card.budget' | translate" [error]="budgetError()">
+        <app-v2-budget-input
+          [value]="model().budget"
+          [currency]="model().currency"
+          [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
+          [currencyLabel]="'v2.popup.success.currency' | translate"
+          (valueChange)="setBudget($event)"
+          (currencyChange)="setCurrency($event)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'v2.card.location' | translate">
+        <input
+          autocomplete="off"
+          [placeholder]="'v2.leadInfo.locationPlaceholder' | translate"
+          [formField]="info.location"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-lead-info__section">
+    <h3>{{ 'v2.leadInfo.documents' | translate }}</h3>
+    <!-- TODO(v2): C12 owns document listing and signed uploads. -->
+    <button type="button" class="v2-lead-info__dropzone" disabled>
+      <strong>{{ 'v2.leadInfo.documentsDrop' | translate }}</strong>
+      <span>{{ 'v2.leadInfo.documentsHint' | translate }}</span>
+    </button>
+  </section>
+
+  <section class="v2-lead-info__section">
+    <h3>{{ 'v2.leadInfo.aboutSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.leadInfo.about' | translate"
+      [hint]="'v2.leadInfo.aboutHint' | translate"
+    >
+      <textarea rows="4" [formField]="info.aboutClient"></textarea>
+    </app-v2-form-field>
+  </section>
+
+  <section class="v2-lead-info__section">
+    <h3>{{ 'v2.popup.success.checklist' | translate }}</h3>
+    <app-v2-field-group [error]="informedError()">
+      <p class="v2-lead-info__progress">
+        {{ 'v2.popup.success.checklistProgress' | translate: { count: checklistDoneCount() } }}
+      </p>
+      <div class="v2-lead-info__checklist">
+        @for (item of checklist; track item.field) {
+          <label class="v2-lead-info__check">
+            <input
+              type="checkbox"
+              [checked]="model()[item.field]"
+              (change)="toggleChecklist(item.field)"
+            />
+            <span>{{ item.label | translate }}</span>
+          </label>
+        }
+        <label class="v2-lead-info__check v2-lead-info__check--required">
+          <input
+            type="checkbox"
+            [checked]="model().clientInformed"
+            (change)="toggleChecklist('clientInformed')"
+          />
+          <span>{{ 'v2.popup.success.clientInformed' | translate }}</span>
+          <b aria-hidden="true">*</b>
+          <small>{{ 'v2.popup.success.clientInformedHint' | translate }}</small>
+        </label>
+      </div>
+    </app-v2-field-group>
+  </section>
+
+  <section class="v2-lead-info__section">
+    <h3>{{ 'v2.leadInfo.projectSection' | translate }}</h3>
+    <app-v2-field-group
+      [label]="'v2.leadInfo.projectType' | translate"
+      [hint]="'v2.leadInfo.projectTypeHint' | translate"
+    >
+      <div class="v2-lead-info__project-types">
+        @for (option of projectTypes; track option.value) {
+          <button
+            type="button"
+            class="v2-lead-info__project-type"
+            [class.v2-lead-info__project-type--on]="model().projectType === option.value"
+            [attr.aria-pressed]="model().projectType === option.value"
+            (click)="toggleProjectType(option.value)"
+          >
+            <span aria-hidden="true"></span>
+            <strong>{{ option.label | translate }}</strong>
+            <small>{{ option.description | translate }}</small>
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+    <app-v2-form-field
+      [label]="'v2.leadInfo.responsibleManager' | translate"
+      [required]="true"
+      [error]="managerError()"
+      [hint]="'v2.leadInfo.managerTeam' | translate: { showroom: (showroomLabelKey | translate) }"
+    >
+      <select [formField]="info.responsibleManagerId">
+        <option value="" disabled>{{ 'v2.leadInfo.chooseManager' | translate }}</option>
+        @for (manager of managers(); track manager.id) {
+          <option [value]="manager.id">{{ manager.name }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+  </section>
+</app-v2-dialog>

@@ -257,7 +257,10 @@ export class V2LeadCardPage {
   protected async openLeadInfo(): Promise<void> {
     const loaded = this.loaded();
     if (!loaded || !this.actionsEnabled()) return;
-    const ref = this.dialogs.open<boolean, V2LeadInfoData>(V2LeadInfoDialog, loaded);
+    const ref = this.dialogs.open<boolean, V2LeadInfoData>(V2LeadInfoDialog, {
+      ...loaded,
+      employees: this.employees(),
+    });
     if (await firstValueFrom(ref.closed)) this.leadResource.reload();
   }
 

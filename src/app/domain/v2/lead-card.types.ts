@@ -9,6 +9,7 @@ import type {
 
 /** Products from the design vocabulary (`leads.products`, OpenAPI `LeadProduct`). */
 export type V2LeadProduct = 'kitchen' | 'wardrobe' | 'furniture' | 'bathroom' | 'hallway' | 'other';
+export type V2ProjectType = 'express' | 'measure' | 'contract';
 
 /**
  * v2 lead columns (W2–W5) read from the raw `GET /v1/leads/{id}` row. The shared v1 `Lead`
@@ -37,6 +38,9 @@ export interface V2LeadColumns {
   readonly checklistProduct: boolean | null;
   /** W9 acknowledgement of the next steps; null means it has not been recorded yet. */
   readonly clientInformed: boolean | null;
+  readonly aboutClient: string | null;
+  readonly projectType: V2ProjectType | null;
+  readonly responsibleManagerId: string | null;
 }
 
 export interface V2LeadBudget {

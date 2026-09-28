@@ -35,6 +35,9 @@ describe('v2 lead card mapper', () => {
       checklistMaterials: null,
       checklistProduct: null,
       clientInformed: null,
+      aboutClient: null,
+      projectType: null,
+      responsibleManagerId: null,
     });
   });
 
@@ -58,6 +61,9 @@ describe('v2 lead card mapper', () => {
       checklistMaterials: null,
       checklistProduct: null,
       clientInformed: null,
+      aboutClient: null,
+      projectType: null,
+      responsibleManagerId: null,
     });
   });
 
@@ -79,6 +85,21 @@ describe('v2 lead card mapper', () => {
       checklistProduct: true,
       clientInformed: true,
     });
+  });
+
+  it('maps the fill-info project fields and drops an unknown project type', () => {
+    expect(
+      v2LeadColumnsFromRow({
+        about_client: 'New house',
+        project_type: 'measure',
+        responsible_manager_id: 'manager-1',
+      }),
+    ).toMatchObject({
+      aboutClient: 'New house',
+      projectType: 'measure',
+      responsibleManagerId: 'manager-1',
+    });
+    expect(v2LeadColumnsFromRow({ project_type: 'measurement' }).projectType).toBeNull();
   });
 
   it('splits and joins the name for Edit contact info', () => {
