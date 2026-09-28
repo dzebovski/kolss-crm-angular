@@ -347,8 +347,7 @@ export class V2LeadCardPage {
     const ref = this.dialogs.open<boolean, V2EditContactData>(V2EditContactDialog, {
       lead: loaded.lead,
       card,
-      employees: this.employees(),
-      canAssignManager: leadPolicy.canChangeLeadManager(this.policyContext(), loaded.lead),
+      columns: loaded.columns,
     });
     if (await firstValueFrom(ref.closed)) this.leadResource.reload();
   }

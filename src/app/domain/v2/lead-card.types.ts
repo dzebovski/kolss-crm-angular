@@ -39,6 +39,7 @@ export interface V2LeadColumns {
   /** W9 acknowledgement of the next steps; null means it has not been recorded yet. */
   readonly clientInformed: boolean | null;
   readonly aboutClient: string | null;
+  readonly referredBy: string | null;
   readonly projectType: V2ProjectType | null;
   readonly responsibleManagerId: string | null;
 }

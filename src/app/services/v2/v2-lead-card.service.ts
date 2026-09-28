@@ -40,6 +40,20 @@ export interface V2SuccessfulCallUpdate {
   readonly status: Omit<V2StatusActivityRequest, 'type'>;
 }
 
+export interface V2EditContactUpdate {
+  readonly contact: V2ContactUpdate;
+  readonly editedFields: readonly V2ContactField[];
+  readonly info: UpdateLeadInfoRequest;
+}
+
+export class V2EditContactPartialWriteError extends Error {
+  constructor(cause: unknown) {
+    super('v2.editContact.partialSave');
+    this.name = 'V2EditContactPartialWriteError';
+    this.cause = cause;
+  }
+}
+
 /** An earlier request succeeded, so closing the dialog would hide a partial saved result. */
 export class V2SuccessfulCallPartialWriteError extends Error {
   constructor(
@@ -94,8 +108,8 @@ export class V2LeadCardService {
     lead: Lead,
     update: V2ContactUpdate,
     editedFields: readonly V2ContactField[],
-  ): Promise<void> {
-    await this.api.updateLead(lead.id, lead.version ?? 1, {
+  ): Promise<number> {
+    const result = await this.api.updateLead(lead.id, lead.version ?? 1, {
       name: update.name,
       phone: update.phone,
       email: update.email,
@@ -108,6 +122,28 @@ export class V2LeadCardService {
       channel: update.channel,
       editedFields: [...editedFields],
     });
+    return result.version;
+  }
+
+  /**
+   * C7 spans the full lead edit and partial v2 info endpoints. Contact goes first and returns
+   * the next optimistic-lock version; the info patch then uses that version. A partial save is
+   * surfaced explicitly so the stale dialog is never submitted again as if nothing changed.
+   */
+  async editContactAndRequest(lead: Lead, update: V2EditContactUpdate): Promise<void> {
+    let version = lead.version ?? 1;
+    let contactSaved = false;
+    if (update.editedFields.length) {
+      version = await this.updateContact(lead, update.contact, update.editedFields);
+      contactSaved = true;
+    }
+    if (!Object.keys(update.info).length) return;
+    try {
+      await this.api.updateLeadInfo(lead.id, version, update.info);
+    } catch (error) {
+      if (contactSaved) throw new V2EditContactPartialWriteError(error);
+      throw error;
+    }
   }
 
   /** Reminders & tasks "Mark as done": clears the reminder as v1 does (`clear_reminder`). */

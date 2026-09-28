@@ -1,0 +1,156 @@
+<app-v2-dialog
+  [title]="'v2.editContact.title' | translate"
+  [subtitle]="'v2.editContact.subtitle' | translate"
+  [leadContext]="data.card"
+  width="form"
+  [hint]="footerHint()"
+  [cancelLabel]="'v2.editContact.cancel' | translate"
+  [saveLabel]="'v2.editContact.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-edit-contact__error" role="alert">{{ message }}</p>
+  }
+
+  <section class="v2-edit-contact__section">
+    <h3>{{ 'v2.editContact.contactSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.editContact.fullName' | translate"
+      [required]="true"
+      [hint]="'v2.editContact.fullNameHint' | translate"
+      [error]="nameError()"
+    >
+      <input cdkFocusInitial autocomplete="name" [formField]="contact.name" />
+    </app-v2-form-field>
+    <div class="v2-edit-contact__pair">
+      <app-v2-form-field
+        [label]="'v2.card.phone' | translate"
+        [required]="true"
+        [hint]="'v2.editContact.phoneHint' | translate"
+        [error]="phoneError()"
+      >
+        <app-v2-phone-input
+          [value]="model().phone"
+          [countryCode]="phoneCountryCode"
+          [placeholder]="phonePlaceholder"
+          (valueChange)="setPhone($event)"
+          (touch)="phoneBlurred.set(true)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field
+        [label]="'v2.card.email' | translate"
+        [hint]="'v2.editContact.emailHint' | translate"
+        [error]="emailError()"
+      >
+        <input
+          type="email"
+          autocomplete="email"
+          [formField]="contact.email"
+          (blur)="emailBlurred.set(true)"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-edit-contact__section">
+    <h3>{{ 'v2.editContact.showroomSourceSection' | translate }}</h3>
+    <app-v2-field-group
+      [label]="'v2.editContact.showroom' | translate"
+      [required]="true"
+      [hint]="'v2.editContact.showroomHint' | translate"
+    >
+      <div class="v2-edit-contact__showrooms">
+        @for (showroom of showrooms; track showroom) {
+          <!-- TODO(v2): Moving a lead between offices requires owner decision Q-C3 and API support. -->
+          <button
+            type="button"
+            class="v2-edit-contact__showroom"
+            [class.v2-edit-contact__showroom--on]="showroom === data.lead.officeCode"
+            [attr.aria-pressed]="showroom === data.lead.officeCode"
+            [disabled]="showroom !== data.lead.officeCode"
+          >
+            <span aria-hidden="true"></span>
+            <strong>{{ officeConfig[showroom].showroomCardLabelKey | translate }}</strong>
+            <small>{{ officeConfig[showroom].showroomCardSubKey | translate }}</small>
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+
+    <app-v2-field-group [label]="'v2.editContact.source' | translate">
+      <div class="v2-edit-contact__channels">
+        @for (channel of channels; track channel) {
+          <button
+            type="button"
+            class="v2-edit-contact__chip"
+            [class.v2-edit-contact__chip--on]="model().channel === channel"
+            [attr.aria-pressed]="model().channel === channel"
+            [disabled]="channel === 'other'"
+            (click)="selectChannel(channel)"
+          >
+            {{ channelLabels[channel] | translate }}
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+    @if (model().channel === 'referral') {
+      <app-v2-form-field
+        [label]="'v2.editContact.referredBy' | translate"
+        [required]="true"
+        [hint]="'v2.editContact.referredByHint' | translate"
+        [error]="referredByError()"
+      >
+        <input autocomplete="off" [formField]="contact.referredBy" />
+      </app-v2-form-field>
+    }
+  </section>
+
+  <section class="v2-edit-contact__section">
+    <h3>{{ 'v2.leadInfo.request' | translate }}</h3>
+    <app-v2-product-chips [(selected)]="products" />
+    <div class="v2-edit-contact__pair">
+      <app-v2-form-field [label]="'v2.card.budget' | translate" [error]="budgetError()">
+        <app-v2-budget-input
+          [value]="model().budget"
+          [currency]="model().currency"
+          [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
+          [currencyLabel]="'v2.popup.success.currency' | translate"
+          (valueChange)="setBudget($event)"
+          (currencyChange)="setCurrency($event)"
+          (touch)="budgetBlurred.set(true)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'v2.card.location' | translate">
+        <input
+          autocomplete="off"
+          [placeholder]="'v2.leadInfo.locationPlaceholder' | translate"
+          [formField]="contact.location"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-edit-contact__section">
+    <h3>{{ 'v2.leadInfo.documents' | translate }}</h3>
+    <!-- TODO(v2): C12 owns document listing and signed uploads. -->
+    <button type="button" class="v2-edit-contact__dropzone" disabled>
+      <strong>{{ 'v2.leadInfo.documentsDrop' | translate }}</strong>
+      <span>{{ 'v2.leadInfo.documentsHint' | translate }}</span>
+    </button>
+  </section>
+
+  <section class="v2-edit-contact__section">
+    <h3>{{ 'v2.leadInfo.aboutSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.leadInfo.about' | translate"
+      [hint]="'v2.leadInfo.aboutHint' | translate"
+    >
+      <textarea rows="4" [formField]="contact.aboutClient"></textarea>
+    </app-v2-form-field>
+  </section>
+</app-v2-dialog>

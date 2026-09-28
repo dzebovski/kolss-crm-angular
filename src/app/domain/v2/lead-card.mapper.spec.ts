@@ -36,6 +36,7 @@ describe('v2 lead card mapper', () => {
       checklistProduct: null,
       clientInformed: null,
       aboutClient: null,
+      referredBy: null,
       projectType: null,
       responsibleManagerId: null,
     });
@@ -62,6 +63,7 @@ describe('v2 lead card mapper', () => {
       checklistProduct: null,
       clientInformed: null,
       aboutClient: null,
+      referredBy: null,
       projectType: null,
       responsibleManagerId: null,
     });
@@ -91,11 +93,13 @@ describe('v2 lead card mapper', () => {
     expect(
       v2LeadColumnsFromRow({
         about_client: 'New house',
+        referred_by: 'W0123',
         project_type: 'measure',
         responsible_manager_id: 'manager-1',
       }),
     ).toMatchObject({
       aboutClient: 'New house',
+      referredBy: 'W0123',
       projectType: 'measure',
       responsibleManagerId: 'manager-1',
     });

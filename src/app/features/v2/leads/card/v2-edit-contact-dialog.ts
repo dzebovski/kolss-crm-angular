@@ -1,165 +1,72 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, computed, inject, signal } from '@angular/core';
-import { disabled, form, FormField, required } from '@angular/forms/signals';
+import { form, FormField } from '@angular/forms/signals';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
+import { OFFICE_CONFIG, OFFICE_IDS } from '@core/office/office.config';
 import { normalizePhoneForOffice } from '@core/phone/phone';
-import { isSuperAdminRole } from '@core/roles/roles';
-import type { Lead } from '@domain/lead.types';
-import { joinV2Name, splitV2Name } from '@domain/v2/lead-card.mapper';
-import type { V2LeadCard } from '@domain/v2/lead-card.types';
+import type { ContractCurrency, Lead } from '@domain/lead.types';
+import { isV2BudgetText } from '@domain/v2/lead-action';
+import type { V2LeadCard, V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
+import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
-import type { CrmEmployee } from '@services/users.service';
 import {
+  V2EditContactPartialWriteError,
   V2LeadCardService,
   type V2ContactField,
   type V2ContactUpdate,
 } from '@services/v2/v2-lead-card.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
+import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
+import { V2BudgetInput } from '../../ui/v2-budget-input';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
+import { V2PhoneInput } from '../../ui/v2-phone-input';
+import { V2ProductChips } from './v2-product-chips';
 
 export interface V2EditContactData {
   readonly lead: Lead;
   readonly card: V2LeadCard;
-  readonly employees: readonly CrmEmployee[];
-  /** Any user who can edit the lead may also reassign its manager (D9, task G4). */
-  readonly canAssignManager: boolean;
+  readonly columns: V2LeadColumns;
 }
 
 interface ContactModel {
-  first: string;
-  last: string;
+  name: string;
   phone: string;
   email: string;
-  managerId: string;
   channel: V2LeadChannel;
+  referredBy: string;
+  budget: string;
+  currency: ContractCurrency;
+  location: string;
+  aboutClient: string;
 }
 
-/** Channels a person can pick (design `e-ch` select); `other` stays only on old imports. */
 const PICKABLE_CHANNELS: readonly V2LeadChannel[] = [
-  'referral',
-  'phone',
   'office',
+  'phone',
   'website',
   'meta_ads',
   'google_ads',
+  'referral',
 ];
-const NO_MANAGER = '';
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
-// Edit contact info popup from lead card v1.3 (Modal `edit`): First name *, Last name, Phone *,
-// E-mail, Manager, Channel, then the note about the code and region. Saves through
-// `PATCH /v1/leads/{id}`; the API writes the `lead_edited` timeline event with the changed
-// fields. Closes with `true` after a save.
 @Component({
   selector: 'app-v2-edit-contact-dialog',
-  imports: [FormField, TranslatePipe, V2DialogShell, V2FormField],
-  template: `
-    <app-v2-dialog
-      [title]="'v2.editContact.title' | translate"
-      [subtitle]="'v2.editContact.subtitle' | translate"
-      [hint]="'v2.dialog.autoAuthor' | translate"
-      [saveLabel]="'v2.editContact.save' | translate"
-      [saveDisabled]="saving()"
-      [invalid]="invalid()"
-      [errorCount]="errorCount()"
-      [hasUnsavedInput]="hasUnsavedInput()"
-      (save)="save()"
-      (invalidAttempt)="touched.set(true)"
-    >
-      @if (error(); as message) {
-        <p class="v2-edit-contact__error" role="alert">{{ message }}</p>
-      }
-
-      <div class="v2-edit-contact__pair">
-        <app-v2-form-field
-          [label]="'v2.editContact.firstName' | translate"
-          [required]="true"
-          [error]="
-            touched() && contact.first().errors().length
-              ? ('v2.dialog.fieldRequired' | translate)
-              : ''
-          "
-        >
-          <input cdkFocusInitial autocomplete="off" [formField]="contact.first" />
-        </app-v2-form-field>
-        <app-v2-form-field [label]="'v2.editContact.lastName' | translate">
-          <input autocomplete="off" [formField]="contact.last" />
-        </app-v2-form-field>
-      </div>
-
-      <div class="v2-edit-contact__pair">
-        <app-v2-form-field
-          [label]="'v2.card.phone' | translate"
-          [required]="true"
-          [error]="
-            touched() && contact.phone().errors().length
-              ? ('v2.dialog.fieldRequired' | translate)
-              : ''
-          "
-        >
-          <input type="tel" autocomplete="off" [formField]="contact.phone" />
-        </app-v2-form-field>
-        <app-v2-form-field [label]="'v2.card.email' | translate">
-          <input type="email" autocomplete="off" [formField]="contact.email" />
-        </app-v2-form-field>
-      </div>
-
-      <div class="v2-edit-contact__pair">
-        <app-v2-form-field [label]="'v2.card.manager' | translate">
-          <select [formField]="contact.managerId">
-            @for (option of managerOptions(); track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </app-v2-form-field>
-        <app-v2-form-field [label]="'v2.editContact.channel' | translate">
-          <select [formField]="contact.channel">
-            @for (channel of channels; track channel) {
-              <option [value]="channel">{{ channelLabels[channel] | translate }}</option>
-            }
-          </select>
-        </app-v2-form-field>
-      </div>
-
-      <p class="v2-edit-contact__note">
-        {{ 'v2.editContact.note' | translate: { code: data.card.code } }}
-      </p>
-    </app-v2-dialog>
-  `,
-  styles: `
-    .v2-edit-contact__pair {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--v2-space-3);
-    }
-
-    .v2-edit-contact__note {
-      margin: 0;
-      color: var(--v2-muted);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-
-    // No error style in the design: the same notice as the impersonation popup.
-    .v2-edit-contact__error {
-      margin: 0;
-      padding: 10px var(--v2-space-3);
-      background: var(--v2-danger-bg);
-      border-radius: var(--v2-radius-sm);
-      color: var(--v2-danger);
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    @media (max-width: 480px) {
-      .v2-edit-contact__pair {
-        grid-template-columns: 1fr;
-      }
-    }
-  `,
+  imports: [
+    FormField,
+    TranslatePipe,
+    V2BudgetInput,
+    V2DialogShell,
+    V2FieldGroup,
+    V2FormField,
+    V2PhoneInput,
+    V2ProductChips,
+  ],
+  templateUrl: './v2-edit-contact-dialog.html',
+  styleUrl: './v2-edit-contact-dialog.scss',
 })
 export class V2EditContactDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
@@ -170,122 +77,230 @@ export class V2EditContactDialog {
   protected readonly channelLabels = V2_CHANNEL_LABEL;
   protected readonly channels: readonly V2LeadChannel[] =
     this.data.card.channel === 'other' ? [...PICKABLE_CHANNELS, 'other'] : PICKABLE_CHANNELS;
+  protected readonly officeConfig = OFFICE_CONFIG;
+  protected readonly showrooms = OFFICE_IDS;
+  protected readonly phoneCountryCode = OFFICE_CONFIG[this.data.lead.officeCode].phoneCountryCode;
+  protected readonly phonePlaceholder = OFFICE_CONFIG[this.data.lead.officeCode].phonePlaceholder;
 
   private readonly initial: ContactModel = {
-    ...splitV2Name(this.data.card.name),
+    name: this.data.card.name,
     phone: this.data.card.phone,
     email: this.data.card.email ?? '',
-    managerId: this.data.card.managerId ?? NO_MANAGER,
     channel: this.data.card.channel,
+    referredBy: this.data.columns.referredBy ?? '',
+    budget: this.data.columns.estimatedBudgetText ?? budgetFromV1(this.data.lead),
+    currency: this.data.lead.estimatedBudgetCurrency,
+    location: this.data.lead.cityRegion,
+    aboutClient: this.data.columns.aboutClient ?? '',
   };
-  private readonly model = signal<ContactModel>({ ...this.initial });
-  protected readonly contact = form(this.model, (path) => {
-    required(path.first);
-    required(path.phone);
-    disabled(path.managerId, () => !this.data.canAssignManager);
-  });
-
+  protected readonly model = signal<ContactModel>({ ...this.initial });
+  protected readonly contact = form(this.model);
+  protected readonly products = signal<readonly V2LeadProduct[]>(this.data.columns.products);
   protected readonly saving = signal(false);
-  protected readonly error = signal('');
-  /** Set once Save is pressed while invalid; required-field errors stay hidden until then. */
-  protected readonly touched = signal(false);
-  protected readonly errorCount = computed(
-    () =>
-      [this.contact.first, this.contact.phone].filter((field) => field().errors().length > 0)
-        .length,
-  );
-  protected readonly invalid = computed(() => this.errorCount() > 0);
-  protected readonly hasUnsavedInput = computed(
-    () => JSON.stringify(this.model()) !== JSON.stringify(this.initial),
-  );
+  protected readonly saveError = signal('');
+  protected readonly attempted = signal(false);
+  protected readonly phoneBlurred = signal(false);
+  protected readonly emailBlurred = signal(false);
+  protected readonly budgetBlurred = signal(false);
 
-  /**
-   * Active staff of the lead's office (as the v1 manager picker), plus the current manager and
-   * "Unassigned" when that's the current state. Locked unless the viewer may reassign.
-   */
-  protected readonly managerOptions = computed(() => {
-    const { lead, card, employees } = this.data;
-    const staff = employees.filter(
-      (employee) =>
-        employee.id === card.managerId ||
-        (employee.status === 'active' &&
-          !isSuperAdminRole(employee.role) &&
-          employee.officeIds.includes(lead.officeCode)),
-    );
-    const options = staff.map((employee) => ({ value: employee.id, label: employee.displayName }));
-    return card.managerId
-      ? options
-      : [{ value: NO_MANAGER, label: this.i18n.t('common.unassigned') }, ...options];
+  private readonly phoneValidation = computed(() => v2ValidatePhone(this.model().phone));
+  protected readonly nameError = computed(() =>
+    this.attempted() && !this.model().name.trim() ? this.i18n.t('v2.editContact.nameRequired') : '',
+  );
+  protected readonly phoneError = computed(() => {
+    const result = this.phoneValidation();
+    if (!this.attempted() && !this.phoneBlurred()) return '';
+    return phoneValidationMessage(result, this.i18n);
   });
+  protected readonly emailError = computed(() =>
+    (this.attempted() || this.emailBlurred()) && !this.emailValid()
+      ? this.i18n.t('v2.editContact.emailInvalid')
+      : '',
+  );
+  protected readonly referredByError = computed(() =>
+    this.attempted() && this.model().channel === 'referral' && !this.model().referredBy.trim()
+      ? this.i18n.t('v2.editContact.referrerRequired')
+      : '',
+  );
+  protected readonly budgetError = computed(() =>
+    (this.attempted() || this.budgetBlurred()) && !this.budgetValid()
+      ? this.i18n.t('v2.leadInfo.budgetInvalid')
+      : '',
+  );
+  protected readonly missingCount = computed(() => {
+    let count = 0;
+    if (!this.model().name.trim()) count++;
+    if (this.phoneValidation().kind !== 'ok') count++;
+    if (!this.emailValid()) count++;
+    if (this.model().channel === 'referral' && !this.model().referredBy.trim()) count++;
+    if (!this.budgetValid()) count++;
+    return count;
+  });
+  protected readonly invalid = computed(() => this.missingCount() > 0);
+  protected readonly changeCount = computed(() => this.countChanges());
+  protected readonly footerHint = computed(() => {
+    const count = this.changeCount();
+    if (!count) return this.i18n.t('v2.editContact.noChanges');
+    return this.i18n.t(count === 1 ? 'v2.editContact.oneChange' : 'v2.editContact.manyChanges', {
+      count,
+    });
+  });
+  protected readonly hasUnsavedInput = computed(() => this.changeCount() > 0);
+
+  protected selectChannel(channel: V2LeadChannel): void {
+    if (channel === 'other') return;
+    this.model.update((value) => ({ ...value, channel }));
+  }
+
+  protected setPhone(phone: string): void {
+    this.model.update((value) => ({ ...value, phone }));
+  }
+
+  protected setBudget(budget: string): void {
+    this.model.update((value) => ({ ...value, budget }));
+  }
+
+  protected setCurrency(currency: ContractCurrency): void {
+    this.model.update((value) => ({ ...value, currency }));
+  }
 
   protected async save(): Promise<void> {
-    if (this.saving() || !this.contact().valid()) return;
-    this.error.set('');
-    const value = this.model();
-    const { lead } = this.data;
-
-    const name = joinV2Name(value.first, value.last);
-    if (!value.first.trim()) {
-      this.error.set(this.i18n.t('lead.nameRequired'));
-      return;
-    }
-    const phone = normalizePhoneForOffice(value.phone, lead.officeCode);
-    if (!phone) {
-      this.error.set(this.i18n.t('lead.phoneInvalid'));
-      return;
-    }
-    const email = value.email.trim();
-    if (email && !EMAIL_PATTERN.test(email)) {
-      this.error.set(this.i18n.t('lead.emailInvalid'));
-      return;
-    }
-
-    const update: V2ContactUpdate = {
-      name,
-      phone,
-      email: email || null,
-      managerId: this.data.canAssignManager ? value.managerId || null : lead.assignedToId,
-      channel: value.channel,
-    };
-    const fields = changedFields(this.initialUpdate(), update);
-    if (!fields.length) {
+    if (this.saving() || this.invalid()) return;
+    const contact = this.contactUpdate();
+    const editedFields = changedContactFields(this.initialContactUpdate(), contact);
+    const info = this.infoChanges();
+    if (!editedFields.length && !Object.keys(info).length) {
       this.dialogRef.close(false);
       return;
     }
 
     this.saving.set(true);
+    this.saveError.set('');
     try {
-      await this.service.updateContact(lead, update, fields);
+      await this.service.editContactAndRequest(this.data.lead, {
+        contact,
+        editedFields,
+        info,
+      });
       this.dialogRef.close(true);
     } catch (error) {
-      this.error.set(
-        error instanceof Error
-          ? this.i18n.localizeError(error.message)
-          : this.i18n.t('lead.saveChangesFailed'),
+      this.saveError.set(
+        error instanceof V2EditContactPartialWriteError
+          ? this.i18n.t('v2.editContact.partialSave')
+          : this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
       );
     } finally {
       this.saving.set(false);
     }
   }
 
-  private initialUpdate(): V2ContactUpdate {
-    const { lead, card } = this.data;
+  private emailValid(): boolean {
+    const email = this.model().email.trim();
+    return !email || EMAIL_PATTERN.test(email);
+  }
+
+  private budgetValid(): boolean {
+    return isV2BudgetText(this.model().budget);
+  }
+
+  private persistedReferrer(value = this.model()): string {
+    return value.channel === 'referral' ? value.referredBy.trim() : '';
+  }
+
+  private contactUpdate(): V2ContactUpdate {
+    const value = this.model();
     return {
-      name: card.name,
-      phone: normalizePhoneForOffice(card.phone, lead.officeCode) ?? card.phone,
-      email: card.email,
-      managerId: lead.assignedToId,
-      channel: card.channel,
+      name: value.name.trim(),
+      phone: normalizePhoneForOffice(value.phone, this.data.lead.officeCode) ?? value.phone.trim(),
+      email: value.email.trim() || null,
+      managerId: this.data.lead.assignedToId,
+      channel: value.channel,
     };
+  }
+
+  private initialContactUpdate(): V2ContactUpdate {
+    return {
+      name: this.data.card.name,
+      phone:
+        normalizePhoneForOffice(this.data.card.phone, this.data.lead.officeCode) ??
+        this.data.card.phone,
+      email: this.data.card.email,
+      managerId: this.data.lead.assignedToId,
+      channel: this.data.card.channel,
+    };
+  }
+
+  private infoChanges() {
+    const value = this.model();
+    const products = this.products();
+    const initialReferrer =
+      this.initial.channel === 'referral' ? this.initial.referredBy.trim() : '';
+    const nextReferrer = this.persistedReferrer(value);
+    return {
+      ...(nextReferrer !== initialReferrer ? { referredBy: nextReferrer } : {}),
+      ...(value.budget.trim() !== this.initial.budget.trim()
+        ? { estimatedBudgetText: value.budget.trim() }
+        : {}),
+      ...(value.currency !== this.initial.currency
+        ? { estimatedBudgetCurrency: value.currency }
+        : {}),
+      ...(value.location.trim() !== this.initial.location.trim()
+        ? { cityRegion: value.location.trim() }
+        : {}),
+      ...(sameProducts(products, this.data.columns.products) ? {} : { products: [...products] }),
+      ...(value.aboutClient.trim() !== this.initial.aboutClient.trim()
+        ? { aboutClient: value.aboutClient.trim() }
+        : {}),
+    };
+  }
+
+  private countChanges(): number {
+    const value = this.model();
+    let count = 0;
+    if (value.name.trim() !== this.initial.name.trim()) count++;
+    if (
+      (normalizePhoneForOffice(value.phone, this.data.lead.officeCode) ?? value.phone.trim()) !==
+      (normalizePhoneForOffice(this.initial.phone, this.data.lead.officeCode) ?? this.initial.phone)
+    )
+      count++;
+    if ((value.email.trim() || null) !== (this.initial.email.trim() || null)) count++;
+    if (value.channel !== this.initial.channel) count++;
+    if (this.persistedReferrer(value) !== this.persistedReferrer(this.initial)) count++;
+    if (!sameProducts(this.products(), this.data.columns.products)) count++;
+    if (value.budget.trim() !== this.initial.budget.trim()) count++;
+    if (value.currency !== this.initial.currency) count++;
+    if (value.location.trim() !== this.initial.location.trim()) count++;
+    if (value.aboutClient.trim() !== this.initial.aboutClient.trim()) count++;
+    return count;
   }
 }
 
-function changedFields(before: V2ContactUpdate, after: V2ContactUpdate): V2ContactField[] {
+function phoneValidationMessage(result: V2PhoneValidation, i18n: I18nService): string {
+  switch (result.kind) {
+    case 'ok':
+      return '';
+    case 'empty':
+      return i18n.t('v2.editContact.phoneRequired');
+    case 'noCode':
+      return i18n.t('v2.editContact.phoneCode');
+    case 'incomplete':
+      return i18n.t('v2.editContact.phoneIncomplete', { count: result.missingDigits });
+  }
+}
+
+function changedContactFields(before: V2ContactUpdate, after: V2ContactUpdate): V2ContactField[] {
   const fields: V2ContactField[] = [];
   if (before.name !== after.name) fields.push('name');
   if (before.phone !== after.phone) fields.push('phone');
   if (before.email !== after.email) fields.push('email');
-  if (before.managerId !== after.managerId) fields.push('manager');
   if (before.channel !== after.channel) fields.push('channel');
   return fields;
+}
+
+function budgetFromV1(lead: Lead): string {
+  return lead.estimatedBudget == null ? '' : String(lead.estimatedBudget);
+}
+
+function sameProducts(a: readonly V2LeadProduct[], b: readonly V2LeadProduct[]): boolean {
+  return a.length === b.length && a.every((product) => b.includes(product));
 }

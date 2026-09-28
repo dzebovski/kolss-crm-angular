@@ -70,6 +70,7 @@ export function v2LeadColumnsFromRow(row: unknown): V2LeadColumns {
     checklistProduct: booleanOrNull(record['checklist_product']),
     clientInformed: booleanOrNull(record['client_informed']),
     aboutClient: text(record['about_client']),
+    referredBy: text(record['referred_by']),
     projectType: oneOf(record['project_type'], PROJECT_TYPES),
     responsibleManagerId: text(record['responsible_manager_id']),
   };
