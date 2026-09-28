@@ -1,6 +1,7 @@
 <app-v2-dialog
   [title]="copy.title | translate"
   [subtitle]="copy.subtitle | translate"
+  [leadContext]="leadContext()"
   [statusDot]="kind"
   width="status"
   [hint]="hint()"
@@ -15,6 +16,34 @@
 >
   @if (error(); as message) {
     <p class="v2-status__error" role="alert">{{ message }}</p>
+  }
+
+  @if (attemptSummary() || nextAttemptSummary()) {
+    <div class="v2-status__attempts" aria-live="polite">
+      @if (attemptSummary()) {
+        <p class="v2-status__attempt-count">{{ attemptSummary() }}</p>
+      }
+      @if (nextAttemptSummary()) {
+        <p class="v2-status__attempt-next">{{ nextAttemptSummary() }}</p>
+      }
+      @for (attempt of previousAttempts(); track attempt.id) {
+        <article class="v2-status__attempt">
+          <time
+            >{{ formatV2ReminderDate(attempt.occurredAt, data.now, i18n.locale()) }},
+            {{ formatV2Time(attempt.occurredAt) }}</time
+          >
+          <p>
+            {{ statusEventLabel(attempt) }}
+            @if (attempt.actorName) {
+              · {{ attempt.actorName }}
+            }
+            @if (attempt.comment) {
+              — {{ attempt.comment }}
+            }
+          </p>
+        </article>
+      }
+    </div>
   }
 
   @if (kind === 'success') {
@@ -54,23 +83,44 @@
       [required]="copy.dateRequired ?? false"
       [error]="dateError()"
     >
-      <input
-        type="datetime-local"
-        [attr.cdkFocusInitial]="kind === 'success' ? null : ''"
-        [attr.aria-required]="copy.dateRequired ?? false"
-        [formField]="status.date"
-      />
+      @if (kind === 'success') {
+        <input
+          type="datetime-local"
+          [attr.aria-required]="copy.dateRequired ?? false"
+          [formField]="status.date"
+        />
+      } @else {
+        <app-v2-date-time-input [formField]="status.date" />
+      }
     </app-v2-form-field>
   }
 
   @if (kind === 'invited') {
+    <app-v2-field-group [label]="'v2.popup.invited.showroom' | translate" [required]="true">
+      <div class="v2-status__showrooms">
+        @for (showroom of showrooms(); track showroom.id) {
+          <!-- TODO(v2): Enable cross-office invitation after the API defines its showroom semantics (Q-C2). -->
+          <button
+            type="button"
+            class="v2-status__showroom"
+            [class.v2-status__showroom--on]="showroom.selected"
+            [disabled]="!showroom.selected"
+            [attr.aria-pressed]="showroom.selected"
+          >
+            <span>{{ showroom.label }}</span>
+            <small>{{ showroom.sublabel }}</small>
+          </button>
+        }
+      </div>
+      <p class="v2-status__field-hint">{{ 'v2.popup.invited.showroomFromLead' | translate }}</p>
+    </app-v2-field-group>
     <app-v2-form-field
-      [label]="'v2.current.designer' | translate"
+      [label]="'v2.popup.invited.manager' | translate"
       [required]="true"
       [error]="designerError()"
     >
       <select aria-required="true" [formField]="status.designerId">
-        <option value="" disabled>{{ 'v2.popup.invited.chooseDesigner' | translate }}</option>
+        <option value="" disabled>{{ 'v2.popup.invited.chooseManager' | translate }}</option>
         @for (designer of designers(); track designer.id) {
           <option [value]="designer.id">{{ designer.name }}</option>
         }
@@ -86,13 +136,19 @@
       [error]="reasonError()"
     >
       <div class="v2-status__chips">
+        @if (lossReasonsResource.isLoading()) {
+          <p class="v2-status__field-hint">{{ 'v2.popup.lost.reasonsLoading' | translate }}</p>
+        }
+        @if (lossReasonsError(); as message) {
+          <p class="v2-status__error" role="alert">{{ message }}</p>
+        }
         @for (option of lossReasons(); track option.id) {
           <button
             type="button"
             class="v2-status__chip"
-            [class.v2-status__chip--on]="reason() === option.id"
-            [attr.aria-pressed]="reason() === option.id"
-            (click)="pickReason(option.id)"
+            [class.v2-status__chip--on]="reasons().includes(option.id)"
+            [attr.aria-pressed]="reasons().includes(option.id)"
+            (click)="toggleReason(option.id)"
           >
             {{ option.label }}
           </button>
@@ -101,10 +157,18 @@
     </app-v2-field-group>
   }
 
-  <app-v2-form-field [label]="'v2.timeline.comment' | translate">
+  <app-v2-form-field
+    [label]="'v2.timeline.comment' | translate"
+    [required]="kind === 'lost' && reasons().includes('other')"
+    [error]="otherCommentError()"
+  >
     <textarea
       rows="3"
-      [placeholder]="'v2.popup.commentPlaceholder' | translate"
+      [placeholder]="
+        kind === 'lost'
+          ? ('v2.popup.lost.commentPlaceholder' | translate)
+          : ('v2.popup.commentPlaceholder' | translate)
+      "
       [formField]="status.comment"
     ></textarea>
   </app-v2-form-field>

@@ -40,6 +40,23 @@ interface Chip {
   selector: 'app-v2-date-time-input',
   imports: [TranslatePipe],
   template: `
+    <div
+      class="v2-date-time-input__chips"
+      role="group"
+      [attr.aria-label]="'v2.popup.quickDates' | translate"
+    >
+      @for (chip of chips(); track chip.key) {
+        <button
+          type="button"
+          class="v2-date-time-input__chip"
+          [class.v2-date-time-input__chip--on]="chip.on"
+          [attr.aria-pressed]="chip.on"
+          (click)="pick(chip)"
+        >
+          {{ chip.label }}
+        </button>
+      }
+    </div>
     <div class="v2-date-time-input__row">
       <input
         class="v2-date-time-input__field"
@@ -56,19 +73,6 @@ interface Chip {
         (input)="onTimeInput($event)"
         (blur)="touch.emit()"
       />
-    </div>
-    <div class="v2-date-time-input__chips">
-      @for (chip of chips(); track chip.key) {
-        <button
-          type="button"
-          class="v2-date-time-input__chip"
-          [class.v2-date-time-input__chip--on]="chip.on"
-          [attr.aria-pressed]="chip.on"
-          (click)="pick(chip)"
-        >
-          {{ chip.label }}
-        </button>
-      }
     </div>
   `,
   styles: `
@@ -107,7 +111,7 @@ interface Chip {
       display: flex;
       flex-wrap: wrap;
       gap: var(--v2-space-2);
-      margin-top: var(--v2-space-2);
+      margin-bottom: var(--v2-space-2);
     }
 
     .v2-date-time-input__chip {

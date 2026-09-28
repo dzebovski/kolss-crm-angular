@@ -3,6 +3,7 @@ import { inject, Service } from '@angular/core';
 import { KolssApiClient, KolssApiError } from '@core/api/generated/kolss-api.client';
 import type {
   LeadRating,
+  LossReason,
   RatingActivityRequest,
   UpdateLeadInfoRequest,
   V2StatusActivityRequest,
@@ -45,6 +46,12 @@ export class V2LeadCardService {
   private readonly api = inject(KolssApiClient);
   private readonly activities = inject(LeadActivitiesService);
   private readonly leads = inject(LeadsService);
+
+  /** Reasons enabled for the v2 Lost popup; the database controls the offered codes. */
+  async listV2LossReasons(): Promise<readonly LossReason[]> {
+    const result = await this.api.lossReasons<LossReason>();
+    return result.items.filter((reason) => reason.is_v2);
+  }
 
   /** Null when the lead doesn't exist (404). */
   async load(leadId: string): Promise<V2LoadedLead | null> {

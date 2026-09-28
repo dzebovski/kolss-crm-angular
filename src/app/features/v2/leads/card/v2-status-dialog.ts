@@ -1,21 +1,25 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 
-import type { V2LossReason, V2StatusActivityRequest } from '@core/api/generated/kolss-api.types';
+import type { LossReason, V2StatusActivityRequest } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
 import type { MessageKey } from '@core/i18n/messages';
+import { OFFICE_CONFIG, OFFICE_IDS } from '@core/office/office.config';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { isSuperAdminRole } from '@core/roles/roles';
-import type { Lead } from '@domain/lead.types';
-import { formatV2ReminderDate, formatV2TimeRange } from '@domain/v2/date-format';
+import type { Lead, LeadEvent } from '@domain/lead.types';
+import { formatV2ReminderDate, formatV2Time, formatV2TimeRange } from '@domain/v2/date-format';
 import { isV2BudgetText, v2LocalDateTimeToIso } from '@domain/v2/lead-action';
+import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import type { V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
 import type { CrmEmployee } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
+import { V2DateTimeInput } from '../../ui/v2-date-time-input';
+import { V2_STATUS_LABEL } from '../../ui/v2-tone';
 import type { V2CallResult, V2StatusChange } from './v2-lead-action-panel';
 import { V2ProductChips } from './v2-product-chips';
 
@@ -56,7 +60,7 @@ const COPY: Record<V2StatusKind, Copy> = {
   noanswer: {
     title: 'v2.status.noanswer',
     subtitle: 'v2.popup.noanswer.subtitle',
-    save: 'v2.popup.setReminder',
+    save: 'v2.popup.noanswer.save',
     date: 'v2.popup.noanswer.date',
     dateRequired: true,
   },
@@ -81,15 +85,6 @@ const COPY: Record<V2StatusKind, Copy> = {
   },
 };
 
-/** Design `REASONS`; `other` reuses the existing code. */
-const LOSS_REASONS: readonly V2LossReason[] = [
-  'bought_elsewhere',
-  'out_of_budget',
-  'not_relevant',
-  'cant_reach_client',
-  'other',
-];
-
 /** An invitation is a 1-hour showroom event (design and API). */
 const VISIT_MS = 60 * 60 * 1000;
 
@@ -109,20 +104,37 @@ interface StatusModel {
 // activity and closes with `true`.
 @Component({
   selector: 'app-v2-status-dialog',
-  imports: [FormField, TranslatePipe, V2DialogShell, V2FieldGroup, V2FormField, V2ProductChips],
+  imports: [
+    FormField,
+    TranslatePipe,
+    V2DateTimeInput,
+    V2DialogShell,
+    V2FieldGroup,
+    V2FormField,
+    V2ProductChips,
+  ],
   templateUrl: './v2-status-dialog.html',
   styleUrl: './v2-status-dialog.scss',
 })
 export class V2StatusDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
   private readonly service = inject(V2LeadCardService);
-  private readonly i18n = inject(I18nService);
+  protected readonly i18n = inject(I18nService);
   protected readonly data = inject<V2StatusDialogData>(DIALOG_DATA);
 
   protected readonly kind = this.data.kind;
   protected readonly copy = COPY[this.kind];
+  protected readonly formatV2ReminderDate = formatV2ReminderDate;
+  protected readonly formatV2Time = formatV2Time;
+  protected readonly leadContext = computed(() => toV2LeadCard(this.data.lead, this.data.columns));
+  protected readonly lossReasonsResource = resource({
+    loader: () => (this.kind === 'lost' ? this.service.listV2LossReasons() : Promise.resolve([])),
+  });
   protected readonly lossReasons = computed(() =>
-    LOSS_REASONS.map((reason) => ({ id: reason, label: this.i18n.closeReasonLabel(reason) })),
+    (this.lossReasonsResource.value() ?? []).map((reason) => ({
+      id: reason.code,
+      label: this.lossReasonLabel(reason),
+    })),
   );
 
   private readonly initial: StatusModel = {
@@ -136,7 +148,7 @@ export class V2StatusDialog {
   protected readonly model = signal<StatusModel>({ ...this.initial });
   protected readonly status = form(this.model);
   protected readonly products = signal<readonly V2LeadProduct[]>(this.data.columns.products);
-  protected readonly reason = signal<V2LossReason | null>(null);
+  protected readonly reasons = signal<readonly string[]>([]);
 
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
@@ -146,9 +158,15 @@ export class V2StatusDialog {
   /** Popup-rules.dc.html footer: how many required fields are still missing. */
   protected readonly missingCount = computed(() => {
     let count = 0;
-    if (this.copy.dateRequired && !this.dueAt()) count++;
+    if (
+      (this.copy.dateRequired && !this.validDueAt()) ||
+      (!this.copy.dateRequired && this.model().date && !this.validDueAt())
+    )
+      count++;
     if (this.kind === 'invited' && !this.model().designerId) count++;
-    if (this.kind === 'lost' && !this.reason()) count++;
+    if (this.kind === 'lost' && this.reasons().length === 0) count++;
+    if (this.kind === 'lost' && this.requiresOtherComment() && !this.model().comment.trim())
+      count++;
     if (!this.budgetValid()) count++;
     return count;
   });
@@ -164,24 +182,31 @@ export class V2StatusDialog {
       value.designerId !== '' ||
       value.budget.trim() !== this.initial.budget.trim() ||
       value.location.trim() !== this.initial.location.trim() ||
-      this.reason() !== null ||
+      this.reasons().length > 0 ||
       this.products().length !== this.data.columns.products.length
     );
   });
 
-  protected readonly dateError = computed(() =>
-    this.touched() && this.copy.dateRequired && !this.dueAt()
-      ? this.i18n.t('v2.dialog.fieldRequired')
-      : '',
-  );
+  protected readonly dateError = computed(() => {
+    if (!this.touched()) return '';
+    if (this.copy.dateRequired && !this.dueAt()) return this.i18n.t('v2.dialog.fieldRequired');
+    return this.model().date && !this.isFutureDate()
+      ? this.i18n.t('v2.popup.dateMustBeFuture')
+      : '';
+  });
   protected readonly designerError = computed(() =>
     this.touched() && this.kind === 'invited' && !this.model().designerId
       ? this.i18n.t('v2.dialog.fieldRequired')
       : '',
   );
   protected readonly reasonError = computed(() =>
-    this.touched() && this.kind === 'lost' && !this.reason()
+    this.touched() && this.kind === 'lost' && this.reasons().length === 0
       ? this.i18n.t('v2.dialog.fieldRequired')
+      : '',
+  );
+  protected readonly otherCommentError = computed(() =>
+    this.touched() && this.requiresOtherComment() && !this.model().comment.trim()
+      ? this.i18n.t('v2.popup.lost.otherCommentRequired')
       : '',
   );
 
@@ -198,6 +223,11 @@ export class V2StatusDialog {
   );
 
   private readonly dueAt = computed(() => v2LocalDateTimeToIso(this.model().date));
+  private readonly isFutureDate = computed(() => {
+    const dueAt = this.dueAt();
+    return dueAt !== null && new Date(dueAt).getTime() > this.data.now.getTime();
+  });
+  private readonly validDueAt = computed(() => this.dueAt() && this.isFutureDate());
   protected readonly budgetValid = computed(
     () => this.kind !== 'success' || isV2BudgetText(this.model().budget),
   );
@@ -205,12 +235,23 @@ export class V2StatusDialog {
   protected readonly error = computed(() =>
     this.budgetValid() ? this.saveError() : this.i18n.t('v2.leadInfo.budgetInvalid'),
   );
+  protected readonly lossReasonsError = computed(() => {
+    const error = this.lossReasonsResource.error();
+    return error
+      ? this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed')
+      : '';
+  });
 
   protected readonly canSave = computed(() => {
     if (this.saving() || !this.budgetValid()) return false;
-    if (this.copy.dateRequired && !this.dueAt()) return false;
+    if (
+      (this.copy.dateRequired && !this.validDueAt()) ||
+      (!this.copy.dateRequired && this.model().date && !this.validDueAt())
+    )
+      return false;
     if (this.kind === 'invited' && !this.model().designerId) return false;
-    if (this.kind === 'lost' && !this.reason()) return false;
+    if (this.kind === 'lost' && this.reasons().length === 0) return false;
+    if (this.kind === 'lost' && this.requiresOtherComment()) return false;
     return true;
   });
 
@@ -226,15 +267,86 @@ export class V2StatusDialog {
     });
   });
 
-  /** Design `footNote`. */
-  protected readonly hint = computed(() =>
-    this.kind === 'noanswer'
-      ? this.i18n.t('v2.popup.noanswer.attempt', { count: this.data.columns.noAnswerAttempts + 1 })
-      : this.i18n.t('v2.dialog.autoAuthor'),
+  /** The matching status activity history is the only reliable source for the board's prior attempts. */
+  protected readonly previousAttempts = computed(() =>
+    this.data.lead.events
+      .filter((event) => this.isSameStatusEvent(event))
+      .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
+  );
+  protected readonly attemptSummary = computed(() => {
+    const count = this.previousAttempts().length;
+    if (count === 0) return '';
+    switch (this.kind) {
+      case 'later':
+        return this.i18n.t('v2.popup.later.previousCalls', { count });
+      case 'noanswer':
+        return this.i18n.t('v2.popup.noanswer.previousAttempts', { count });
+      case 'thinking':
+        return this.i18n.t('v2.popup.thinking.previousFollowUps', { count });
+      default:
+        return '';
+    }
+  });
+  protected readonly nextAttemptSummary = computed(() => {
+    if (this.kind === 'noanswer') {
+      return this.i18n.t('v2.popup.noanswer.thisAttempt', {
+        count: this.data.columns.noAnswerAttempts + 1,
+      });
+    }
+    if (this.kind === 'later' || this.kind === 'thinking') {
+      const count = this.previousAttempts().length + 1;
+      return this.i18n.t(
+        this.kind === 'later' ? 'v2.popup.later.thisCall' : 'v2.popup.thinking.thisFollowUp',
+        { count },
+      );
+    }
+    return '';
+  });
+  /** Design footer outcome, including the accurately derived next No answer attempt. */
+  protected readonly hint = computed(() => {
+    switch (this.kind) {
+      case 'later':
+        return this.i18n.t('v2.popup.later.footer');
+      case 'noanswer':
+        return this.i18n.t('v2.popup.noanswer.footerAttempt', {
+          count: this.data.columns.noAnswerAttempts + 1,
+        });
+      case 'thinking':
+        return this.i18n.t('v2.popup.thinking.footer');
+      case 'invited':
+        return this.i18n.t('v2.popup.invited.footer');
+      case 'lost':
+        return this.i18n.t('v2.popup.lost.footer');
+      case 'success':
+        return this.i18n.t('v2.dialog.autoAuthor');
+    }
+  });
+  protected readonly showrooms = computed(() =>
+    OFFICE_IDS.map((id) => ({
+      id,
+      label: this.i18n.t(OFFICE_CONFIG[id].showroomCardLabelKey),
+      sublabel: this.i18n.t(OFFICE_CONFIG[id].showroomCardSubKey),
+      selected: id === this.data.lead.officeCode,
+    })),
   );
 
-  protected pickReason(reason: V2LossReason): void {
-    this.reason.set(reason);
+  protected toggleReason(reason: string): void {
+    this.reasons.update((reasons) =>
+      reasons.includes(reason) ? reasons.filter((item) => item !== reason) : [...reasons, reason],
+    );
+  }
+
+  protected statusEventLabel(event: LeadEvent): string {
+    switch (event.statusCode) {
+      case 'callback_requested':
+        return this.i18n.t(V2_STATUS_LABEL.later);
+      case 'no_answer':
+        return this.i18n.t(V2_STATUS_LABEL.noanswer);
+      case 'thinking':
+        return this.i18n.t(V2_STATUS_LABEL.thinking);
+      default:
+        return '';
+    }
   }
 
   protected async save(): Promise<void> {
@@ -283,9 +395,34 @@ export class V2StatusDialog {
       case 'invited':
         return { ...base, designerId: value.designerId };
       case 'lost':
-        return { ...base, lossReason: this.reason() ?? 'other' };
+        return { ...base, lossReasons: [...this.reasons()] };
       default:
         return base;
+    }
+  }
+
+  private requiresOtherComment(): boolean {
+    return this.kind === 'lost' && this.reasons().includes('other') && !this.model().comment.trim();
+  }
+
+  private lossReasonLabel(reason: LossReason): string {
+    const locale = this.i18n.locale();
+    if (locale === 'en') return reason.label_en?.trim() || reason.label_pl || reason.label_uk;
+    return locale === 'pl'
+      ? reason.label_pl || reason.label_uk
+      : reason.label_uk || reason.label_pl;
+  }
+
+  private isSameStatusEvent(event: LeadEvent): boolean {
+    switch (this.kind) {
+      case 'later':
+        return event.category === 'call_status' && event.statusCode === 'callback_requested';
+      case 'noanswer':
+        return event.category === 'call_status' && event.statusCode === 'no_answer';
+      case 'thinking':
+        return event.category === 'client_status' && event.statusCode === 'thinking';
+      default:
+        return false;
     }
   }
 }
