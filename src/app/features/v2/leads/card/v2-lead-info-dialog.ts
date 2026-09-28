@@ -10,15 +10,22 @@ import { OFFICE_CONFIG } from '@core/office/office.config';
 import { isSuperAdminRole } from '@core/roles/roles';
 import type { ContractCurrency, Lead } from '@domain/lead.types';
 import { isV2BudgetText } from '@domain/v2/lead-action';
+import {
+  v2DocumentLocalErrorCount,
+  v2UpdatePendingDocument,
+  type V2PendingDocument,
+} from '@domain/v2/lead-documents';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import type { V2LeadColumns, V2LeadProduct, V2ProjectType } from '@domain/v2/lead-card.types';
 import type { CrmEmployee } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
+import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import { V2BudgetInput } from '../../ui/v2-budget-input';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
+import { V2DocumentPicker } from './v2-document-picker';
 import { V2ProductChips } from './v2-product-chips';
 
 export interface V2LeadInfoData {
@@ -56,6 +63,7 @@ type ChecklistField =
     FormField,
     TranslatePipe,
     V2BudgetInput,
+    V2DocumentPicker,
     V2DialogShell,
     V2FieldGroup,
     V2FormField,
@@ -67,6 +75,7 @@ type ChecklistField =
 export class V2LeadInfoDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
   private readonly service = inject(V2LeadCardService);
+  private readonly documentsService = inject(V2LeadDocumentsService);
   protected readonly i18n = inject(I18nService);
   protected readonly data = inject<V2LeadInfoData>(DIALOG_DATA);
 
@@ -92,6 +101,7 @@ export class V2LeadInfoDialog {
   protected readonly model = signal<LeadInfoModel>({ ...this.initial });
   protected readonly info = form(this.model);
   protected readonly products = signal<readonly V2LeadProduct[]>(this.data.columns.products);
+  protected readonly documents = signal<readonly V2PendingDocument[]>([]);
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
   protected readonly touched = signal(false);
@@ -147,13 +157,15 @@ export class V2LeadInfoDialog {
     if (!this.budgetValid()) count++;
     if (!this.model().clientInformed) count++;
     if (!this.model().responsibleManagerId) count++;
+    count += v2DocumentLocalErrorCount(this.documents());
     return count;
   });
   protected readonly invalid = computed(() => this.missingCount() > 0);
   protected readonly hasUnsavedInput = computed(
     () =>
       JSON.stringify(this.model()) !== JSON.stringify(this.initial) ||
-      !sameProducts(this.products(), this.data.columns.products),
+      !sameProducts(this.products(), this.data.columns.products) ||
+      this.documents().length > 0,
   );
   protected readonly budgetError = computed(() =>
     this.touched() && !this.budgetValid() ? this.i18n.t('v2.leadInfo.budgetInvalid') : '',
@@ -191,14 +203,17 @@ export class V2LeadInfoDialog {
   protected async save(): Promise<void> {
     if (this.saving() || this.invalid()) return;
     const request = this.changes();
-    if (!Object.keys(request).length) {
+    if (!Object.keys(request).length && this.documents().length === 0) {
       this.dialogRef.close(false);
       return;
     }
     this.saving.set(true);
     this.saveError.set('');
     try {
-      await this.service.updateLeadInfo(this.data.lead, request);
+      await this.documentsService.uploadAll(this.data.lead.id, this.documents(), '', (id, change) =>
+        this.documents.update((items) => v2UpdatePendingDocument(items, id, change)),
+      );
+      if (Object.keys(request).length) await this.service.updateLeadInfo(this.data.lead, request);
       this.dialogRef.close(true);
     } catch (error) {
       this.saveError.set(

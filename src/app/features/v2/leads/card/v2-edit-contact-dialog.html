@@ -137,11 +137,7 @@
 
   <section class="v2-edit-contact__section">
     <h3>{{ 'v2.leadInfo.documents' | translate }}</h3>
-    <!-- TODO(v2): C12 owns document listing and signed uploads. -->
-    <button type="button" class="v2-edit-contact__dropzone" disabled>
-      <strong>{{ 'v2.leadInfo.documentsDrop' | translate }}</strong>
-      <span>{{ 'v2.leadInfo.documentsHint' | translate }}</span>
-    </button>
+    <app-v2-document-picker [(documents)]="documents" [disabled]="saving()" />
   </section>
 
   <section class="v2-edit-contact__section">

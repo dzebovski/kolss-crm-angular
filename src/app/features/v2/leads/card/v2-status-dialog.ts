@@ -16,6 +16,11 @@ import { isSuperAdminRole } from '@core/roles/roles';
 import type { ContractCurrency, Lead, LeadEvent } from '@domain/lead.types';
 import { formatV2ReminderDate, formatV2Time, formatV2TimeRange } from '@domain/v2/date-format';
 import { isV2BudgetText, v2LocalDateTimeToIso } from '@domain/v2/lead-action';
+import {
+  v2DocumentLocalErrorCount,
+  v2UpdatePendingDocument,
+  type V2PendingDocument,
+} from '@domain/v2/lead-documents';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import type { V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
 import type { CrmEmployee } from '@services/users.service';
@@ -23,6 +28,7 @@ import {
   V2LeadCardService,
   V2SuccessfulCallPartialWriteError,
 } from '@services/v2/v2-lead-card.service';
+import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
@@ -32,6 +38,7 @@ import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
 import { V2_STATUS_LABEL } from '../../ui/v2-tone';
 import type { V2CallResult, V2StatusChange } from './v2-lead-action-panel';
 import { V2ProductChips } from './v2-product-chips';
+import { V2DocumentPicker } from './v2-document-picker';
 
 export type V2StatusKind = V2CallResult | V2StatusChange;
 
@@ -132,6 +139,7 @@ type ChecklistField =
     TranslatePipe,
     V2DateTimeInput,
     V2BudgetInput,
+    V2DocumentPicker,
     V2DialogShell,
     V2FieldGroup,
     V2FormField,
@@ -143,6 +151,7 @@ type ChecklistField =
 export class V2StatusDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
   private readonly service = inject(V2LeadCardService);
+  private readonly documentsService = inject(V2LeadDocumentsService);
   protected readonly i18n = inject(I18nService);
   protected readonly data = inject<V2StatusDialogData>(DIALOG_DATA);
 
@@ -178,6 +187,7 @@ export class V2StatusDialog {
   protected readonly model = signal<StatusModel>({ ...this.initial });
   protected readonly status = form(this.model);
   protected readonly products = signal<readonly V2LeadProduct[]>(this.data.columns.products);
+  protected readonly documents = signal<readonly V2PendingDocument[]>([]);
   protected readonly reasons = signal<readonly string[]>([]);
   protected readonly rating = signal<LeadRating | null>(this.data.columns.rating);
   protected readonly checklist: readonly {
@@ -224,6 +234,7 @@ export class V2StatusDialog {
       count++;
     if (this.kind === 'success' && !this.model().clientInformed) count++;
     if (!this.budgetValid()) count++;
+    if (this.kind === 'success') count += v2DocumentLocalErrorCount(this.documents());
     return count;
   });
   protected readonly invalid = computed(() => this.missingCount() > 0);
@@ -246,7 +257,8 @@ export class V2StatusDialog {
       value.clientInformed !== this.initial.clientInformed ||
       this.reasons().length > 0 ||
       this.products().length !== this.data.columns.products.length ||
-      this.rating() !== this.data.columns.rating
+      this.rating() !== this.data.columns.rating ||
+      (this.kind === 'success' && this.documents().length > 0)
     );
   });
 
@@ -434,6 +446,15 @@ export class V2StatusDialog {
     this.saving.set(true);
     this.saveError.set('');
     try {
+      if (this.kind === 'success') {
+        await this.documentsService.uploadAll(
+          this.data.lead.id,
+          this.documents(),
+          '',
+          (id, change) =>
+            this.documents.update((items) => v2UpdatePendingDocument(items, id, change)),
+        );
+      }
       if (this.kind === 'success') {
         await this.service.recordSuccessfulCall(this.data.lead, {
           info: this.successInfoRequest(),

@@ -15,10 +15,16 @@ import {
   type V2CreateLeadChannel,
 } from '@domain/v2/create-lead';
 import { isV2BudgetText } from '@domain/v2/lead-action';
+import {
+  v2DocumentLocalErrorCount,
+  v2UpdatePendingDocument,
+  type V2PendingDocument,
+} from '@domain/v2/lead-documents';
 import type { V2LeadProduct } from '@domain/v2/lead-card.types';
 import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
 import type { Office } from '@models/database';
 import { V2LeadsListService } from '@services/v2/v2-leads-list.service';
+import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
@@ -26,6 +32,7 @@ import { V2BudgetInput } from '../../ui/v2-budget-input';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
 import { V2PhoneInput } from '../../ui/v2-phone-input';
 import { V2ProductChips } from '../card/v2-product-chips';
+import { V2DocumentPicker } from '../card/v2-document-picker';
 
 export interface V2CreateLeadData {
   readonly offices: readonly Office[];
@@ -64,6 +71,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
     FormField,
     TranslatePipe,
     V2BudgetInput,
+    V2DocumentPicker,
     V2DialogShell,
     V2FieldGroup,
     V2FormField,
@@ -76,6 +84,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 export class V2CreateLeadDialog {
   private readonly dialogRef = inject<DialogRef<string>>(DialogRef);
   private readonly service = inject(V2LeadsListService);
+  private readonly documentsService = inject(V2LeadDocumentsService);
   private readonly i18n = inject(I18nService);
   protected readonly data = inject<V2CreateLeadData>(DIALOG_DATA);
 
@@ -106,6 +115,8 @@ export class V2CreateLeadDialog {
   protected readonly model = signal<CreateLeadModel>({ ...this.initial });
   protected readonly lead = form(this.model);
   protected readonly products = signal<readonly V2LeadProduct[]>([]);
+  protected readonly documents = signal<readonly V2PendingDocument[]>([]);
+  private readonly createdLeadId = signal<string | null>(null);
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
   protected readonly attempted = signal(false);
@@ -168,12 +179,15 @@ export class V2CreateLeadDialog {
     if (this.model().channel === 'referral' && !this.model().referredBy.trim()) count++;
     if (!this.createdValid()) count++;
     if (!this.budgetValid()) count++;
+    count += v2DocumentLocalErrorCount(this.documents());
     return count;
   });
   protected readonly invalid = computed(() => this.missingCount() > 0);
   protected readonly hasUnsavedInput = computed(
     () =>
-      JSON.stringify(this.model()) !== JSON.stringify(this.initial) || this.products().length > 0,
+      JSON.stringify(this.model()) !== JSON.stringify(this.initial) ||
+      this.products().length > 0 ||
+      this.documents().length > 0,
   );
 
   protected selectShowroom(showroom: OfficeId): void {
@@ -215,7 +229,11 @@ export class V2CreateLeadDialog {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      const leadId = await this.service.create(request);
+      const leadId = this.createdLeadId() ?? (await this.service.create(request));
+      this.createdLeadId.set(leadId);
+      await this.documentsService.uploadAll(leadId, this.documents(), '', (id, change) =>
+        this.documents.update((items) => v2UpdatePendingDocument(items, id, change)),
+      );
       this.dialogRef.close(leadId);
     } catch (error) {
       this.saveError.set(

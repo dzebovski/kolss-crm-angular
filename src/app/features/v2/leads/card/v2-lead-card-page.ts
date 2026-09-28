@@ -138,8 +138,6 @@ export class V2LeadCardPage {
     return v2CurrentStatus(loaded.lead, card.status, loaded.columns.noAnswerAttempts);
   });
 
-  protected readonly attachments = computed(() => this.loaded()?.lead.attachments ?? []);
-
   protected readonly tasks = computed(() => {
     const lead = this.loaded()?.lead;
     return lead ? v2LeadTasks(lead, this.now()) : [];

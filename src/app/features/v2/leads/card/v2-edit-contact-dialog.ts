@@ -8,6 +8,11 @@ import { OFFICE_CONFIG, OFFICE_IDS } from '@core/office/office.config';
 import { normalizePhoneForOffice } from '@core/phone/phone';
 import type { ContractCurrency, Lead } from '@domain/lead.types';
 import { isV2BudgetText } from '@domain/v2/lead-action';
+import {
+  v2DocumentLocalErrorCount,
+  v2UpdatePendingDocument,
+  type V2PendingDocument,
+} from '@domain/v2/lead-documents';
 import type { V2LeadCard, V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
 import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
@@ -17,12 +22,14 @@ import {
   type V2ContactField,
   type V2ContactUpdate,
 } from '@services/v2/v2-lead-card.service';
+import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import { V2BudgetInput } from '../../ui/v2-budget-input';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
 import { V2PhoneInput } from '../../ui/v2-phone-input';
+import { V2DocumentPicker } from './v2-document-picker';
 import { V2ProductChips } from './v2-product-chips';
 
 export interface V2EditContactData {
@@ -59,6 +66,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
     FormField,
     TranslatePipe,
     V2BudgetInput,
+    V2DocumentPicker,
     V2DialogShell,
     V2FieldGroup,
     V2FormField,
@@ -71,6 +79,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 export class V2EditContactDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
   private readonly service = inject(V2LeadCardService);
+  private readonly documentsService = inject(V2LeadDocumentsService);
   private readonly i18n = inject(I18nService);
   protected readonly data = inject<V2EditContactData>(DIALOG_DATA);
 
@@ -96,6 +105,7 @@ export class V2EditContactDialog {
   protected readonly model = signal<ContactModel>({ ...this.initial });
   protected readonly contact = form(this.model);
   protected readonly products = signal<readonly V2LeadProduct[]>(this.data.columns.products);
+  protected readonly documents = signal<readonly V2PendingDocument[]>([]);
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
   protected readonly attempted = signal(false);
@@ -134,6 +144,7 @@ export class V2EditContactDialog {
     if (!this.emailValid()) count++;
     if (this.model().channel === 'referral' && !this.model().referredBy.trim()) count++;
     if (!this.budgetValid()) count++;
+    count += v2DocumentLocalErrorCount(this.documents());
     return count;
   });
   protected readonly invalid = computed(() => this.missingCount() > 0);
@@ -145,7 +156,9 @@ export class V2EditContactDialog {
       count,
     });
   });
-  protected readonly hasUnsavedInput = computed(() => this.changeCount() > 0);
+  protected readonly hasUnsavedInput = computed(
+    () => this.changeCount() > 0 || this.documents().length > 0,
+  );
 
   protected selectChannel(channel: V2LeadChannel): void {
     if (channel === 'other') return;
@@ -169,7 +182,7 @@ export class V2EditContactDialog {
     const contact = this.contactUpdate();
     const editedFields = changedContactFields(this.initialContactUpdate(), contact);
     const info = this.infoChanges();
-    if (!editedFields.length && !Object.keys(info).length) {
+    if (!editedFields.length && !Object.keys(info).length && this.documents().length === 0) {
       this.dialogRef.close(false);
       return;
     }
@@ -177,11 +190,16 @@ export class V2EditContactDialog {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      await this.service.editContactAndRequest(this.data.lead, {
-        contact,
-        editedFields,
-        info,
-      });
+      await this.documentsService.uploadAll(this.data.lead.id, this.documents(), '', (id, change) =>
+        this.documents.update((items) => v2UpdatePendingDocument(items, id, change)),
+      );
+      if (editedFields.length || Object.keys(info).length) {
+        await this.service.editContactAndRequest(this.data.lead, {
+          contact,
+          editedFields,
+          info,
+        });
+      }
       this.dialogRef.close(true);
     } catch (error) {
       this.saveError.set(

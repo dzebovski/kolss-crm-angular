@@ -122,7 +122,6 @@
       </app-v2-form-field>
     </div>
 
-    <!-- TODO(v2): C12 owns the signed-upload flow; this board only draws its disabled control. -->
     <section
       class="v2-status__documents"
       [attr.aria-label]="'v2.popup.success.documents' | translate"
@@ -131,8 +130,8 @@
         <strong>{{ 'v2.popup.success.documents' | translate }}</strong>
         <p>{{ 'v2.popup.success.documentsHint' | translate }}</p>
       </div>
-      <button type="button" disabled>{{ 'v2.popup.success.addDocuments' | translate }}</button>
     </section>
+    <app-v2-document-picker [(documents)]="documents" [disabled]="saving()" />
 
     <app-v2-field-group
       [label]="'v2.popup.success.checklist' | translate"
