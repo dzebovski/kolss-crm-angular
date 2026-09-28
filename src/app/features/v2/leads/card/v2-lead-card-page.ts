@@ -242,8 +242,15 @@ export class V2LeadCardPage {
 
   protected async openComment(): Promise<void> {
     const lead = this.loaded()?.lead;
-    if (!lead || !this.commentEnabled()) return;
-    const ref = this.dialogs.open<boolean, V2CommentData>(V2CommentDialog, { leadId: lead.id });
+    const columns = this.loaded()?.columns;
+    if (!lead || !columns || !this.commentEnabled()) return;
+    const ref = this.dialogs.open<boolean, V2CommentData>(V2CommentDialog, {
+      leadId: lead.id,
+      lead,
+      columns,
+      employees: this.employees(),
+      now: this.now(),
+    });
     if (await firstValueFrom(ref.closed)) this.leadResource.reload();
   }
 

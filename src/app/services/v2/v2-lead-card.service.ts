@@ -125,12 +125,18 @@ export class V2LeadCardService {
     await this.api.leadActivity(leadId, request);
   }
 
-  /** Add comment popup: a comment with an optional reminder (no assignee, decision D5). */
-  async addComment(leadId: string, comment: string, dueAt: string | null): Promise<void> {
+  /** Add-comment popup: a note, personal reminder, or task assigned to an office colleague. */
+  async addComment(
+    leadId: string,
+    comment: string,
+    dueAt: string | null,
+    assignedTo: string | null,
+  ): Promise<void> {
     await this.api.leadActivity(leadId, {
       type: 'comment',
       comment: comment.trim(),
       ...(dueAt ? { dueAt } : {}),
+      ...(assignedTo ? { assignedTo } : {}),
     });
   }
 
