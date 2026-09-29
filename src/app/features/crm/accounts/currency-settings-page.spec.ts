@@ -19,7 +19,7 @@ describe('CurrencySettingsPage', () => {
   const update = vi.fn(async () => ({ ...current, version: 4 }));
 
   beforeEach(async () => {
-    setActiveLocale('uk');
+    setActiveLocale('en');
     load.mockReset();
     load.mockResolvedValue(current);
     update.mockReset();

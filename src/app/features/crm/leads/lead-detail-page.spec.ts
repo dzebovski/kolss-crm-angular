@@ -425,7 +425,9 @@ describe('LeadDetailView', () => {
     const { fixture } = await render({ ...FIXTURE_LEADS[2]!, events: [event] });
     const element = fixture.nativeElement as HTMLElement;
 
-    element.querySelector<HTMLButtonElement>('.timeline-card button[aria-label="Видалити"]')?.click();
+    element
+      .querySelector<HTMLButtonElement>('.timeline-card button[aria-label="Видалити"]')
+      ?.click();
     await fixture.whenStable();
 
     expect(element.querySelector('.manager-dialog-copy p')?.textContent).toContain(

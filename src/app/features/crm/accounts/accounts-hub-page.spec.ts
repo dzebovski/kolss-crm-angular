@@ -7,7 +7,7 @@ import { AccountsHubPage } from './accounts-hub-page';
 
 describe('AccountsHubPage', () => {
   beforeEach(async () => {
-    setActiveLocale('uk');
+    setActiveLocale('en');
     await TestBed.configureTestingModule({
       imports: [AccountsHubPage],
       providers: [provideRouter([])],

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
+import { setActiveLocale } from '@core/i18n/locale-storage';
 import { TaskCreateForm } from './task-create-form';
 
 const offices = [
@@ -8,6 +9,7 @@ const offices = [
 ];
 
 async function render(createManagerTask = vi.fn().mockResolvedValue({})) {
+  setActiveLocale('en');
   await TestBed.configureTestingModule({
     imports: [TaskCreateForm],
     providers: [{ provide: KolssApiClient, useValue: { createManagerTask } }],
