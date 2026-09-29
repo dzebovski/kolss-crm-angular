@@ -39,9 +39,9 @@
   }
 
   <div class="v2-filters__row v2-filters__chips-row">
-    <span class="v2-filters__label" id="v2-filters-status">{{
-      'v2.leads.statusFilter' | translate
-    }}</span>
+    <span class="v2-filters__label" id="v2-filters-status"
+      >{{ 'v2.leads.statusFilter' | translate }}:</span
+    >
     <div class="v2-filters__chips" role="group" aria-labelledby="v2-filters-status">
       @for (chip of statusChips(); track chip.value) {
         <button
@@ -57,12 +57,10 @@
       }
     </div>
 
-    <div class="v2-filters__divider"></div>
-
     <div class="v2-filters__rating">
-      <span class="v2-filters__label" id="v2-filters-rating">{{
-        'v2.leads.ratingFilter' | translate
-      }}</span>
+      <span class="v2-filters__label" id="v2-filters-rating"
+        >{{ 'v2.leads.ratingFilter' | translate }}:</span
+      >
       <div
         class="v2-filters__chips v2-filters__chips--nowrap"
         role="group"
