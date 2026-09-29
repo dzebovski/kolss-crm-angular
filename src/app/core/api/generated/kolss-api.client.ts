@@ -1,13 +1,20 @@
-// Generated contract adapter for api/openapi.yaml v2.31.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.33.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '@env/environment';
 import type {
+  AddProjectContractRequest,
+  AddProjectPaymentRequest,
+  CancelProjectRequest,
+  ChangeProjectStatusRequest,
   ConfirmLeadDocumentRequest,
   CreateLeadDocumentUploadRequest,
   CreateManagerTaskRequest,
+  CreateProjectFileUploadRequest,
+  CreateProjectRequest,
+  CreateTaskListRequest,
   LeadDocument,
   LeadDocumentUpload,
   LeadEventCorrectionRequest,
@@ -16,6 +23,19 @@ import type {
   ManagerTaskListResponse,
   ManagerTaskMutationResponse,
   ManagerTaskStatus,
+  Project,
+  ProjectEvent,
+  ProjectFacetsResponse,
+  ProjectFileUpload,
+  ProjectListQuery,
+  ProjectListResponse,
+  TaskCounts,
+  TaskFeedItem,
+  TaskFeedQuery,
+  TaskFeedResponse,
+  TaskList,
+  UpdateManagerTaskRequest,
+  UpdateTaskListRequest,
   AnswerLeadQuestionResponse,
   AppointmentListResponse,
   AppointmentMutationResponse,
@@ -307,6 +327,116 @@ export class KolssApiClient {
       { status },
       { 'If-Match': String(version) },
     );
+  }
+
+  /** Partial task update (2.33.0): progress, assignee, title, note, date and time. */
+  patchManagerTask(
+    id: string,
+    version: number,
+    body: UpdateManagerTaskRequest,
+  ): Promise<ManagerTaskMutationResponse> {
+    return this.patch(`/v1/tasks/${encodeURIComponent(id)}`, body, {
+      'If-Match': String(version),
+    });
+  }
+
+  /** CRM v2 Tasks page feed (2.33.0). */
+  listTasks(query: TaskFeedQuery): Promise<TaskFeedResponse> {
+    return this.get('/v1/tasks', { ...query });
+  }
+
+  task(id: string): Promise<TaskFeedItem> {
+    return this.get(`/v1/tasks/${encodeURIComponent(id)}`);
+  }
+
+  taskCounts(officeId?: string): Promise<TaskCounts> {
+    return this.get('/v1/tasks/counts', { officeId });
+  }
+
+  taskLists(): Promise<{ readonly items: readonly TaskList[] }> {
+    return this.get('/v1/task-lists');
+  }
+
+  createTaskList(body: CreateTaskListRequest, idempotencyKey?: string): Promise<TaskList> {
+    return this.post('/v1/task-lists', body, idempotencyKey);
+  }
+
+  taskList(id: string): Promise<TaskList> {
+    return this.get(`/v1/task-lists/${encodeURIComponent(id)}`);
+  }
+
+  updateTaskList(id: string, version: number, body: UpdateTaskListRequest): Promise<TaskList> {
+    return this.patch(`/v1/task-lists/${encodeURIComponent(id)}`, body, {
+      'If-Match': String(version),
+    });
+  }
+
+  /** CRM v2 Create project (2.32.0): the lead's single project; the lead moves to status `project`. */
+  createProjectFromLead(
+    leadId: string,
+    body: CreateProjectRequest,
+    idempotencyKey?: string,
+  ): Promise<Project> {
+    return this.post(`/v1/leads/${encodeURIComponent(leadId)}/project`, body, idempotencyKey);
+  }
+
+  /** CRM v2 Projects list, newest first (2.32.0). */
+  listProjects(query: ProjectListQuery): Promise<ProjectListResponse> {
+    return this.get('/v1/projects', { ...query });
+  }
+
+  /** Chip counts and total; takes the `listProjects` filters, ignores `limit` and `cursor`. */
+  projectFacets(query: Omit<ProjectListQuery, 'limit' | 'cursor'>): Promise<ProjectFacetsResponse> {
+    return this.get('/v1/projects/facets', { ...query });
+  }
+
+  project(id: string): Promise<Project> {
+    return this.get(`/v1/projects/${encodeURIComponent(id)}`);
+  }
+
+  /** Newest first, up to 200 entries. */
+  projectTimeline(
+    id: string,
+    limit?: number,
+  ): Promise<{ readonly items: readonly ProjectEvent[] }> {
+    return this.get(`/v1/projects/${encodeURIComponent(id)}/timeline`, { limit });
+  }
+
+  /** Changes the status, or updates the details of the current one (2.32.0). */
+  changeProjectStatus(id: string, body: ChangeProjectStatusRequest): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/status`, body);
+  }
+
+  cancelProject(id: string, body: CancelProjectRequest): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/cancel`, body);
+  }
+
+  restoreProject(id: string): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/restore`, {});
+  }
+
+  addProjectContract(
+    id: string,
+    body: AddProjectContractRequest,
+    idempotencyKey?: string,
+  ): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/contract`, body, idempotencyKey);
+  }
+
+  addProjectPayment(
+    id: string,
+    body: AddProjectPaymentRequest,
+    idempotencyKey?: string,
+  ): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/payments`, body, idempotencyKey);
+  }
+
+  /** Step 1 of a contract file / receipt upload: presigned direct upload (2.32.0). */
+  createProjectFileUpload(
+    id: string,
+    body: CreateProjectFileUploadRequest,
+  ): Promise<ProjectFileUpload> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/files/uploads`, body);
   }
 
   dashboard(query: Readonly<Record<string, string | null | undefined>> = {}): Promise<{

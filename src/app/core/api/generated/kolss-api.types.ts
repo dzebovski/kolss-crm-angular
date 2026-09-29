@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.31.0' as const;
+export const API_CONTRACT_VERSION = '2.33.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -454,12 +454,149 @@ export interface CreateManagerTaskRequest {
   readonly assigneeId: string;
   readonly title: string;
   readonly dueDate: string | null;
+  /** Office-local `HH:MM`; needs `dueDate` (2.33.0). */
+  readonly dueTime?: string | null;
+  readonly note?: string | null;
+  /** Puts the task on a task list; exclusive with `link` (2.33.0). */
+  readonly listId?: string | null;
+  /** Only `lead` is accepted for now; `project` and `client` are reserved (2.33.0). */
+  readonly link?: TaskLinkRequest | null;
+}
+
+export interface TaskLinkRequest {
+  readonly type: 'lead' | 'project' | 'client';
+  readonly id: string;
+}
+
+/** `PATCH /v1/tasks/{taskId}` (2.33.0): partial, at least one field. */
+export interface UpdateManagerTaskRequest {
+  readonly status?: ManagerTaskStatus;
+  /** Only an open task can be in progress. */
+  readonly inProgress?: boolean;
+  readonly assigneeId?: string;
+  readonly title?: string;
+  readonly note?: string | null;
+  /** `null` clears the date and the time. */
+  readonly dueDate?: string | null;
+  /** `HH:MM`, needs a due date; `null` clears it. */
+  readonly dueTime?: string | null;
 }
 
 export interface ManagerTaskMutationResponse {
   readonly id: string;
   readonly version: number;
   readonly status: ManagerTaskStatus;
+  readonly inProgress?: boolean;
+}
+
+export type TaskFeedView = 'my_day' | 'upcoming' | 'all' | 'done' | 'list';
+export type TaskFeedKind = 'call' | 'visit' | 'comment' | 'nonext' | 'list' | 'personal';
+
+/** `GET /v1/tasks` query (2.33.0). */
+export interface TaskFeedQuery {
+  readonly view: TaskFeedView;
+  /** Required for view `list`. */
+  readonly listId?: string;
+  /** Only for view `all`. */
+  readonly assigneeId?: string;
+  readonly officeId?: string;
+  readonly kinds?: readonly TaskFeedKind[];
+  readonly q?: string;
+}
+
+export interface TaskFeedLink {
+  readonly type: 'lead' | 'project' | 'client';
+  readonly id: string;
+  readonly name: string | null;
+  readonly code: string | null;
+  readonly phone: string | null;
+}
+
+export interface TaskFeedList {
+  readonly id: string;
+  readonly name: string;
+  readonly color: string;
+}
+
+export interface TaskFeedItem {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly source: 'manual' | 'reminder' | 'appointment' | 'lead';
+  readonly kind: TaskFeedKind;
+  readonly subKind?: string;
+  readonly title: string | null;
+  readonly note: string | null;
+  readonly status: 'open' | 'done';
+  readonly inProgress: boolean;
+  readonly dueDate: string | null;
+  readonly dueTime: string | null;
+  readonly dueAt: string | null;
+  readonly overdueDays: number;
+  readonly office: DashboardTask['office'];
+  readonly assigneeId: string | null;
+  readonly assigneeName: string | null;
+  readonly createdById: string | null;
+  readonly createdByName: string | null;
+  readonly link: TaskFeedLink | null;
+  readonly list: TaskFeedList | null;
+  /** `If-Match` value for `updateManagerTask`; manual tasks only. */
+  readonly version: number | null;
+  readonly canManage: boolean;
+  readonly canEdit: boolean;
+  readonly updatedAt: string;
+}
+
+export interface TaskFeedResponse {
+  readonly items: readonly TaskFeedItem[];
+  /** True when more than 500 items matched and the rest were dropped. */
+  readonly truncated: boolean;
+}
+
+/** `GET /v1/tasks/counts`: sidebar badges of the Tasks page. */
+export interface TaskCounts {
+  readonly myDay: number;
+  readonly upcoming: number;
+  /** Everyone's overdue items; null unless super admin or office admin. */
+  readonly overdue: number | null;
+}
+
+export interface TaskListMember {
+  readonly id: string;
+  readonly displayName: string;
+}
+
+export interface TaskList {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly datesText: string | null;
+  readonly ownerId: string | null;
+  readonly ownerName: string | null;
+  /** `#rrggbb`. */
+  readonly color: string;
+  readonly version: number;
+  readonly taskCount: number;
+  readonly doneCount: number;
+  readonly overdueCount: number;
+  readonly members: readonly TaskListMember[];
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CreateTaskListRequest {
+  readonly name: string;
+  readonly description?: string | null;
+  readonly datesText?: string | null;
+  readonly ownerId?: string;
+  readonly color?: string;
+}
+
+export interface UpdateTaskListRequest {
+  readonly name?: string;
+  readonly description?: string | null;
+  readonly datesText?: string | null;
+  readonly ownerId?: string;
+  readonly color?: string;
 }
 
 /** Add documents board file type tag (2.30.0, task W11). */
@@ -519,4 +656,253 @@ export interface LeadEventCorrectionResponse {
   readonly version: number;
   /** True when the entry was the latest status entry and the lead's status followed. */
   readonly leadStatusChanged: boolean;
+}
+
+/**
+ * CRM v2 projects (2.32.0, task P1). Lifecycle order: none → express → measure → design → contract
+ * → production → installation → completed; `cancelled` is outside the order, `none` is
+ * "Status not set". `contract` is set only by adding a contract, `cancelled` only by cancelling.
+ */
+export type ProjectStatus =
+  | 'none'
+  | 'express'
+  | 'measure'
+  | 'design'
+  | 'contract'
+  | 'production'
+  | 'installation'
+  | 'completed'
+  | 'cancelled';
+
+export type ProjectCancelReason =
+  | 'chose_another_supplier'
+  | 'price_too_high'
+  | 'postponed_renovation'
+  | 'disagreed_design'
+  | 'not_relevant'
+  | 'other';
+
+export type ProjectCurrency = 'PLN' | 'UAH' | 'EUR' | 'USD';
+
+export interface ProjectPerson {
+  readonly id: string;
+  readonly name: string;
+}
+
+/** Download with `fileDownloadURL(id)`. */
+export interface ProjectFileRef {
+  readonly id: string;
+  readonly fileName: string;
+  readonly sizeBytes: number;
+}
+
+export interface ProjectContract {
+  readonly id: string;
+  readonly number: string;
+  /** `YYYY-MM-DD`. */
+  readonly signedOn: string;
+  /** Major units, at most 2 decimals. */
+  readonly totalAmount: number;
+  readonly currency: ProjectCurrency;
+  readonly paidAmount: number;
+  readonly remainingAmount: number;
+  readonly file: ProjectFileRef | null;
+}
+
+export interface ProjectPayment {
+  readonly id: string;
+  /** In the contract's currency. */
+  readonly amount: number;
+  readonly paidOn: string;
+  readonly note: string | null;
+  readonly createdAt: string;
+  readonly createdByName: string;
+  readonly file: ProjectFileRef | null;
+}
+
+/** Details kept per stage so editing one does not erase the other; dates live on the project. */
+export interface ProjectStageDetails {
+  readonly express?: {
+    readonly responsibleId?: string;
+    readonly what?: string;
+    readonly done?: boolean;
+    readonly result?: string;
+  };
+  readonly measure?: {
+    readonly responsibleId?: string;
+    readonly address?: string;
+    readonly done?: boolean;
+    readonly result?: string;
+  };
+}
+
+export interface ProjectCancellation {
+  readonly cancelledAt: string;
+  readonly cancelledBy: string | null;
+  readonly cancelledByName: string;
+  readonly reasons: readonly ProjectCancelReason[];
+  readonly comment: string | null;
+  /** The status Restore returns to. */
+  readonly statusBeforeCancel: string | null;
+}
+
+/** `GET /v1/projects/{projectId}` and every project mutation response. */
+export interface Project {
+  readonly id: string;
+  readonly leadId: string;
+  readonly officeId: string;
+  /** The lead's reference id (client code). */
+  readonly code: string;
+  readonly status: ProjectStatus;
+  readonly projectType: ProjectType | null;
+  /** Next event of the current status, office-local date. */
+  readonly eventDate: string | null;
+  /** `HH:MM`. */
+  readonly eventTime: string | null;
+  readonly statusDetails: ProjectStageDetails;
+  readonly manager: ProjectPerson | null;
+  readonly client: {
+    readonly name: string;
+    readonly phone: string | null;
+    readonly email: string | null;
+    readonly cityRegion: string | null;
+  };
+  readonly createdAt: string;
+  readonly createdByName: string;
+  readonly statusChangedAt: string;
+  readonly lastActivityAt: string;
+  readonly cancellation: ProjectCancellation | null;
+  readonly contract: ProjectContract | null;
+  readonly payments: readonly ProjectPayment[];
+  readonly permissions: {
+    /** The responsible manager and admins can change the project; others can only view. */
+    readonly canEdit: boolean;
+  };
+}
+
+export interface ProjectListItem {
+  readonly id: string;
+  readonly leadId: string;
+  readonly code: string;
+  readonly clientName: string;
+  /** Product tags of the lead. */
+  readonly products: readonly string[];
+  readonly status: ProjectStatus;
+  readonly projectType: ProjectType | null;
+  readonly eventDate: string | null;
+  readonly eventTime: string | null;
+  readonly manager: ProjectPerson | null;
+  readonly createdAt: string;
+  readonly lastComment: { readonly text: string; readonly at: string } | null;
+}
+
+export interface ProjectListResponse {
+  readonly items: readonly ProjectListItem[];
+  /** Empty when there is no next page. */
+  readonly nextCursor: string;
+}
+
+/** `GET /v1/projects` filters; `status` is sent comma-separated. */
+export interface ProjectListQuery {
+  /** Matches the client name, phone or code. */
+  readonly q?: string;
+  readonly managerId?: string;
+  readonly officeId?: string;
+  readonly status?: readonly ProjectStatus[];
+  /** 1–100, default 30. */
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+/** `GET /v1/projects/facets`: `total` with every filter, `status` counts without the status filter. */
+export interface ProjectFacetsResponse {
+  readonly total: number;
+  /** Statuses without projects are absent. */
+  readonly status: Readonly<Partial<Record<ProjectStatus, number>>>;
+}
+
+export type ProjectEventType =
+  | 'created'
+  | 'status_changed'
+  | 'status_updated'
+  | 'contract_added'
+  | 'payment_added'
+  | 'cancelled'
+  | 'restored';
+
+export interface ProjectEvent {
+  readonly id: string;
+  readonly type: ProjectEventType;
+  readonly actor: ProjectPerson | null;
+  readonly oldValue: Readonly<Record<string, unknown>> | null;
+  readonly newValue: Readonly<Record<string, unknown>> | null;
+  readonly comment: string | null;
+  readonly createdAt: string;
+}
+
+/** `POST /v1/leads/{leadId}/project`: send `{}` to take everything from the lead. */
+export interface CreateProjectRequest {
+  readonly projectType?: ProjectType | null;
+  /** Must be an active member of the lead's office. */
+  readonly managerId?: string | null;
+}
+
+/** `POST /v1/projects/{projectId}/status`; required fields depend on the status. */
+export interface ChangeProjectStatusRequest {
+  readonly status: ProjectStatus;
+  readonly eventDate?: string | null;
+  /** `HH:MM`. */
+  readonly eventTime?: string | null;
+  readonly responsibleId?: string | null;
+  readonly what?: string | null;
+  readonly address?: string | null;
+  readonly done?: boolean | null;
+  readonly result?: string | null;
+  /** Optional, goes to the timeline. */
+  readonly comment?: string | null;
+}
+
+export interface CancelProjectRequest {
+  /** At least one. */
+  readonly reasons: readonly ProjectCancelReason[];
+  /** Required when `other` is picked. */
+  readonly comment?: string | null;
+  readonly cancelFutureEvents?: boolean;
+}
+
+export interface AddProjectContractRequest {
+  readonly number: string;
+  readonly signedOn: string;
+  /** Major units, at most 2 decimals. */
+  readonly totalAmount: number;
+  readonly currency: ProjectCurrency;
+  /** The id from `createProjectFileUpload` with kind `contract`, uploaded before this call. */
+  readonly fileId?: string | null;
+}
+
+export interface AddProjectPaymentRequest {
+  /** Major units, at most 2 decimals; never above the remaining balance. */
+  readonly amount: number;
+  readonly paidOn: string;
+  readonly note?: string | null;
+  /** A receipt uploaded with kind `receipt`. */
+  readonly fileId?: string | null;
+}
+
+export type ProjectFileKind = 'contract' | 'receipt';
+
+export interface CreateProjectFileUploadRequest {
+  readonly kind: ProjectFileKind;
+  readonly fileName: string;
+  /** 1 – 26 214 400 bytes (25 MB); PDF, JPG, PNG or HEIC. */
+  readonly sizeBytes: number;
+}
+
+/** Presigned direct upload; pass `fileId` to `addProjectContract` / `addProjectPayment`. */
+export interface ProjectFileUpload {
+  readonly fileId: string;
+  readonly uploadUrl: string;
+  readonly method: string;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly expiresAt: string;
 }
