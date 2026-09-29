@@ -113,7 +113,12 @@
         [pending]="taskPending()"
         (complete)="completeTask($event)"
       />
-      <app-v2-lead-documents-card [lead]="lead" [now]="now()" />
+      <app-v2-lead-documents-card
+        [lead]="lead"
+        [now]="now()"
+        [canAdd]="canEdit()"
+        (changed)="reloadLead()"
+      />
     </div>
 
     <app-v2-lead-timeline

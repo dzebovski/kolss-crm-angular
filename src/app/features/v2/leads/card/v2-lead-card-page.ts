@@ -226,6 +226,10 @@ export class V2LeadCardPage {
     this.leadResource.reload();
   }
 
+  protected reloadLead(): void {
+    this.leadResource.reload();
+  }
+
   protected async setRating(rating: V2LeadRating): Promise<void> {
     const lead = this.loaded()?.lead;
     // The API answers 409 rating_unchanged for the same value; the design ignores that click.

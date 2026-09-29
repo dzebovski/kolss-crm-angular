@@ -20,7 +20,7 @@ export function v2EventCorrectionType(event: LeadEvent): LeadEventCorrectionType
     if (event.statusCode === 'no_answer') return 'noanswer';
   }
   if (event.category === 'client_status' && event.statusCode === 'thinking') return 'thinking';
-  if (event.category === 'comment' || event.rawType === 'comment_added') return 'comment';
+  if (event.rawType === 'comment_added') return 'comment';
   return null;
 }
 

@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, resource, signal } from '@angular/core';
+import { Component, computed, inject, input, output, resource, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import type { LeadDocument } from '@core/api/generated/kolss-api.types';
@@ -51,13 +51,15 @@ const DOCUMENT_TAG_LABEL: Record<NonNullable<LeadDocument['tag']>, MessageKey> =
       @if (loadError(); as message) {
         <p class="v2-docs__error" role="alert">{{ message }}</p>
       }
-      <button type="button" class="v2-docs__add" (click)="addDocuments()">
-        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 5v14" />
-          <path d="M5 12h14" />
-        </svg>
-        {{ 'v2.docs.add' | translate }}
-      </button>
+      @if (canAdd()) {
+        <button type="button" class="v2-docs__add" (click)="addDocuments()">
+          <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
+          {{ 'v2.docs.add' | translate }}
+        </button>
+      }
     </app-v2-info-card>
   `,
   styles: `
@@ -167,11 +169,16 @@ export class V2LeadDocumentsCard {
 
   readonly lead = input.required<V2LeadCard>();
   readonly now = input.required<Date>();
+  /** The API lets only users who can edit the lead attach documents. */
+  readonly canAdd = input(false);
+  /** Documents were added; the page reloads the lead so the timeline shows the new entry. */
+  readonly changed = output<void>();
   protected readonly error = signal('');
   protected readonly tagLabels = DOCUMENT_TAG_LABEL;
   protected readonly documentsResource = resource({
-    params: () => this.lead().id,
-    loader: ({ params }) => this.service.list(params),
+    // A fresh object per loaded lead: other popups attach files too, and the id alone stays equal.
+    params: () => ({ id: this.lead().id, loaded: this.lead() }),
+    loader: ({ params }) => this.service.list(params.id),
   });
   protected readonly loadError = computed(() => {
     const error = this.documentsResource.error();
@@ -192,7 +199,7 @@ export class V2LeadDocumentsCard {
       leadId: this.lead().id,
       leadContext: this.lead(),
     });
-    if (await firstValueFrom(ref.closed)) this.documentsResource.reload();
+    if (await firstValueFrom(ref.closed)) this.changed.emit();
   }
 
   protected async download(document: LeadDocument): Promise<void> {
