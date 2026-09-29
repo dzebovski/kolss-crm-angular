@@ -309,12 +309,14 @@ export class V2LeadsPage {
 
   protected async openCreateLead(): Promise<void> {
     const filter = this.session.officeFilter();
+    let createdId: string | null = null;
     const ref = this.dialogs.open<string, V2CreateLeadData>(V2CreateLeadDialog, {
       offices: this.session.officeContext()?.filterOffices ?? [],
       defaultOffice: isOfficeId(filter) ? filter : '',
       now: this.clock(),
+      onCreated: (id) => (createdId = id),
     });
-    const leadId = await firstValueFrom(ref.closed);
+    const leadId = (await firstValueFrom(ref.closed)) ?? createdId;
     if (leadId) void this.router.navigate(['/v2/leads', leadId]);
   }
 

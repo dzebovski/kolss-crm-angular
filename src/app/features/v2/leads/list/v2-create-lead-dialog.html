@@ -16,7 +16,7 @@
     <p class="v2-create-lead__error" role="alert">{{ message }}</p>
   }
 
-  <section class="v2-create-lead__section">
+  <section class="v2-create-lead__section" [attr.inert]="locked() ? '' : null">
     <h3>{{ 'v2.editContact.contactSection' | translate }}</h3>
     <app-v2-form-field
       [label]="'v2.editContact.fullName' | translate"
@@ -56,7 +56,7 @@
     </div>
   </section>
 
-  <section class="v2-create-lead__section">
+  <section class="v2-create-lead__section" [attr.inert]="locked() ? '' : null">
     <h3>{{ 'v2.editContact.showroomSourceSection' | translate }}</h3>
     <app-v2-field-group
       [label]="'v2.editContact.showroom' | translate"
@@ -130,7 +130,7 @@
     </app-v2-field-group>
   </section>
 
-  <section class="v2-create-lead__section">
+  <section class="v2-create-lead__section" [attr.inert]="locked() ? '' : null">
     <h3>{{ 'v2.leadInfo.request' | translate }}</h3>
     <app-v2-product-chips [(selected)]="products" />
     <div class="v2-create-lead__pair">
@@ -160,7 +160,7 @@
     <app-v2-document-picker [(documents)]="documents" [disabled]="saving()" />
   </section>
 
-  <section class="v2-create-lead__section">
+  <section class="v2-create-lead__section" [attr.inert]="locked() ? '' : null">
     <h3>{{ 'v2.createLead.requestDetails' | translate }}</h3>
     <app-v2-form-field
       [label]="'v2.createLead.clientRequest' | translate"

@@ -180,6 +180,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.card.openProject': 'Open project',
   'v2.card.eyebrow': 'Lead',
   'v2.card.createProject': 'Create project',
+  'v2.card.createProject.soon': 'Creating a project is coming soon',
   'v2.card.editContact': 'Edit contact info',
   'v2.card.phone': 'Phone',
   'v2.card.email': 'E-mail',
@@ -480,6 +481,8 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.leads.create': 'Create lead',
   'v2.createLead.title': 'Create lead',
   'v2.createLead.subtitle': 'Add contact details and the client’s first request',
+  'v2.createLead.createdUploadFailed':
+    'The lead was created, but not all files uploaded. Retry, or close to open the lead card.',
   'v2.createLead.footer': 'The new lead card opens after creation',
   'v2.createLead.cancel': 'Cancel',
   'v2.createLead.save': 'Create lead',

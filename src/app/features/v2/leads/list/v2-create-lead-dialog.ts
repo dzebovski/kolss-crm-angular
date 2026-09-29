@@ -6,7 +6,6 @@ import type { CreateLeadRequest } from '@core/api/generated/kolss-api.types';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { OFFICE_CONFIG } from '@core/office/office.config';
-import { normalizePhoneForOffice } from '@core/phone/phone';
 import type { ContractCurrency } from '@domain/lead.types';
 import type { OfficeId } from '@domain/office.types';
 import {
@@ -22,6 +21,7 @@ import {
 } from '@domain/v2/lead-documents';
 import type { V2LeadProduct } from '@domain/v2/lead-card.types';
 import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
+import { v2StoredPhone } from '@domain/v2/phone-storage';
 import type { Office } from '@models/database';
 import { V2LeadsListService } from '@services/v2/v2-leads-list.service';
 import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
@@ -38,6 +38,8 @@ export interface V2CreateLeadData {
   readonly offices: readonly Office[];
   readonly defaultOffice: OfficeId | '';
   readonly now: Date;
+  /** Called as soon as the lead exists, so the page can open it even if a later upload fails. */
+  readonly onCreated: (leadId: string) => void;
 }
 
 interface CreateLeadModel {
@@ -117,6 +119,8 @@ export class V2CreateLeadDialog {
   protected readonly products = signal<readonly V2LeadProduct[]>([]);
   protected readonly documents = signal<readonly V2PendingDocument[]>([]);
   private readonly createdLeadId = signal<string | null>(null);
+  /** Once the lead exists its fields are final; only the failed files can be retried. */
+  protected readonly locked = computed(() => this.createdLeadId() !== null);
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
   protected readonly attempted = signal(false);
@@ -229,15 +233,24 @@ export class V2CreateLeadDialog {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      const leadId = this.createdLeadId() ?? (await this.service.create(request));
-      this.createdLeadId.set(leadId);
+      let leadId = this.createdLeadId();
+      if (!leadId) {
+        leadId = await this.service.create(request);
+        this.createdLeadId.set(leadId);
+        this.data.onCreated(leadId);
+      }
       await this.documentsService.uploadAll(leadId, this.documents(), '', (id, change) =>
         this.documents.update((items) => v2UpdatePendingDocument(items, id, change)),
       );
       this.dialogRef.close(leadId);
     } catch (error) {
+      const message = this.i18n.localizeError(
+        error instanceof Error ? error.message : 'error.leadCreateFailed',
+      );
       this.saveError.set(
-        this.i18n.localizeError(error instanceof Error ? error.message : 'error.leadCreateFailed'),
+        this.createdLeadId()
+          ? `${this.i18n.t('v2.createLead.createdUploadFailed')} ${message}`
+          : message,
       );
     } finally {
       this.saving.set(false);
@@ -248,7 +261,7 @@ export class V2CreateLeadDialog {
     const value = this.model();
     const showroom = this.showroomOptions.find((option) => option.id === value.showroom);
     if (!showroom || !value.showroom) return null;
-    const phone = normalizePhoneForOffice(value.phone, value.showroom);
+    const phone = v2StoredPhone(value.phone, value.showroom);
     if (!phone) return null;
     const products = this.products();
     return {

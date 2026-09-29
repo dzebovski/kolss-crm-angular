@@ -179,6 +179,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.card.openProject': 'Otwórz projekt',
   'v2.card.eyebrow': 'Lead',
   'v2.card.createProject': 'Utwórz projekt',
+  'v2.card.createProject.soon': 'Tworzenie projektu będzie dostępne wkrótce',
   'v2.card.editContact': 'Edytuj dane kontaktowe',
   'v2.card.phone': 'Telefon',
   'v2.card.email': 'E-mail',
@@ -480,6 +481,8 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.leads.create': 'Utwórz lead',
   'v2.createLead.title': 'Utwórz lead',
   'v2.createLead.subtitle': 'Dodaj dane kontaktowe i pierwsze zapytanie klienta',
+  'v2.createLead.createdUploadFailed':
+    'Lead został utworzony, ale nie wszystkie pliki zostały przesłane. Spróbuj ponownie lub zamknij — otworzy się karta leada.',
   'v2.createLead.footer': 'Po utworzeniu otworzy się karta nowego leada',
   'v2.createLead.cancel': 'Anuluj',
   'v2.createLead.save': 'Utwórz lead',

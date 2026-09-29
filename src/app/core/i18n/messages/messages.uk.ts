@@ -177,6 +177,7 @@ export const messagesUk = {
   'v2.card.openProject': 'Відкрити проєкт',
   'v2.card.eyebrow': 'Лід',
   'v2.card.createProject': 'Створити проєкт',
+  'v2.card.createProject.soon': "Створення проєкту з'явиться найближчим часом",
   'v2.card.editContact': 'Редагувати контакти',
   'v2.card.phone': 'Телефон',
   'v2.card.email': 'E-mail',
@@ -478,6 +479,8 @@ export const messagesUk = {
   'v2.leads.create': 'Створити лід',
   'v2.createLead.title': 'Створити лід',
   'v2.createLead.subtitle': 'Додайте контактні дані та перший запит клієнта',
+  'v2.createLead.createdUploadFailed':
+    'Лід створено, але не всі файли завантажено. Повторіть спробу або закрийте — відкриється картка ліда.',
   'v2.createLead.footer': 'Після створення відкриється картка нового ліда',
   'v2.createLead.cancel': 'Скасувати',
   'v2.createLead.save': 'Створити лід',

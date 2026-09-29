@@ -5,7 +5,6 @@ import { form, FormField } from '@angular/forms/signals';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { OFFICE_CONFIG, OFFICE_IDS } from '@core/office/office.config';
-import { normalizePhoneForOffice } from '@core/phone/phone';
 import type { ContractCurrency, Lead } from '@domain/lead.types';
 import { isV2BudgetText } from '@domain/v2/lead-action';
 import {
@@ -15,6 +14,7 @@ import {
 } from '@domain/v2/lead-documents';
 import type { V2LeadCard, V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
 import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
+import { v2StoredPhone } from '@domain/v2/phone-storage';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
 import {
   V2EditContactPartialWriteError,
@@ -229,7 +229,7 @@ export class V2EditContactDialog {
     const value = this.model();
     return {
       name: value.name.trim(),
-      phone: normalizePhoneForOffice(value.phone, this.data.lead.officeCode) ?? value.phone.trim(),
+      phone: v2StoredPhone(value.phone, this.data.lead.officeCode) ?? value.phone.trim(),
       email: value.email.trim() || null,
       managerId: this.data.lead.assignedToId,
       channel: value.channel,
@@ -239,9 +239,7 @@ export class V2EditContactDialog {
   private initialContactUpdate(): V2ContactUpdate {
     return {
       name: this.data.card.name,
-      phone:
-        normalizePhoneForOffice(this.data.card.phone, this.data.lead.officeCode) ??
-        this.data.card.phone,
+      phone: v2StoredPhone(this.data.card.phone, this.data.lead.officeCode) ?? this.data.card.phone,
       email: this.data.card.email,
       managerId: this.data.lead.assignedToId,
       channel: this.data.card.channel,
@@ -277,8 +275,8 @@ export class V2EditContactDialog {
     let count = 0;
     if (value.name.trim() !== this.initial.name.trim()) count++;
     if (
-      (normalizePhoneForOffice(value.phone, this.data.lead.officeCode) ?? value.phone.trim()) !==
-      (normalizePhoneForOffice(this.initial.phone, this.data.lead.officeCode) ?? this.initial.phone)
+      (v2StoredPhone(value.phone, this.data.lead.officeCode) ?? value.phone.trim()) !==
+      (v2StoredPhone(this.initial.phone, this.data.lead.officeCode) ?? this.initial.phone)
     )
       count++;
     if ((value.email.trim() || null) !== (this.initial.email.trim() || null)) count++;
