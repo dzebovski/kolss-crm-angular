@@ -25,6 +25,8 @@
       size="lg"
       class="v2-card-header__action"
       aria-disabled="true"
+      aria-describedby="v2-create-project-hint"
+      [attr.title]="'v2.card.createProject.soon' | translate"
     >
       <svg
         width="16"
@@ -38,6 +40,9 @@
       </svg>
       {{ 'v2.card.createProject' | translate }}
     </button>
+    <span id="v2-create-project-hint" class="v2-card-header__sr-only">
+      {{ 'v2.card.createProject.soon' | translate }}
+    </span>
     <button
       type="button"
       appV2Button
