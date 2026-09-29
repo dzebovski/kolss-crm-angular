@@ -19,6 +19,7 @@ import {
   v2TimelineCorrectionRequest,
 } from '@domain/v2/timeline-correction';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
+import { v2LiveNow } from '../../core/v2-clock';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import { V2DateTimeInput } from '../../ui/v2-date-time-input';
@@ -87,9 +88,10 @@ export class V2EditEntryDialog {
   protected readonly needsDate = computed(
     () => this.typeChanged() && v2CorrectionNeedsDate(this.model().type),
   );
+  private readonly liveNow = v2LiveNow();
   private readonly dueIso = computed(() => v2LocalDateTimeToIso(this.model().dueAt));
   private readonly dateInvalid = computed(
-    () => this.needsDate() && (!this.dueIso() || new Date(this.dueIso()!) <= this.data.now),
+    () => this.needsDate() && (!this.dueIso() || new Date(this.dueIso()!) <= this.liveNow()),
   );
   protected readonly commentError = computed(() =>
     this.attempted() && !this.model().comment.trim()

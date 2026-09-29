@@ -40,23 +40,6 @@ interface Chip {
   selector: 'app-v2-date-time-input',
   imports: [TranslatePipe],
   template: `
-    <div
-      class="v2-date-time-input__chips"
-      role="group"
-      [attr.aria-label]="'v2.popup.quickDates' | translate"
-    >
-      @for (chip of chips(); track chip.key) {
-        <button
-          type="button"
-          class="v2-date-time-input__chip"
-          [class.v2-date-time-input__chip--on]="chip.on"
-          [attr.aria-pressed]="chip.on"
-          (click)="pick(chip)"
-        >
-          {{ chip.label }}
-        </button>
-      }
-    </div>
     <div class="v2-date-time-input__row">
       <input
         class="v2-date-time-input__field"
@@ -74,9 +57,31 @@ interface Chip {
         (blur)="touch.emit()"
       />
     </div>
+    <div
+      class="v2-date-time-input__chips"
+      role="group"
+      [attr.aria-label]="'v2.popup.quickDates' | translate"
+    >
+      @for (chip of chips(); track chip.key) {
+        <button
+          type="button"
+          class="v2-date-time-input__chip"
+          [class.v2-date-time-input__chip--on]="chip.on"
+          [attr.aria-pressed]="chip.on"
+          (click)="pick(chip)"
+        >
+          {{ chip.label }}
+        </button>
+      }
+    </div>
   `,
   styles: `
     @use '../../../../styles/v2/chip';
+
+    :host {
+      display: flex;
+      flex-direction: column;
+    }
 
     .v2-date-time-input__row {
       display: grid;
@@ -107,7 +112,9 @@ interface Chip {
       }
     }
 
+    /* After the inputs in the DOM so a wrapping <label> names the date input, shown above them. */
     .v2-date-time-input__chips {
+      order: -1;
       display: flex;
       flex-wrap: wrap;
       gap: var(--v2-space-2);

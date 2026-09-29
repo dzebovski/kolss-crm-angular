@@ -11,6 +11,7 @@ import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import type { V2LeadColumns } from '@domain/v2/lead-card.types';
 import type { CrmEmployee } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
+import { v2LiveNow } from '../../core/v2-clock';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import { V2DateTimeInput } from '../../ui/v2-date-time-input';
@@ -156,10 +157,11 @@ export class V2CommentDialog {
       )
       .map((employee) => ({ id: employee.id, name: employee.displayName })),
   );
+  private readonly liveNow = v2LiveNow();
   private readonly dueAt = computed(() => v2LocalDateTimeToIso(this.model().remindOn));
   private readonly hasFutureDueAt = computed(() => {
     const dueAt = this.dueAt();
-    return dueAt !== null && new Date(dueAt).getTime() > this.data.now.getTime();
+    return dueAt !== null && new Date(dueAt).getTime() > this.liveNow().getTime();
   });
   protected readonly missingCount = computed(() => {
     const value = this.model();

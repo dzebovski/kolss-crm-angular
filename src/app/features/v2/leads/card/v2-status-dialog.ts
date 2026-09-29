@@ -29,6 +29,7 @@ import {
   V2SuccessfulCallPartialWriteError,
 } from '@services/v2/v2-lead-card.service';
 import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
+import { v2LiveNow } from '../../core/v2-clock';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
@@ -164,10 +165,13 @@ export class V2StatusDialog {
     loader: () => (this.kind === 'lost' ? this.service.listV2LossReasons() : Promise.resolve([])),
   });
   protected readonly lossReasons = computed(() =>
-    (this.lossReasonsResource.value() ?? []).map((reason) => ({
-      id: reason.code,
-      label: this.lossReasonLabel(reason),
-    })),
+    // The API sorts by code; "Other" always closes the list, as on the Lost board.
+    [...(this.lossReasonsResource.value() ?? [])]
+      .sort((a, b) => Number(a.code === 'other') - Number(b.code === 'other'))
+      .map((reason) => ({
+        id: reason.code,
+        label: this.lossReasonLabel(reason),
+      })),
   );
 
   private readonly initial: StatusModel = {
@@ -297,10 +301,11 @@ export class V2StatusDialog {
       .map((employee) => ({ id: employee.id, name: employee.displayName })),
   );
 
+  private readonly liveNow = v2LiveNow();
   private readonly dueAt = computed(() => v2LocalDateTimeToIso(this.model().date));
   private readonly isFutureDate = computed(() => {
     const dueAt = this.dueAt();
-    return dueAt !== null && new Date(dueAt).getTime() > this.data.now.getTime();
+    return dueAt !== null && new Date(dueAt).getTime() > this.liveNow().getTime();
   });
   private readonly validDueAt = computed(() => this.dueAt() && this.isFutureDate());
   protected readonly budgetValid = computed(
