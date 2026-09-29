@@ -1,0 +1,177 @@
+@use '../../../../../styles/v2/interactive';
+
+:host {
+  position: absolute;
+  z-index: 20;
+  top: 64px;
+  left: 336px;
+}
+.v2-range {
+  width: 664px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+  background: var(--v2-surface);
+  box-shadow: 0 16px 40px rgba(23, 23, 26, 0.16);
+  color: var(--v2-ink);
+}
+.v2-range__header,
+.v2-range__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+.v2-range__header {
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+.v2-range__header p {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+.v2-range__nav,
+.v2-range__actions,
+.v2-range__selection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.v2-range__nav button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface);
+  color: var(--v2-ink);
+  font: inherit;
+  font-size: 21px;
+  cursor: pointer;
+  @include interactive.states(surface);
+}
+.v2-range__months {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 18px 20px;
+}
+.v2-range__month {
+  min-width: 0;
+}
+.v2-range__month h3 {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: capitalize;
+}
+.v2-range__weekdays,
+.v2-range__days {
+  display: grid;
+  grid-template-columns: repeat(7, 36px);
+  justify-content: center;
+}
+.v2-range__weekdays span {
+  height: 24px;
+  color: var(--v2-muted);
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+.v2-range__days > span,
+.v2-range__days button {
+  width: 36px;
+  height: 36px;
+  box-sizing: border-box;
+}
+.v2-range__days button {
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  background: transparent;
+  color: var(--v2-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  @include interactive.states(ghost);
+}
+.v2-range__days .v2-range__day--between {
+  border-radius: 0;
+  background: var(--v2-surface-sunk);
+}
+.v2-range__days .v2-range__day--edge {
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+  font-weight: 600;
+
+  &:hover#{interactive.$enabled} {
+    @include interactive.hover(ink);
+  }
+
+  &:active#{interactive.$enabled} {
+    @include interactive.pressed(ink);
+  }
+}
+.v2-range__days .v2-range__day--today:not(.v2-range__day--edge) {
+  box-shadow: inset 0 0 0 1px var(--v2-ink);
+}
+.v2-range__footer {
+  border-top: 1px solid var(--v2-line-soft);
+}
+.v2-range__selection span {
+  display: inline-flex;
+  min-width: 94px;
+  height: 32px;
+  box-sizing: border-box;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+.v2-range__selection span:first-child,
+.v2-range__selection .v2-range__selection--active {
+  color: var(--v2-ink);
+}
+.v2-range__selection b {
+  color: var(--v2-muted);
+  font-weight: 400;
+}
+.v2-range__actions button {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--v2-radius-sm);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.v2-range__cancel {
+  border: 1px solid var(--v2-line);
+  background: var(--v2-surface);
+  color: var(--v2-ink);
+  @include interactive.states(surface);
+}
+.v2-range__apply {
+  border: 1px solid var(--v2-ink);
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+  @include interactive.states(ink);
+}
+@media (max-width: 900px) {
+  :host {
+    right: 0;
+    left: 0;
+  }
+  .v2-range {
+    width: 100%;
+  }
+  .v2-range__months {
+    grid-template-columns: 1fr;
+  }
+  .v2-range__month:first-child {
+    display: none;
+  }
+}
