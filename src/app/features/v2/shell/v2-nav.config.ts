@@ -91,8 +91,8 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     section: 'sales',
     labelKey: 'v2.nav.projects',
     icon: 'projects',
-    route: '/projects',
-    v1: true,
+    route: '/v2/projects',
+    v1: false,
   },
   {
     id: 'clients',

@@ -28,6 +28,9 @@
   --v2-status-invited: #6d4ab8;
   --v2-status-lost: #8a8a82;
   --v2-status-project: #17171a;
+  // Project statuses without a lead counterpart (Projects boards; not in the design system tokens).
+  --v2-status-production: #0e6b64;
+  --v2-status-installation: #475467;
 
   --v2-rating-cold: #1f5c99;
   --v2-rating-cold-bg: #e8f0fa;

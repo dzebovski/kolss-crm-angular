@@ -3,6 +3,7 @@ import { inject, Service } from '@angular/core';
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type { LeadDocument } from '@core/api/generated/kolss-api.types';
 import type { V2PendingDocument } from '@domain/v2/lead-documents';
+import { putV2File } from './v2-file-upload';
 
 @Service()
 export class V2LeadDocumentsService {
@@ -41,7 +42,7 @@ export class V2LeadDocumentsService {
       fileName: document.file.name,
       sizeBytes: document.file.size,
     });
-    await putFile(signed.method, signed.uploadUrl, signed.headers, document.file, progress);
+    await putV2File(signed.method, signed.uploadUrl, signed.headers, document.file, progress);
     return this.api.confirmLeadDocument(leadId, {
       attachmentId: signed.attachmentId,
       tag: document.tag,
@@ -72,28 +73,4 @@ export class V2LeadDocumentsService {
       }
     }
   }
-}
-
-function putFile(
-  method: string,
-  url: string,
-  headers: Readonly<Record<string, string>>,
-  file: File,
-  progress: (value: number) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.open(method, url);
-    for (const [name, value] of Object.entries(headers)) request.setRequestHeader(name, value);
-    request.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) progress(Math.round((event.loaded / event.total) * 100));
-    });
-    request.addEventListener('load', () => {
-      if (request.status >= 200 && request.status < 300) resolve();
-      else reject(new Error('v2.documents.uploadFailed'));
-    });
-    request.addEventListener('error', () => reject(new Error('v2.documents.uploadFailed')));
-    request.addEventListener('abort', () => reject(new Error('v2.documents.uploadFailed')));
-    request.send(file);
-  });
 }

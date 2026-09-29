@@ -18,6 +18,16 @@ const V2_ROUTES: Routes = [
           import('./leads/card/v2-lead-card-page').then((page) => page.V2LeadCardPage),
       },
       {
+        path: 'projects',
+        loadComponent: () =>
+          import('./projects/list/v2-projects-page').then((page) => page.V2ProjectsPage),
+      },
+      {
+        path: 'projects/:projectId',
+        loadComponent: () =>
+          import('./projects/card/v2-project-card-page').then((page) => page.V2ProjectCardPage),
+      },
+      {
         // Tasks will be redesigned; until then the section shows an in-development block.
         path: 'tasks',
         loadComponent: () =>
