@@ -8,11 +8,7 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { OFFICE_CONFIG } from '@core/office/office.config';
 import type { ContractCurrency } from '@domain/lead.types';
 import type { OfficeId } from '@domain/office.types';
-import {
-  v2CreateLeadLegacySource,
-  v2CreateLeadLocalDateTime,
-  type V2CreateLeadChannel,
-} from '@domain/v2/create-lead';
+import { v2CreateLeadLocalDateTime, type V2CreateLeadChannel } from '@domain/v2/create-lead';
 import { isV2BudgetText } from '@domain/v2/lead-action';
 import {
   v2DocumentLocalErrorCount,
@@ -266,7 +262,7 @@ export class V2CreateLeadDialog {
     const products = this.products();
     return {
       officeId: showroom.uuid,
-      source: v2CreateLeadLegacySource(value.channel),
+      source: 'office',
       name: value.name.trim(),
       phone,
       email: value.email.trim() || null,
