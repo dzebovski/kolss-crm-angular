@@ -84,6 +84,45 @@ describe('v2 lead timeline', () => {
     expect(matchesV2TimelineFilter({ category: 'system' }, 'status')).toBe(true);
   });
 
+  it('maps confirmed attachment details and keeps legacy entries without metadata', () => {
+    const withDocuments: Lead = {
+      ...lead,
+      events: [
+        event({
+          id: 'document',
+          rawType: 'attachment',
+          category: 'system',
+          occurredAt: '2026-09-29T10:34:00.000Z',
+          newValue: {
+            attachment_id: 'document-1',
+            file_name: 'Kitchen plan.pdf',
+            tag: 'plan',
+            note: 'Approved drawing',
+          },
+        }),
+        event({
+          id: 'legacy',
+          rawType: 'attachment',
+          category: 'system',
+          newValue: { file_name: 'old.pdf' },
+        }),
+      ],
+    };
+
+    const [document, legacy] = v2LeadTimeline(withDocuments, 'office');
+    expect(document).toMatchObject({
+      at: '2026-09-29T10:34:00.000Z',
+      title: { kind: 'key', key: 'attachmentUploaded' },
+      attachment: {
+        id: 'document-1',
+        fileName: 'Kitchen plan.pdf',
+        tag: 'plan',
+        note: 'Approved drawing',
+      },
+    });
+    expect(legacy).toMatchObject({ title: { kind: 'v1' }, attachment: null });
+  });
+
   it('shows a reopen as Lost → New and replays from New afterwards', () => {
     const reopened: Lead = {
       ...lead,

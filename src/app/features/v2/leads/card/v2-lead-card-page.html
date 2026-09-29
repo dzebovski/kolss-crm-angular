@@ -128,9 +128,11 @@
       [canMutate]="canMutateEntry"
       [pending]="entryPending()"
       [translating]="translatingIds()"
+      [attachmentError]="attachmentError()"
       (editRequested)="editEntry($event)"
       (deleteRequested)="deleteEntry($event)"
       (translateRequested)="translateEntry($event)"
+      (openAttachmentRequested)="openAttachment($event)"
     />
   }
 }

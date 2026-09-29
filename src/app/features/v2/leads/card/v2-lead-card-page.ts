@@ -27,6 +27,7 @@ import { v2LeadTimeline } from '@domain/v2/lead-timeline';
 import { v2EventCorrectionType } from '@domain/v2/timeline-correction';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
+import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2_NOW } from '../../core/v2-clock';
 import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import { V2Button } from '../../ui/v2-button';
@@ -71,6 +72,7 @@ import {
 })
 export class V2LeadCardPage {
   private readonly service = inject(V2LeadCardService);
+  private readonly documentsService = inject(V2LeadDocumentsService);
   private readonly usersService = inject(UsersService);
   private readonly auth = inject(AuthService);
   private readonly session = inject(SessionService);
@@ -186,6 +188,7 @@ export class V2LeadCardPage {
     );
   });
   protected readonly entryPending = signal(false);
+  protected readonly attachmentError = signal<{ eventId: string; message: string } | null>(null);
   protected readonly translatingIds = signal<ReadonlySet<string>>(new Set());
 
   protected readonly timeline = computed(() => {
@@ -197,6 +200,22 @@ export class V2LeadCardPage {
   /** Bound field: v1 rule (own entries, or any for a super admin; none on archived leads). */
   protected readonly canMutateEntry = (event: LeadEvent): boolean =>
     !this.card()?.archived && leadPolicy.canMutateEvent(this.policyContext(), event);
+
+  protected async openAttachment(request: { eventId: string; documentId: string }): Promise<void> {
+    this.attachmentError.set(null);
+    try {
+      await this.documentsService.openInNewTab(request.documentId);
+    } catch (error) {
+      this.attachmentError.set({
+        eventId: request.eventId,
+        message: this.i18n.t(
+          error instanceof Error && error.message === 'v2.timeline.popupBlocked'
+            ? 'v2.timeline.popupBlocked'
+            : 'v2.timeline.openFailed',
+        ),
+      });
+    }
+  }
   protected readonly actionError = signal('');
 
   protected readonly canEdit = computed(() => {

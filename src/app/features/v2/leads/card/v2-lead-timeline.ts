@@ -1,5 +1,6 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 
+import type { LeadDocument } from '@core/api/generated/kolss-api.types';
 import {
   presentEventBodyFromLeadEvent,
   presentEventTitleFromLeadEvent,
@@ -11,10 +12,12 @@ import type { ContractCurrency, LeadEvent } from '@domain/lead.types';
 import {
   formatV2CardDate,
   formatV2ReminderDate,
+  formatV2ReportDate,
   formatV2Time,
   formatV2TimeRange,
 } from '@domain/v2/date-format';
 import { formatV2Budget } from '@domain/v2/lead-card.mapper';
+import { v2DocumentExtension } from '@domain/v2/lead-documents';
 import {
   matchesV2TimelineFilter,
   type V2TimelineFilter,
@@ -37,6 +40,7 @@ const FILTERS: readonly { readonly id: V2TimelineFilter; readonly label: Message
 ];
 
 const TITLE_KEY: Record<Extract<V2TimelineTitle, { kind: 'key' }>['key'], MessageKey> = {
+  attachmentUploaded: 'v2.timeline.attachmentUploaded',
   leadInfoUpdated: 'v2.timeline.leadInfoUpdated',
   reopened: 'v2.timeline.reopened',
   firstMessage: 'v2.timeline.firstMessage',
@@ -46,6 +50,14 @@ const TITLE_KEY: Record<Extract<V2TimelineTitle, { kind: 'key' }>['key'], Messag
   comment: 'v2.timeline.comment',
   question: 'v2.timeline.question',
   contactUpdated: 'v2.timeline.contactUpdated',
+};
+
+const DOCUMENT_TAG_LABEL: Record<NonNullable<LeadDocument['tag']>, MessageKey> = {
+  plan: 'v2.documents.tag.plan',
+  photo: 'v2.documents.tag.photo',
+  drawing: 'v2.documents.tag.drawing',
+  estimate: 'v2.documents.tag.estimate',
+  other: 'v2.documents.tag.other',
 };
 
 const ROW_LABEL: Record<V2TimelineRowLabel, MessageKey> = {
@@ -91,9 +103,16 @@ export class V2LeadTimeline {
   readonly pending = input(false);
   /** Event ids whose translation is being requested. */
   readonly translating = input<ReadonlySet<string>>(new Set());
+  readonly attachmentError = input<{ readonly eventId: string; readonly message: string } | null>(
+    null,
+  );
   readonly editRequested = output<LeadEvent>();
   readonly deleteRequested = output<LeadEvent>();
   readonly translateRequested = output<LeadEvent>();
+  readonly openAttachmentRequested = output<{
+    readonly eventId: string;
+    readonly documentId: string;
+  }>();
 
   protected readonly filter = signal<V2TimelineFilter>('all');
 
@@ -130,6 +149,21 @@ export class V2LeadTimeline {
             value: this.value(row.value),
           })),
           text: this.text(item),
+          attachment: item.attachment
+            ? {
+                ...item.attachment,
+                type:
+                  v2DocumentExtension(item.attachment.fileName).toUpperCase() ||
+                  this.i18n.t('v2.timeline.fileType'),
+                tagLabel: item.attachment.tag
+                  ? this.i18n.t(DOCUMENT_TAG_LABEL[item.attachment.tag])
+                  : null,
+                uploadedAt: this.i18n.t('v2.timeline.uploadedAt', {
+                  date: formatV2ReportDate(item.at),
+                  time: formatV2Time(item.at),
+                }),
+              }
+            : null,
           translation: event?.translationEn ?? null,
           canEdit: mutable && Boolean(event && v2EventCorrectionType(event)),
           edited: Boolean(event?.editAudit || event?.correctionAudit),

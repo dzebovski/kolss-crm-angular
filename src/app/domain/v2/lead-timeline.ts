@@ -1,3 +1,4 @@
+import type { LeadDocumentTag } from '@core/api/generated/kolss-api.types';
 import { callbackDueAtFromNewValue } from '@domain/lead.rules';
 import type { CallStatus, ClientStatus, Lead, LeadEvent } from '@domain/lead.types';
 import type { V2CurrentStatusValue } from './lead-card-status';
@@ -23,7 +24,8 @@ export type V2TimelineTitle =
         | 'rating'
         | 'comment'
         | 'question'
-        | 'contactUpdated';
+        | 'contactUpdated'
+        | 'attachmentUploaded';
     }
   /** Anything v2 has no design for: the v1 event title and body. */
   | { readonly kind: 'v1' };
@@ -67,6 +69,13 @@ export type V2TimelineSide =
 
 export type V2TimelineTone = V2LeadDisplayStatus | V2LeadRating | 'ink' | 'faint';
 
+export interface V2TimelineAttachment {
+  readonly id: string;
+  readonly fileName: string;
+  readonly tag: LeadDocumentTag | null;
+  readonly note: string | null;
+}
+
 export interface V2TimelineItem {
   /** Event id; the synthetic first message (no `created` event) uses `first-message`. */
   readonly id: string;
@@ -84,6 +93,7 @@ export interface V2TimelineItem {
   readonly quote: string | null;
   readonly rows: readonly V2TimelineRow[];
   readonly text: string | null;
+  readonly attachment: V2TimelineAttachment | null;
   /** `lead_edited`: audit field keys ("Changed: Phone, Channel"). */
   readonly changedFields: readonly string[] | null;
 }
@@ -104,6 +114,7 @@ const CLIENT_STATUSES: readonly ClientStatus[] = [
   'contract_signed',
 ];
 const RATINGS: readonly V2LeadRating[] = ['cold', 'medium', 'hot'];
+const DOCUMENT_TAGS: readonly LeadDocumentTag[] = ['plan', 'photo', 'drawing', 'estimate', 'other'];
 const COMMENT_TYPES = new Set(['comment', 'comment_added']);
 const CREATED_TYPE = 'created';
 const REOPENED_TYPE = 'lead_reopened';
@@ -259,6 +270,22 @@ function statusItem(
 
 function otherItem(event: LeadEvent): V2TimelineItem {
   const value = record(event.newValue);
+  if (event.rawType === 'attachment') {
+    const id = stringValue(value['attachment_id']);
+    const fileName = stringValue(value['file_name']);
+    if (id && fileName) {
+      return {
+        ...base(event),
+        title: { kind: 'key', key: 'attachmentUploaded' },
+        attachment: {
+          id,
+          fileName,
+          tag: oneOf(value['tag'], DOCUMENT_TAGS),
+          note: stringValue(value['note']),
+        },
+      };
+    }
+  }
   if (event.rawType === 'rating_changed') {
     const from = oneOf(value['from'], RATINGS);
     const to = oneOf(value['to'], RATINGS);
@@ -338,6 +365,7 @@ function base(event: LeadEvent | null): V2TimelineItem {
     quote: null,
     rows: [],
     text: null,
+    attachment: null,
     changedFields: null,
   };
 }

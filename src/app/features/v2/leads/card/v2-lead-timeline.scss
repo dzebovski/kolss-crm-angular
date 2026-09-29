@@ -69,6 +69,87 @@
   padding: var(--v2-space-1) var(--v2-space-5) var(--v2-space-4);
 }
 
+.v2-timeline__file {
+  display: flex;
+  width: min(100%, 560px);
+  align-items: center;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-3);
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-surface);
+  color: var(--v2-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(surface);
+
+  svg {
+    flex-shrink: 0;
+    fill: none;
+    stroke: var(--v2-muted);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.v2-timeline__file-type {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-muted);
+  font-family: var(--v2-font-mono);
+  font-size: 10px;
+}
+
+.v2-timeline__file-details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-timeline__file-name {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-timeline__file-date,
+.v2-timeline__file-tag {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-timeline__file-tag {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-pill);
+}
+
+.v2-timeline__file-note,
+.v2-timeline__file-error {
+  max-width: 560px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.v2-timeline__file-error {
+  color: var(--v2-danger);
+}
+
 // Not drawn: the English translation (v1 feature) under the text, as a caption.
 .v2-timeline__translation {
   max-width: 860px;

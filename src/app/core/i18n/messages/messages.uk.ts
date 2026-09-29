@@ -274,6 +274,13 @@ export const messagesUk = {
   'v2.documents.tag.estimate': 'Кошторис',
   'v2.documents.tag.other': 'Інше',
   'v2.timeline.title': 'Таймлайн',
+  'v2.timeline.attachmentUploaded': 'Файл завантажено',
+  'v2.timeline.fileType': 'Файл',
+  'v2.timeline.uploadedAt': 'Завантажено {date} о {time}',
+  'v2.timeline.openFile': 'Відкрити файл {fileName}',
+  'v2.timeline.popupBlocked':
+    'Браузер заблокував нову вкладку. Дозвольте спливні вікна та спробуйте ще раз.',
+  'v2.timeline.openFailed': 'Не вдалося відкрити файл. Спробуйте ще раз.',
   'v2.timeline.filter': 'Фільтр таймлайну',
   'v2.timeline.filter.all': 'Усе',
   'v2.timeline.filter.calls': 'Дзвінки',

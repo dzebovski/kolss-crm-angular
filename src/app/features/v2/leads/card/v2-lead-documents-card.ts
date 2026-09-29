@@ -187,7 +187,7 @@ export class V2LeadDocumentsCard {
       : '';
   });
   protected readonly files = computed(() =>
-    (this.documentsResource.value() ?? []).map((document) => ({
+    (this.documentsResource.hasValue() ? this.documentsResource.value() : []).map((document) => ({
       document,
       type: v2DocumentExtension(document.fileName).slice(0, 4).toUpperCase(),
       meta: `${v2FormatFileSize(document.sizeBytes)} · ${document.uploadedByName} · ${formatV2CardDate(document.createdAt, this.now(), this.i18n.locale())}`,

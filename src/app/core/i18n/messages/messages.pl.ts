@@ -275,6 +275,13 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.documents.tag.estimate': 'Wycena',
   'v2.documents.tag.other': 'Inne',
   'v2.timeline.title': 'Oś czasu',
+  'v2.timeline.attachmentUploaded': 'Przesłano plik',
+  'v2.timeline.fileType': 'Plik',
+  'v2.timeline.uploadedAt': 'Przesłano {date} o {time}',
+  'v2.timeline.openFile': 'Otwórz plik {fileName}',
+  'v2.timeline.popupBlocked':
+    'Przeglądarka zablokowała nową kartę. Zezwól na wyskakujące okna i spróbuj ponownie.',
+  'v2.timeline.openFailed': 'Nie udało się otworzyć pliku. Spróbuj ponownie.',
   'v2.timeline.filter': 'Filtruj oś czasu',
   'v2.timeline.filter.all': 'Wszystko',
   'v2.timeline.filter.calls': 'Rozmowy',

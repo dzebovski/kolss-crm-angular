@@ -17,6 +17,20 @@ export class V2LeadDocumentsService {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
+  async openInNewTab(documentId: string): Promise<void> {
+    // Reserve the tab during the click; browsers can block window.open after the API request.
+    const tab = window.open('about:blank', '_blank');
+    if (!tab) throw new Error('v2.timeline.popupBlocked');
+    tab.opener = null;
+    try {
+      const { url } = await this.api.fileDownloadURL(documentId);
+      tab.location.replace(url);
+    } catch (error) {
+      tab.close();
+      throw error;
+    }
+  }
+
   async upload(
     leadId: string,
     document: V2PendingDocument,
