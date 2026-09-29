@@ -66,7 +66,7 @@
     >
       <div class="v2-edit-contact__showrooms">
         @for (showroom of showrooms; track showroom) {
-          <!-- TODO(v2): Moving a lead between offices requires owner decision Q-C3 and API support. -->
+          <!-- A lead never changes office (owner decision 09-29): the other showroom stays disabled. -->
           <button
             type="button"
             class="v2-edit-contact__showroom"

@@ -62,7 +62,7 @@ export const OFFICE_CONFIG: Record<OfficeId, OfficeConfig> = {
     sortOrder: 0,
     phoneCountryCode: '+380',
     phonePlaceholder: '+380 67 214 58 03',
-    defaultBudgetCurrency: 'USD',
+    defaultBudgetCurrency: 'UAH',
     showroomCardLabelKey: 'v2.form.showroom.kyivLabel',
     showroomCardSubKey: 'v2.form.showroom.kyivSub',
   },

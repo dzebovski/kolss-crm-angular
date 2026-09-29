@@ -179,7 +179,7 @@
     <app-v2-field-group [label]="'v2.popup.invited.showroom' | translate" [required]="true">
       <div class="v2-status__showrooms">
         @for (showroom of showrooms(); track showroom.id) {
-          <!-- TODO(v2): Enable cross-office invitation after the API defines its showroom semantics (Q-C2). -->
+          <!-- Invitations stay in the lead's own office (owner decision 09-29): the other showroom stays disabled. -->
           <button
             type="button"
             class="v2-status__showroom"

@@ -38,7 +38,7 @@ export interface V2AddDocumentsData {
       <app-v2-document-picker [(documents)]="documents" [disabled]="saving()" />
 
       <label class="v2-add-documents__timeline">
-        <!-- TODO(v2): W11 always writes an attachment event; the API has no switch for this. -->
+        <!-- Always on: W11 always writes the attachment event (owner decision 09-29). -->
         <input type="checkbox" checked disabled />
         <span>{{ 'v2.documents.postTimeline' | translate }}</span>
       </label>
