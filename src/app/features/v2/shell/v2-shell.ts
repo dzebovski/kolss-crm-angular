@@ -23,7 +23,11 @@ import { V2SideMenu } from './v2-side-menu';
     @if (impersonating()) {
       <app-v2-impersonation-banner [name]="displayName()" (stop)="stopImpersonation()" />
     }
-    <app-v2-header [menuOpen]="menuOpen()" (menuToggle)="toggleMenu()" />
+    <app-v2-header
+      [menuOpen]="menuOpen()"
+      (menuToggle)="toggleMenu()"
+      (action)="runNavAction($event)"
+    />
     <div class="v2-shell__body">
       <app-v2-side-menu [open]="menuOpen()" (action)="runNavAction($event)" />
       <main class="v2-shell__main">

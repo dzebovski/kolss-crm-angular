@@ -1,0 +1,229 @@
+@use '../../../../styles/v2/interactive';
+
+// Values from Main.dc.html (Current user button and account menu, 300px wide, opens at 56px).
+:host {
+  position: relative;
+  display: block;
+}
+
+svg {
+  display: block;
+  flex-shrink: 0;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-account__trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: var(--v2-control-lg);
+  padding: 0 var(--v2-space-2) 0 var(--v2-space-1);
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+.v2-account__avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.v2-account__avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+.v2-account__text,
+.v2-account__identity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.v2-account__name,
+.v2-account__role {
+  overflow: hidden;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-account__name {
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-account__role {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-account__chevron,
+.v2-account__icon {
+  stroke: var(--v2-muted);
+}
+
+.v2-account__chevron {
+  stroke-width: 2;
+}
+
+.v2-account__icon {
+  stroke-width: 1.75;
+}
+
+.v2-account__panel {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 300px;
+  padding: 6px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+  box-shadow: var(--v2-shadow-menu);
+}
+
+.v2-account__panel--visible {
+  display: flex;
+}
+
+.v2-account__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: var(--v2-space-1);
+  padding: 10px 10px 12px;
+  border-bottom: 1px solid var(--v2-line);
+}
+
+.v2-account__identity-text {
+  gap: 1px;
+}
+
+.v2-account__identity-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.v2-account__meta {
+  overflow: hidden;
+  color: var(--v2-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-account__item,
+.v2-account__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  height: var(--v2-control-md);
+  padding: 0 10px;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.v2-account__item {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(none);
+
+  &:not(:disabled, [aria-disabled='true']):hover {
+    background-color: var(--v2-surface-sunk);
+  }
+
+  &:not(:disabled, [aria-disabled='true']):active {
+    @include interactive.pressed(ghost);
+  }
+}
+
+.v2-account__label {
+  flex-grow: 1;
+}
+
+.v2-account__hint {
+  color: var(--v2-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.v2-account__segments {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-sm);
+}
+
+.v2-account__segment {
+  height: 28px;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-xs);
+  color: var(--v2-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+.v2-account__segment--on {
+  background-color: var(--v2-surface);
+  box-shadow: 0 0 0 1px var(--v2-line);
+  color: var(--v2-ink);
+  font-weight: 600;
+}
+
+.v2-account__divider {
+  height: 1px;
+  margin: var(--v2-space-1) 0;
+  background: var(--v2-line);
+}
+
+// The board is desktop-only (1440). On narrow screens the name and role give way to the avatar.
+@media (max-width: 640px) {
+  .v2-account__text,
+  .v2-account__chevron {
+    display: none;
+  }
+
+  .v2-account__panel {
+    max-width: calc(100vw - 2 * var(--v2-space-4));
+  }
+}
