@@ -31,7 +31,7 @@ export interface V2SegmentOption<T extends string> {
 
     :host {
       display: flex;
-      gap: 2px;
+      gap: 5px;
       padding: var(--v2-space-1);
       background: var(--v2-ground);
       border-radius: var(--v2-radius-sm);
