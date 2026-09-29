@@ -93,7 +93,7 @@ interface CalendarMonth {
           }}</span>
         </div>
         <div class="v2-range__actions">
-          <button type="button" class="v2-range__cancel" (click)="cancel.emit()">
+          <button type="button" class="v2-range__cancel" (click)="dismissed.emit()">
             {{ 'common.cancel' | translate }}
           </button>
           <button
@@ -116,7 +116,7 @@ export class V2DateRangePicker {
   readonly to = input.required<string>();
   readonly today = input.required<Date>();
   readonly apply = output<V2DateRange>();
-  readonly cancel = output<void>();
+  readonly dismissed = output<void>();
 
   protected readonly draft = linkedSignal<
     { from: string; to: string },
