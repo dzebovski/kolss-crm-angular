@@ -17,13 +17,7 @@ import {
   showroomDueAtForLead,
   type LeadActiveReminder,
 } from '@domain/lead.rules';
-import type {
-  LeadEvent,
-  LeadMarkerKind,
-  Lead,
-  LeadReaction,
-  QuestionLanguage,
-} from '@domain/lead.types';
+import type { LeadEvent, Lead, LeadReaction, QuestionLanguage } from '@domain/lead.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { LeadsService } from '@services/leads.service';
 import { type CrmEmployee, UsersService } from '@services/users.service';
@@ -41,7 +35,6 @@ import { UiSelect, type UiSelectOption } from '@ui/form/ui-select';
 import { UiIcon } from '@ui/icon/ui-icon';
 import * as presenter from './lead-detail-page.presenter';
 import { LeadActionsPanel } from './lead-actions-panel';
-import { LeadMarkerToggles } from './lead-marker-toggles';
 import { LeadReactionToggles } from './lead-reaction-toggles';
 import { LeadSummaryPanel } from './lead-summary-panel';
 import { LeadTimeline } from './lead-timeline';
@@ -71,7 +64,6 @@ const NO_MANAGER_VALUE = '__unassigned__';
     RouterLink,
     EditLeadDialog,
     LeadActionsPanel,
-    LeadMarkerToggles,
     LeadReactionToggles,
     LeadSummaryPanel,
     LeadTimeline,
@@ -101,9 +93,6 @@ export class LeadDetailView {
   protected readonly actionError = signal('');
   protected readonly editLeadDialogOpen = signal(false);
   protected readonly deletingLead = signal(false);
-  protected readonly markerPending = signal<LeadMarkerKind | null>(null);
-  protected readonly markerError = signal('');
-  protected readonly questionPending = signal(false);
   protected readonly assignManagerDialogOpen = signal(false);
   protected readonly assignManagerId = signal(NO_MANAGER_VALUE);
   protected readonly managerPending = signal(false);
@@ -133,10 +122,6 @@ export class LeadDetailView {
 
   protected canMutateEvent(event: LeadEvent): boolean {
     return !this.lead()?.archivedAt && leadPolicy.canMutateEvent(this.leadPolicyContext(), event);
-  }
-
-  protected canAskQuestion(lead: Lead): boolean {
-    return leadPolicy.canAskLeadQuestion(this.leadPolicyContext(), lead);
   }
 
   protected canAnswerQuestion(lead: Lead): boolean {
@@ -231,42 +216,6 @@ export class LeadDetailView {
       await this.leadResource.reload();
       this.changed.emit();
     };
-  }
-
-  protected async openQuestion(lead: Lead): Promise<void> {
-    if (!this.canAskQuestion(lead) || this.questionPending()) return;
-    const result = await firstValueFrom(
-      this.dialog
-        .open<
-          LeadQuestionDialog,
-          { readonly employees: readonly CrmEmployee[]; readonly officeCode: Lead['officeCode'] },
-          LeadQuestionDialogResult
-        >(LeadQuestionDialog, {
-          data: { employees: this.employeesResource.value() ?? [], officeCode: lead.officeCode },
-          ariaLabelledBy: 'lead-question-dialog-title',
-          maxWidth: 'calc(100vw - 1rem)',
-        })
-        .afterClosed(),
-    );
-    if (!result) return;
-    this.questionPending.set(true);
-    this.markerError.set('');
-    try {
-      await this.activities.addQuestion(
-        lead.id,
-        result.text,
-        result.assigneeIds,
-        result.translations,
-      );
-      await this.leadResource.reload();
-      this.changed.emit();
-    } catch (error) {
-      this.markerError.set(
-        error instanceof Error ? error.message : this.i18n.t('leadQuestion.createFailed'),
-      );
-    } finally {
-      this.questionPending.set(false);
-    }
   }
 
   protected async answerQuestion(lead: Lead, event: LeadEvent): Promise<void> {
@@ -436,27 +385,6 @@ export class LeadDetailView {
   protected updateReactions(reactions: readonly LeadReaction[]): void {
     this.leadResource.value.update((value) => (value ? { ...value, reactions } : value));
     this.changed.emit();
-  }
-
-  protected async toggleMarker(lead: Lead, kind: LeadMarkerKind): Promise<void> {
-    if (lead.archivedAt || this.markerPending()) return;
-    this.markerError.set('');
-    this.markerPending.set(kind);
-    const active = lead.markers.some((marker) => marker.kind === kind);
-    try {
-      const markers = active
-        ? lead.markers.filter((marker) => marker.kind !== kind)
-        : [...lead.markers, await this.leadsService.setMarker(lead.id, kind)];
-      if (active) await this.leadsService.deleteMarker(lead.id, kind);
-      this.leadResource.value.update((value) => (value ? { ...value, markers } : value));
-      this.changed.emit();
-    } catch (error) {
-      this.markerError.set(
-        error instanceof Error ? error.message : 'Не вдалося зберегти позначку.',
-      );
-    } finally {
-      this.markerPending.set(null);
-    }
   }
 
   protected canAssignManager(lead: Lead): boolean {

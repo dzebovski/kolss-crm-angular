@@ -23,16 +23,6 @@
         <span class="lead-control-bar__label">Контроль ліда</span>
       }
       <div class="lead-control-bar__toggles">
-        <app-lead-marker-toggles
-          [markers]="lead.markers"
-          [pending]="markerPending()"
-          [disabled]="!!lead.archivedAt"
-          [canAskQuestion]="canAskQuestion(lead)"
-          [questionPending]="questionPending()"
-          [questionLabel]="i18n.t('leadQuestion.actionLabel')"
-          (toggled)="toggleMarker(lead, $event)"
-          (questionRequested)="openQuestion(lead)"
-        />
         <app-lead-reaction-toggles
           [leadId]="lead.id"
           [reactions]="lead.reactions"
@@ -41,10 +31,6 @@
         />
       </div>
     </div>
-
-    @if (markerError()) {
-      <div class="action-error" role="alert">{{ markerError() }}</div>
-    }
 
     <app-lead-summary-panel
       [lead]="lead"
