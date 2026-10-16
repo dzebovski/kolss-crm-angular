@@ -45,6 +45,7 @@ import type {
   LeadEventTranslationResponse,
   LeadFacetsResponse,
   LeadMarkerResponse,
+  LeadReactionResponse,
   LeadListResponse,
   LeadReportQuery,
   MeResponse,
@@ -133,6 +134,19 @@ export class KolssApiClient {
   deleteLeadMarker(id: string, kind: 'reviewed' | 'manager_aware'): Promise<void> {
     return this.delete(
       `/v1/leads/${encodeURIComponent(id)}/markers/${encodeURIComponent(kind)}`,
+    ).then(() => undefined);
+  }
+
+  setLeadReaction(id: string, kind: 'like' | 'star' | 'question'): Promise<LeadReactionResponse> {
+    return this.put(
+      `/v1/leads/${encodeURIComponent(id)}/reactions/${encodeURIComponent(kind)}`,
+      {},
+    );
+  }
+
+  deleteLeadReaction(id: string, kind: 'like' | 'star' | 'question'): Promise<void> {
+    return this.delete(
+      `/v1/leads/${encodeURIComponent(id)}/reactions/${encodeURIComponent(kind)}`,
     ).then(() => undefined);
   }
 

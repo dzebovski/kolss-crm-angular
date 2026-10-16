@@ -303,13 +303,13 @@ describe('LeadsPage', () => {
     expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ clientStatus: [] }));
   });
 
-  it('uses four compact subgrid fields and places the active switch in the fifth column', async () => {
+  it('uses five compact subgrid fields and places the active switch in the last column', async () => {
     const fixture = TestBed.createComponent(LeadsPage);
     await fixture.whenStable();
 
     const filters = (fixture.nativeElement as HTMLElement).querySelector('.filters');
-    expect(filters?.children.length).toBe(5);
-    expect(filters?.querySelectorAll(':scope > .filter-field')).toHaveLength(4);
+    expect(filters?.children.length).toBe(6);
+    expect(filters?.querySelectorAll(':scope > .filter-field')).toHaveLength(5);
     expect(
       filters?.querySelector('.ui-field__message, .ui-multi-select__message, .ui-select__message'),
     ).toBeNull();
@@ -750,5 +750,74 @@ describe('LeadsPage', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  describe('activity sort and reaction filter', () => {
+    const older: Lead = {
+      ...FIXTURE_LEADS[0]!,
+      id: 'lead-older',
+      name: 'Старий з активністю',
+      sourceCreatedAt: '2026-01-10T10:00:00.000Z',
+      lastActivityAt: '2026-07-06T10:00:00.000Z',
+      reactions: [{ kind: 'star', count: 1, userIds: ['u-2'], userNames: ['Олена'] }],
+    };
+    const newer: Lead = {
+      ...FIXTURE_LEADS[1]!,
+      id: 'lead-newer',
+      name: 'Новий без змін',
+      sourceCreatedAt: '2026-07-01T10:00:00.000Z',
+      lastActivityAt: '2026-07-01T10:00:00.000Z',
+      reactions: [],
+    };
+
+    const rowNames = (element: HTMLElement) =>
+      Array.from(element.querySelectorAll('.lead-row .client-name-row strong')).map((node) =>
+        node.textContent?.trim(),
+      );
+
+    beforeEach(() => {
+      list.mockImplementation(async () => [newer, older]);
+    });
+
+    afterEach(() => {
+      list.mockReset();
+    });
+
+    it('puts the most recently active lead first and ignores the creation period', async () => {
+      storedValues.set(
+        LEADS_PAGE_PREFERENCES_STORAGE_KEY,
+        JSON.stringify({ periodDays: null, sortMode: 'activity' }),
+      );
+      const fixture = TestBed.createComponent(LeadsPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(rowNames(fixture.nativeElement)).toEqual(['Старий з активністю', 'Новий без змін']);
+      expect(list.mock.calls.at(-1)?.[0].days).toBeNull();
+    });
+
+    it('keeps the default arrival order grouped by month', async () => {
+      storedValues.set(LEADS_PAGE_PREFERENCES_STORAGE_KEY, JSON.stringify({ periodDays: null }));
+      const fixture = TestBed.createComponent(LeadsPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(rowNames(fixture.nativeElement)).toEqual(['Новий без змін', 'Старий з активністю']);
+    });
+
+    it("shows only leads with anyone's reaction of the selected kind", async () => {
+      storedValues.set(
+        LEADS_PAGE_PREFERENCES_STORAGE_KEY,
+        JSON.stringify({ periodDays: null, reactionFilter: ['star'] }),
+      );
+      const fixture = TestBed.createComponent(LeadsPage);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(rowNames(fixture.nativeElement)).toEqual(['Старий з активністю']);
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('.lead-count')?.textContent,
+      ).toContain('1');
+    });
   });
 });

@@ -18,6 +18,8 @@ describe('leads page query params', () => {
     managerFilter: '',
     query: '',
     showArchived: false,
+    sortMode: 'created',
+    reactionFilter: [],
   };
 
   it('returns null when the URL carries no leads filter', () => {
@@ -34,6 +36,8 @@ describe('leads page query params', () => {
       managerFilter: '',
       query: '',
       showArchived: false,
+      sortMode: 'created',
+      reactionFilter: [],
     });
   });
 
@@ -61,12 +65,21 @@ describe('leads page query params', () => {
       managerFilter: '',
       query: '',
       showArchived: false,
+      sortMode: 'created',
+      reactionFilter: [],
     });
   });
 
   it('maps the all-time period to days=all in both directions', () => {
     expect(parse({ days: 'all' })?.periodDays).toBeNull();
     expect(serializeLeadsPageQuery({ ...emptyState, periodDays: null })['days']).toBe('all');
+  });
+
+  it('drops unknown reactions and sort modes', () => {
+    const state = parse({ sort: 'oldest', reactions: 'star,heart' });
+
+    expect(state?.sortMode).toBe('created');
+    expect(state?.reactionFilter).toEqual(['star']);
   });
 
   it('omits empty filters from the link but always keeps the period', () => {
@@ -82,6 +95,8 @@ describe('leads page query params', () => {
       managerFilter: 'emp-kyiv-1',
       query: 'kowalski',
       showArchived: true,
+      sortMode: 'activity',
+      reactionFilter: ['like', 'question'],
     };
 
     expect(parse(serializeLeadsPageQuery(state))).toEqual(state);
@@ -98,6 +113,8 @@ describe('leads page query params', () => {
       managerFilter: '',
       query: '',
       showArchived: false,
+      sortMode: 'created',
+      reactionFilter: [],
     });
   });
 
@@ -117,6 +134,8 @@ describe('leads page query params', () => {
       managerFilter: '',
       query: '',
       showArchived: false,
+      sortMode: 'created',
+      reactionFilter: [],
     };
 
     expect(parse(serializeLeadsPageQuery(state))).toEqual(state);
@@ -129,6 +148,8 @@ describe('leads page query params', () => {
         callStatusFilter: ['reached'],
         clientStatusFilter: [],
         managerFilter: 'emp-kyiv-1',
+        sortMode: 'activity',
+        reactionFilter: ['star'],
       }),
     ).toEqual({
       office: null,
@@ -138,6 +159,8 @@ describe('leads page query params', () => {
       managerFilter: 'emp-kyiv-1',
       query: '',
       showArchived: false,
+      sortMode: 'activity',
+      reactionFilter: ['star'],
     });
   });
 });

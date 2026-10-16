@@ -146,6 +146,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-07-06T11:24:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {
@@ -192,6 +193,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-07-05T10:14:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {
@@ -251,6 +253,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-07-01T16:10:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {
@@ -314,6 +317,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-06-28T13:20:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [
       {
         id: 'att-1004-plan',
@@ -384,6 +388,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-07-02T12:30:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {
@@ -448,6 +453,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-06-12T16:45:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [
       {
         id: 'att-1006-sketch',
@@ -525,6 +531,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-06-18T13:20:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [
       {
         id: 'att-1007-contract',
@@ -596,6 +603,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-05-30T09:05:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {
@@ -656,6 +664,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2026-04-21T10:00:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {
@@ -711,6 +720,7 @@ export const FIXTURE_LEADS: readonly Lead[] = [
     latestTimelineComment: null,
     lastActivityAt: '2025-12-16T16:15:00.000Z',
     markers: [],
+    reactions: [],
     attachments: [],
     events: [
       {

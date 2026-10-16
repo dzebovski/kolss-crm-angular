@@ -33,7 +33,9 @@ h1 {
 }
 .period-row {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
 }
 .filters-stack {
   display: grid;
@@ -41,7 +43,7 @@ h1 {
 }
 .filters {
   display: grid;
-  grid-template-columns: minmax(16rem, 1.4fr) repeat(3, minmax(11rem, 1fr)) max-content;
+  grid-template-columns: minmax(16rem, 1.4fr) repeat(4, minmax(10rem, 1fr)) max-content;
   grid-template-rows: auto var(--ui-control-height);
   column-gap: var(--ui-space-3);
   row-gap: var(--ui-space-2);
@@ -183,6 +185,12 @@ thead th {
 }
 .date-cell strong {
   text-transform: capitalize;
+}
+.date-cell .date-created {
+  opacity: 0.75;
+}
+.row-reactions {
+  margin-top: 0.25rem;
 }
 .client-name-row {
   min-width: 0;

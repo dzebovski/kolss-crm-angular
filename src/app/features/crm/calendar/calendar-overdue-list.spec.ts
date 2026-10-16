@@ -38,6 +38,7 @@ const baseLead: Lead = {
   attachments: [],
   events: [],
   markers: [],
+  reactions: [],
 };
 
 const callbackRow: CalendarOverdueRow = {

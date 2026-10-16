@@ -31,6 +31,16 @@ export type LeadWorkflowStatus =
 export type LeadSource = 'website' | 'facebook' | 'office' | 'other';
 export type LeadMarkerKind = 'reviewed' | 'manager_aware';
 
+export type LeadReactionKind = 'like' | 'star' | 'question';
+
+/** Personal reactions on a lead, summarised per kind (kinds nobody used are absent). */
+export interface LeadReaction {
+  readonly kind: LeadReactionKind;
+  readonly count: number;
+  readonly userIds: readonly string[];
+  readonly userNames: readonly string[];
+}
+
 export interface LeadMarker {
   readonly kind: LeadMarkerKind;
   readonly actorId: string;
@@ -207,10 +217,12 @@ export interface Lead {
   readonly measurementDueAt?: string | null;
   readonly lastComment: string | null;
   readonly latestTimelineComment: LatestTimelineComment | null;
+  /** Latest of arrival and the newest history event; reactions/markers do not count. */
   readonly lastActivityAt: string;
   readonly attachments: readonly LeadAttachment[];
   readonly events: readonly LeadEvent[];
   readonly markers: readonly LeadMarker[];
+  readonly reactions: readonly LeadReaction[];
 }
 
 export interface CallbackDueContext {

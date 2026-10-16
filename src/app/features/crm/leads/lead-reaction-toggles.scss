@@ -1,0 +1,94 @@
+:host {
+  display: inline-flex;
+}
+
+.lead-reactions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.lead-reaction {
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-pill);
+  background: color-mix(in srgb, var(--ui-surface-raised) 94%, transparent);
+  color: var(--ui-text-muted);
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition:
+    transform var(--ui-duration-fast) var(--ui-ease),
+    border-color var(--ui-duration-fast) var(--ui-ease),
+    background var(--ui-duration-fast) var(--ui-ease),
+    opacity var(--ui-duration-fast) var(--ui-ease);
+}
+
+.lead-reaction:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--ui-border-strong);
+}
+
+.lead-reaction:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.lead-reaction:focus-visible {
+  outline: 2px solid var(--ui-action);
+  outline-offset: 2px;
+}
+
+.lead-reaction--mine {
+  border-color: color-mix(in srgb, var(--ui-action) 50%, var(--ui-border));
+  background: color-mix(in srgb, var(--ui-action) 12%, var(--ui-surface-raised));
+  color: var(--ui-text);
+}
+
+.lead-reaction small {
+  font-size: 0.72rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.lead-reaction:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.lead-reactions--compact {
+  gap: 0.2rem;
+}
+
+.lead-reactions--compact .lead-reaction {
+  min-height: 1.6rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.8rem;
+}
+
+/* Unused kinds stay quiet in the dense list until hovered or focused. */
+.lead-reactions--compact .lead-reaction:not(.lead-reaction--used) {
+  border-color: transparent;
+  background: transparent;
+  opacity: 0.38;
+}
+
+.lead-reactions--compact .lead-reaction:not(.lead-reaction--used):hover,
+.lead-reactions--compact .lead-reaction:not(.lead-reaction--used):focus-visible {
+  opacity: 1;
+  border-color: var(--ui-border);
+}
+
+.lead-reactions__error {
+  color: var(--ui-danger);
+  font-size: 0.72rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lead-reaction {
+    transition: none;
+  }
+}

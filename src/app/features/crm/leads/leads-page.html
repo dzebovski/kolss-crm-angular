@@ -9,7 +9,7 @@
             {{ 'leads.filteredCountPrefix' | translate }}
             <app-ui-badge class="lead-count-badge" tone="brand">
               <app-ui-icon name="person" [size]="14" [style.margin-right.rem]="0.25" />
-              {{ 'leads.count' | translate: { count: leads().length } }}
+              {{ 'leads.count' | translate: { count: visibleLeads().length } }}
             </app-ui-badge>
           </span>
         }
@@ -37,6 +37,18 @@
   </header>
 
   <div class="period-row">
+    <div class="period-switcher" role="group" [attr.aria-label]="'leads.sort.aria' | translate">
+      @for (option of sortModes(); track option.mode) {
+        <button
+          type="button"
+          [class.is-active]="sortMode() === option.mode"
+          [attr.aria-pressed]="sortMode() === option.mode"
+          (click)="sortMode.set(option.mode)"
+        >
+          {{ option.label }}
+        </button>
+      }
+    </div>
     <div class="period-switcher" role="group" [attr.aria-label]="'reports.period' | translate">
       @for (period of periods(); track period.days ?? 'all') {
         <button
@@ -82,6 +94,16 @@
         [(value)]="clientStatusFilter"
       />
 
+      <app-ui-multi-select
+        class="filter-field"
+        [label]="'leads.filter.reactions' | translate"
+        [placeholder]="'leads.filter.all' | translate"
+        [options]="reactionOptions()"
+        [selectedSummaryLabel]="filterSummaryLabel()"
+        [reserveMessageSpace]="false"
+        [(value)]="reactionFilter"
+      />
+
       <app-ui-select
         class="filter-field"
         [label]="'leads.filter.byManager' | translate"
@@ -98,7 +120,12 @@
       />
     </div>
 
-    @if (callStatusFilter().length || clientStatusFilter().length || managerFilter()) {
+    @if (
+      callStatusFilter().length ||
+      clientStatusFilter().length ||
+      reactionFilter().length ||
+      managerFilter()
+    ) {
       <div class="filter-chips" aria-live="polite">
         @for (status of callStatusFilter(); track status) {
           <app-ui-chip
@@ -118,6 +145,15 @@
             (removed)="removeClientStatus(status)"
           >
             {{ clientStatusFilterLabel(status) }}
+          </app-ui-chip>
+        }
+        @for (kind of reactionFilter(); track kind) {
+          <app-ui-chip
+            [label]="reactionLabel(kind)"
+            [removable]="true"
+            (removed)="removeReaction(kind)"
+          >
+            {{ reactionLabel(kind) }}
           </app-ui-chip>
         }
         @if (managerFilter(); as managerId) {
@@ -145,7 +181,7 @@
         <span></span>
       }
     </div>
-  } @else if (!leads().length) {
+  } @else if (!visibleLeads().length) {
     <article class="empty-state">
       <app-ui-icon name="inbox" [size]="30" />
       <h2>{{ 'leads.emptyTitle' | translate }}</h2>
@@ -198,8 +234,19 @@
                 (keydown.enter)="openLead(lead)"
               >
                 <td class="date-cell">
-                  <strong>{{ formatDayMonth(lead.sourceCreatedAt) }}</strong>
-                  <small>{{ formatTime(lead.sourceCreatedAt) }}</small>
+                  @if (sortMode() === 'activity') {
+                    <strong [title]="'leads.lastActivity' | translate">
+                      {{ formatDayMonth(lead.lastActivityAt) }}
+                    </strong>
+                    <small>{{ formatTime(lead.lastActivityAt) }}</small>
+                    <small class="date-created">
+                      {{ 'leadDetail.created' | translate }}:
+                      {{ formatDayMonth(lead.sourceCreatedAt) }}
+                    </small>
+                  } @else {
+                    <strong>{{ formatDayMonth(lead.sourceCreatedAt) }}</strong>
+                    <small>{{ formatTime(lead.sourceCreatedAt) }}</small>
+                  }
                 </td>
                 <td class="client-cell">
                   <span class="client-name-row">
@@ -207,6 +254,14 @@
                     <strong>{{ lead.name }}</strong>
                   </span>
                   <small>{{ lead.phone }}</small>
+                  <app-lead-reaction-toggles
+                    class="row-reactions"
+                    [leadId]="lead.id"
+                    [reactions]="lead.reactions"
+                    [disabled]="!!lead.archivedAt"
+                    [compact]="true"
+                    (reactionsChange)="updateReactions(lead.id, $event)"
+                  />
                 </td>
                 <td>
                   @if (hasActiveManager(lead.assignedToId)) {

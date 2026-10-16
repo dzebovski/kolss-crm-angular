@@ -5,11 +5,14 @@ import {
   type CallStatusFilterKey,
   type ClientStatusFilterKey,
 } from '@domain/lead-filters';
+import { isLeadReactionKind } from '@domain/lead-reactions';
+import type { LeadReactionKind } from '@domain/lead.types';
 import type { OfficeFilter } from '@domain/office.types';
 import {
   DEFAULT_LEADS_PAGE_PREFERENCES,
   isPeriodDays,
   type LeadsPagePreferences,
+  type LeadsSortMode,
 } from './leads-page-preferences.storage';
 
 /**
@@ -26,6 +29,8 @@ export interface LeadsPageQueryState {
   readonly managerFilter: string;
   readonly query: string;
   readonly showArchived: boolean;
+  readonly sortMode: LeadsSortMode;
+  readonly reactionFilter: readonly LeadReactionKind[];
 }
 
 /** Every param this page owns — also the probe set for "is this a filter deep link?". */
@@ -37,6 +42,8 @@ const QUERY_KEYS = [
   'assignedTo',
   'q',
   'archived',
+  'sort',
+  'reactions',
 ] as const;
 
 const ALL_PERIODS = 'all';
@@ -86,6 +93,8 @@ export function parseLeadsPageQuery(params: ReadonlyParamMap): LeadsPageQuerySta
     managerFilter: params.get('assignedTo')?.trim() ?? '',
     query: params.get('q')?.trim() ?? '',
     showArchived: params.get('archived') === ARCHIVED_ONLY,
+    sortMode: params.get('sort') === 'activity' ? 'activity' : 'created',
+    reactionFilter: parseList(params.get('reactions'), isLeadReactionKind),
   };
 }
 
@@ -104,6 +113,8 @@ export function serializeLeadsPageQuery(state: LeadsPageQueryState): Record<stri
   if (state.managerFilter) params['assignedTo'] = state.managerFilter;
   if (state.query) params['q'] = state.query;
   if (state.showArchived) params['archived'] = ARCHIVED_ONLY;
+  if (state.sortMode !== 'created') params['sort'] = state.sortMode;
+  if (state.reactionFilter.length) params['reactions'] = state.reactionFilter.join(',');
   return params;
 }
 
@@ -119,5 +130,7 @@ export function leadsPageQueryStateFromPreferences(
     managerFilter: preferences.managerFilter,
     query: '',
     showArchived: false,
+    sortMode: preferences.sortMode,
+    reactionFilter: preferences.reactionFilter,
   };
 }

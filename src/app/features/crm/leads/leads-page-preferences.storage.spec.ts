@@ -36,6 +36,8 @@ describe('leads-page-preferences.storage', () => {
       callStatusFilter: ['no_answer', 'reached'] as const,
       clientStatusFilter: ['thinking', 'postponed', 'in_work'] as const,
       managerFilter: 'manager-2',
+      sortMode: 'activity' as const,
+      reactionFilter: ['star', 'question'] as const,
     };
     writeLeadsPagePreferences(preferences);
     expect(readLeadsPagePreferences()).toEqual(preferences);
@@ -47,6 +49,8 @@ describe('leads-page-preferences.storage', () => {
       callStatusFilter: [] as const,
       clientStatusFilter: [] as const,
       managerFilter: '',
+      sortMode: 'created' as const,
+      reactionFilter: [] as const,
     };
     writeLeadsPagePreferences(preferences);
     expect(readLeadsPagePreferences()).toEqual(preferences);
@@ -67,6 +71,8 @@ describe('leads-page-preferences.storage', () => {
       callStatusFilter: ['reached'],
       clientStatusFilter: ['thinking'],
       managerFilter: '',
+      sortMode: 'created',
+      reactionFilter: [],
     });
   });
 
@@ -85,6 +91,8 @@ describe('leads-page-preferences.storage', () => {
       callStatusFilter: [],
       clientStatusFilter: [],
       managerFilter: '',
+      sortMode: 'created',
+      reactionFilter: [],
     });
   });
 
@@ -98,6 +106,8 @@ describe('leads-page-preferences.storage', () => {
       callStatusFilter: [],
       clientStatusFilter: [],
       managerFilter: '',
+      sortMode: 'created',
+      reactionFilter: [],
     });
   });
 });

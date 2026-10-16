@@ -18,6 +18,7 @@ import type {
   LeadEventType,
   LeadMarker,
   LeadMarkerKind,
+  LeadReaction,
   LeadQuestionAnswer,
   LeadQuestionAssignee,
   LeadQuestionData,
@@ -28,6 +29,7 @@ import type {
   ShowroomVisit,
 } from '@domain/lead.types';
 import type { OfficeId } from '@domain/office.types';
+import { isLeadReactionKind } from '@domain/lead-reactions';
 import { isContractCurrency, resolveCloseUserComment } from '@domain/lead.rules';
 import { toSimplifiedWorkflowStatus } from './workflow-legacy.mapper';
 
@@ -73,11 +75,20 @@ export type LeadListRow = LeadRow & {
   measurement_due_at?: string | null;
   callback_due_context?: CallbackDueContextEmbed | null;
   markers?: readonly LeadMarkerEmbed[] | null;
+  reactions?: readonly LeadReactionEmbed[] | null;
+  last_activity_at?: string | null;
 };
 
 export interface CallbackDueContextEmbed {
   readonly event_category: string;
   readonly status_code: string | null;
+}
+
+export interface LeadReactionEmbed {
+  readonly kind: string;
+  readonly count: number;
+  readonly user_ids: readonly string[];
+  readonly user_names: readonly string[];
 }
 
 export interface LeadMarkerEmbed {
@@ -660,10 +671,11 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     measurementDueAt,
     lastComment: row.last_comment,
     latestTimelineComment: mapLatestTimelineComment(row.latest_timeline_comment),
-    lastActivityAt: row.updated_at,
+    lastActivityAt: row.last_activity_at ?? row.updated_at,
     attachments: [],
     events: mapEvents(relations.events),
     markers: mapLeadMarkers(row.markers),
+    reactions: mapLeadReactions(row.reactions),
   };
 }
 
@@ -688,6 +700,25 @@ export function mapLeadMarker(value: LeadMarkerEmbed): LeadMarker | null {
     actorName: value.actor_name.trim() || 'Невідомий',
     markedAt: value.marked_at,
   };
+}
+
+export function mapLeadReaction(value: LeadReactionEmbed): LeadReaction | null {
+  if (!isLeadReactionKind(value.kind) || !value.user_ids?.length) return null;
+  return {
+    kind: value.kind,
+    count: value.user_ids.length,
+    userIds: [...value.user_ids],
+    userNames: value.user_names.map((name) => name.trim() || 'Невідомий'),
+  };
+}
+
+function mapLeadReactions(
+  values: readonly LeadReactionEmbed[] | null | undefined,
+): readonly LeadReaction[] {
+  return (values ?? []).flatMap((value) => {
+    const reaction = mapLeadReaction(value);
+    return reaction ? [reaction] : [];
+  });
 }
 
 function mapLeadMarkers(

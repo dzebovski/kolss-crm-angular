@@ -4,6 +4,15 @@ import {
   type CallStatusFilterKey,
   type ClientStatusFilterKey,
 } from '@domain/lead-filters';
+import { isLeadReactionKind } from '@domain/lead-reactions';
+import type { LeadReactionKind } from '@domain/lead.types';
+
+/** `created` = newest arrivals grouped by month; `activity` = most recently changed first. */
+export type LeadsSortMode = 'created' | 'activity';
+
+export function isLeadsSortMode(value: unknown): value is LeadsSortMode {
+  return value === 'created' || value === 'activity';
+}
 
 export interface LeadsPagePreferences {
   periodDays: number | null;
@@ -11,6 +20,9 @@ export interface LeadsPagePreferences {
   clientStatusFilter: readonly ClientStatusFilterKey[];
   /** Empty string = no manager filter. */
   managerFilter: string;
+  sortMode: LeadsSortMode;
+  /** Empty = no reaction filter; otherwise leads with anyone's reaction of these kinds. */
+  reactionFilter: readonly LeadReactionKind[];
 }
 
 export const LEADS_PAGE_PREFERENCES_STORAGE_KEY = 'kolss.leads-list-preferences';
@@ -21,6 +33,8 @@ export const DEFAULT_LEADS_PAGE_PREFERENCES: LeadsPagePreferences = {
   callStatusFilter: [],
   clientStatusFilter: [],
   managerFilter: '',
+  sortMode: 'created',
+  reactionFilter: [],
 };
 
 function isManagerFilter(value: unknown): value is string {
@@ -62,6 +76,12 @@ export function readLeadsPagePreferences(): LeadsPagePreferences {
       managerFilter: isManagerFilter(record['managerFilter'])
         ? record['managerFilter']
         : DEFAULT_LEADS_PAGE_PREFERENCES.managerFilter,
+      sortMode: isLeadsSortMode(record['sortMode'])
+        ? record['sortMode']
+        : DEFAULT_LEADS_PAGE_PREFERENCES.sortMode,
+      reactionFilter: Array.isArray(record['reactionFilter'])
+        ? record['reactionFilter'].filter(isLeadReactionKind)
+        : [],
     };
   } catch {
     return { ...DEFAULT_LEADS_PAGE_PREFERENCES };

@@ -22,7 +22,20 @@ import {
   showroomDueAtForLead,
   callbackReminderDueAt,
 } from '@domain/lead.rules';
-import type { CallStatus, ClientStatus, LeadEventCategory, Lead } from '@domain/lead.types';
+import {
+  LEAD_REACTION_KINDS,
+  leadHasAnyReaction,
+  sortLeadsByActivity,
+} from '@domain/lead-reactions';
+import type {
+  CallStatus,
+  ClientStatus,
+  LeadEventCategory,
+  Lead,
+  LeadMonthGroup,
+  LeadReaction,
+  LeadReactionKind,
+} from '@domain/lead.types';
 import { LeadsService } from '@services/leads.service';
 import { UsersService } from '@services/users.service';
 import { UiButton } from '@ui/button/ui-button';
@@ -39,11 +52,13 @@ import { UiUser } from '@ui/user/ui-user';
 import { CreateLeadDialog } from './create-lead-dialog';
 import { closeReasonLabelForLead } from './lead-detail-page.presenter';
 import { LeadDueDate } from './lead-due-date';
+import { LeadReactionToggles } from './lead-reaction-toggles';
 import { LeadReference } from './lead-reference';
 import { formatLeadDayMonth, formatLeadTime } from './leads-page.presenter';
 import {
   readLeadsPagePreferences,
   writeLeadsPagePreferences,
+  type LeadsSortMode,
 } from './leads-page-preferences.storage';
 import {
   leadsPageQueryStateFromPreferences,
@@ -56,6 +71,7 @@ import {
   imports: [
     CreateLeadDialog,
     LeadDueDate,
+    LeadReactionToggles,
     LeadReference,
     LinkifiedText,
     TranslatePipe,
@@ -126,6 +142,10 @@ export class LeadsPage {
   );
   protected readonly activeClientsOnly = signal(this.initialActiveClientsOnly);
   protected readonly managerFilter = signal(this.initialFilters.managerFilter);
+  protected readonly sortMode = signal<LeadsSortMode>(this.initialFilters.sortMode);
+  protected readonly reactionFilter = signal<readonly LeadReactionKind[]>(
+    this.initialFilters.reactionFilter,
+  );
   protected readonly createDialogOpen = signal(false);
   protected readonly skeletonRows = [1, 2, 3, 4];
   protected readonly callStatusTone = callStatusTone;
@@ -160,6 +180,8 @@ export class LeadsPage {
         callStatusFilter: this.callStatusFilter(),
         clientStatusFilter: this.effectiveClientStatusFilter(),
         managerFilter: this.managerFilter(),
+        sortMode: this.sortMode(),
+        reactionFilter: this.reactionFilter(),
       });
     });
 
@@ -175,6 +197,8 @@ export class LeadsPage {
         managerFilter: this.managerFilter(),
         query: this.debouncedQuery().trim(),
         showArchived: this.showArchived(),
+        sortMode: this.sortMode(),
+        reactionFilter: this.reactionFilter(),
       });
       void this.router.navigate([], { relativeTo: this.route, queryParams, replaceUrl: true });
     });
@@ -211,6 +235,19 @@ export class LeadsPage {
     ];
   });
 
+  protected readonly sortModes = computed(() => {
+    this.i18n.locale();
+    return [
+      { mode: 'created' as const, label: this.i18n.t('leads.sort.created') },
+      { mode: 'activity' as const, label: this.i18n.t('leads.sort.activity') },
+    ];
+  });
+
+  protected readonly reactionOptions = computed((): readonly UiMultiSelectOption[] => {
+    this.i18n.locale();
+    return LEAD_REACTION_KINDS.map((kind) => ({ value: kind, label: this.reactionLabel(kind) }));
+  });
+
   protected readonly callStatusOptions = computed((): readonly UiMultiSelectOption[] => {
     this.i18n.locale();
     return CALL_STATUS_FILTER_KEYS.map((status) => ({
@@ -237,7 +274,9 @@ export class LeadsPage {
       officeId: this.session.selectedOfficeId(),
       search: this.debouncedQuery().trim(),
       archived: this.showArchived() ? ('only' as const) : ('active' as const),
-      days: this.periodDays(),
+      // In activity mode the period means "active within N days", applied
+      // client-side, so older leads with fresh activity are not cut off here.
+      days: this.sortMode() === 'activity' ? null : this.periodDays(),
       callStatus: this.callStatusFilter(),
       clientStatus: this.effectiveClientStatusFilter(),
       assignedTo: this.managerFilter() || null,
@@ -266,7 +305,30 @@ export class LeadsPage {
   });
 
   protected readonly leads = computed(() => this.leadsResource.value() ?? []);
-  protected readonly groupedLeads = computed(() => groupLeadsByYearMonth(this.leads()));
+  protected readonly visibleLeads = computed(() => {
+    const kinds = this.reactionFilter();
+    const days = this.periodDays();
+    const activitySince =
+      this.sortMode() === 'activity' && days !== null ? Date.now() - days * 86_400_000 : null;
+    return this.leads().filter(
+      (lead) =>
+        leadHasAnyReaction(lead, kinds) &&
+        (activitySince === null || Date.parse(lead.lastActivityAt) >= activitySince),
+    );
+  });
+  protected readonly groupedLeads = computed((): readonly LeadMonthGroup[] => {
+    const leads = this.visibleLeads();
+    if (this.sortMode() !== 'activity') return groupLeadsByYearMonth(leads);
+    this.i18n.locale();
+    return [
+      {
+        key: 'activity',
+        label: this.i18n.t('leads.sort.activity'),
+        rows: [...sortLeadsByActivity(leads)],
+        contractTotals: [],
+      },
+    ];
+  });
   protected readonly loadError = computed(() => {
     const error = this.leadsResource.error();
     return error instanceof Error
@@ -376,6 +438,21 @@ export class LeadsPage {
     return (
       !!employeeId &&
       (this.employeesResource.value() ?? []).some((employee) => employee.id === employeeId)
+    );
+  }
+
+  protected reactionLabel(kind: LeadReactionKind): string {
+    return this.i18n.t(`leads.reaction.${kind}`);
+  }
+
+  protected removeReaction(kind: LeadReactionKind): void {
+    this.reactionFilter.update((values) => values.filter((v) => v !== kind));
+  }
+
+  /** Keeps the loaded list in sync after a reaction toggled in a row. */
+  protected updateReactions(leadId: string, reactions: readonly LeadReaction[]): void {
+    this.leadsResource.value.update((leads) =>
+      leads?.map((lead) => (lead.id === leadId ? { ...lead, reactions } : lead)),
     );
   }
 

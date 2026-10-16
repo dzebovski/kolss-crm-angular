@@ -270,6 +270,7 @@ const baseLead: Lead = {
   attachments: [],
   events: [],
   markers: [],
+  reactions: [],
 };
 
 const callbackLead: Lead = {

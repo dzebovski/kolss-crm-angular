@@ -7,11 +7,19 @@ import type {
   ContractCurrency,
   LeadMarker,
   LeadMarkerKind,
+  LeadReaction,
+  LeadReactionKind,
   QuestionLanguage,
   LeadSource,
   Lead,
 } from '@domain/lead.types';
-import { mapLeadDetail, mapLeadListRow, mapLeadMarker, type LeadListRow } from './leads.mapper';
+import {
+  mapLeadDetail,
+  mapLeadListRow,
+  mapLeadMarker,
+  mapLeadReaction,
+  type LeadListRow,
+} from './leads.mapper';
 
 export interface LeadsListFilters {
   officeId?: string | null;
@@ -179,6 +187,23 @@ export class LeadsService {
 
   async deleteMarker(leadId: string, kind: LeadMarkerKind): Promise<void> {
     await this.api.deleteLeadMarker(leadId, kind);
+  }
+
+  /** Adds or removes the current user's reaction; returns the server state for `kind` when added. */
+  async setReaction(
+    leadId: string,
+    kind: LeadReactionKind,
+    on: boolean,
+  ): Promise<LeadReaction | null> {
+    if (!on) {
+      await this.api.deleteLeadReaction(leadId, kind);
+      return null;
+    }
+    return mapLeadReaction(await this.api.setLeadReaction(leadId, kind));
+  }
+
+  currentUserName(): string {
+    return this.auth.profile()?.display_name?.trim() || '';
   }
 
   currentUserId(): string {

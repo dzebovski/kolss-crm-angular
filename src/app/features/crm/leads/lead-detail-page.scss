@@ -16,6 +16,14 @@
     gap: var(--ui-space-3);
   }
 
+  .lead-control-bar__toggles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--ui-space-2);
+  }
+
   .lead-control-bar--drawer {
     justify-content: flex-end;
   }

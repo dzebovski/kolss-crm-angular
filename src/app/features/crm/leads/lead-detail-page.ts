@@ -17,7 +17,13 @@ import {
   showroomDueAtForLead,
   type LeadActiveReminder,
 } from '@domain/lead.rules';
-import type { LeadEvent, LeadMarkerKind, Lead, QuestionLanguage } from '@domain/lead.types';
+import type {
+  LeadEvent,
+  LeadMarkerKind,
+  Lead,
+  LeadReaction,
+  QuestionLanguage,
+} from '@domain/lead.types';
 import { LeadActivitiesService } from '@services/lead-activities.service';
 import { LeadsService } from '@services/leads.service';
 import { type CrmEmployee, UsersService } from '@services/users.service';
@@ -36,6 +42,7 @@ import { UiIcon } from '@ui/icon/ui-icon';
 import * as presenter from './lead-detail-page.presenter';
 import { LeadActionsPanel } from './lead-actions-panel';
 import { LeadMarkerToggles } from './lead-marker-toggles';
+import { LeadReactionToggles } from './lead-reaction-toggles';
 import { LeadSummaryPanel } from './lead-summary-panel';
 import { LeadTimeline } from './lead-timeline';
 import {
@@ -65,6 +72,7 @@ const NO_MANAGER_VALUE = '__unassigned__';
     EditLeadDialog,
     LeadActionsPanel,
     LeadMarkerToggles,
+    LeadReactionToggles,
     LeadSummaryPanel,
     LeadTimeline,
     UiButton,
@@ -423,6 +431,11 @@ export class LeadDetailView {
     } finally {
       this.deletingLead.set(false);
     }
+  }
+
+  protected updateReactions(reactions: readonly LeadReaction[]): void {
+    this.leadResource.value.update((value) => (value ? { ...value, reactions } : value));
+    this.changed.emit();
   }
 
   protected async toggleMarker(lead: Lead, kind: LeadMarkerKind): Promise<void> {
