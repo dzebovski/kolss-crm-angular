@@ -2,7 +2,7 @@
   [title]="'v2.createLead.title' | translate"
   [subtitle]="'v2.createLead.subtitle' | translate"
   width="form"
-  [hint]="'v2.createLead.footer' | translate"
+  [hint]="footerHint()"
   [cancelLabel]="'v2.createLead.cancel' | translate"
   [saveLabel]="'v2.createLead.save' | translate"
   [saveDisabled]="saving()"
@@ -30,7 +30,8 @@
       <app-v2-form-field
         [label]="'v2.card.phone' | translate"
         [required]="true"
-        [hint]="'v2.editContact.phoneHint' | translate"
+        [hint]="phoneMatch() || ('v2.editContact.phoneHint' | translate)"
+        [warn]="phoneMatch() !== ''"
         [error]="phoneError()"
       >
         <app-v2-phone-input
@@ -43,7 +44,8 @@
       </app-v2-form-field>
       <app-v2-form-field
         [label]="'v2.card.email' | translate"
-        [hint]="'v2.editContact.emailHint' | translate"
+        [hint]="emailMatch() || ('v2.editContact.emailHint' | translate)"
+        [warn]="emailMatch() !== ''"
         [error]="emailError()"
       >
         <input

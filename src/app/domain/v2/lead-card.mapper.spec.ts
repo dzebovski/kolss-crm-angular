@@ -39,6 +39,7 @@ describe('v2 lead card mapper', () => {
       referredBy: null,
       projectType: null,
       responsibleManagerId: null,
+      clientId: null,
     });
   });
 
@@ -66,6 +67,7 @@ describe('v2 lead card mapper', () => {
       referredBy: null,
       projectType: null,
       responsibleManagerId: null,
+      clientId: null,
     });
   });
 
@@ -96,12 +98,14 @@ describe('v2 lead card mapper', () => {
         referred_by: 'W0123',
         project_type: 'measure',
         responsible_manager_id: 'manager-1',
+        client_id: 'client-1',
       }),
     ).toMatchObject({
       aboutClient: 'New house',
       referredBy: 'W0123',
       projectType: 'measure',
       responsibleManagerId: 'manager-1',
+      clientId: 'client-1',
     });
     expect(v2LeadColumnsFromRow({ project_type: 'measurement' }).projectType).toBeNull();
   });

@@ -73,6 +73,7 @@ export function v2LeadColumnsFromRow(row: unknown): V2LeadColumns {
     referredBy: text(record['referred_by']),
     projectType: oneOf(record['project_type'], PROJECT_TYPES),
     responsibleManagerId: text(record['responsible_manager_id']),
+    clientId: text(record['client_id']),
   };
 }
 
@@ -96,6 +97,7 @@ export function toV2LeadCard(lead: Lead, columns: V2LeadColumns): V2LeadCard {
     productText: columns.products.length ? null : lead.productInterest.trim() || null,
     managerId: lead.assignedToId,
     officeId: lead.officeCode,
+    clientId: columns.clientId,
     channel: columns.channel ?? channelFromSource(lead.source),
     status,
     projectAt: status === 'project' ? columns.v2StatusChangedAt : null,

@@ -177,6 +177,8 @@ export class V2EditContactDialog {
     this.model.update((value) => ({ ...value, currency }));
   }
 
+  // TODO(v2): the Client-card board says editing a lead's contact edits the client too (name,
+  // phone, email). That waits for owner question Q-CL8; for now only the lead is updated.
   protected async save(): Promise<void> {
     if (this.saving() || this.invalid()) return;
     const contact = this.contactUpdate();

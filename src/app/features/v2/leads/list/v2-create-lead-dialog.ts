@@ -1,5 +1,5 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 
 import type { CreateLeadRequest } from '@core/api/generated/kolss-api.types';
@@ -8,6 +8,8 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { OFFICE_CONFIG } from '@core/office/office.config';
 import type { ContractCurrency } from '@domain/lead.types';
 import type { OfficeId } from '@domain/office.types';
+import { v2ClientApiPhone } from '@domain/v2/client-form';
+import { v2PluralCategory } from '@domain/v2/plural';
 import { v2CreateLeadLocalDateTime, type V2CreateLeadChannel } from '@domain/v2/create-lead';
 import { isV2BudgetText } from '@domain/v2/lead-action';
 import {
@@ -19,6 +21,7 @@ import type { V2LeadProduct } from '@domain/v2/lead-card.types';
 import { v2FormatPhoneInput, v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
 import { v2StoredPhone } from '@domain/v2/phone-storage';
 import type { Office } from '@models/database';
+import { V2ClientsService } from '@services/v2/v2-clients.service';
 import { V2LeadsListService } from '@services/v2/v2-leads-list.service';
 import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
@@ -71,6 +74,7 @@ const CHANNELS: readonly V2CreateLeadChannel[] = [
   'google_ads',
   'referral',
 ];
+const MATCH_DELAY_MS = 400;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 @Component({
@@ -92,6 +96,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 export class V2CreateLeadDialog {
   private readonly dialogRef = inject<DialogRef<string>>(DialogRef);
   private readonly service = inject(V2LeadsListService);
+  private readonly clients = inject(V2ClientsService);
   private readonly documentsService = inject(V2LeadDocumentsService);
   private readonly i18n = inject(I18nService);
   protected readonly data = inject<V2CreateLeadData>(DIALOG_DATA);
@@ -206,6 +211,54 @@ export class V2CreateLeadDialog {
       this.documents().length > 0,
   );
 
+  /**
+   * Returning-client hint (Create-lead-existing-client.dc.html): once the phone (or email) is
+   * valid and a showroom is picked, `GET /v1/clients/match` says whether the lead will join an
+   * existing client. Debounced; a failed lookup just shows no hint.
+   */
+  private readonly matchQuery = computed(() => {
+    const value = this.model();
+    const showroom = this.showroomOptions.find((option) => option.id === value.showroom);
+    if (!showroom || this.locked()) return undefined;
+    const phone = this.phoneValidation().kind === 'ok' ? v2ClientApiPhone(value.phone) : null;
+    const email = this.emailValid() && value.email.trim() ? value.email.trim() : null;
+    if (!phone && !email) return undefined;
+    return { officeId: showroom.uuid, phone: phone ?? undefined, email: email ?? undefined };
+  });
+  private readonly matchResource = resource({
+    params: () => this.matchQuery(),
+    loader: async ({ params, abortSignal }) => {
+      await pause(MATCH_DELAY_MS, abortSignal);
+      return this.clients.match(params).catch(() => null);
+    },
+  });
+  private readonly match = computed(() =>
+    this.matchResource.hasValue() ? (this.matchResource.value() ?? null) : null,
+  );
+  private readonly matchText = computed(() => {
+    const match = this.match();
+    if (!match) return '';
+    const locale = this.i18n.locale();
+    const { leadsCount, projectsCount } = match.client;
+    return this.i18n.t('v2.createLead.existingClient', {
+      code: match.client.code,
+      name: match.client.name,
+      info: `${leadsCount} ${this.i18n.t(`v2.clients.leads.${v2PluralCategory(locale, leadsCount)}`)}, ${projectsCount} ${this.i18n.t(`v2.clients.projects.${v2PluralCategory(locale, projectsCount)}`)}`,
+    });
+  });
+  protected readonly phoneMatch = computed(() =>
+    this.match()?.matchedBy === 'phone' ? this.matchText() : '',
+  );
+  protected readonly emailMatch = computed(() =>
+    this.match()?.matchedBy === 'email' ? this.matchText() : '',
+  );
+  protected readonly footerHint = computed(() => {
+    const match = this.match();
+    return match
+      ? this.i18n.t('v2.createLead.addsToClient', { code: match.client.code })
+      : this.i18n.t('v2.createLead.footer');
+  });
+
   protected selectShowroom(showroom: OfficeId): void {
     const next = this.createdEdited ? null : v2CreateLeadLocalDateTime(this.data.now, showroom);
     this.model.update((value) => ({
@@ -306,4 +359,14 @@ function phoneValidationMessage(result: V2PhoneValidation, i18n: I18nService): s
     case 'incomplete':
       return i18n.t('v2.editContact.phoneIncomplete', { count: result.missingDigits });
   }
+}
+
+function pause(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    });
+  });
 }

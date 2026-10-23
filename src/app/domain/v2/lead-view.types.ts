@@ -46,6 +46,8 @@ export interface V2LeadListItem {
   readonly rating: V2LeadRating | null;
   readonly channel: V2LeadChannel;
   readonly officeId: OfficeId;
+  /** The lead's client; null for data without one. */
+  readonly clientId: string | null;
   readonly managerId: string | null;
   readonly managerName: string | null;
   /** ISO timestamp the lead arrived; drives the list date column and month groups. */

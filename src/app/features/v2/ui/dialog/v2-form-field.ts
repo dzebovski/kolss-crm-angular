@@ -33,6 +33,7 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
         <span
           class="v2-field__message"
           [class.v2-field__message--err]="invalid()"
+          [class.v2-field__message--warn]="warn() && !invalid()"
           aria-live="polite"
         >
           @if (invalid()) {
@@ -93,6 +94,12 @@ import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 
     app-v2-form-field .v2-field__message--err {
       color: var(--v2-danger);
+    }
+
+    // Create-lead-existing-client.dc.html (msg-warn): a notice in the hint's place, not an error.
+    app-v2-form-field .v2-field__message--warn {
+      color: var(--v2-rating-medium);
+      font-weight: 500;
     }
 
     // Board .fld class. :where() keeps its specificity at the element level, so the
@@ -176,6 +183,8 @@ export class V2FormField {
   readonly hint = input('');
   /** Non-empty switches the field to its error look and shows this text instead of the hint. */
   readonly error = input('');
+  /** Shows the hint as a notice (amber, medium weight), e.g. "Existing client …". */
+  readonly warn = input(false);
 
   protected readonly invalid = computed(() => this.error() !== '');
   protected readonly errorText = computed(() => this.error());

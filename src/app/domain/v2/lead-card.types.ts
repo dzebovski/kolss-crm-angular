@@ -42,6 +42,8 @@ export interface V2LeadColumns {
   readonly referredBy: string | null;
   readonly projectType: V2ProjectType | null;
   readonly responsibleManagerId: string | null;
+  /** The lead's client (API 2.35.0); the code chip links to its card. */
+  readonly clientId: string | null;
 }
 
 export interface V2LeadBudget {
@@ -81,6 +83,8 @@ export interface V2LeadCard {
   readonly productText: string | null;
   readonly managerId: string | null;
   readonly officeId: OfficeId;
+  /** The lead's client (API 2.35.0); the code chip links to its card. */
+  readonly clientId: string | null;
   readonly channel: V2LeadChannel;
   readonly status: V2LeadDisplayStatus;
   /** When the lead became a project (`v2_status_changed_at`); null for any other status. */

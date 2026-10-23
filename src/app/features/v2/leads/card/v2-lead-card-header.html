@@ -10,7 +10,7 @@
         <app-v2-rating-pill [rating]="lead.rating" />
         <app-v2-status-pill [status]="lead.status" />
         @if (lead.code) {
-          <app-v2-code-chip [code]="lead.code" />
+          <app-v2-code-chip [code]="lead.code" [clientId]="lead.clientId" />
         }
       </div>
     </div>

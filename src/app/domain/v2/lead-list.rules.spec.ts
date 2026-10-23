@@ -13,6 +13,7 @@ function lead(id: string, createdAt: string, status: V2LeadDisplayStatus = 'new'
     rating: null,
     channel: 'office',
     officeId: OFFICE_CONFIG.kyiv.id,
+    clientId: null,
     managerId: null,
     managerName: null,
     createdAt,

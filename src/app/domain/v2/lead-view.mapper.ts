@@ -25,6 +25,7 @@ export function toV2LeadListItem(lead: Lead, columns: V2LeadColumns): V2LeadList
     rating: columns.rating,
     channel: columns.channel ?? channelFromSource(lead.source),
     officeId: lead.officeCode,
+    clientId: columns.clientId,
     managerId: lead.assignedToId,
     managerName: null,
     createdAt: lead.sourceCreatedAt,
