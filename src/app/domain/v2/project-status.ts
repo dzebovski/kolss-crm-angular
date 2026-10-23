@@ -1,113 +1,103 @@
 import type { MessageKey } from '@core/i18n/messages';
 import type { ProjectStageDetails } from '@core/api/generated/kolss-api.types';
-import type { V2Project, V2ProjectSchedule, V2ProjectStatus, V2ProjectType } from './project.types';
+import type { V2Project, V2ProjectSchedule, V2ProjectStatus } from './project.types';
 
-/** Every status, in the order the API documents them (`none` first, `cancelled` last). */
+/** Every status in pipeline order, `cancelled` last (the order of the API's board columns). */
 export const V2_PROJECT_STATUSES: readonly V2ProjectStatus[] = [
-  'none',
-  'express',
+  'estimate',
+  'intro_contract',
   'measure',
   'design',
-  'contract',
+  'main_contract',
+  'prepayment',
+  'factory',
   'production',
+  'final_payment',
   'installation',
   'completed',
   'cancelled',
 ];
 
-/** The seven steps of the stage tracker and the status cards of Change status, in order. */
+/** The eleven steps of the stage tracker (every status except `cancelled`), in order. */
 export const V2_PROJECT_STAGES = [
-  'express',
+  'estimate',
+  'intro_contract',
   'measure',
   'design',
-  'contract',
+  'main_contract',
+  'prepayment',
+  'factory',
   'production',
+  'final_payment',
   'installation',
   'completed',
 ] as const satisfies readonly V2ProjectStatus[];
 
 export type V2ProjectStage = (typeof V2_PROJECT_STAGES)[number];
 
-/** Status chips of the list: the stages, then Cancelled, then Status not set (Projects-list board). */
+/** Status chips and kanban columns: the stages, then Cancelled. */
 export const V2_PROJECT_FILTER_ORDER: readonly V2ProjectStatus[] = [
   ...V2_PROJECT_STAGES,
   'cancelled',
-  'none',
 ];
 
 /**
- * Colours of the status dot and stage circle. Most reuse the lead status tokens (the boards
- * use the same hex values); `production` and `installation` have their own tokens.
+ * Colours of the status dot and stage circle, all from existing tokens (the boards use the same
+ * hex values). The money stages (contracts, prepayment, final payment) share the green of
+ * "Successful call"; factory shares the teal of production.
  */
 export const V2_PROJECT_STATUS_COLOR: Readonly<Record<V2ProjectStatus, string>> = {
-  none: 'var(--v2-faint)',
-  express: 'var(--v2-status-thinking)',
+  estimate: 'var(--v2-status-thinking)',
+  intro_contract: 'var(--v2-status-success)',
   measure: 'var(--v2-status-later)',
   design: 'var(--v2-status-invited)',
-  contract: 'var(--v2-status-success)',
+  main_contract: 'var(--v2-status-success)',
+  prepayment: 'var(--v2-status-success)',
+  factory: 'var(--v2-status-production)',
   production: 'var(--v2-status-production)',
+  final_payment: 'var(--v2-status-success)',
   installation: 'var(--v2-status-installation)',
   completed: 'var(--v2-status-project)',
   cancelled: 'var(--v2-status-lost)',
 };
 
-/** `contract` is set only by Add contract, `cancelled` only by Cancel project, `none` at creation. */
-const CHANGEABLE: readonly V2ProjectStatus[] = [
-  'express',
-  'measure',
-  'design',
-  'production',
-  'installation',
-  'completed',
-];
+/** `intro_contract` / `main_contract` are set only by Add contract, `cancelled` only by Cancel. */
+const CHANGEABLE: readonly V2ProjectStatus[] = V2_PROJECT_STAGES.filter(
+  (stage) => stage !== 'intro_contract' && stage !== 'main_contract',
+);
 
+/** Stages with their own name for the next event; every other open stage uses the generic one. */
 const NEXT_EVENT_KEY: Partial<Record<V2ProjectStatus, MessageKey>> = {
-  express: 'v2.project.nextEvent.express',
+  estimate: 'v2.project.nextEvent.estimate',
   measure: 'v2.project.nextEvent.measure',
   design: 'v2.project.nextEvent.design',
-  contract: 'v2.project.nextEvent.contract',
   production: 'v2.project.nextEvent.production',
   installation: 'v2.project.nextEvent.installation',
-};
-
-/** What the first status is for each "Project type" of Create project (`none` without a type). */
-const FIRST_STATUS: Record<V2ProjectType, V2ProjectStatus> = {
-  express: 'express',
-  measure: 'measure',
-  contract: 'design',
 };
 
 export function v2ProjectStatusLabelKey(status: V2ProjectStatus): MessageKey {
   return `v2.project.status.${status}`;
 }
 
-/** Name of the status' next event (Estimate deadline, Measurement visit …); null when it has none. */
+/** Name of the status' next event (Estimate deadline, Measurement visit …); null once closed. */
 export function v2ProjectNextEventLabelKey(status: V2ProjectStatus): MessageKey | null {
-  return NEXT_EVENT_KEY[status] ?? null;
+  if (v2IsProjectClosed(status)) return null;
+  return NEXT_EVENT_KEY[status] ?? 'v2.project.nextEvent.generic';
 }
 
-export function v2ProjectFirstStatus(type: V2ProjectType | null): V2ProjectStatus {
-  return type ? FIRST_STATUS[type] : 'none';
-}
-
-/** Create project with "Contract signing" opens Add contract right after creation. */
-export function v2ProjectOpensAddContract(type: V2ProjectType | null): boolean {
-  return type === 'contract';
-}
-
-/** Statuses a user can pick in Change status. */
+/** Statuses a user can pick in Change status (backwards moves are allowed). */
 export function v2IsChangeableProjectStatus(status: V2ProjectStatus): boolean {
   return CHANGEABLE.includes(status);
 }
 
-/** Position in the stage tracker (0–6); -1 for `none` and `cancelled`. */
+/** Position in the stage tracker (0–10); -1 for `cancelled`. */
 export function v2ProjectStageIndex(status: V2ProjectStatus): number {
   return (V2_PROJECT_STAGES as readonly V2ProjectStatus[]).indexOf(status);
 }
 
 export type V2ProjectStageState = 'done' | 'current' | 'upcoming';
 
-/** One step of the tracker: earlier steps are done, no step is done for `none` / `cancelled`. */
+/** One step of the tracker: earlier steps are done, no step is done for `cancelled`. */
 export function v2ProjectStageState(
   status: V2ProjectStatus,
   stage: V2ProjectStage,
@@ -123,9 +113,8 @@ export function v2IsProjectClosed(status: V2ProjectStatus): boolean {
   return status === 'completed' || status === 'cancelled';
 }
 
-/** Whether the stage's own work is logged (Done / Took place ticked); only express and measure have it. */
+/** Whether the stage's own work is logged (Took place ticked); only the measurement has it. */
 export function v2ProjectStageDone(status: V2ProjectStatus, details: ProjectStageDetails): boolean {
-  if (status === 'express') return details.express?.done === true;
   if (status === 'measure') return details.measure?.done === true;
   return false;
 }
@@ -143,7 +132,7 @@ export type V2ProjectNextEvent =
 
 /**
  * The list's "Next event" cell. Overdue compares calendar days (`now` is the viewer's local day);
- * `done` is the express / measure "Done" flag, which the list does not have (pass `false`).
+ * `done` is the measurement "Took place" flag, which the list does not have (pass `false`).
  */
 export function v2ProjectNextEvent(
   input: {
@@ -168,10 +157,15 @@ export type V2ProjectLockReason = 'viewer' | 'cancelled';
 
 export interface V2ProjectActions {
   readonly canChangeStatus: boolean;
-  readonly canAddContract: boolean;
+  readonly canAddIntroContract: boolean;
+  readonly canAddMainContract: boolean;
   readonly canAddPayment: boolean;
+  /** Estimate lines can be edited until a main contract exists. */
+  readonly canEditEstimate: boolean;
   readonly canCancel: boolean;
   readonly canRestore: boolean;
+  /** Comments are open to every user with office access; only a cancelled project refuses them. */
+  readonly canComment: boolean;
   /**
    * Why the buttons are disabled: `viewer` shows the read-only hint under the status bar (and as a
    * tooltip on the buttons), `cancelled` the grey banner. Null while the user can act.
@@ -181,20 +175,26 @@ export interface V2ProjectActions {
 
 /**
  * Which project buttons are enabled. Mirrors the API: only the manager and admins act
- * (`canEdit`), a cancelled project only accepts Restore, one contract per project, payments
- * need a contract with something left to pay. Comments and documents are open to everyone.
+ * (`canEdit`), a cancelled project only accepts Restore, one contract of each kind per project,
+ * payments need a contract with something left to pay, the estimate locks with the main contract.
+ * Contract and payment edit / delete follow `canChangeStatus` (same rule: manager and admins).
  */
 export function v2ProjectActions(
-  project: Pick<V2Project, 'status' | 'canEdit' | 'contract'>,
+  project: Pick<V2Project, 'status' | 'canEdit' | 'contracts' | 'estimate'>,
 ): V2ProjectActions {
   const cancelled = project.status === 'cancelled';
   const active = project.canEdit && !cancelled;
+  const { intro, main } = project.contracts;
+  const unpaid = (intro?.remaining.amount ?? 0) > 0 || (main?.remaining.amount ?? 0) > 0;
   return {
     canChangeStatus: active,
-    canAddContract: active && project.contract === null,
-    canAddPayment: active && project.contract !== null && project.contract.remaining.amount > 0,
+    canAddIntroContract: active && intro === null,
+    canAddMainContract: active && main === null,
+    canAddPayment: active && unpaid,
+    canEditEstimate: active && !project.estimate.locked,
     canCancel: active,
     canRestore: project.canEdit && cancelled,
+    canComment: !cancelled,
     lockReason: !project.canEdit ? 'viewer' : cancelled ? 'cancelled' : null,
   };
 }

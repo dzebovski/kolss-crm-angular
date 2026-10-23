@@ -1,11 +1,19 @@
 import type { LocaleCode } from '@domain/i18n.types';
-import type { V2Money, V2ProjectCurrency } from './project.types';
+import type { V2EstimateLineKey, V2Money, V2ProjectCurrency } from './project.types';
 
 const NBSP = '\u00a0';
 const SYMBOL: Record<V2ProjectCurrency, string> = { PLN: 'zł', USD: '$', EUR: '€', UAH: '₴' };
 
 /** Currencies offered by Add contract, in the board's order (zł, $, €, ₴). */
 export const V2_PROJECT_CURRENCIES: readonly V2ProjectCurrency[] = ['PLN', 'USD', 'EUR', 'UAH'];
+
+/** The four estimate lines in the order of the card and Create project. */
+export const V2_ESTIMATE_LINES: readonly V2EstimateLineKey[] = [
+  'kitchen',
+  'appliances',
+  'installation',
+  'countertop',
+];
 
 export function v2CurrencySymbol(currency: V2ProjectCurrency): string {
   return SYMBOL[currency];

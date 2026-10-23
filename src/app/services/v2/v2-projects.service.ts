@@ -2,22 +2,31 @@ import { inject, Service } from '@angular/core';
 
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type {
+  AddProjectCommentRequest,
   AddProjectContractRequest,
   AddProjectPaymentRequest,
   CancelProjectRequest,
   ChangeProjectStatusRequest,
   CreateProjectRequest,
+  ProjectBoardQuery,
   ProjectFileKind,
   ProjectListQuery,
+  UpdateLeadInfoRequest,
+  UpdateProjectContractRequest,
+  UpdateProjectDetailsRequest,
+  UpdateProjectEstimateRequest,
+  UpdateProjectPaymentRequest,
 } from '@core/api/generated/kolss-api.types';
 import {
   toV2Project,
+  toV2ProjectBoard,
   toV2ProjectFacets,
   toV2ProjectListItem,
   toV2ProjectTimelineEntry,
 } from '@domain/v2/project.mapper';
 import type {
   V2Project,
+  V2ProjectBoard,
   V2ProjectFacets,
   V2ProjectListItem,
   V2ProjectTimelineEntry,
@@ -49,6 +58,11 @@ export class V2ProjectsService {
     return toV2ProjectFacets(await this.api.projectFacets(query));
   }
 
+  /** Kanban: all 12 columns with counts and the first `limit` (default 20) cards of each. */
+  async board(query: ProjectBoardQuery): Promise<V2ProjectBoard> {
+    return toV2ProjectBoard(await this.api.projectBoard(query));
+  }
+
   async get(id: string): Promise<V2Project> {
     return toV2Project(await this.api.project(id));
   }
@@ -67,7 +81,7 @@ export class V2ProjectsService {
     return toV2Project(await this.api.createProjectFromLead(leadId, body, idempotencyKey));
   }
 
-  /** Changes the status, or updates the details of the current one. */
+  /** Moves to any stage but the contract ones and Cancelled, or updates the current stage's details. */
   async changeStatus(id: string, body: ChangeProjectStatusRequest): Promise<V2Project> {
     return toV2Project(await this.api.changeProjectStatus(id, body));
   }
@@ -80,7 +94,38 @@ export class V2ProjectsService {
     return toV2Project(await this.api.restoreProject(id));
   }
 
-  /** Sets status `contract`; upload the optional file first with `uploadFile` and pass its id. */
+  /** Edit details: manager and designer (`designerId: null` clears it). */
+  async updateDetails(id: string, body: UpdateProjectDetailsRequest): Promise<V2Project> {
+    return toV2Project(await this.api.updateProjectDetails(id, body));
+  }
+
+  /** Edits the linked lead's info from the project (same body as the lead's Fill lead info). */
+  async updateLeadInfo(
+    id: string,
+    body: UpdateLeadInfoRequest,
+    leadVersion?: number,
+  ): Promise<V2Project> {
+    return toV2Project(await this.api.updateProjectLeadInfo(id, body, leadVersion));
+  }
+
+  /** Lines replace, `null` removes, omitted lines stay; 409 `estimate_locked` after a main contract. */
+  async updateEstimate(id: string, body: UpdateProjectEstimateRequest): Promise<V2Project> {
+    return toV2Project(await this.api.updateProjectEstimate(id, body));
+  }
+
+  /** Any user with office access may comment; a cancelled project answers 409. */
+  async addComment(
+    id: string,
+    body: AddProjectCommentRequest,
+    idempotencyKey?: string,
+  ): Promise<V2Project> {
+    return toV2Project(await this.api.addProjectComment(id, body, idempotencyKey));
+  }
+
+  /**
+   * Adds the intro or main contract (`kind`, default main) and moves the status forward to
+   * `intro_contract` / `main_contract`; upload the optional file first with `uploadFile`.
+   */
   async addContract(
     id: string,
     body: AddProjectContractRequest,
@@ -89,12 +134,38 @@ export class V2ProjectsService {
     return toV2Project(await this.api.addProjectContract(id, body, idempotencyKey));
   }
 
+  async updateContract(
+    id: string,
+    contractId: string,
+    body: UpdateProjectContractRequest,
+  ): Promise<V2Project> {
+    return toV2Project(await this.api.updateProjectContract(id, contractId, body));
+  }
+
+  /** Only a contract without payments; delete its payments first. */
+  async deleteContract(id: string, contractId: string): Promise<V2Project> {
+    return toV2Project(await this.api.deleteProjectContract(id, contractId));
+  }
+
+  /** Payments never move the status; `body.contractId` picks the contract (default: main). */
   async addPayment(
     id: string,
     body: AddProjectPaymentRequest,
     idempotencyKey?: string,
   ): Promise<V2Project> {
     return toV2Project(await this.api.addProjectPayment(id, body, idempotencyKey));
+  }
+
+  async updatePayment(
+    id: string,
+    paymentId: string,
+    body: UpdateProjectPaymentRequest,
+  ): Promise<V2Project> {
+    return toV2Project(await this.api.updateProjectPayment(id, paymentId, body));
+  }
+
+  async deletePayment(id: string, paymentId: string): Promise<V2Project> {
+    return toV2Project(await this.api.deleteProjectPayment(id, paymentId));
   }
 
   /**
