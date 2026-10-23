@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.33.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.35.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +9,12 @@ import type {
   AddProjectPaymentRequest,
   CancelProjectRequest,
   ChangeProjectStatusRequest,
+  Client,
+  ClientFacetsResponse,
+  ClientListQuery,
+  ClientListResponse,
+  ClientMatchQuery,
+  ClientMatchResponse,
   ConfirmLeadDocumentRequest,
   CreateLeadDocumentUploadRequest,
   CreateManagerTaskRequest,
@@ -23,6 +29,7 @@ import type {
   ManagerTaskListResponse,
   ManagerTaskMutationResponse,
   ManagerTaskStatus,
+  MergeClientsRequest,
   Project,
   ProjectEvent,
   ProjectFacetsResponse,
@@ -34,6 +41,7 @@ import type {
   TaskFeedQuery,
   TaskFeedResponse,
   TaskList,
+  UpdateClientRequest,
   UpdateManagerTaskRequest,
   UpdateTaskListRequest,
   AnswerLeadQuestionResponse,
@@ -383,6 +391,39 @@ export class KolssApiClient {
     return this.patch(`/v1/task-lists/${encodeURIComponent(id)}`, body, {
       'If-Match': String(version),
     });
+  }
+
+  /** CRM v2 clients list, newest first (2.35.0). */
+  listClients(query: ClientListQuery): Promise<ClientListResponse> {
+    return this.get('/v1/clients', { ...query });
+  }
+
+  /** Chip counts and total; takes the `listClients` filters, ignores `limit` and `cursor`. */
+  clientFacets(query: Omit<ClientListQuery, 'limit' | 'cursor'>): Promise<ClientFacetsResponse> {
+    return this.get('/v1/clients/facets', { ...query });
+  }
+
+  /** Returning-client hint for Create lead. */
+  matchClient(query: ClientMatchQuery): Promise<ClientMatchResponse> {
+    return this.get('/v1/clients/match', { ...query });
+  }
+
+  client(id: string): Promise<Client> {
+    return this.get(`/v1/clients/${encodeURIComponent(id)}`);
+  }
+
+  /** `If-Match` (the client `version`) is optional; a stale value returns 409 `version_conflict`. */
+  updateClient(id: string, body: UpdateClientRequest, version?: number): Promise<Client> {
+    return this.patch(
+      `/v1/clients/${encodeURIComponent(id)}`,
+      body,
+      version === undefined ? {} : { 'If-Match': String(version) },
+    );
+  }
+
+  /** Irreversible; the older client survives. Returns the survivor's card. */
+  mergeClients(id: string, body: MergeClientsRequest, idempotencyKey?: string): Promise<Client> {
+    return this.post(`/v1/clients/${encodeURIComponent(id)}/merge`, body, idempotencyKey);
   }
 
   /** CRM v2 Create project (2.32.0): the lead's single project; the lead moves to status `project`. */

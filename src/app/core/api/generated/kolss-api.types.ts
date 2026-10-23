@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.34.0' as const;
+export const API_CONTRACT_VERSION = '2.35.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -757,6 +757,8 @@ export interface ProjectCancellation {
 export interface Project {
   readonly id: string;
   readonly leadId: string;
+  /** The client (2.35.0); open it with `client(id)`. */
+  readonly clientId: string | null;
   readonly officeId: string;
   /** The lead's reference id (client code). */
   readonly code: string;
@@ -790,6 +792,8 @@ export interface Project {
 export interface ProjectListItem {
   readonly id: string;
   readonly leadId: string;
+  /** Added in 2.35.0. */
+  readonly clientId: string | null;
   readonly code: string;
   readonly clientName: string;
   /** Product tags of the lead. */
@@ -912,4 +916,178 @@ export interface ProjectFileUpload {
   readonly method: string;
   readonly headers: Readonly<Record<string, string>>;
   readonly expiresAt: string;
+}
+
+/**
+ * CRM v2 clients (2.35.0, task CL1). A client is created by the database when a lead arrives
+ * (matched by phone, then email, inside the office) and links the client's leads and projects.
+ */
+export type ClientListFilter = 'all' | 'with_projects' | 'leads_only';
+
+/** `GET /v1/clients` and `GET /v1/clients/facets` query; facets ignore `limit` and `cursor`. */
+export interface ClientListQuery {
+  /** Name, code or phone (digits are compared without formatting). */
+  readonly q?: string;
+  readonly officeId?: string;
+  readonly filter?: ClientListFilter;
+  readonly limit?: number;
+  readonly cursor?: string;
+}
+
+export interface ClientOffice {
+  readonly id: string;
+  readonly code: string;
+  readonly nameUk: string;
+  readonly namePl: string;
+}
+
+/** Shared by the list, the match hint and duplicate candidates; the card (`Client`) extends it. */
+export interface ClientSummary {
+  readonly id: string;
+  /** The code of the client's first lead (`leads.reference_id`). */
+  readonly code: string;
+  readonly name: string;
+  readonly phone: string | null;
+  readonly secondPhone: string | null;
+  readonly email: string | null;
+  readonly officeId: string;
+  readonly office: ClientOffice;
+  /** "Client since". */
+  readonly createdAt: string;
+  /** Channel of the client's first lead (read-only). */
+  readonly firstChannel: string | null;
+  /** Active (not archived) leads. */
+  readonly leadsCount: number;
+  readonly projectsCount: number;
+  /** Manager of the latest project, otherwise of the latest lead. */
+  readonly manager: ProjectPerson | null;
+}
+
+export interface ClientListResponse {
+  readonly items: readonly ClientSummary[];
+  /** Empty when there is no next page. */
+  readonly nextCursor: string;
+}
+
+export interface ClientFacetsResponse {
+  readonly total: number;
+  readonly filter: {
+    readonly all: number;
+    readonly with_projects: number;
+    readonly leads_only: number;
+  };
+}
+
+export interface ClientMatchQuery {
+  readonly officeId?: string;
+  readonly phone?: string;
+  readonly email?: string;
+}
+
+/** Returning-client hint for Create lead; `match` is null when nothing was found. */
+export interface ClientMatchResponse {
+  readonly match: {
+    readonly matchedBy: 'phone' | 'email';
+    readonly client: ClientSummary;
+  } | null;
+}
+
+export interface ClientDuplicate extends ClientSummary {
+  /** Why it is a candidate. Compare `createdAt`; the older client survives a merge. */
+  readonly matchedBy: readonly ('phone' | 'email')[];
+}
+
+export interface ClientContractValue {
+  readonly currency: ProjectCurrency;
+  readonly total: number;
+  readonly paid: number;
+  readonly remaining: number;
+}
+
+export interface ClientLeadRow {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly createdAt: string;
+  readonly channel: string | null;
+  readonly v2Status: string | null;
+  readonly rating: string | null;
+  readonly products: readonly string[];
+  readonly manager: ProjectPerson | null;
+  /** The lead's project, if it became one. */
+  readonly projectId: string | null;
+}
+
+export interface ClientProjectRow {
+  readonly id: string;
+  readonly leadId: string;
+  /** The lead's code. */
+  readonly code: string;
+  /** Product tags of the lead. */
+  readonly title: readonly string[];
+  readonly status: ProjectStatus;
+  readonly projectType: ProjectType | null;
+  readonly createdAt: string;
+  readonly manager: ProjectPerson | null;
+  readonly contract: {
+    readonly currency: ProjectCurrency;
+    readonly totalAmount: number;
+    readonly paidAmount: number;
+  } | null;
+}
+
+export type ClientLanguage = 'pl' | 'uk' | 'en' | 'ru';
+
+/** `GET /v1/clients/{clientId}`. */
+export interface Client extends ClientSummary {
+  readonly address: string | null;
+  readonly language: ClientLanguage | null;
+  /** The note about the client. */
+  readonly about: string | null;
+  /** Optimistic-lock counter for `updateClient`. */
+  readonly version: number;
+  readonly firstLeadId: string | null;
+  readonly stats: {
+    readonly leadsCount: number;
+    readonly projectsCount: number;
+    /** Summed per currency over the projects that have a contract (cancelled ones left out). */
+    readonly contractValue: readonly ClientContractValue[];
+  };
+  /** Active leads, newest first (up to 200). */
+  readonly leads: readonly ClientLeadRow[];
+  /** Newest first (up to 200). */
+  readonly projects: readonly ClientProjectRow[];
+  readonly duplicates: readonly ClientDuplicate[];
+  /** Set when the requested client was merged into this one. */
+  readonly redirectedFrom: { readonly id: string; readonly code: string } | null;
+  readonly permissions: {
+    /** Any user with access to the office. */
+    readonly canEdit: boolean;
+    /** Super admin and office admin of the client's office. */
+    readonly canMerge: boolean;
+  };
+}
+
+/** `PATCH /v1/clients/{clientId}`: partial; `null` or empty text clears an optional field. */
+export interface UpdateClientRequest {
+  readonly name?: string;
+  /** +48 or +380 with 9 digits after the country code. */
+  readonly phone?: string;
+  readonly secondPhone?: string | null;
+  readonly email?: string | null;
+  readonly address?: string | null;
+  readonly language?: ClientLanguage | null;
+  readonly about?: string | null;
+}
+
+/** `POST /v1/clients/{clientId}/merge` (irreversible; super admin and office admin). */
+export interface MergeClientsRequest {
+  /** The other client (same office). */
+  readonly duplicateId: string;
+  /** Which client's value survives per field; the default is `older`. */
+  readonly keep?: {
+    readonly email?: 'older' | 'newer';
+    readonly address?: 'older' | 'newer';
+    readonly about?: 'older' | 'newer';
+  };
 }

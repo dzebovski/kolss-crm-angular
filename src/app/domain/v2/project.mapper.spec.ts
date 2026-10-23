@@ -5,6 +5,7 @@ import { toV2Project, toV2ProjectFacets, toV2ProjectListItem } from './project.m
 const project = (patch: Partial<Project> = {}): Project => ({
   id: 'p1',
   leadId: 'l1',
+  clientId: null,
   officeId: 'o1',
   code: 'W0231',
   status: 'contract',
@@ -124,6 +125,7 @@ describe('toV2ProjectListItem', () => {
     const item: ProjectListItem = {
       id: 'p1',
       leadId: 'l1',
+      clientId: null,
       code: 'W0231',
       clientName: 'Marta Zielińska',
       products: ['kitchen'],

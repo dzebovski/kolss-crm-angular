@@ -1,6 +1,6 @@
 {
-  "version": "2.34.0",
-  "sha256": "8c2e52555466de2c215f7262c48ebc2f1ecbcfd3a8575abb972cd82a7dd84c18",
+  "version": "2.35.0",
+  "sha256": "8e66d21a4fa3550aae7bd73de033419598d635e2aeec06d8503a23a5a9f4ad10",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -69,6 +69,12 @@
     "addProjectPayment",
     "createProjectFileUpload",
     "createFileDownloadURL",
+    "listClients",
+    "getClientFacets",
+    "matchClient",
+    "getClient",
+    "updateClient",
+    "mergeClients",
     "verifyMetaWebhook",
     "receiveMetaWebhook",
     "createLeadSubmission"
