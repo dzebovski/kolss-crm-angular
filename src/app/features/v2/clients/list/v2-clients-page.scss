@@ -1,0 +1,124 @@
+// Values from Clients-list.dc.html. The 320px search, the 200px sort field and the -6px pull of
+// the result count are board values without a token.
+:host {
+  display: contents;
+}
+
+.v2-clients__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+}
+
+.v2-clients__hint {
+  margin-bottom: var(--v2-space-2);
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-clients__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  // One line of the 16px count, kept while loading so nothing below moves.
+  min-height: 22px;
+  margin-bottom: -6px;
+  line-height: 22px;
+}
+
+.v2-clients__result-count {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.v2-clients__result-context {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-clients__result-skeleton {
+  align-self: center;
+  width: 220px;
+  max-width: 100%;
+  height: 14px;
+  border-radius: var(--v2-radius-xs);
+  background: var(--v2-surface-sunk);
+  animation: v2-clients-page-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes v2-clients-page-skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-clients__result-skeleton {
+    animation: none;
+  }
+}
+
+.v2-clients__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-4) 20px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-clients__search {
+  width: 320px;
+  max-width: 100%;
+}
+
+.v2-clients__spacer {
+  flex-grow: 1;
+}
+
+.v2-clients__sort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-clients__sort-select {
+  display: block;
+  width: 200px;
+}
+
+.v2-clients__retry-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+// "No clients found." box inside the table card (board: 24/20px margin, dashed, centred).
+.v2-clients__none {
+  margin: var(--v2-space-5) 20px;
+  padding: var(--v2-space-6);
+  border: 1px dashed var(--v2-line-strong);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.v2-clients__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

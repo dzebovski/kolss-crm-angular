@@ -16,7 +16,7 @@ import {
   type V2PendingDocument,
 } from '@domain/v2/lead-documents';
 import type { V2LeadProduct } from '@domain/v2/lead-card.types';
-import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
+import { v2FormatPhoneInput, v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
 import { v2StoredPhone } from '@domain/v2/phone-storage';
 import type { Office } from '@models/database';
 import { V2LeadsListService } from '@services/v2/v2-leads-list.service';
@@ -30,10 +30,20 @@ import { V2PhoneInput } from '../../ui/v2-phone-input';
 import { V2ProductChips } from '../card/v2-product-chips';
 import { V2DocumentPicker } from '../card/v2-document-picker';
 
+/** Contact fields a caller already knows (New lead on a client card); all stay editable. */
+export interface V2CreateLeadPrefill {
+  readonly name: string;
+  /** Any form the phone mask accepts; the popup formats it. */
+  readonly phone: string;
+  readonly email: string | null;
+  readonly showroom: OfficeId;
+}
+
 export interface V2CreateLeadData {
   readonly offices: readonly Office[];
   readonly defaultOffice: OfficeId | '';
   readonly now: Date;
+  readonly prefill?: V2CreateLeadPrefill;
   /** Called as soon as the lead exists, so the page can open it even if a later upload fails. */
   readonly onCreated: (leadId: string) => void;
 }
@@ -96,10 +106,16 @@ export class V2CreateLeadDialog {
     this.data.now,
     this.data.defaultOffice || 'warsaw',
   );
+  private readonly prefill = this.data.prefill;
   private readonly initial: CreateLeadModel = {
-    name: '',
-    phone: '',
-    email: '',
+    name: this.prefill?.name ?? '',
+    phone: this.prefill
+      ? v2FormatPhoneInput(
+          this.prefill.phone,
+          OFFICE_CONFIG[this.prefill.showroom].phoneCountryCode,
+        )
+      : '',
+    email: this.prefill?.email ?? '',
     showroom: this.data.defaultOffice,
     channel: 'office',
     referredBy: '',

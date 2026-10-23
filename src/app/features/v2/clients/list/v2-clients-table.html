@@ -1,0 +1,118 @@
+<section
+  class="v2-clients-table"
+  [attr.aria-label]="'v2.clients.list' | translate"
+  [attr.aria-busy]="busy() || null"
+>
+  <div class="v2-clients-table__scroll">
+    <div class="v2-clients-table__row v2-clients-table__head">
+      <span>{{ 'v2.clients.col.created' | translate }}</span>
+      <span>{{ 'v2.clients.col.client' | translate }}</span>
+      <span>{{ 'v2.clients.col.leads' | translate }}</span>
+      <span>{{ 'v2.clients.col.projects' | translate }}</span>
+      <span>{{ 'v2.clients.col.manager' | translate }}</span>
+    </div>
+
+    @for (row of rows(); track row.client.id) {
+      <a
+        class="v2-clients-table__row v2-clients-table__item"
+        [routerLink]="['/v2/clients', row.client.id]"
+      >
+        <span class="v2-clients-table__created">{{ row.created }}</span>
+
+        <span class="v2-clients-table__client">
+          <span class="v2-clients-table__avatar" aria-hidden="true">{{ row.initials }}</span>
+          <span class="v2-clients-table__identity">
+            <span class="v2-clients-table__name">{{ row.client.name }}</span>
+            <span class="v2-clients-table__line">
+              <app-v2-code-chip [code]="row.client.code" size="sm" />
+              <span class="v2-clients-table__phone">{{ row.client.phone }}</span>
+            </span>
+          </span>
+        </span>
+
+        <span class="v2-clients-table__count">
+          <span>
+            <strong>{{ row.client.leadsCount }}</strong>
+            <span class="v2-clients-table__muted">{{ row.leadsWord }}</span>
+          </span>
+          @if (row.client.returning) {
+            <span
+              class="v2-clients-table__returning"
+              [title]="'v2.clients.returningHint' | translate"
+              >{{ 'v2.clients.returning' | translate }}</span
+            >
+          }
+        </span>
+
+        <span class="v2-clients-table__projects">
+          @if (row.client.projectsCount > 0) {
+            <strong>{{ row.client.projectsCount }}</strong>
+            <span class="v2-clients-table__muted">{{ row.projectsWord }}</span>
+          } @else {
+            <span class="v2-clients-table__none">{{ 'v2.clients.noProjects' | translate }}</span>
+          }
+        </span>
+
+        <span class="v2-clients-table__manager">{{ row.client.managerName ?? '—' }}</span>
+      </a>
+    }
+
+    @if (busy() || loadingMore()) {
+      <!-- Not a spinner in the content: skeleton rows with the real grid (board note). -->
+      <div aria-hidden="true">
+        @for (width of busy() ? skeletonRows : moreSkeleton; track $index) {
+          <div class="v2-clients-table__row v2-clients-table__skeleton">
+            <span class="v2-clients-table__bar" style="width: 70px"></span>
+            <span class="v2-clients-table__client">
+              <span class="v2-clients-table__avatar"></span>
+              <span class="v2-clients-table__identity">
+                <span class="v2-clients-table__bar" style="width: 150px"></span>
+                <span
+                  class="v2-clients-table__bar v2-clients-table__bar--sm"
+                  style="width: 110px"
+                ></span>
+              </span>
+            </span>
+            <span class="v2-clients-table__bar" style="width: 60px"></span>
+            <span class="v2-clients-table__bar" style="width: 70px"></span>
+            <span class="v2-clients-table__bar" style="width: 100px"></span>
+          </div>
+        }
+      </div>
+    }
+
+    @if (hasMore() && !busy()) {
+      <div class="v2-clients-table__more">
+        <button
+          type="button"
+          appV2Button
+          class="v2-clients-table__more-button"
+          [attr.aria-busy]="loadingMore() || null"
+          [disabled]="loadingMore()"
+          (click)="showMore.emit()"
+        >
+          @if (loadingMore()) {
+            <span class="v2-clients-table__spinner" aria-hidden="true"></span>
+            {{ 'v2.clients.loadingMore' | translate }}
+          } @else {
+            {{ 'v2.clients.showMore' | translate: { count: nextBatch() } }}
+          }
+        </button>
+        <span class="v2-clients-table__page-info">{{
+          'v2.clients.pageInfo' | translate: { shown: clients().length, total: total() }
+        }}</span>
+        @if (moreError(); as message) {
+          <span class="v2-clients-table__more-error" role="alert">{{ message }}</span>
+        }
+      </div>
+    }
+
+    @if (allShown()) {
+      <div class="v2-clients-table__all">
+        {{ 'v2.clients.allShown' | translate: { total: total() } }}
+      </div>
+    }
+
+    <ng-content />
+  </div>
+</section>

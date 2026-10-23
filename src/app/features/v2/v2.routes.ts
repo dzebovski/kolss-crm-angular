@@ -28,6 +28,11 @@ const V2_ROUTES: Routes = [
           import('./projects/card/v2-project-card-page').then((page) => page.V2ProjectCardPage),
       },
       {
+        path: 'clients',
+        loadComponent: () =>
+          import('./clients/list/v2-clients-page').then((page) => page.V2ClientsPage),
+      },
+      {
         path: 'tasks',
         loadComponent: () => import('./tasks/v2-tasks-page').then((page) => page.V2TasksPage),
       },

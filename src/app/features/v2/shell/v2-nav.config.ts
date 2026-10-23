@@ -100,8 +100,8 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     section: 'sales',
     labelKey: 'v2.nav.clients',
     icon: 'clients',
-    route: '/clients',
-    v1: true,
+    route: '/v2/clients',
+    v1: false,
   },
   {
     id: 'meetings-calendar',

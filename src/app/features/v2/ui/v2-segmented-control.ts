@@ -5,6 +5,8 @@ export interface V2SegmentOption<T extends string> {
   readonly label: string;
   /** One segment that can't be picked yet (e.g. an unfinished option). */
   readonly disabled?: boolean;
+  /** Small count after the label (Clients-list.dc.html); omitted or null = none. */
+  readonly count?: number | null;
 }
 
 // Segmented control from the Leads board (Main.dc.html, Period group: SEG / SEG_ON / SEG_OFF).
@@ -22,6 +24,9 @@ export interface V2SegmentOption<T extends string> {
         (click)="value.set(option.value)"
       >
         {{ option.label }}
+        @if (option.count !== undefined && option.count !== null) {
+          <span class="v2-segmented__count">{{ option.count }}</span>
+        }
       </button>
     }
   `,
@@ -38,6 +43,9 @@ export interface V2SegmentOption<T extends string> {
     }
 
     .v2-segmented__segment {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       height: var(--v2-control-sm);
       padding: 0 14px;
       background: transparent;
@@ -51,6 +59,12 @@ export interface V2SegmentOption<T extends string> {
       cursor: pointer;
 
       @include interactive.states(ghost);
+    }
+
+    .v2-segmented__count {
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.7;
     }
 
     .v2-segmented__segment:hover#{interactive.$enabled} {

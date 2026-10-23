@@ -1,0 +1,94 @@
+<div class="v2-clients__title-row">
+  <app-v2-sales-tabs current="clients" />
+  <span class="v2-clients__hint">{{ 'v2.clients.hint' | translate }}</span>
+</div>
+
+@if (!isEmpty()) {
+  <div class="v2-clients__result" aria-live="polite">
+    @if (loaded()) {
+      <span class="v2-clients__result-count">{{ countLabel() }}</span>
+      <span class="v2-clients__result-context">{{ countContext() }}</span>
+    } @else if (loading()) {
+      <span class="v2-clients__result-skeleton" aria-hidden="true"></span>
+    }
+  </div>
+
+  <section class="v2-clients__filters" [attr.aria-label]="'v2.clients.filters' | translate">
+    <app-v2-search-field
+      class="v2-clients__search"
+      [value]="searchText()"
+      [ariaLabel]="'v2.clients.search' | translate"
+      [placeholder]="'v2.clients.searchPlaceholder' | translate"
+      (valueChange)="onSearch($event)"
+    />
+    <div class="v2-clients__spacer"></div>
+    <div class="v2-clients__sort">
+      <span>{{ 'v2.clients.sort' | translate }}</span>
+      <!-- TODO(v2): disabled until the API can sort (see sortOptions). -->
+      <app-v2-select
+        class="v2-clients__sort-select"
+        value="new"
+        [options]="sortOptions()"
+        [ariaLabel]="'v2.clients.sort.aria' | translate"
+        [disabled]="true"
+      />
+    </div>
+    <app-v2-segmented-control
+      [options]="segments()"
+      [value]="query().filter"
+      [ariaLabel]="'v2.clients.show' | translate"
+      (valueChange)="onFilter($event)"
+    />
+  </section>
+}
+
+@if (loadError(); as message) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'v2.clients.error.title' | translate"
+    [hint]="message"
+  >
+    <button type="button" appV2Button variant="primary" (click)="retry()">
+      <svg
+        class="v2-clients__retry-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+        <path d="M20 4v7h-7" />
+      </svg>
+      {{ 'v2.clients.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else if (isEmpty()) {
+  <app-v2-state-panel
+    tone="empty"
+    icon="people"
+    [title]="'v2.clients.empty.title' | translate"
+    [hint]="'v2.clients.empty.hint' | translate"
+  >
+    <button type="button" appV2Button variant="primary" (click)="openCreateLead()">
+      {{ 'v2.clients.empty.action' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else {
+  <app-v2-clients-table
+    [clients]="shown()"
+    [now]="now()"
+    [busy]="loading()"
+    [total]="total()"
+    [hasMore]="hasMore()"
+    [loadingMore]="loadingMore()"
+    [moreError]="moreError()"
+    (showMore)="showMore()"
+  >
+    @if (loading()) {
+      <p class="v2-clients__sr-only" role="status">{{ 'v2.clients.loading' | translate }}</p>
+    } @else if (noResults()) {
+      <p class="v2-clients__none">{{ 'v2.clients.none' | translate }}</p>
+    }
+  </app-v2-clients-table>
+}
