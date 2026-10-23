@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.35.0' as const;
+export const API_CONTRACT_VERSION = '2.36.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -666,17 +666,22 @@ export interface LeadEventCorrectionResponse {
 }
 
 /**
- * CRM v2 projects (2.32.0, task P1). Lifecycle order: none → express → measure → design → contract
- * → production → installation → completed; `cancelled` is outside the order, `none` is
- * "Status not set". `contract` is set only by adding a contract, `cancelled` only by cancelling.
+ * CRM v2 projects (2.32.0, task P1; pipeline 2.1 since 2.36.0, task P1b). Pipeline order: estimate →
+ * intro_contract → measure → design → main_contract → prepayment (target 50%) → factory (sent to
+ * factory) → production → final_payment → installation → completed; `cancelled` is outside the
+ * order. Stages move by hand (backwards allowed); only adding a contract sets `intro_contract` /
+ * `main_contract`, only cancelling sets `cancelled`; payments never move the stage.
  */
 export type ProjectStatus =
-  | 'none'
-  | 'express'
+  | 'estimate'
+  | 'intro_contract'
   | 'measure'
   | 'design'
-  | 'contract'
+  | 'main_contract'
+  | 'prepayment'
+  | 'factory'
   | 'production'
+  | 'final_payment'
   | 'installation'
   | 'completed'
   | 'cancelled';
@@ -703,21 +708,39 @@ export interface ProjectFileRef {
   readonly sizeBytes: number;
 }
 
+/** The intro contract covers the measurement and the design and is credited to the main one. */
+export type ProjectContractKind = 'intro' | 'main';
+
+/** An amount in major units (at most 2 decimals). */
+export interface ProjectMoney {
+  readonly amount: number;
+  readonly currency: ProjectCurrency;
+}
+
 export interface ProjectContract {
   readonly id: string;
+  readonly kind: ProjectContractKind;
   readonly number: string;
   /** `YYYY-MM-DD`. */
   readonly signedOn: string;
   /** Major units, at most 2 decimals. */
   readonly totalAmount: number;
   readonly currency: ProjectCurrency;
+  /** Payments recorded on this contract. */
   readonly paidAmount: number;
+  /** Main contract: the paid intro amount credited to it (same currency); 0 for the intro one. */
+  readonly creditedAmount: number;
+  /** total - paidAmount - creditedAmount, never below 0. */
   readonly remainingAmount: number;
+  /** Main contract only: 50% of the total rounded up to the cent. A target, not a gate. */
+  readonly target50Amount: number | null;
   readonly file: ProjectFileRef | null;
 }
 
 export interface ProjectPayment {
   readonly id: string;
+  readonly contractId: string;
+  readonly contractKind: ProjectContractKind;
   /** In the contract's currency. */
   readonly amount: number;
   readonly paidOn: string;
@@ -727,20 +750,30 @@ export interface ProjectPayment {
   readonly file: ProjectFileRef | null;
 }
 
-/** Details kept per stage so editing one does not erase the other; dates live on the project. */
+/** Details kept per stage; dates live on the project. Only `measure` carries details since 2.36.0. */
 export interface ProjectStageDetails {
-  readonly express?: {
-    readonly responsibleId?: string;
-    readonly what?: string;
-    readonly done?: boolean;
-    readonly result?: string;
-  };
   readonly measure?: {
     readonly responsibleId?: string;
     readonly address?: string;
     readonly done?: boolean;
     readonly result?: string;
   };
+}
+
+export type ProjectEstimateLineKey = 'kitchen' | 'appliances' | 'installation' | 'countertop';
+
+export interface ProjectEstimateLine {
+  readonly amount: number;
+  readonly currency: ProjectCurrency;
+  readonly note: string | null;
+}
+
+export interface ProjectEstimate {
+  readonly lines: Readonly<Record<ProjectEstimateLineKey, ProjectEstimateLine | null>>;
+  /** Sum of the lines per currency. */
+  readonly totals: readonly ProjectMoney[];
+  /** True once a main contract exists: the estimate is then read-only. */
+  readonly locked: boolean;
 }
 
 export interface ProjectCancellation {
@@ -770,6 +803,8 @@ export interface Project {
   readonly eventTime: string | null;
   readonly statusDetails: ProjectStageDetails;
   readonly manager: ProjectPerson | null;
+  /** Optional, chosen in Edit details (2.36.0). */
+  readonly designer: ProjectPerson | null;
   readonly client: {
     readonly name: string;
     readonly phone: string | null;
@@ -781,7 +816,16 @@ export interface Project {
   readonly statusChangedAt: string;
   readonly lastActivityAt: string;
   readonly cancellation: ProjectCancellation | null;
+  readonly estimate: ProjectEstimate;
+  /** The office default intro amount to prefill; null where none is configured (Kyiv, for now). */
+  readonly introDefault: ProjectMoney | null;
+  readonly contracts: {
+    readonly intro: ProjectContract | null;
+    readonly main: ProjectContract | null;
+  };
+  /** @deprecated The main contract; use `contracts`. */
   readonly contract: ProjectContract | null;
+  /** Payments of both contracts, oldest first. */
   readonly payments: readonly ProjectPayment[];
   readonly permissions: {
     /** The responsible manager and admins can change the project; others can only view. */
@@ -803,6 +847,9 @@ export interface ProjectListItem {
   readonly eventDate: string | null;
   readonly eventTime: string | null;
   readonly manager: ProjectPerson | null;
+  readonly designer: ProjectPerson | null;
+  /** Estimate total per currency (empty when no line is set). Added in 2.36.0. */
+  readonly estimateTotals: readonly ProjectMoney[];
   readonly createdAt: string;
   readonly lastComment: { readonly text: string; readonly at: string } | null;
 }
@@ -836,10 +883,19 @@ export type ProjectEventType =
   | 'created'
   | 'status_changed'
   | 'status_updated'
-  | 'contract_added'
-  | 'payment_added'
   | 'cancelled'
-  | 'restored';
+  | 'restored'
+  | 'estimate_updated'
+  | 'contract_added'
+  | 'contract_updated'
+  | 'contract_deleted'
+  | 'payment_added'
+  | 'payment_updated'
+  | 'payment_deleted'
+  | 'details_updated'
+  | 'lead_info_updated'
+  | 'comment'
+  | 'measurement_visit';
 
 export interface ProjectEvent {
   readonly id: string;
@@ -858,14 +914,16 @@ export interface CreateProjectRequest {
   readonly managerId?: string | null;
 }
 
-/** `POST /v1/projects/{projectId}/status`; required fields depend on the status. */
+/**
+ * `POST /v1/projects/{projectId}/status`; required fields depend on the status. Moves to any stage
+ * except `intro_contract` / `main_contract` (only by adding a contract) and `cancelled`.
+ */
 export interface ChangeProjectStatusRequest {
   readonly status: ProjectStatus;
   readonly eventDate?: string | null;
   /** `HH:MM`. */
   readonly eventTime?: string | null;
   readonly responsibleId?: string | null;
-  readonly what?: string | null;
   readonly address?: string | null;
   readonly done?: boolean | null;
   readonly result?: string | null;
@@ -882,6 +940,8 @@ export interface CancelProjectRequest {
 }
 
 export interface AddProjectContractRequest {
+  /** Default `main`; at most one contract of each kind per project. */
+  readonly kind?: ProjectContractKind;
   readonly number: string;
   readonly signedOn: string;
   /** Major units, at most 2 decimals. */
@@ -892,6 +952,8 @@ export interface AddProjectContractRequest {
 }
 
 export interface AddProjectPaymentRequest {
+  /** Defaults to the main contract (the intro one when it is the only contract). */
+  readonly contractId?: string | null;
   /** Major units, at most 2 decimals; never above the remaining balance. */
   readonly amount: number;
   readonly paidOn: string;
@@ -899,6 +961,70 @@ export interface AddProjectPaymentRequest {
   /** A receipt uploaded with kind `receipt`. */
   readonly fileId?: string | null;
 }
+
+/** `PATCH /v1/projects/{projectId}`: send at least one. */
+export interface UpdateProjectDetailsRequest {
+  /** Cannot be cleared. */
+  readonly managerId?: string;
+  /** `null` clears the designer. */
+  readonly designerId?: string | null;
+}
+
+export interface ProjectEstimateLineInput {
+  readonly amount: number;
+  readonly currency: ProjectCurrency;
+  readonly note?: string | null;
+}
+
+/** `PUT /v1/projects/{projectId}/estimate`: a line replaces the stored one, `null` removes it, an omitted line is untouched. */
+export interface UpdateProjectEstimateRequest {
+  readonly lines: Readonly<
+    Partial<Record<ProjectEstimateLineKey, ProjectEstimateLineInput | null>>
+  >;
+}
+
+export interface AddProjectCommentRequest {
+  /** 1–1000 characters. */
+  readonly text: string;
+}
+
+/** `PATCH /v1/projects/{projectId}/contracts/{contractId}`: partial, send at least one. */
+export interface UpdateProjectContractRequest {
+  readonly number?: string;
+  readonly signedOn?: string;
+  readonly totalAmount?: number;
+  readonly currency?: ProjectCurrency;
+  /** Replaces the contract file; it cannot be cleared yet. */
+  readonly fileId?: string;
+}
+
+/** `PATCH /v1/projects/{projectId}/payments/{paymentId}`: partial, send at least one. */
+export interface UpdateProjectPaymentRequest {
+  readonly amount?: number;
+  readonly paidOn?: string;
+  /** An empty string clears the note. */
+  readonly note?: string;
+  /** Replaces the receipt; it cannot be cleared yet. */
+  readonly fileId?: string;
+}
+
+export interface ProjectBoardColumn {
+  readonly status: ProjectStatus;
+  /** All matching projects in this status. */
+  readonly count: number;
+  readonly items: readonly ProjectListItem[];
+  /** Empty when all cards are shown; else the cursor for `listProjects` with `status=<column>`. */
+  readonly nextCursor: string;
+}
+
+/** `GET /v1/projects/board`: all 12 statuses in pipeline order, `cancelled` last. */
+export interface ProjectBoard {
+  readonly total: number;
+  readonly columns: readonly ProjectBoardColumn[];
+}
+
+/** `GET /v1/projects/board` takes the `listProjects` filters; `limit` is cards per column (1–50, default 20). */
+export type ProjectBoardQuery = ProjectListQuery;
 
 export type ProjectFileKind = 'contract' | 'receipt';
 

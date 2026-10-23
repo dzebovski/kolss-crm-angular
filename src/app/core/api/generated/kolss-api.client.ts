@@ -1,10 +1,11 @@
-// Generated contract adapter for api/openapi.yaml v2.35.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.36.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '@env/environment';
 import type {
+  AddProjectCommentRequest,
   AddProjectContractRequest,
   AddProjectPaymentRequest,
   CancelProjectRequest,
@@ -31,6 +32,8 @@ import type {
   ManagerTaskStatus,
   MergeClientsRequest,
   Project,
+  ProjectBoard,
+  ProjectBoardQuery,
   ProjectEvent,
   ProjectFacetsResponse,
   ProjectFileUpload,
@@ -43,6 +46,10 @@ import type {
   TaskList,
   UpdateClientRequest,
   UpdateManagerTaskRequest,
+  UpdateProjectContractRequest,
+  UpdateProjectDetailsRequest,
+  UpdateProjectEstimateRequest,
+  UpdateProjectPaymentRequest,
   UpdateTaskListRequest,
   AnswerLeadQuestionResponse,
   AppointmentListResponse,
@@ -445,8 +452,48 @@ export class KolssApiClient {
     return this.get('/v1/projects/facets', { ...query });
   }
 
+  /** Projects kanban (2.36.0): all 12 statuses with counts and the first `limit` cards of each. */
+  projectBoard(query: ProjectBoardQuery): Promise<ProjectBoard> {
+    return this.get('/v1/projects/board', { ...query });
+  }
+
   project(id: string): Promise<Project> {
     return this.get(`/v1/projects/${encodeURIComponent(id)}`);
+  }
+
+  /** Edit details: manager and designer (2.36.0). */
+  updateProjectDetails(id: string, body: UpdateProjectDetailsRequest): Promise<Project> {
+    return this.patch(`/v1/projects/${encodeURIComponent(id)}`, body);
+  }
+
+  /**
+   * Edit the linked lead's info from the project card (2.36.0): the body of `updateLeadInfo`.
+   * `If-Match` (the lead version) is optional here.
+   */
+  updateProjectLeadInfo(
+    id: string,
+    body: UpdateLeadInfoRequest,
+    leadVersion?: number,
+  ): Promise<Project> {
+    return this.patch(
+      `/v1/projects/${encodeURIComponent(id)}/lead-info`,
+      body,
+      leadVersion === undefined ? {} : { 'If-Match': String(leadVersion) },
+    );
+  }
+
+  /** Four estimate lines; allowed until a main contract exists (409 `estimate_locked`). */
+  updateProjectEstimate(id: string, body: UpdateProjectEstimateRequest): Promise<Project> {
+    return this.put(`/v1/projects/${encodeURIComponent(id)}/estimate`, body);
+  }
+
+  /** Any user with access to the project's office (2.36.0). */
+  addProjectComment(
+    id: string,
+    body: AddProjectCommentRequest,
+    idempotencyKey?: string,
+  ): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/comments`, body, idempotencyKey);
   }
 
   /** Newest first, up to 200 entries. */
@@ -484,6 +531,41 @@ export class KolssApiClient {
     idempotencyKey?: string,
   ): Promise<Project> {
     return this.post(`/v1/projects/${encodeURIComponent(id)}/payments`, body, idempotencyKey);
+  }
+
+  updateProjectContract(
+    id: string,
+    contractId: string,
+    body: UpdateProjectContractRequest,
+  ): Promise<Project> {
+    return this.patch(
+      `/v1/projects/${encodeURIComponent(id)}/contracts/${encodeURIComponent(contractId)}`,
+      body,
+    );
+  }
+
+  /** Only a contract without payments (409 `contract_has_payments`). */
+  deleteProjectContract(id: string, contractId: string): Promise<Project> {
+    return this.delete(
+      `/v1/projects/${encodeURIComponent(id)}/contracts/${encodeURIComponent(contractId)}`,
+    );
+  }
+
+  updateProjectPayment(
+    id: string,
+    paymentId: string,
+    body: UpdateProjectPaymentRequest,
+  ): Promise<Project> {
+    return this.patch(
+      `/v1/projects/${encodeURIComponent(id)}/payments/${encodeURIComponent(paymentId)}`,
+      body,
+    );
+  }
+
+  deleteProjectPayment(id: string, paymentId: string): Promise<Project> {
+    return this.delete(
+      `/v1/projects/${encodeURIComponent(id)}/payments/${encodeURIComponent(paymentId)}`,
+    );
   }
 
   /** Step 1 of a contract file / receipt upload: presigned direct upload (2.32.0). */
