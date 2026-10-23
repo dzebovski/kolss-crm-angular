@@ -78,6 +78,7 @@
           [collapsible]="card.collapsible"
           (open)="select($event)"
           (circle)="toggle($event)"
+          (plan)="planNextStep($event)"
         />
       }
       @if (truncated()) {
@@ -85,4 +86,15 @@
       }
     }
   </div>
+
+  @if (selectedTask(); as openTask) {
+    <app-v2-task-panel
+      class="v2-tasks__panel"
+      [task]="openTask"
+      [now]="now()"
+      [employees]="employees()"
+      (closed)="closePanel()"
+      (changed)="reloadAll()"
+    />
+  }
 </div>

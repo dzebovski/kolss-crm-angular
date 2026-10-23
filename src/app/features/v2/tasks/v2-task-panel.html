@@ -1,0 +1,275 @@
+@let item = task();
+<header class="v2-panel__head">
+  <app-v2-task-kind-badge [kind]="item.kind" [label]="kindLabel() | translate" />
+  <button
+    type="button"
+    class="v2-panel__close"
+    [attr.aria-label]="'v2.tasks.panel.close' | translate"
+    (click)="closed.emit()"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  </button>
+</header>
+
+<div class="v2-panel__body">
+  @if (error(); as message) {
+    <p class="v2-panel__error" role="alert">{{ message }}</p>
+  }
+
+  @if (editing()) {
+    <form class="v2-panel__edit" (submit)="$event.preventDefault(); saveEdit()">
+      <label class="v2-panel__field">
+        <span class="v2-panel__label">{{ 'v2.tasks.panel.titleLabel' | translate }}</span>
+        <input
+          class="v2-panel__input v2-panel__input--text"
+          maxlength="1000"
+          [value]="titleDraft()"
+          (input)="titleDraft.set($any($event.target).value)"
+        />
+      </label>
+      <label class="v2-panel__field">
+        <span class="v2-panel__label">{{ 'v2.tasks.panel.noteLabel' | translate }}</span>
+        <textarea
+          class="v2-panel__input v2-panel__input--text v2-panel__textarea"
+          rows="3"
+          maxlength="5000"
+          [value]="noteDraft()"
+          (input)="noteDraft.set($any($event.target).value)"
+        ></textarea>
+      </label>
+      <div class="v2-panel__edit-actions">
+        <button type="button" appV2Button size="sm" (click)="cancelEdit()">
+          {{ 'v2.tasks.panel.cancel' | translate }}
+        </button>
+        <button type="submit" appV2Button size="sm" variant="primary" [disabled]="pending()">
+          {{ 'v2.tasks.panel.save' | translate }}
+        </button>
+      </div>
+    </form>
+  } @else {
+    <div class="v2-panel__title-row">
+      <h2 class="v2-panel__title">{{ title() }}</h2>
+      @if (canEditText()) {
+        <button type="button" appV2Button size="sm" (click)="startEdit()">
+          {{ 'v2.tasks.panel.edit' | translate }}
+        </button>
+      }
+    </div>
+  }
+
+  <div
+    class="v2-panel__status"
+    role="group"
+    [attr.aria-label]="'v2.tasks.panel.status' | translate"
+  >
+    @for (option of statusOptions(); track option.value) {
+      <button
+        type="button"
+        class="v2-panel__segment"
+        [attr.aria-pressed]="statusValue() === option.value"
+        [disabled]="readOnly() || pending()"
+        (click)="setStatus(option.value)"
+      >
+        {{ option.label | translate }}
+      </button>
+    }
+  </div>
+
+  <div class="v2-panel__rows">
+    <div class="v2-panel__row">
+      <span class="v2-panel__label">{{ 'v2.tasks.panel.assignee' | translate }}</span>
+      <app-v2-select
+        class="v2-panel__select"
+        [ariaLabel]="'v2.tasks.panel.assignee' | translate"
+        [options]="assigneeOptions()"
+        [value]="assigneeValue()"
+        [disabled]="readOnly() || pending()"
+        (valueChange)="setAssignee($event)"
+      />
+    </div>
+
+    <div class="v2-panel__row">
+      <span class="v2-panel__label">{{ 'v2.tasks.panel.due' | translate }}</span>
+      <div class="v2-panel__due">
+        <div class="v2-panel__due-inputs">
+          <input
+            type="date"
+            class="v2-panel__input"
+            [attr.aria-label]="'v2.tasks.panel.dueDate' | translate"
+            [value]="dateValue()"
+            [disabled]="readOnly() || pending()"
+            (change)="setDate($any($event.target).value)"
+          />
+          <input
+            type="time"
+            class="v2-panel__input"
+            [attr.aria-label]="'v2.tasks.panel.dueTime' | translate"
+            [value]="timeValue()"
+            [disabled]="readOnly() || pending() || !dateValue()"
+            (change)="setTime($any($event.target).value)"
+          />
+        </div>
+        @if (dueNote()) {
+          <span class="v2-panel__due-note">{{ dueNote() }}</span>
+        }
+      </div>
+    </div>
+
+    @if (item.link; as link) {
+      <div class="v2-panel__row">
+        <span class="v2-panel__label">{{ 'v2.tasks.panel.linked' | translate }}</span>
+        @if (link.type === 'lead') {
+          <a class="v2-panel__link" [routerLink]="['/v2/leads', link.id]">
+            @if (link.code) {
+              <app-v2-code-chip [code]="link.code" size="sm" />
+            }
+            <span class="v2-panel__link-name">{{ link.name }}</span>
+            <span class="v2-panel__link-kind">{{ linkLabel()! | translate }}</span>
+          </a>
+        } @else {
+          <!-- TODO(v2): project and client links open their cards once P1 / CL1 can validate them. -->
+          <span class="v2-panel__link v2-panel__link--plain">
+            @if (link.code) {
+              <app-v2-code-chip [code]="link.code" size="sm" />
+            }
+            <span class="v2-panel__link-name">{{ link.name }}</span>
+            <span class="v2-panel__link-kind">{{ linkLabel()! | translate }}</span>
+          </span>
+        }
+      </div>
+      @if (link.phone) {
+        <div class="v2-panel__row">
+          <span class="v2-panel__label">{{ 'v2.tasks.panel.phone' | translate }}</span>
+          <span class="v2-panel__value">{{ link.phone }}</span>
+        </div>
+      }
+    } @else if (item.list; as list) {
+      <div class="v2-panel__row">
+        <span class="v2-panel__label">{{ 'v2.tasks.panel.list' | translate }}</span>
+        <a
+          class="v2-panel__link"
+          routerLink="."
+          [queryParams]="{ view: null, list: list.id, task: null, who: null }"
+          queryParamsHandling="merge"
+        >
+          <span class="v2-panel__dot" [style.background]="list.color" aria-hidden="true"></span>
+          <span class="v2-panel__link-name">{{ list.name }}</span>
+        </a>
+      </div>
+    } @else {
+      <div class="v2-panel__row">
+        <span class="v2-panel__label">{{ 'v2.tasks.panel.linked' | translate }}</span>
+        <span class="v2-panel__muted">{{ 'v2.tasks.panel.nothing' | translate }}</span>
+      </div>
+    }
+  </div>
+
+  @if (item.note && !editing()) {
+    <p class="v2-panel__note">{{ item.note }}</p>
+  }
+
+  @if (showCallResult()) {
+    <div class="v2-panel__actions-block">
+      <span class="v2-panel__label">{{ 'v2.tasks.panel.callResult' | translate }}</span>
+      <div class="v2-panel__results">
+        <button
+          type="button"
+          appV2Button
+          size="lg"
+          dot="success"
+          class="v2-panel__result"
+          [disabled]="pending()"
+          (click)="callResult('success')"
+        >
+          {{ 'v2.tasks.panel.callSuccess' | translate }}
+        </button>
+        <button
+          type="button"
+          appV2Button
+          size="lg"
+          dot="later"
+          class="v2-panel__result"
+          [disabled]="pending()"
+          (click)="callResult('later')"
+        >
+          {{ 'v2.status.later' | translate }}
+        </button>
+        <button
+          type="button"
+          appV2Button
+          size="lg"
+          dot="noanswer"
+          class="v2-panel__result"
+          [disabled]="pending()"
+          (click)="callResult('noanswer')"
+        >
+          {{ 'v2.status.noanswer' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (showNoNextStep()) {
+    <div class="v2-panel__buttons">
+      <button
+        type="button"
+        appV2Button
+        variant="primary"
+        size="sm"
+        [disabled]="pending()"
+        (click)="planNextStep()"
+      >
+        {{ 'v2.tasks.panel.planNext' | translate }}
+      </button>
+      <button type="button" appV2Button size="sm" [disabled]="pending()" (click)="markLost()">
+        {{ 'v2.tasks.panel.markLost' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (showClearReminder()) {
+    <div class="v2-panel__buttons">
+      <button
+        type="button"
+        appV2Button
+        variant="primary"
+        size="sm"
+        [disabled]="pending()"
+        (click)="clearReminder()"
+      >
+        {{ 'v2.tasks.panel.markDone' | translate }}
+      </button>
+    </div>
+  }
+
+  @if (item.automatic) {
+    <p class="v2-panel__hint">{{ 'v2.tasks.panel.readOnly' | translate }}</p>
+    @if (item.link?.type === 'lead') {
+      <div class="v2-panel__buttons">
+        <a appV2Button size="sm" [routerLink]="['/v2/leads', item.link!.id]">
+          {{ 'v2.tasks.panel.openLead' | translate }}
+        </a>
+      </div>
+    }
+  }
+
+  @if (canDelete()) {
+    <div class="v2-panel__buttons">
+      <button type="button" appV2Button size="sm" [disabled]="pending()" (click)="remove()">
+        {{ 'v2.tasks.panel.delete' | translate }}
+      </button>
+    </div>
+  }
+
+  <div class="v2-panel__origin">
+    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5" />
+      <path d="M12 8h.01" />
+    </svg>
+    <span>{{ origin() }}</span>
+  </div>
+</div>

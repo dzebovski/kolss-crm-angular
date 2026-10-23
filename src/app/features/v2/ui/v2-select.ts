@@ -20,6 +20,7 @@ export interface V2SelectOption {
         class="v2-select__control"
         [attr.aria-label]="ariaLabel() || null"
         [value]="value()"
+        [disabled]="disabled()"
         (change)="onChange($event)"
         (blur)="touch.emit()"
       >
@@ -97,6 +98,7 @@ export class V2Select implements FormValueControl<string> {
   readonly value = model('');
   readonly options = input.required<readonly V2SelectOption[]>();
   readonly ariaLabel = input('');
+  readonly disabled = input(false);
   readonly touch = output<void>();
 
   protected onChange(event: Event): void {

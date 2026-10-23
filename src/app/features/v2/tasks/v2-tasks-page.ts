@@ -30,7 +30,9 @@ import { V2_NOW } from '../core/v2-clock';
 import { V2Button } from '../ui/v2-button';
 import { V2EmptyState } from '../ui/v2-empty-state';
 import type { V2SelectOption } from '../ui/v2-select';
+import { V2TaskLeadPopups } from './v2-task-lead-popups';
 import { V2TaskListHead } from './v2-task-list-head';
+import { V2TaskPanel } from './v2-task-panel';
 import { V2TaskGroupCard } from './v2-task-group';
 import {
   V2_TASK_CHIP_KINDS,
@@ -71,6 +73,7 @@ interface GroupCard {
     V2EmptyState,
     V2TaskGroupCard,
     V2TaskListHead,
+    V2TaskPanel,
     V2TasksSidebar,
     V2TasksToolbar,
   ],
@@ -86,6 +89,7 @@ export class V2TasksPage {
   private readonly clock = inject(V2_NOW);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly leadPopups = inject(V2TaskLeadPopups);
 
   // Query params, bound by `withComponentInputBinding()`.
   readonly view = input<string>();
@@ -235,6 +239,14 @@ export class V2TasksPage {
   });
 
   protected readonly selectedId = computed(() => this.query().taskId);
+  /** The open task, while it is still in the feed (a closed call-back or a deleted task is not). */
+  protected readonly selectedTask = computed(() => {
+    const id = this.selectedId();
+    return id ? (this.items().find((task) => task.id === id) ?? null) : null;
+  });
+  protected readonly employees = computed(() =>
+    this.employeesResource.hasValue() ? this.employeesResource.value() : [],
+  );
   protected readonly actionError = signal('');
   private readonly busy = signal(false);
 
@@ -271,6 +283,26 @@ export class V2TasksPage {
     this.navigate({
       hidden: hidden.includes(kind) ? hidden.filter((value) => value !== kind) : [...hidden, kind],
     });
+  }
+
+  protected closePanel(): void {
+    this.navigate({ taskId: null });
+  }
+
+  /** "Plan next step" of a lead with nothing planned opens Add comment on that lead. */
+  protected async planNextStep(task: V2Task): Promise<void> {
+    if (!task.link || this.busy()) return;
+    this.busy.set(true);
+    this.actionError.set('');
+    try {
+      if (await this.leadPopups.openComment(task.link.id)) this.reloadAll();
+    } catch (error) {
+      this.actionError.set(
+        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
+      );
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   /** The row circle: a manual task flips between To do and Done; a comment reminder is cleared. */

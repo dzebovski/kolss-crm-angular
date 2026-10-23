@@ -92,3 +92,21 @@ export function v2LongDate(date: Date, locale: LocaleCode): string {
   }).format(date);
   return text.charAt(0).toLocaleUpperCase(NAME_LOCALE[locale]) + text.slice(1);
 }
+
+/** "Where does this item come from" line at the foot of the detail panel. */
+export function v2TaskOrigin(task: V2Task, t: Translate): string {
+  const name = task.createdBy?.name ?? '';
+  if (task.kind === 'nonext') return t('v2.tasks.origin.nonext');
+  if (task.source === 'reminder') {
+    if (task.subKind === 'comment') {
+      return name ? t('v2.tasks.origin.commentBy', { name }) : t('v2.tasks.origin.comment');
+    }
+    return task.subKind === 'thinking'
+      ? t('v2.tasks.origin.thinking')
+      : t('v2.tasks.origin.callback');
+  }
+  if (task.source === 'appointment') {
+    return name ? t('v2.tasks.origin.visitBy', { name }) : t('v2.tasks.origin.visit');
+  }
+  return name ? t('v2.tasks.origin.manual', { name }) : t('v2.tasks.origin.system');
+}
