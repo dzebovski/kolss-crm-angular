@@ -1,0 +1,110 @@
+@use '../../../../styles/v2/interactive';
+
+// Values from Tasks-my-day-panel.dc.html (New menu): 300px panel at 48px, 36px icon squares.
+:host {
+  position: relative;
+  display: block;
+}
+
+svg {
+  display: block;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-new-menu__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  height: var(--v2-control-md);
+  padding: 0 var(--v2-space-3) 0 14px;
+  background: var(--v2-ink);
+  border: 1px solid var(--v2-ink);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-on-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  @include interactive.states(ink);
+}
+
+.v2-new-menu__divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.v2-new-menu__panel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 30;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  width: 300px;
+  padding: 6px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow-menu);
+}
+
+.v2-new-menu__panel--visible {
+  display: flex;
+}
+
+.v2-new-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+  padding: 10px;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  background: transparent;
+  color: var(--v2-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(none);
+
+  &:hover,
+  &[data-active='true'] {
+    background-color: var(--v2-surface-sunk);
+  }
+}
+
+.v2-new-menu__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface-sunk);
+}
+
+.v2-new-menu__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.v2-new-menu__label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.v2-new-menu__hint {
+  color: var(--v2-muted);
+  font-size: 12px;
+}

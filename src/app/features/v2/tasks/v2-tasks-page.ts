@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
@@ -17,19 +18,23 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { canViewAllTasks } from '@core/policy/task.policy';
 import { SessionService } from '@core/session/session.service';
 import { formatV2CardDate } from '@domain/v2/date-format';
+import { v2CanEditTaskList } from '@domain/v2/task-form';
 import {
   v2DayProgress,
   v2GroupTasks,
   v2AssignableEmployees,
   type V2TaskGroup,
 } from '@domain/v2/task-view';
-import type { V2Task, V2TaskKind } from '@domain/v2/task.types';
+import type { V2Task, V2TaskKind, V2TaskList } from '@domain/v2/task.types';
 import { UsersService } from '@services/users.service';
 import { V2TasksService, type V2TaskFeedFilters } from '@services/v2/v2-tasks.service';
 import { V2_NOW } from '../core/v2-clock';
+import { V2DialogService } from '../ui/dialog/v2-dialog.service';
 import { V2Button } from '../ui/v2-button';
 import { V2EmptyState } from '../ui/v2-empty-state';
 import type { V2SelectOption } from '../ui/v2-select';
+import { V2NewListDialog, type V2NewListData } from './v2-new-list-dialog';
+import { V2NewTaskDialog, type V2NewTaskData } from './v2-new-task-dialog';
 import { V2TaskLeadPopups } from './v2-task-lead-popups';
 import { V2TaskListHead } from './v2-task-list-head';
 import { V2TaskPanel } from './v2-task-panel';
@@ -47,6 +52,7 @@ import {
   v2VisibleKinds,
   type V2TasksQuery,
 } from './v2-tasks-query';
+import { V2TasksNewMenu } from './v2-tasks-new-menu';
 import { V2TasksSidebar } from './v2-tasks-sidebar';
 import { V2TasksToolbar } from './v2-tasks-toolbar';
 
@@ -74,6 +80,7 @@ interface GroupCard {
     V2TaskGroupCard,
     V2TaskListHead,
     V2TaskPanel,
+    V2TasksNewMenu,
     V2TasksSidebar,
     V2TasksToolbar,
   ],
@@ -90,6 +97,7 @@ export class V2TasksPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly leadPopups = inject(V2TaskLeadPopups);
+  private readonly dialogs = inject(V2DialogService);
 
   // Query params, bound by `withComponentInputBinding()`.
   readonly view = input<string>();
@@ -178,6 +186,15 @@ export class V2TasksPage {
   protected readonly openList = computed(() => {
     const id = this.query().listId;
     return id ? (this.lists().find((list) => list.id === id) ?? null) : null;
+  });
+  protected readonly canEditList = computed(() => {
+    const list = this.openList();
+    return list
+      ? v2CanEditTaskList(list, {
+          id: this.auth.sessionContext()?.user.id ?? null,
+          isSuperAdmin: this.session.officeContext()?.isSuperAdmin ?? false,
+        })
+      : false;
   });
   /** A list id that no list has, once the lists arrived. */
   protected readonly listMissing = computed(
@@ -283,6 +300,33 @@ export class V2TasksPage {
     this.navigate({
       hidden: hidden.includes(kind) ? hidden.filter((value) => value !== kind) : [...hidden, kind],
     });
+  }
+
+  /** New task; from "Add task to this list" it opens linked to that list. */
+  protected async openNewTask(listId: string | null = null): Promise<void> {
+    const ref = this.dialogs.open<string, V2NewTaskData>(V2NewTaskDialog, {
+      employees: this.employees(),
+      lists: this.lists(),
+      listId,
+    });
+    const createdId = await firstValueFrom(ref.closed);
+    if (!createdId) return;
+    this.reloadAll();
+    this.navigate({ taskId: createdId });
+  }
+
+  /** New task list, or Edit list (the list's owner and super admins). */
+  protected async openListDialog(list: V2TaskList | null = null): Promise<void> {
+    const ref = this.dialogs.open<V2TaskList, V2NewListData>(V2NewListDialog, {
+      employees: this.employees(),
+      list,
+    });
+    const saved = await firstValueFrom(ref.closed);
+    if (!saved) return;
+    this.listsResource.reload();
+    // A new list opens at once; an edited one stays where it is.
+    if (!list) this.navigate({ view: 'list', listId: saved.id, taskId: null, assigneeId: '' });
+    else this.feedResource.reload();
   }
 
   protected closePanel(): void {

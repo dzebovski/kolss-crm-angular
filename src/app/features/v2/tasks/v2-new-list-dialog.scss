@@ -1,0 +1,25 @@
+.v2-new-list__error {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-danger-bg);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-danger);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.v2-new-list__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--v2-space-3);
+}
+
+.v2-new-list__note {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-ground);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}

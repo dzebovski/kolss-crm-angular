@@ -1,0 +1,77 @@
+@use '../../../../styles/v2/chip';
+
+.v2-new-task__error {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-danger-bg);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-danger);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+// Linked to: a segmented tab strip on `ground`, as the status control (board `linkKinds`).
+.v2-new-task__kinds {
+  display: flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: var(--v2-space-1);
+  background: var(--v2-ground);
+  border-radius: var(--v2-radius-sm);
+}
+
+.v2-new-task__kind {
+  height: var(--v2-control-sm);
+  padding: 0 var(--v2-space-3);
+  border: 0;
+  border-radius: var(--v2-radius-xs);
+  background: transparent;
+  color: var(--v2-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover:not(:disabled, [aria-selected='true']) {
+    color: var(--v2-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 2px;
+  }
+
+  &[aria-selected='true'] {
+    background: var(--v2-surface);
+    box-shadow:
+      var(--v2-shadow-control),
+      0 0 0 1px var(--v2-line);
+    color: var(--v2-ink);
+    font-weight: 600;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.v2-new-task__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+}
+
+.v2-new-task__chip {
+  @include chip.base;
+
+  &[aria-pressed='true'] {
+    @include chip.on;
+  }
+}
+
+.v2-new-task__due {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: var(--v2-space-2);
+}

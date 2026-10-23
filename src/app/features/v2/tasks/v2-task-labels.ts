@@ -1,5 +1,6 @@
 import type { MessageKey } from '@core/i18n/messages';
 import type { V2TaskGroupKey } from '@domain/v2/task-view';
+import type { V2NewTaskLinkKind } from '@domain/v2/task-form';
 import type { V2TaskKind, V2TaskStatus, V2TaskView } from '@domain/v2/task.types';
 
 /** Chip order of the board: Call-back · Visit · From comment · No next step · Task list · Personal. */
@@ -80,6 +81,14 @@ export const V2_TASK_STATUS_LABEL: Record<V2TaskStatus, MessageKey> = {
   todo: 'v2.tasks.status.todo',
   progress: 'v2.tasks.status.progress',
   done: 'v2.tasks.status.done',
+};
+
+export const V2_TASK_LINK_LABEL: Record<V2NewTaskLinkKind, MessageKey> = {
+  none: 'v2.tasks.link.none',
+  lead: 'v2.tasks.link.lead',
+  client: 'v2.tasks.link.client',
+  project: 'v2.tasks.link.project',
+  list: 'v2.tasks.link.list',
 };
 
 /** Title of an automatic item that has no text of its own, by the API's `subKind`. */

@@ -3,6 +3,7 @@
     <div class="v2-tasks__eyebrow">{{ 'v2.nav.section.planning' | translate }}</div>
     <h1 class="v2-tasks__h1">{{ 'v2.nav.tasks' | translate }}</h1>
   </div>
+  <app-v2-tasks-new-menu (newTask)="openNewTask()" (newList)="openListDialog()" />
 </div>
 
 <div class="v2-tasks__body">
@@ -13,12 +14,17 @@
     [lists]="lists()"
     [listsFailed]="listsFailed()"
     [canViewAll]="canViewAll()"
+    (newList)="openListDialog()"
   />
 
   <div class="v2-tasks__main">
     @if (isListView()) {
       @if (openList(); as openedList) {
-        <app-v2-task-list-head [list]="openedList" />
+        <app-v2-task-list-head
+          [list]="openedList"
+          [canEdit]="canEditList()"
+          (edit)="openListDialog(openedList)"
+        />
       }
     } @else {
       <app-v2-tasks-toolbar
@@ -76,9 +82,11 @@
           [showList]="!isListView()"
           [danger]="card.danger"
           [collapsible]="card.collapsible"
+          [canAdd]="card.canAdd"
           (open)="select($event)"
           (circle)="toggle($event)"
           (plan)="planNextStep($event)"
+          (add)="openNewTask(query().listId)"
         />
       }
       @if (truncated()) {

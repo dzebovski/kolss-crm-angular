@@ -1,0 +1,65 @@
+<app-v2-dialog
+  [title]="(editing ? 'v2.tasks.editList.title' : 'v2.tasks.newList.title') | translate"
+  [subtitle]="(editing ? 'v2.tasks.editList.subtitle' : 'v2.tasks.newList.subtitle') | translate"
+  width="status"
+  [hint]="'v2.tasks.newList.foot' | translate"
+  [cancelLabel]="(editing ? 'v2.tasks.editList.cancel' : 'v2.tasks.newList.cancel') | translate"
+  [saveLabel]="(editing ? 'v2.tasks.editList.save' : 'v2.tasks.newList.save') | translate"
+  [saveDisabled]="saving()"
+  [invalid]="errorCount() > 0"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="touched.set(true)"
+>
+  @if (error(); as message) {
+    <p class="v2-new-list__error" role="alert">{{ message }}</p>
+  }
+
+  <app-v2-form-field
+    [label]="'v2.tasks.newList.name' | translate"
+    [required]="true"
+    [hint]="'v2.tasks.newList.nameHint' | translate"
+    [error]="fieldError('name')"
+  >
+    <input
+      cdkFocusInitial
+      [placeholder]="'v2.tasks.newList.namePlaceholder' | translate"
+      [formField]="fields.name"
+    />
+  </app-v2-form-field>
+
+  <app-v2-form-field [label]="'v2.tasks.newList.description' | translate">
+    <textarea
+      rows="3"
+      [placeholder]="'v2.tasks.newList.descriptionPlaceholder' | translate"
+      [formField]="fields.description"
+    ></textarea>
+  </app-v2-form-field>
+
+  <div class="v2-new-list__pair">
+    <app-v2-form-field [label]="'v2.tasks.newList.when' | translate">
+      <input
+        [placeholder]="'v2.tasks.newList.whenPlaceholder' | translate"
+        [formField]="fields.datesText"
+      />
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'v2.tasks.newList.owner' | translate"
+      [required]="true"
+      [hint]="'v2.tasks.newList.ownerHint' | translate"
+      [error]="fieldError('owner')"
+    >
+      <select [formField]="fields.ownerId">
+        <option value="">{{ 'v2.tasks.newTask.choosePerson' | translate }}</option>
+        @for (person of owners(); track person.id) {
+          <option [value]="person.id">{{ person.displayName }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+  </div>
+
+  @if (!editing) {
+    <p class="v2-new-list__note">{{ 'v2.tasks.newList.note' | translate }}</p>
+  }
+</app-v2-dialog>

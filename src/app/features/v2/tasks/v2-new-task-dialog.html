@@ -1,0 +1,144 @@
+<app-v2-dialog
+  [title]="'v2.tasks.newTask.title' | translate"
+  [subtitle]="'v2.tasks.newTask.subtitle' | translate"
+  width="documents"
+  [hint]="hint()"
+  [cancelLabel]="'v2.tasks.newTask.cancel' | translate"
+  [saveLabel]="'v2.tasks.newTask.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="errorCount() > 0"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="touched.set(true)"
+>
+  @if (error(); as message) {
+    <p class="v2-new-task__error" role="alert">{{ message }}</p>
+  }
+
+  <app-v2-form-field
+    [label]="'v2.tasks.newTask.what' | translate"
+    [required]="true"
+    [hint]="'v2.tasks.newTask.whatHint' | translate"
+    [error]="fieldError('title')"
+  >
+    <input
+      cdkFocusInitial
+      [placeholder]="'v2.tasks.newTask.whatPlaceholder' | translate"
+      [formField]="fields.title"
+    />
+  </app-v2-form-field>
+
+  <app-v2-field-group
+    [label]="'v2.tasks.newTask.linkedTo' | translate"
+    [hint]="linkHint()"
+    [error]="fieldError('link')"
+  >
+    <div class="v2-new-task__kinds" role="tablist">
+      @for (kind of linkKinds; track kind) {
+        <!-- TODO(v2): Client and Project links stay off until the API accepts them (P1 / CL1). -->
+        <button
+          type="button"
+          role="tab"
+          class="v2-new-task__kind"
+          [attr.aria-selected]="model().linkKind === kind"
+          [disabled]="!kindAvailable(kind)"
+          [attr.title]="kindAvailable(kind) ? null : ('v2.account.comingSoon' | translate)"
+          (click)="setLinkKind(kind)"
+        >
+          {{ linkLabel[kind] | translate }}
+        </button>
+      }
+    </div>
+    @switch (model().linkKind) {
+      @case ('lead') {
+        <app-v2-task-lead-picker
+          [officeId]="selectedOfficeId()"
+          (picked)="setLead($event?.id ?? '', $event)"
+        />
+      }
+      @case ('list') {
+        <app-v2-form-field>
+          <select [attr.aria-label]="'v2.tasks.pick.list' | translate" [formField]="fields.linkId">
+            <option value="">{{ 'v2.tasks.pick.list' | translate }}</option>
+            @for (list of lists; track list.id) {
+              <option [value]="list.id">{{ list.name }}</option>
+            }
+          </select>
+        </app-v2-form-field>
+      }
+    }
+  </app-v2-field-group>
+
+  <app-v2-form-field
+    [label]="'v2.tasks.assignee' | translate"
+    [required]="true"
+    [hint]="assigneeHint()"
+    [error]="fieldError('assignee')"
+  >
+    <select [formField]="fields.assigneeId">
+      <option value="">{{ 'v2.tasks.newTask.choosePerson' | translate }}</option>
+      @for (person of assignees(); track person.id) {
+        <option [value]="person.id">{{ person.displayName }}</option>
+      }
+    </select>
+  </app-v2-form-field>
+
+  <app-v2-field-group
+    [label]="'v2.tasks.newTask.due' | translate"
+    [hint]="'v2.tasks.newTask.dueHint' | translate"
+    [error]="fieldError('date')"
+  >
+    <div
+      class="v2-new-task__chips"
+      role="group"
+      [attr.aria-label]="'v2.popup.quickDates' | translate"
+    >
+      @for (chip of dateChips(); track chip.key) {
+        <button
+          type="button"
+          class="v2-new-task__chip"
+          [attr.aria-pressed]="chip.on"
+          (click)="setDate(chip.date)"
+        >
+          {{ chip.label }}
+        </button>
+      }
+      <button
+        type="button"
+        class="v2-new-task__chip"
+        [attr.aria-pressed]="model().date === ''"
+        (click)="setDate('')"
+      >
+        {{ 'v2.tasks.due.none' | translate }}
+      </button>
+    </div>
+    <div class="v2-new-task__due">
+      <app-v2-form-field>
+        <input
+          type="date"
+          [attr.aria-label]="'v2.tasks.panel.dueDate' | translate"
+          [value]="model().date"
+          (input)="setDate($any($event.target).value)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field>
+        <input
+          type="time"
+          [attr.aria-label]="'v2.tasks.newTask.timeOptional' | translate"
+          [disabled]="!model().date"
+          [value]="model().time"
+          (input)="setTime($any($event.target).value)"
+        />
+      </app-v2-form-field>
+    </div>
+  </app-v2-field-group>
+
+  <app-v2-form-field [label]="'v2.tasks.newTask.details' | translate">
+    <textarea
+      rows="3"
+      [placeholder]="'v2.tasks.newTask.detailsPlaceholder' | translate"
+      [formField]="fields.note"
+    ></textarea>
+  </app-v2-form-field>
+</app-v2-dialog>
