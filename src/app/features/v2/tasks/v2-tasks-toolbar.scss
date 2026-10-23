@@ -1,0 +1,134 @@
+@use '../../../../styles/v2/interactive';
+@use '../../../../styles/v2/type';
+
+// Values from Tasks-my-day-panel.dc.html (page head card): 18/20px padding, 22px title, 240px
+// search, 200px assignee, 30px source chips.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-toolbar__top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-4);
+}
+
+.v2-toolbar__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+}
+
+.v2-toolbar__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.v2-toolbar__sub {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-toolbar__day {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.v2-toolbar__overdue {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-danger-bg);
+  color: var(--v2-danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.v2-toolbar__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 200px;
+}
+
+.v2-toolbar__progress-label {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-toolbar__bar {
+  height: 6px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-line-soft);
+}
+
+.v2-toolbar__bar-fill {
+  height: 100%;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-status-success);
+}
+
+.v2-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-3);
+  padding-top: 14px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.v2-toolbar__search {
+  width: 240px;
+}
+
+.v2-toolbar__assignee {
+  width: 200px;
+}
+
+.v2-toolbar__divider {
+  width: 1px;
+  height: 24px;
+  background: var(--v2-line);
+}
+
+.v2-toolbar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.v2-toolbar__chip {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 30px;
+  padding: 0 var(--v2-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius-pill);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+// Off: the chip drops its tint and gets a dashed outline, as on the board.
+.v2-toolbar__chip--off {
+  border: 1px dashed var(--v2-line-strong);
+  background-color: var(--v2-surface);
+  color: var(--v2-subtle);
+}

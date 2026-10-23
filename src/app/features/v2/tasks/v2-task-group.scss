@@ -1,0 +1,120 @@
+@use '../../../../styles/v2/interactive';
+
+// Values from Tasks-my-day-panel.dc.html (section): white card, 16px radius, 48px header.
+:host {
+  display: block;
+  overflow: hidden;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-group__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  height: 48px;
+  padding: 0 var(--v2-space-4);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-group__label {
+  margin: 0;
+  color: var(--v2-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.v2-group__label--danger {
+  color: var(--v2-danger);
+}
+
+.v2-group__count {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--v2-space-2);
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.v2-group__count--danger {
+  background: var(--v2-danger-bg);
+  color: var(--v2-danger);
+}
+
+.v2-group__spacer {
+  flex-grow: 1;
+}
+
+.v2-group__link {
+  height: 28px;
+  padding: 0 var(--v2-space-2);
+  border: 0;
+  border-radius: var(--v2-radius-xs);
+  background: transparent;
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+.v2-group__empty {
+  margin: 0;
+  padding: var(--v2-space-4);
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-group__fold {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--v2-space-4);
+  border: 0;
+  border-bottom: 1px solid var(--v2-line-soft);
+  background: #fafaf8;
+  color: var(--v2-muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+.v2-group__add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--v2-space-4);
+  border: 0;
+  background: var(--v2-surface);
+  color: var(--v2-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}

@@ -1,0 +1,124 @@
+// Values from Tasks-list-expo.dc.html (list header card): 18/20px padding, facts grid
+// 160 / 180 / 1fr / 200px with a 24px gap.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-list-head__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--v2-space-4);
+}
+
+.v2-list-head__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 560px;
+}
+
+.v2-list-head__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.v2-list-head__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.v2-list-head__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.v2-list-head__description {
+  color: var(--v2-ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.v2-list-head__facts {
+  display: grid;
+  grid-template-columns: 160px 180px minmax(0, 1fr) 200px;
+  gap: var(--v2-space-5);
+  align-items: end;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.v2-list-head__fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+
+  dt {
+    color: var(--v2-muted);
+    font-size: 12px;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+.v2-list-head__people {
+  display: flex;
+}
+
+.v2-list-head__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  margin-right: -6px;
+  border: 2px solid var(--v2-surface);
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.v2-list-head__progress-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.v2-list-head__overdue {
+  color: var(--v2-danger);
+  font-weight: 600;
+}
+
+.v2-list-head__bar {
+  height: 6px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-line-soft);
+}
+
+.v2-list-head__bar-fill {
+  height: 100%;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-status-success);
+}

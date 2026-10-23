@@ -113,7 +113,6 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     v1: true,
   },
   {
-    // Placeholder page until Tasks is redesigned (user, 2026-09-24).
     id: 'tasks',
     kind: 'link',
     section: 'planning',

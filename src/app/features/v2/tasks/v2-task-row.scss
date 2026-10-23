@@ -1,0 +1,219 @@
+@use '../../../../styles/v2/interactive';
+
+// Values from Tasks-my-day-panel.dc.html (row): 60px min height, 8/16px padding, 12px gap, 22px
+// circle, 28px badge, 132px action and 118px due columns are board values without a token.
+:host {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+  box-sizing: border-box;
+  min-height: 60px;
+  padding: var(--v2-space-2) var(--v2-space-4);
+  border-bottom: 1px solid var(--v2-line-soft);
+  background: var(--v2-surface);
+
+  &:hover {
+    background: var(--v2-ground);
+  }
+}
+
+:host(.v2-task-row--selected) {
+  background: var(--v2-ground);
+  box-shadow: inset 3px 0 0 var(--v2-ink);
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-task-row__circle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.75px solid var(--v2-faint);
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface);
+  color: var(--v2-on-ink);
+  cursor: pointer;
+
+  @include interactive.states(none);
+
+  svg {
+    stroke-width: 3;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 1;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--v2-ink);
+  }
+
+  &[data-status='progress'] {
+    border-color: var(--v2-status-later);
+    background: linear-gradient(90deg, var(--v2-status-later) 50%, var(--v2-surface) 50%);
+  }
+
+  &[data-status='done'] {
+    border-color: var(--v2-status-success);
+    background: var(--v2-status-success);
+  }
+}
+
+.v2-task-row__text {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+// The title is the row's one tab stop; its ::after covers the row so a click anywhere opens it.
+.v2-task-row__open {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::after {
+    @include interactive.focus-ring(-2px);
+  }
+}
+
+.v2-task-row__open--done {
+  color: var(--v2-subtle);
+  text-decoration: line-through;
+}
+
+.v2-task-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  min-width: 0;
+  color: var(--v2-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.v2-task-row__entity {
+  overflow: hidden;
+  color: var(--v2-ink-2);
+  text-overflow: ellipsis;
+}
+
+.v2-task-row__list {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--v2-ink-2);
+}
+
+.v2-task-row__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.v2-task-row__progress {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--v2-space-2);
+  border-radius: var(--v2-radius-pill);
+  background: #e8f0fa;
+  color: #1f4f8a;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.v2-task-row__action {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  width: 132px;
+}
+
+.v2-task-row__quick {
+  position: relative;
+  z-index: 1;
+  height: 30px;
+  font-size: 12px;
+}
+
+.v2-task-row__due {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  width: 118px;
+  white-space: nowrap;
+}
+
+.v2-task-row__due-primary {
+  color: var(--v2-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.v2-task-row__due-secondary {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-task-row__due--danger .v2-task-row__due-primary {
+  color: var(--v2-danger);
+}
+
+.v2-task-row__due--muted .v2-task-row__due-primary {
+  color: var(--v2-subtle);
+}
+
+.v2-task-row__who {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}

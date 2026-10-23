@@ -28,11 +28,8 @@ const V2_ROUTES: Routes = [
           import('./projects/card/v2-project-card-page').then((page) => page.V2ProjectCardPage),
       },
       {
-        // Tasks will be redesigned; until then the section shows an in-development block.
         path: 'tasks',
-        loadComponent: () =>
-          import('./shell/v2-placeholder-page').then((page) => page.V2PlaceholderPage),
-        data: { sectionKey: 'v2.nav.section.planning', titleKey: 'v2.nav.tasks' },
+        loadComponent: () => import('./tasks/v2-tasks-page').then((page) => page.V2TasksPage),
       },
       {
         // The v2 design system: tokens and the live UI kit.

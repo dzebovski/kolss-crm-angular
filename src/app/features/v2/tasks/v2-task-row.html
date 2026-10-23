@@ -1,0 +1,109 @@
+@let item = task();
+<button
+  type="button"
+  class="v2-task-row__circle"
+  [attr.data-status]="item.status"
+  [disabled]="!circleActive()"
+  [attr.aria-label]="(done() ? 'v2.tasks.row.markTodo' : 'v2.tasks.row.markDone') | translate"
+  [attr.title]="circleActive() ? null : ('v2.tasks.row.locked' | translate)"
+  (click)="circle.emit(item)"
+>
+  @if (done()) {
+    <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m5 12 5 5L20 7" />
+    </svg>
+  }
+</button>
+
+<app-v2-task-kind-badge [kind]="item.kind" [attr.title]="kindLabel() | translate" />
+
+<div class="v2-task-row__text">
+  <button
+    type="button"
+    class="v2-task-row__open"
+    [class.v2-task-row__open--done]="done()"
+    [attr.aria-current]="selected() ? 'true' : null"
+    (click)="open.emit(item)"
+  >
+    {{ title() }}
+  </button>
+  <span class="v2-task-row__meta">
+    @if (item.link; as link) {
+      @if (link.code) {
+        <app-v2-code-chip [code]="link.code" size="sm" />
+      }
+      @if (link.name) {
+        <span class="v2-task-row__entity">{{ link.name }}</span>
+      }
+      <span aria-hidden="true">·</span>
+    }
+    @if (showList() && item.list; as list) {
+      <span class="v2-task-row__list">
+        <span class="v2-task-row__dot" [style.background]="list.color" aria-hidden="true"></span>
+        {{ list.name }}
+      </span>
+      <span aria-hidden="true">·</span>
+    }
+    <span>{{ kindLabel() | translate }}</span>
+  </span>
+</div>
+
+@if (item.status === 'progress') {
+  <span class="v2-task-row__progress">{{ 'v2.tasks.status.progress' | translate }}</span>
+}
+
+<div class="v2-task-row__action">
+  @if (showCall()) {
+    <button
+      type="button"
+      appV2Button
+      size="sm"
+      class="v2-task-row__quick"
+      (click)="open.emit(item)"
+    >
+      <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"
+        />
+      </svg>
+      {{ 'v2.tasks.row.logCall' | translate }}
+    </button>
+  } @else if (showVisit()) {
+    <!-- TODO(v2): marking a visit as visited belongs to the calendar (CA3); the feed item is read-only. -->
+    <button
+      type="button"
+      appV2Button
+      size="sm"
+      class="v2-task-row__quick"
+      disabled
+      [attr.title]="'v2.account.comingSoon' | translate"
+    >
+      {{ 'v2.tasks.row.markVisited' | translate }}
+    </button>
+  } @else if (showPlan()) {
+    <button
+      type="button"
+      appV2Button
+      size="sm"
+      class="v2-task-row__quick"
+      (click)="plan.emit(item)"
+    >
+      {{ 'v2.tasks.row.planNext' | translate }}
+    </button>
+  }
+</div>
+
+<div
+  class="v2-task-row__due"
+  [class.v2-task-row__due--danger]="due().danger"
+  [class.v2-task-row__due--muted]="due().muted"
+>
+  <span class="v2-task-row__due-primary">{{ due().primary }}</span>
+  @if (due().secondary) {
+    <span class="v2-task-row__due-secondary">{{ due().secondary }}</span>
+  }
+</div>
+
+@if (showAssignee()) {
+  <span class="v2-task-row__who" [attr.title]="item.assignee?.name ?? null">{{ initials() }}</span>
+}

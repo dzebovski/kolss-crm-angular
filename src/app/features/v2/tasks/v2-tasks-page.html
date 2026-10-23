@@ -1,0 +1,88 @@
+<div class="v2-tasks__title-row">
+  <div class="v2-tasks__title">
+    <div class="v2-tasks__eyebrow">{{ 'v2.nav.section.planning' | translate }}</div>
+    <h1 class="v2-tasks__h1">{{ 'v2.nav.tasks' | translate }}</h1>
+  </div>
+</div>
+
+<div class="v2-tasks__body">
+  <app-v2-tasks-sidebar
+    [view]="query().view"
+    [listId]="query().listId"
+    [counts]="counts()"
+    [lists]="lists()"
+    [listsFailed]="listsFailed()"
+    [canViewAll]="canViewAll()"
+  />
+
+  <div class="v2-tasks__main">
+    @if (isListView()) {
+      @if (openList(); as openedList) {
+        <app-v2-task-list-head [list]="openedList" />
+      }
+    } @else {
+      <app-v2-tasks-toolbar
+        [title]="title()"
+        [subtitle]="subtitle()"
+        [progress]="progress()"
+        [search]="searchText()"
+        [assigneeOptions]="assigneeOptions()"
+        [assignee]="query().assigneeId"
+        [hidden]="query().hidden"
+        (searchChange)="onSearch($event)"
+        (assigneeChange)="onAssignee($event)"
+        (kindToggle)="toggleKind($event)"
+      />
+    }
+
+    @if (actionError(); as message) {
+      <p class="v2-tasks__action-error" role="alert">{{ message }}</p>
+    }
+
+    @if (listMissing()) {
+      <app-v2-empty-state
+        layout="list"
+        role="alert"
+        [title]="'v2.tasks.listMissing.title' | translate"
+        [hint]="'v2.tasks.listMissing.hint' | translate"
+      />
+    } @else if (loading()) {
+      <section class="v2-tasks__skeleton" aria-hidden="true">
+        @for (row of [1, 2, 3, 4]; track row) {
+          <div class="v2-tasks__skeleton-row"></div>
+        }
+      </section>
+      <p class="v2-tasks__sr-only" role="status">{{ 'v2.tasks.loading' | translate }}</p>
+    } @else if (loadError(); as message) {
+      <app-v2-empty-state
+        layout="list"
+        role="alert"
+        [title]="'v2.tasks.error.title' | translate"
+        [hint]="message"
+      >
+        <button type="button" appV2Button size="sm" class="v2-tasks__retry" (click)="retry()">
+          {{ 'v2.tasks.retry' | translate }}
+        </button>
+      </app-v2-empty-state>
+    } @else {
+      @for (card of cards(); track card.group.key) {
+        <app-v2-task-group
+          [group]="card.group"
+          [label]="card.label"
+          [emptyText]="card.emptyText"
+          [now]="now()"
+          [selectedId]="selectedId()"
+          [showAssignee]="query().view === 'all' || isListView()"
+          [showList]="!isListView()"
+          [danger]="card.danger"
+          [collapsible]="card.collapsible"
+          (open)="select($event)"
+          (circle)="toggle($event)"
+        />
+      }
+      @if (truncated()) {
+        <p class="v2-tasks__note">{{ 'v2.tasks.truncated' | translate }}</p>
+      }
+    }
+  </div>
+</div>

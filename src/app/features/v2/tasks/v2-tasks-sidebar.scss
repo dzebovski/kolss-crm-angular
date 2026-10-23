@@ -1,0 +1,111 @@
+@use '../../../../styles/v2/interactive';
+
+// Values from Tasks-my-day-panel.dc.html (nav): 248px card, 12px padding, 40px items.
+:host {
+  display: block;
+  flex-shrink: 0;
+  width: 248px;
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-tasks-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--v2-space-3);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-tasks-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--v2-control-md);
+  padding: 0 10px;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+
+  @include interactive.states(ghost);
+
+  &[aria-current='page'] {
+    background-color: var(--v2-surface-sunk);
+    font-weight: 600;
+  }
+}
+
+.v2-tasks-nav__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-tasks-nav__count {
+  margin-left: auto;
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.v2-tasks-nav__count--danger {
+  color: var(--v2-danger);
+}
+
+.v2-tasks-nav__dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.v2-tasks-nav__lists-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 10px 6px;
+}
+
+.v2-tasks-nav__lists-title {
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.v2-tasks-nav__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-xs);
+  background: var(--v2-surface);
+  color: var(--v2-ink);
+  cursor: pointer;
+
+  @include interactive.states(surface);
+}
+
+.v2-tasks-nav__note {
+  margin: 10px 10px 0;
+  color: var(--v2-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}

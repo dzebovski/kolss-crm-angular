@@ -1,0 +1,108 @@
+@use '../../../../styles/v2/type';
+
+// Layout from Tasks-my-day-panel.dc.html: title row, then the 248px sidebar and the feed with
+// 16px gaps (the 420px detail panel joins them on the right).
+:host {
+  display: contents;
+}
+
+.v2-tasks__title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+}
+
+.v2-tasks__title {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+}
+
+.v2-tasks__eyebrow {
+  @include type.text(eyebrow);
+
+  color: var(--v2-muted);
+}
+
+.v2-tasks__h1 {
+  @include type.text(lead-name);
+
+  margin: 0;
+}
+
+.v2-tasks__body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--v2-space-4);
+}
+
+.v2-tasks__main {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+  min-width: 0;
+}
+
+.v2-tasks__action-error {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-danger-bg);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-danger);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.v2-tasks__note {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-tasks__retry {
+  margin-top: var(--v2-space-2);
+}
+
+// Not drawn: a loading placeholder in the size of a section with a few rows.
+.v2-tasks__skeleton {
+  overflow: hidden;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-tasks__skeleton-row {
+  height: 60px;
+  border-bottom: 1px solid var(--v2-line-soft);
+  background: linear-gradient(var(--v2-surface-sunk), var(--v2-surface-sunk)) 16px 50% / 55% 14px
+    no-repeat;
+  animation: v2-tasks-skeleton 1.2s ease-in-out infinite;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+@keyframes v2-tasks-skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-tasks__skeleton-row {
+    animation: none;
+  }
+}
+
+.v2-tasks__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
