@@ -1759,4 +1759,9 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.client.merge.confirm': 'I checked — this is the same person',
   'v2.client.merge.confirmRequired': 'Confirm that this is the same person',
   'v2.client.merge.footer': '{newer} moves into {older} · {counts}',
+  'v2.client.openCard': 'Open client {code}',
+  'v2.createLead.existingClient':
+    'Existing client {code} · {name} ({info}) — the lead will be added to them',
+  'v2.createLead.addsToClient':
+    'Adds a new lead to existing client {code} · no new client is created',
 } as const;

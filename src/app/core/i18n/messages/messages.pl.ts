@@ -1768,4 +1768,9 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.client.merge.confirm': 'Sprawdziłem — to ta sama osoba',
   'v2.client.merge.confirmRequired': 'Potwierdź, że to ta sama osoba',
   'v2.client.merge.footer': '{newer} przechodzi do {older} · {counts}',
+  'v2.client.openCard': 'Otwórz klienta {code}',
+  'v2.createLead.existingClient':
+    'Istniejący klient {code} · {name} ({info}) — lead zostanie do niego dodany',
+  'v2.createLead.addsToClient':
+    'Dodaje nowego leada do istniejącego klienta {code} · nowy klient nie powstaje',
 } as const;

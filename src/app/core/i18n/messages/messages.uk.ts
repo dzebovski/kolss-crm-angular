@@ -1760,6 +1760,11 @@ export const messagesUk = {
   'v2.client.merge.confirm': 'Я перевірив — це та сама людина',
   'v2.client.merge.confirmRequired': 'Підтвердьте, що це та сама людина',
   'v2.client.merge.footer': '{newer} переходить до {older} · {counts}',
+  'v2.client.openCard': 'Відкрити клієнта {code}',
+  'v2.createLead.existingClient':
+    'Існуючий клієнт {code} · {name} ({info}) — лід буде додано до нього',
+  'v2.createLead.addsToClient':
+    'Додає новий лід до існуючого клієнта {code} · новий клієнт не створюється',
 } as const;
 
 export type MessageKey = keyof typeof messagesUk;
