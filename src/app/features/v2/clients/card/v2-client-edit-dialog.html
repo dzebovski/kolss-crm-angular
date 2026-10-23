@@ -1,0 +1,103 @@
+<app-v2-dialog
+  [title]="'v2.client.edit.title' | translate"
+  [subtitle]="'v2.client.edit.subtitle' | translate"
+  width="form"
+  [hint]="footerHint()"
+  [cancelLabel]="'v2.editContact.cancel' | translate"
+  [saveLabel]="'v2.editContact.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="changeCount() > 0"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-client-edit__error" role="alert">{{ message }}</p>
+  }
+
+  <div class="v2-client-edit__context">
+    <span class="v2-client-edit__code">{{ client.code }}</span>
+    <span class="v2-client-edit__name">{{ client.name }}</span>
+    <span class="v2-client-edit__counts">· {{ counts() }}</span>
+  </div>
+
+  <app-v2-form-field
+    [label]="'v2.editContact.fullName' | translate"
+    [required]="true"
+    [hint]="'v2.client.edit.nameHint' | translate"
+    [error]="nameError()"
+  >
+    <input cdkFocusInitial autocomplete="name" [formField]="fields.name" />
+  </app-v2-form-field>
+
+  <div class="v2-client-edit__pair">
+    <app-v2-form-field
+      [label]="'v2.card.phone' | translate"
+      [required]="true"
+      [hint]="'v2.client.edit.phoneHint' | translate"
+      [error]="phoneError()"
+    >
+      <app-v2-phone-input
+        [value]="model().phone"
+        [countryCode]="phoneCountryCode"
+        [placeholder]="phonePlaceholder"
+        (valueChange)="setPhone($event)"
+        (touch)="phoneBlurred.set(true)"
+      />
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'v2.client.edit.secondPhone' | translate"
+      [hint]="'v2.client.edit.phone2Hint' | translate"
+      [error]="phone2Error()"
+    >
+      <app-v2-phone-input
+        [value]="model().secondPhone"
+        [countryCode]="phoneCountryCode"
+        [placeholder]="phonePlaceholder"
+        (valueChange)="setSecondPhone($event)"
+        (touch)="phone2Blurred.set(true)"
+      />
+    </app-v2-form-field>
+  </div>
+
+  <app-v2-form-field
+    [label]="'v2.card.email' | translate"
+    [hint]="'v2.client.edit.emailHint' | translate"
+    [error]="emailError()"
+  >
+    <input
+      type="email"
+      autocomplete="email"
+      placeholder="name@example.com"
+      [formField]="fields.email"
+      (blur)="emailBlurred.set(true)"
+    />
+  </app-v2-form-field>
+
+  <app-v2-form-field
+    [label]="'v2.client.address' | translate"
+    [hint]="'v2.client.edit.addressHint' | translate"
+  >
+    <input autocomplete="street-address" [formField]="fields.address" />
+  </app-v2-form-field>
+
+  <app-v2-form-field [label]="'v2.client.edit.language' | translate">
+    <select class="v2-client-edit__language" [formField]="fields.language">
+      <option value="">{{ 'v2.card.notSet' | translate }}</option>
+      @for (language of languages; track language.value) {
+        <option [value]="language.value">{{ language.labelKey | translate }}</option>
+      }
+    </select>
+  </app-v2-form-field>
+
+  <app-v2-form-field [label]="'v2.client.edit.about' | translate">
+    <textarea
+      rows="3"
+      [placeholder]="'v2.client.edit.aboutPlaceholder' | translate"
+      [formField]="fields.about"
+    ></textarea>
+  </app-v2-form-field>
+
+  <p class="v2-client-edit__note">{{ 'v2.client.edit.leadNote' | translate }}</p>
+</app-v2-dialog>

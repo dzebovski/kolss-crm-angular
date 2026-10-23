@@ -1,0 +1,99 @@
+@use '../../../../../styles/v2/interactive';
+
+// Values from Client-card.dc.html (Leads / Projects tables). Leads columns 112 / 200 / 140 / 160 /
+// 1fr / 20, projects 1.2fr / 220 / 170 / 150 / 180 / 20, 40px header, 12/24px row padding (14px
+// for projects) are board values without a token.
+:host {
+  display: block;
+}
+
+.v2-rows__row {
+  display: grid;
+  align-items: center;
+  box-sizing: border-box;
+  min-width: 920px;
+  padding: 0 24px;
+  column-gap: var(--v2-space-3);
+}
+
+.v2-rows__row--leads {
+  grid-template-columns: 112px 200px 140px 160px minmax(0, 1fr) 20px;
+}
+
+.v2-rows__row--projects {
+  grid-template-columns: minmax(0, 1.2fr) 220px 170px 150px 180px 20px;
+}
+
+.v2-rows__head {
+  height: 40px;
+  border-top: 1px solid var(--v2-line-soft);
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.v2-rows__item {
+  padding-block: 12px;
+  border-top: 1px solid var(--v2-line-soft);
+  color: var(--v2-ink);
+  font-size: 14px;
+  text-decoration: none;
+
+  @include interactive.transition;
+
+  &:hover {
+    background-color: var(--v2-ground);
+  }
+
+  &:focus-visible {
+    @include interactive.focus-ring(-2px);
+  }
+}
+
+.v2-rows__row--projects.v2-rows__item {
+  padding-block: 14px;
+}
+
+.v2-rows__strong {
+  font-weight: 500;
+}
+
+.v2-rows__title {
+  font-weight: 600;
+}
+
+.v2-rows__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-rows__sub {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-rows__sub--paid {
+  color: var(--v2-success-ink);
+}
+
+.v2-rows__muted {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-rows__manager {
+  overflow: hidden;
+  color: var(--v2-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-rows__chevron {
+  fill: none;
+  stroke: var(--v2-muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

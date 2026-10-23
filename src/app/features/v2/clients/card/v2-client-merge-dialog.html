@@ -1,0 +1,107 @@
+<app-v2-dialog
+  [title]="'v2.client.merge.title' | translate"
+  [subtitle]="
+    sides()
+      ? ('v2.client.merge.subtitle'
+        | translate: { older: sides()!.older.code, newer: sides()!.newer.code })
+      : ''
+  "
+  width="form"
+  [hint]="footerHint()"
+  [cancelLabel]="'v2.client.merge.cancel' | translate"
+  [saveLabel]="'v2.client.merge.save' | translate"
+  [saveDisabled]="saving() || loading() || loadFailed()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="confirmed()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-merge__error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="v2-merge__status" role="status">{{ 'v2.client.merge.loading' | translate }}</p>
+  } @else if (loadFailed()) {
+    <p class="v2-merge__error" role="alert">{{ 'v2.client.merge.loadFailed' | translate }}</p>
+  } @else if (sides(); as sides) {
+    <div class="v2-merge__grid v2-merge__grid--head">
+      <span></span>
+      <span>{{
+        'v2.client.merge.stays' | translate: { code: sides.older.code, date: since(sides.older) }
+      }}</span>
+      <span>{{
+        'v2.client.merge.mergedIn' | translate: { code: sides.newer.code, date: since(sides.newer) }
+      }}</span>
+    </div>
+
+    <div class="v2-merge__grid">
+      <span class="v2-merge__label">{{ 'v2.client.merge.nameAndPhone' | translate }}</span>
+      @if (sameIdentity()) {
+        <span class="v2-merge__cell v2-merge__cell--span">
+          {{ sides.older.name }} · {{ sides.older.phone }} —
+          {{ 'v2.client.merge.sameInBoth' | translate }}
+        </span>
+      } @else {
+        <span class="v2-merge__cell">{{ sides.older.name }} · {{ sides.older.phone }}</span>
+        <span class="v2-merge__cell">{{ sides.newer.name }} · {{ sides.newer.phone }}</span>
+      }
+    </div>
+
+    @if (differing().length) {
+      <span class="v2-merge__hint">{{ 'v2.client.merge.choose' | translate }}</span>
+      @for (field of differing(); track field) {
+        <div
+          class="v2-merge__grid"
+          role="radiogroup"
+          [attr.aria-label]="fieldLabel[field] | translate"
+        >
+          <span class="v2-merge__label">{{ fieldLabel[field] | translate }}</span>
+          <button
+            type="button"
+            role="radio"
+            class="v2-merge__option"
+            [class.v2-merge__option--on]="keep()[field] === 'older'"
+            [attr.aria-checked]="keep()[field] === 'older'"
+            (click)="pick(field, 'older')"
+          >
+            <span class="v2-merge__radio" aria-hidden="true"></span>
+            <span class="v2-merge__value">{{ value(sides.older, field) }}</span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            class="v2-merge__option"
+            [class.v2-merge__option--on]="keep()[field] === 'newer'"
+            [attr.aria-checked]="keep()[field] === 'newer'"
+            (click)="pick(field, 'newer')"
+          >
+            <span class="v2-merge__radio" aria-hidden="true"></span>
+            <span class="v2-merge__value">{{ value(sides.newer, field) }}</span>
+          </button>
+        </div>
+      }
+    }
+
+    <div class="v2-merge__happens">
+      <strong>{{ 'v2.client.merge.happensTitle' | translate }}</strong>
+      <span>{{ happens() }}</span>
+    </div>
+
+    <div class="v2-merge__confirm" [attr.data-v2-invalid]="confirmError() ? '' : null">
+      <label class="v2-merge__check" [class.v2-merge__check--err]="confirmError()">
+        <input
+          type="checkbox"
+          [checked]="confirmed()"
+          [attr.aria-invalid]="confirmError() ? 'true' : null"
+          (change)="confirmed.set($any($event.target).checked)"
+        />
+        {{ 'v2.client.merge.confirm' | translate }}
+      </label>
+      @if (confirmError(); as message) {
+        <span class="v2-merge__message" aria-live="polite">{{ message }}</span>
+      }
+    </div>
+  }
+</app-v2-dialog>

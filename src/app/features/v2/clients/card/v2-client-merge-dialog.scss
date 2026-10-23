@@ -1,0 +1,147 @@
+@use '../../../../../styles/v2/interactive';
+
+// Values from Client-merge.dc.html: 120px label column, 8px grid gap, 44px option rows with a
+// 16px radio, 40px confirm row.
+:host {
+  display: block;
+}
+
+.v2-merge__error {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-danger-bg);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-danger);
+  font-size: 13px;
+}
+
+.v2-merge__status {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-merge__grid {
+  display: grid;
+  grid-template-columns: 120px repeat(2, minmax(0, 1fr));
+  gap: var(--v2-space-2);
+  align-items: center;
+  font-size: 13px;
+}
+
+.v2-merge__grid--head {
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.v2-merge__label {
+  color: var(--v2-muted);
+}
+
+.v2-merge__cell {
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-ground);
+  border-radius: var(--v2-radius-md);
+  overflow-wrap: anywhere;
+}
+
+.v2-merge__cell--span {
+  grid-column: span 2;
+}
+
+.v2-merge__hint {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-merge__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--v2-space-2) var(--v2-space-3);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(surface);
+}
+
+.v2-merge__option--on {
+  border-color: var(--v2-ink);
+  box-shadow: inset 0 0 0 1px var(--v2-ink);
+}
+
+.v2-merge__radio {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--v2-faint);
+  border-radius: var(--v2-radius-pill);
+}
+
+.v2-merge__option--on .v2-merge__radio {
+  border: 5px solid var(--v2-ink);
+}
+
+.v2-merge__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.v2-merge__happens {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--v2-space-3) 14px;
+  background: var(--v2-ground);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-ink-2);
+  font-size: 13px;
+}
+
+.v2-merge__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.v2-merge__check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 var(--v2-space-3);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--v2-ink);
+  }
+}
+
+.v2-merge__check--err {
+  border-color: var(--v2-danger);
+  background: #fffafa;
+}
+
+.v2-merge__message {
+  color: var(--v2-danger);
+  font-size: 12px;
+  line-height: 18px;
+}

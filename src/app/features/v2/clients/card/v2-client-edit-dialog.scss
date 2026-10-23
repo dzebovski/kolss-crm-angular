@@ -1,0 +1,56 @@
+// Values from Client-edit.dc.html: 16px gap between fields, 240px language select, 13px note box.
+:host {
+  display: block;
+}
+
+.v2-client-edit__error {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-danger-bg);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-danger);
+  font-size: 13px;
+}
+
+.v2-client-edit__context {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  font-size: 13px;
+}
+
+.v2-client-edit__code {
+  padding: 1px 6px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-xs);
+  font-family: var(--v2-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.v2-client-edit__name {
+  font-weight: 500;
+}
+
+.v2-client-edit__counts {
+  color: var(--v2-muted);
+}
+
+.v2-client-edit__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--v2-space-3);
+}
+
+.v2-client-edit__language {
+  width: 240px;
+}
+
+.v2-client-edit__note {
+  margin: 0;
+  padding: 10px var(--v2-space-3);
+  background: var(--v2-ground);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-ink-2);
+  font-size: 13px;
+}

@@ -1,4 +1,7 @@
 import type { OfficeId } from '@domain/office.types';
+import type { V2LeadProduct } from './lead-card.types';
+import type { V2LeadChannel, V2LeadDisplayStatus } from './lead-view.types';
+import type { V2Money, V2ProjectStatus } from './project.types';
 
 /**
  * CRM v2 client view models (API 2.35.0). Screens take these, not the raw DTOs. Dates stay ISO
@@ -36,4 +39,71 @@ export interface V2ClientListPage {
 export interface V2ClientFacets {
   readonly total: number;
   readonly filter: Readonly<Record<V2ClientFilter, number>>;
+}
+
+export type V2ClientLanguage = 'pl' | 'uk' | 'en' | 'ru';
+
+/** Contract money of the client's projects, per currency (cancelled projects are left out). */
+export interface V2ClientContractValue {
+  readonly total: V2Money;
+  readonly paid: V2Money;
+  readonly remaining: V2Money;
+}
+
+export interface V2ClientLeadRow {
+  readonly id: string;
+  readonly code: string;
+  readonly createdAt: string;
+  readonly status: V2LeadDisplayStatus;
+  readonly products: readonly V2LeadProduct[];
+  readonly managerName: string | null;
+  /** The lead became this project. */
+  readonly projectId: string | null;
+}
+
+export interface V2ClientProjectRow {
+  readonly id: string;
+  /** The code of the lead the project came from. */
+  readonly leadCode: string;
+  readonly products: readonly V2LeadProduct[];
+  readonly status: V2ProjectStatus;
+  readonly createdAt: string;
+  readonly managerName: string | null;
+  readonly contract: {
+    readonly total: V2Money;
+    /** Whole percent of the total that is paid. */
+    readonly percentPaid: number;
+  } | null;
+}
+
+/** Another client sharing a phone or the email: a merge candidate. */
+export interface V2ClientDuplicate extends V2ClientListItem {
+  readonly matchedBy: readonly ('phone' | 'email')[];
+  readonly email: string | null;
+}
+
+/** Client card (`GET /v1/clients/{id}`). */
+export interface V2Client extends V2ClientListItem {
+  /** Stored phone numbers, compact (`+48601334812`); null when empty. */
+  readonly rawPhone: string | null;
+  readonly secondPhone: string | null;
+  readonly secondPhoneDisplay: string | null;
+  readonly email: string | null;
+  readonly address: string | null;
+  readonly language: V2ClientLanguage | null;
+  readonly about: string | null;
+  /** Optimistic-lock counter for `PATCH`. */
+  readonly version: number;
+  readonly firstChannel: V2LeadChannel | null;
+  /** Leads of the client that are not (yet) projects. */
+  readonly openLeadsCount: number;
+  readonly activeProjectsCount: number;
+  readonly contractValue: readonly V2ClientContractValue[];
+  readonly leads: readonly V2ClientLeadRow[];
+  readonly projects: readonly V2ClientProjectRow[];
+  readonly duplicates: readonly V2ClientDuplicate[];
+  /** The code the card was opened by when that client was merged into this one. */
+  readonly redirectedFromCode: string | null;
+  readonly canEdit: boolean;
+  readonly canMerge: boolean;
 }

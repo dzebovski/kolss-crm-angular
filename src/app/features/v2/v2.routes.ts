@@ -33,6 +33,11 @@ const V2_ROUTES: Routes = [
           import('./clients/list/v2-clients-page').then((page) => page.V2ClientsPage),
       },
       {
+        path: 'clients/:clientId',
+        loadComponent: () =>
+          import('./clients/card/v2-client-card-page').then((page) => page.V2ClientCardPage),
+      },
+      {
         path: 'tasks',
         loadComponent: () => import('./tasks/v2-tasks-page').then((page) => page.V2TasksPage),
       },

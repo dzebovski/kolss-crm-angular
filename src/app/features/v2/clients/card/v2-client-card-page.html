@@ -1,0 +1,246 @@
+<nav class="v2-client__crumbs" [attr.aria-label]="'v2.client.breadcrumb' | translate">
+  <a routerLink="/v2/clients">{{ 'v2.nav.clients' | translate }}</a>
+  @if (client(); as client) {
+    <span class="v2-client__crumb-sep" aria-hidden="true">/</span>
+    <span class="v2-client__crumb-current">{{ client.name }}</span>
+  }
+</nav>
+
+@if (loading()) {
+  <div
+    class="v2-client__skeleton"
+    aria-busy="true"
+    [attr.aria-label]="'v2.client.loading' | translate"
+  >
+    <section class="v2-client__card v2-client__card--head">
+      <div class="v2-client__skeleton-top">
+        <div class="v2-client__skeleton-stack">
+          <span class="v2-client__bar" style="width: 60px; height: 10px"></span>
+          <span class="v2-client__bar" style="width: 280px; height: 28px"></span>
+          <span class="v2-client__bar" style="width: 200px"></span>
+        </div>
+        <div class="v2-client__skeleton-actions">
+          <span class="v2-client__bar" style="width: 120px; height: 40px"></span>
+        </div>
+      </div>
+      <div class="v2-client__facts">
+        @for (width of [70, 93, 86, 79, 72]; track $index) {
+          <div class="v2-client__skeleton-stack">
+            <span class="v2-client__bar" style="width: 60px; height: 10px"></span>
+            <span class="v2-client__bar" [style.width.%]="width" style="height: 14px"></span>
+          </div>
+        }
+      </div>
+    </section>
+    <div class="v2-client__tiles">
+      @for (tile of [1, 2, 3]; track tile) {
+        <section class="v2-client__card v2-client__tile">
+          <span class="v2-client__bar" style="width: 60px; height: 10px"></span>
+          <span class="v2-client__bar" style="width: 80px; height: 22px"></span>
+          <span class="v2-client__bar" style="width: 70%; height: 10px"></span>
+        </section>
+      }
+    </div>
+    @for (table of [1, 2]; track table) {
+      <section class="v2-client__card v2-client__skeleton-table">
+        <span class="v2-client__bar" style="width: 90px; height: 14px"></span>
+        @for (row of [1, 2]; track row) {
+          <div class="v2-client__skeleton-row">
+            <span class="v2-client__bar v2-client__bar--square"></span>
+            <div class="v2-client__skeleton-stack v2-client__skeleton-grow">
+              <span class="v2-client__bar" style="width: 50%"></span>
+              <span class="v2-client__bar" style="width: 30%; height: 10px"></span>
+            </div>
+          </div>
+        }
+      </section>
+    }
+  </div>
+} @else if (notFound()) {
+  <app-v2-state-panel
+    tone="neutral"
+    icon="search"
+    [title]="'v2.client.notFound.title' | translate"
+    [hint]="'v2.client.notFound.hint' | translate"
+  >
+    <a appV2Button routerLink="/v2/clients">{{ 'v2.client.back' | translate }}</a>
+  </app-v2-state-panel>
+} @else if (failed()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'v2.client.error.title' | translate"
+    [hint]="'v2.client.error.hint' | translate"
+  >
+    <button type="button" appV2Button variant="primary" (click)="retry()">
+      {{ 'v2.clients.retry' | translate }}
+    </button>
+    <a appV2Button routerLink="/v2/clients">{{ 'v2.client.back' | translate }}</a>
+  </app-v2-state-panel>
+} @else if (client(); as client) {
+  @for (item of duplicates(); track item.duplicate.id) {
+    <div class="v2-client__banner v2-client__banner--warn" role="status">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3 2.5 20h19L12 3Z" />
+        <path d="M12 10v4" />
+        <path d="M12 17h.01" />
+      </svg>
+      <div class="v2-client__banner-text">
+        <span class="v2-client__banner-title">{{
+          'v2.client.dup.title'
+            | translate: { code: item.duplicate.code, name: item.duplicate.name }
+        }}</span>
+        <span>{{ item.same }} {{ item.detail }}</span>
+      </div>
+      @if (client.canMerge) {
+        <button
+          type="button"
+          class="v2-client__banner-action"
+          (click)="merge(client, item.duplicate)"
+        >
+          {{ 'v2.client.dup.review' | translate }}
+        </button>
+      } @else {
+        <span class="v2-client__banner-note">{{ 'v2.client.dup.adminsOnly' | translate }}</span>
+      }
+    </div>
+  }
+
+  @if (mergedCode(); as code) {
+    <div class="v2-client__banner v2-client__banner--done" role="status">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9" />
+        <path d="m8 12.5 3 3 5-6" />
+      </svg>
+      <span>
+        <strong>{{ 'v2.client.merged.title' | translate }}</strong>
+        {{ 'v2.client.merged.text' | translate: { code } }}
+      </span>
+    </div>
+  }
+
+  <section class="v2-client__card v2-client__card--head">
+    <div class="v2-client__top">
+      <div class="v2-client__identity">
+        <span class="v2-client__eyebrow">{{ 'v2.client.eyebrow' | translate }}</span>
+        <div class="v2-client__title-row">
+          <h1 class="v2-client__name">{{ client.name }}</h1>
+          <app-v2-code-chip [code]="client.code" />
+          @if (client.returning) {
+            <span class="v2-client__returning" [title]="'v2.client.returningHint' | translate">{{
+              'v2.client.returning' | translate
+            }}</span>
+          }
+        </div>
+        @if (client.about) {
+          <span class="v2-client__about">{{ client.about }}</span>
+        }
+      </div>
+      <div class="v2-client__actions">
+        <button type="button" appV2Button [disabled]="!client.canEdit" (click)="edit(client)">
+          {{ 'v2.client.edit' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <div class="v2-client__facts">
+      <div class="v2-client__fact">
+        <span class="v2-client__fact-label">{{ 'v2.card.phone' | translate }}</span>
+        <span class="v2-client__fact-value">{{ phones() || ('v2.card.notSet' | translate) }}</span>
+      </div>
+      <div class="v2-client__fact">
+        <span class="v2-client__fact-label">{{ 'v2.card.email' | translate }}</span>
+        <span class="v2-client__fact-value">{{
+          client.email || ('v2.card.notSet' | translate)
+        }}</span>
+      </div>
+      <div class="v2-client__fact">
+        <span class="v2-client__fact-label">{{ 'v2.client.address' | translate }}</span>
+        <span class="v2-client__fact-value">{{
+          client.address || ('v2.card.notSet' | translate)
+        }}</span>
+      </div>
+      <div class="v2-client__fact">
+        <span class="v2-client__fact-label">{{ 'v2.client.language' | translate }}</span>
+        <span class="v2-client__fact-value">
+          @if (languageLabel(); as label) {
+            {{ label | translate }}
+          } @else {
+            {{ 'v2.card.notSet' | translate }}
+          }
+        </span>
+      </div>
+      <div class="v2-client__fact">
+        <span class="v2-client__fact-label">{{ 'v2.client.since' | translate }}</span>
+        <span class="v2-client__fact-value">{{ since() }}</span>
+        @if (channelLabel(); as label) {
+          <span class="v2-client__fact-label">{{
+            'v2.client.firstLead' | translate: { channel: (label | translate) }
+          }}</span>
+        }
+      </div>
+    </div>
+  </section>
+
+  <div class="v2-client__tiles">
+    <section class="v2-client__card v2-client__tile">
+      <span class="v2-client__fact-label">{{ 'v2.client.stat.leads' | translate }}</span>
+      <span class="v2-client__tile-value">{{ client.leads.length }}</span>
+      <span class="v2-client__tile-sub">{{ leadsSub() }}</span>
+    </section>
+    <section class="v2-client__card v2-client__tile">
+      <span class="v2-client__fact-label">{{ 'v2.client.stat.projects' | translate }}</span>
+      <span class="v2-client__tile-value">{{ client.projects.length }}</span>
+      <span class="v2-client__tile-sub">{{ projectsSub() }}</span>
+    </section>
+    <section class="v2-client__card v2-client__tile">
+      <span class="v2-client__fact-label">{{ 'v2.client.stat.contract' | translate }}</span>
+      @for (tile of contractTiles(); track $index) {
+        <span class="v2-client__tile-value">{{ tile.total }}</span>
+        <span class="v2-client__tile-sub">{{ tile.sub }}</span>
+      } @empty {
+        <span class="v2-client__tile-value">—</span>
+        <span class="v2-client__tile-sub">{{ 'v2.client.stat.noContracts' | translate }}</span>
+      }
+    </section>
+  </div>
+
+  <section class="v2-client__card">
+    <div class="v2-client__section-head">
+      <h2>
+        {{ 'v2.client.leads.title' | translate }}
+        <span class="v2-client__count">· {{ client.leads.length }}</span>
+      </h2>
+      <button type="button" appV2Button (click)="newLead(client)">
+        <svg class="v2-client__plus" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+        {{ 'v2.client.leads.new' | translate }}
+      </button>
+    </div>
+    <div class="v2-client__scroll">
+      <app-v2-client-leads-table [leads]="client.leads" [now]="now()" />
+    </div>
+  </section>
+
+  <section class="v2-client__card">
+    <div class="v2-client__section-head">
+      <h2>
+        {{ 'v2.client.projects.title' | translate }}
+        <span class="v2-client__count">· {{ client.projects.length }}</span>
+      </h2>
+      <!-- TODO(v2): New project waits for the redesigned projects screens (pipeline 2.1). -->
+      <button type="button" appV2Button disabled>
+        <svg class="v2-client__plus" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+        {{ 'v2.client.projects.new' | translate }}
+      </button>
+    </div>
+    <div class="v2-client__scroll">
+      <app-v2-client-projects-table [projects]="client.projects" [now]="now()" />
+    </div>
+  </section>
+}
