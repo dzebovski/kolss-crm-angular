@@ -20,8 +20,9 @@ export const ASSIGNABLE_ROLES: readonly UserRole[] = [
   ROLE_OFFICE_MEMBER,
 ];
 
+/** The filter itself only shows when the user also has 2+ offices (see SessionService). */
 export function hasOfficeLeadFilter(role: UserRole | null | undefined): boolean {
-  return role === ROLE_SUPER_ADMIN || role === ROLE_CURATOR;
+  return role === ROLE_SUPER_ADMIN || role === ROLE_CURATOR || role === ROLE_OFFICE_ADMIN;
 }
 
 export function isSuperAdminRole(role: UserRole | null | undefined): boolean {
