@@ -1134,6 +1134,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'leads.reaction.like': 'Podoba się',
   'leads.reaction.star': 'Ważne',
   'leads.reaction.question': 'Jest pytanie',
+  'leads.reaction.cross': 'Negatywne',
   'leads.reaction.failed': 'Nie udało się zapisać',
   'lead.assignManager': 'Przypisz menedżera',
   'lead.replaceManager': 'Zastąp menedżera',

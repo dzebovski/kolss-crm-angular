@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.37.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.38.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -152,14 +152,17 @@ export class KolssApiClient {
     ).then(() => undefined);
   }
 
-  setLeadReaction(id: string, kind: 'like' | 'star' | 'question'): Promise<LeadReactionResponse> {
+  setLeadReaction(
+    id: string,
+    kind: 'like' | 'star' | 'question' | 'cross',
+  ): Promise<LeadReactionResponse> {
     return this.put(
       `/v1/leads/${encodeURIComponent(id)}/reactions/${encodeURIComponent(kind)}`,
       {},
     );
   }
 
-  deleteLeadReaction(id: string, kind: 'like' | 'star' | 'question'): Promise<void> {
+  deleteLeadReaction(id: string, kind: 'like' | 'star' | 'question' | 'cross'): Promise<void> {
     return this.delete(
       `/v1/leads/${encodeURIComponent(id)}/reactions/${encodeURIComponent(kind)}`,
     ).then(() => undefined);

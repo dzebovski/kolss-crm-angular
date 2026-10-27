@@ -9,10 +9,11 @@ const REACTION_EMOJI: Readonly<Record<LeadReactionKind, string>> = {
   like: '👍',
   star: '⭐',
   question: '❓',
+  cross: '❌',
 };
 
 /**
- * Personal like / star / question reactions, toggled like reactions on a post.
+ * Personal like / star / question / cross reactions, toggled like reactions on a post.
  * Saves on its own (optimistic, rolled back on failure) and reports the new
  * state through `reactions` so the host list or card stays in sync.
  */

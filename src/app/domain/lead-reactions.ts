@@ -1,9 +1,14 @@
 import type { Lead, LeadReaction, LeadReactionKind } from './lead.types';
 
-export const LEAD_REACTION_KINDS: readonly LeadReactionKind[] = ['like', 'star', 'question'];
+export const LEAD_REACTION_KINDS: readonly LeadReactionKind[] = [
+  'like',
+  'star',
+  'question',
+  'cross',
+];
 
 export function isLeadReactionKind(value: unknown): value is LeadReactionKind {
-  return value === 'like' || value === 'star' || value === 'question';
+  return value === 'like' || value === 'star' || value === 'question' || value === 'cross';
 }
 
 export function reactionOf(

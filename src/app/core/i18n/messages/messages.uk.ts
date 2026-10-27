@@ -1127,6 +1127,7 @@ export const messagesUk = {
   'leads.reaction.like': 'Подобається',
   'leads.reaction.star': 'Важливо',
   'leads.reaction.question': 'Є питання',
+  'leads.reaction.cross': 'Негатив',
   'leads.reaction.failed': 'Не вдалося зберегти',
   'lead.assignManager': 'Призначити менеджера',
   'lead.replaceManager': 'Замінити менеджера',

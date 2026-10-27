@@ -1128,6 +1128,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'leads.reaction.like': 'Like',
   'leads.reaction.star': 'Important',
   'leads.reaction.question': 'Has a question',
+  'leads.reaction.cross': 'Negative',
   'leads.reaction.failed': 'Could not save',
   'lead.assignManager': 'Assign manager',
   'lead.replaceManager': 'Replace manager',

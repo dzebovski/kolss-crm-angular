@@ -31,7 +31,7 @@ export type LeadWorkflowStatus =
 export type LeadSource = 'website' | 'facebook' | 'office' | 'other';
 export type LeadMarkerKind = 'reviewed' | 'manager_aware';
 
-export type LeadReactionKind = 'like' | 'star' | 'question';
+export type LeadReactionKind = 'like' | 'star' | 'question' | 'cross';
 
 /** Personal reactions on a lead, summarised per kind (kinds nobody used are absent). */
 export interface LeadReaction {
