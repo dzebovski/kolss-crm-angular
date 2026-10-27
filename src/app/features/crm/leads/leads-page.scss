@@ -71,6 +71,9 @@ h1 {
   gap: var(--ui-space-2);
   padding-inline: var(--ui-space-4);
 }
+.client-status-ever {
+  margin-inline-start: var(--ui-space-2);
+}
 .period-switcher {
   padding: 0.1875rem;
   border: 1px solid var(--ui-border);

@@ -25,6 +25,7 @@ export interface LeadsPageQueryState {
   readonly periodDays: number | null;
   readonly callStatusFilter: readonly CallStatusFilterKey[];
   readonly clientStatusFilter: readonly ClientStatusFilterKey[];
+  readonly clientStatusEver: boolean;
   /** Empty string = no manager filter. */
   readonly managerFilter: string;
   readonly query: string;
@@ -37,6 +38,7 @@ export interface LeadsPageQueryState {
 const QUERY_KEYS = [
   'office',
   'clientStatus',
+  'clientStatusEver',
   'callStatus',
   'days',
   'assignedTo',
@@ -90,6 +92,7 @@ export function parseLeadsPageQuery(params: ReadonlyParamMap): LeadsPageQuerySta
     periodDays: parsePeriodDays(params.get('days')),
     callStatusFilter: parseList(params.get('callStatus'), isCallStatusFilterKey),
     clientStatusFilter: parseList(params.get('clientStatus'), isClientStatusFilterKey),
+    clientStatusEver: params.get('clientStatusEver') === '1',
     managerFilter: params.get('assignedTo')?.trim() ?? '',
     query: params.get('q')?.trim() ?? '',
     showArchived: params.get('archived') === ARCHIVED_ONLY,
@@ -104,6 +107,7 @@ export function serializeLeadsPageQuery(state: LeadsPageQueryState): Record<stri
   if (state.office) params['office'] = state.office;
   if (state.clientStatusFilter.length) {
     params['clientStatus'] = state.clientStatusFilter.join(',');
+    if (state.clientStatusEver) params['clientStatusEver'] = '1';
   }
   if (state.callStatusFilter.length) params['callStatus'] = state.callStatusFilter.join(',');
   // Always written, even at the default: it guarantees every generated URL has
@@ -127,6 +131,7 @@ export function leadsPageQueryStateFromPreferences(
     periodDays: preferences.periodDays,
     callStatusFilter: preferences.callStatusFilter,
     clientStatusFilter: preferences.clientStatusFilter,
+    clientStatusEver: preferences.clientStatusEver,
     managerFilter: preferences.managerFilter,
     query: '',
     showArchived: false,

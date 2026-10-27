@@ -18,6 +18,8 @@ export interface LeadsPagePreferences {
   periodDays: number | null;
   callStatusFilter: readonly CallStatusFilterKey[];
   clientStatusFilter: readonly ClientStatusFilterKey[];
+  /** Concrete client statuses also match leads that held them before. */
+  clientStatusEver: boolean;
   /** Empty string = no manager filter. */
   managerFilter: string;
   sortMode: LeadsSortMode;
@@ -32,6 +34,7 @@ export const DEFAULT_LEADS_PAGE_PREFERENCES: LeadsPagePreferences = {
   periodDays: 7,
   callStatusFilter: [],
   clientStatusFilter: [],
+  clientStatusEver: false,
   managerFilter: '',
   sortMode: 'created',
   reactionFilter: [],
@@ -73,6 +76,7 @@ export function readLeadsPagePreferences(): LeadsPagePreferences {
         : DEFAULT_LEADS_PAGE_PREFERENCES.periodDays,
       callStatusFilter: parseCallStatusFilterKeys(record['callStatusFilter']),
       clientStatusFilter: parseClientStatusFilterKeys(record['clientStatusFilter']),
+      clientStatusEver: record['clientStatusEver'] === true,
       managerFilter: isManagerFilter(record['managerFilter'])
         ? record['managerFilter']
         : DEFAULT_LEADS_PAGE_PREFERENCES.managerFilter,

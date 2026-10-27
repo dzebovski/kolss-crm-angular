@@ -1124,6 +1124,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'leads.filter.callStatusNone': 'Nie dzwoniono',
   'leads.filter.callStatusCallbackUndated': 'Oddzwonić bez daty',
   'leads.filter.clientStatusActive': 'Aktywni',
+  'leads.filter.clientStatusEver': 'Łącznie z poprzednimi statusami',
   'leads.sort.aria': 'Sortowanie',
   'leads.sort.created': 'Najnowsze',
   'leads.sort.activity': 'Ostatnia aktywność',

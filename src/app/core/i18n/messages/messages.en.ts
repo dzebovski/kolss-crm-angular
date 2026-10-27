@@ -1118,6 +1118,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'leads.filter.callStatusNone': 'Not called yet',
   'leads.filter.callStatusCallbackUndated': 'Callback, no date',
   'leads.filter.clientStatusActive': 'Active',
+  'leads.filter.clientStatusEver': 'Including past statuses',
   'leads.sort.aria': 'Sorting',
   'leads.sort.created': 'Newest',
   'leads.sort.activity': 'Recent activity',

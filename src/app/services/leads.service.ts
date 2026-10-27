@@ -28,6 +28,8 @@ export interface LeadsListFilters {
   source?: string | null;
   callStatus?: readonly string[] | null;
   clientStatus?: readonly string[] | null;
+  /** Concrete `clientStatus` values also match leads that held them before. */
+  clientStatusEver?: boolean;
   archived?: 'active' | 'only' | 'all';
   days?: number | null;
   /**
@@ -97,6 +99,7 @@ export class LeadsService {
         source: filters.source,
         callStatus: filters.callStatus,
         clientStatus: filters.clientStatus,
+        clientStatusEver: filters.clientStatusEver ? 'true' : undefined,
         archived: filters.archived === 'active' ? undefined : filters.archived,
         days: filters.days ?? undefined,
         cursor,

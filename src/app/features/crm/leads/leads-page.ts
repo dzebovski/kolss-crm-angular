@@ -141,6 +141,8 @@ export class LeadsPage {
       : this.initialFilters.clientStatusFilter.filter((status) => status !== 'active'),
   );
   protected readonly activeClientsOnly = signal(this.initialActiveClientsOnly);
+  /** Widens the concrete status selection to leads that held it before (status history). */
+  protected readonly clientStatusEver = signal(this.initialFilters.clientStatusEver);
   protected readonly managerFilter = signal(this.initialFilters.managerFilter);
   protected readonly sortMode = signal<LeadsSortMode>(this.initialFilters.sortMode);
   protected readonly reactionFilter = signal<readonly LeadReactionKind[]>(
@@ -153,6 +155,10 @@ export class LeadsPage {
   /** `active` cohort when its switch is on, otherwise the concrete selection. */
   protected readonly effectiveClientStatusFilter = computed((): readonly ClientStatusFilterKey[] =>
     this.activeClientsOnly() ? ['active'] : this.clientStatusFilter(),
+  );
+  /** History only applies to a concrete selection, never to the `active` cohort. */
+  private readonly effectiveClientStatusEver = computed(
+    () => this.clientStatusEver() && this.clientStatusFilter().length > 0,
   );
 
   constructor() {
@@ -179,6 +185,7 @@ export class LeadsPage {
         periodDays: this.periodDays(),
         callStatusFilter: this.callStatusFilter(),
         clientStatusFilter: this.effectiveClientStatusFilter(),
+        clientStatusEver: this.effectiveClientStatusEver(),
         managerFilter: this.managerFilter(),
         sortMode: this.sortMode(),
         reactionFilter: this.reactionFilter(),
@@ -194,6 +201,7 @@ export class LeadsPage {
         periodDays: this.periodDays(),
         callStatusFilter: this.callStatusFilter(),
         clientStatusFilter: this.effectiveClientStatusFilter(),
+        clientStatusEver: this.effectiveClientStatusEver(),
         managerFilter: this.managerFilter(),
         query: this.debouncedQuery().trim(),
         showArchived: this.showArchived(),
@@ -279,6 +287,7 @@ export class LeadsPage {
       days: this.sortMode() === 'activity' ? null : this.periodDays(),
       callStatus: this.callStatusFilter(),
       clientStatus: this.effectiveClientStatusFilter(),
+      clientStatusEver: this.effectiveClientStatusEver(),
       assignedTo: this.managerFilter() || null,
     }),
     loader: ({ params }) => this.leadsService.list(params),

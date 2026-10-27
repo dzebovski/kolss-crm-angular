@@ -1117,6 +1117,7 @@ export const messagesUk = {
   'leads.filter.callStatusNone': 'Не телефонували',
   'leads.filter.callStatusCallbackUndated': 'Передзвонити без дати',
   'leads.filter.clientStatusActive': 'Активні',
+  'leads.filter.clientStatusEver': 'Включно з минулими статусами',
   'leads.sort.aria': 'Сортування',
   'leads.sort.created': 'Нові',
   'leads.sort.activity': 'Нещодавня активність',

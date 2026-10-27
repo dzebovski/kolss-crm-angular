@@ -147,6 +147,13 @@
             {{ clientStatusFilterLabel(status) }}
           </app-ui-chip>
         }
+        @if (clientStatusFilter().length) {
+          <app-ui-switch
+            class="client-status-ever"
+            [label]="'leads.filter.clientStatusEver' | translate"
+            [(checked)]="clientStatusEver"
+          />
+        }
         @for (kind of reactionFilter(); track kind) {
           <app-ui-chip
             [label]="reactionLabel(kind)"
