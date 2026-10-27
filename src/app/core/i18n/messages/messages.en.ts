@@ -716,6 +716,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'role.all': 'All roles',
   'source.website': 'Website',
   'source.facebook': 'Facebook Forms',
+  'source.promo_expo': 'Promo / Expo',
   'source.office': 'Office',
   'source.other': 'Other',
   'workflow.new': 'New lead',

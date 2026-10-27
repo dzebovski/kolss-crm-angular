@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.38.0' as const;
+export const API_CONTRACT_VERSION = '2.39.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -131,7 +131,7 @@ export interface UpdateLeadInfoRequest {
  */
 export interface CreateLeadRequest {
   readonly officeId: string;
-  readonly source: 'website' | 'facebook' | 'office' | 'other';
+  readonly source: 'website' | 'facebook' | 'office' | 'promo_expo' | 'other';
   readonly name: string;
   readonly phone: string;
   readonly email?: string | null;

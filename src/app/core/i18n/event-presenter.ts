@@ -210,6 +210,7 @@ function extractCreatedSource(newValue: unknown): string | null {
   if (channel === 'facebook') return 'facebook';
   if (channel === 'office' || channel === 'manual') return 'office';
   if (channel === 'other') return 'other';
+  if (channel === 'promo_expo') return 'promo_expo';
   if (channel === 'website') return 'website';
   return null;
 }

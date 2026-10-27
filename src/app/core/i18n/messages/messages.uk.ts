@@ -715,6 +715,7 @@ export const messagesUk = {
   'role.all': 'Усі ролі',
   'source.website': 'Сайт',
   'source.facebook': 'Facebook Forms',
+  'source.promo_expo': 'Promo / Expo',
   'source.office': 'Офіс',
   'source.other': 'Інше',
   'workflow.new': 'Нова заявка',

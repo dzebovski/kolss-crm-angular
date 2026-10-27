@@ -718,6 +718,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'role.all': 'Wszystkie role',
   'source.website': 'Strona',
   'source.facebook': 'Facebook Forms',
+  'source.promo_expo': 'Promo / Expo',
   'source.office': 'Biuro',
   'source.other': 'Inne',
   'workflow.new': 'Nowe zgłoszenie',

@@ -59,6 +59,14 @@ describe('mapCreateLeadSource', () => {
   });
 });
 
+describe('mapLeadListRow source', () => {
+  it('reads a manual Promo / Expo lead back as promo_expo', () => {
+    expect(
+      mapLeadListRow({ ...baseRow, source_system: 'manual', source_channel: 'promo_expo' }).source,
+    ).toBe('promo_expo');
+  });
+});
+
 describe('mapLeadListRow estimated budget currency', () => {
   it('maps a stored currency and falls back to EUR for legacy rows', () => {
     expect(

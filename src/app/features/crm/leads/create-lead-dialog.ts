@@ -245,7 +245,7 @@ export class CreateLeadDialog {
   );
 
   protected readonly sourceOptions = computed((): readonly UiSelectOption[] =>
-    (['office', 'website', 'facebook', 'other'] as const).map((value) => ({
+    (['office', 'website', 'facebook', 'promo_expo', 'other'] as const).map((value) => ({
       value,
       label: this.i18n.sourceLabel(value),
     })),

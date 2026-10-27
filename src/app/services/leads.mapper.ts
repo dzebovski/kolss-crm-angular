@@ -186,6 +186,7 @@ function mapSource(
   if (channel === 'facebook') return 'facebook';
   if (channel === 'office') return 'office';
   if (channel === 'other') return 'other';
+  if (channel === 'promo_expo') return 'promo_expo';
   if (channel === 'website') return 'website';
   if (channel === 'manual') return 'office';
   if (sourceSystem === 'meta_lead_ads') return 'facebook';

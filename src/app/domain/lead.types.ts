@@ -28,7 +28,7 @@ export type LeadWorkflowStatus =
   | 'closed'
   | 'successful';
 
-export type LeadSource = 'website' | 'facebook' | 'office' | 'other';
+export type LeadSource = 'website' | 'facebook' | 'office' | 'promo_expo' | 'other';
 export type LeadMarkerKind = 'reviewed' | 'manager_aware';
 
 export type LeadReactionKind = 'like' | 'star' | 'question' | 'cross';

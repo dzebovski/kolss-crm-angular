@@ -91,6 +91,7 @@ export function channelFromSource(source: LeadSource): V2LeadChannel {
     case 'facebook':
       return 'meta_ads';
     case 'office':
+    case 'promo_expo':
       return 'office';
     case 'other':
       return 'other';
