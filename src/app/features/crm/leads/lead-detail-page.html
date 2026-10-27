@@ -32,6 +32,14 @@
       </div>
     </div>
 
+    @if (lead.duplicateOf; as original) {
+      <p class="lead-duplicate-note" role="status">
+        <app-ui-icon name="content_copy" [size]="18" />
+        <span>{{ i18n.t('leadDuplicate.banner', { reference: original.referenceId }) }}</span>
+        <a [routerLink]="['/leads', original.id]">{{ i18n.t('leadDuplicate.openOriginal') }}</a>
+      </p>
+    }
+
     <app-lead-summary-panel
       [lead]="lead"
       [employeeName]="employeeNameFn"
@@ -55,11 +63,13 @@
       [canArchiveLead]="canArchiveLead(lead)"
       [canManageArchivedLead]="canManageArchivedLead(lead)"
       [canDeleteLead]="canDeleteLead()"
+      [canMarkDuplicate]="canMarkDuplicate(lead)"
       [runActivity]="runActivityFn"
       (reopenRequested)="reopenLead(lead)"
       (restoreRequested)="restoreLead(lead)"
       (archiveRequested)="confirmArchiveLead(lead)"
       (deletePermanentlyRequested)="confirmDeleteLead(lead)"
+      (duplicateRequested)="openDuplicateDialog(lead)"
       (appointmentRequested)="openLeadAppointment(lead, $event)"
     />
 

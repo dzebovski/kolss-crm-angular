@@ -23,6 +23,30 @@ describe('event-presenter', () => {
     expect(body).toBe('Клієнт обрав іншого постачальника');
   });
 
+  it('renders duplicate events with the other lead reference', () => {
+    expect(
+      presentEventBody(
+        {
+          event_type: 'marked_duplicate',
+          comment: null,
+          new_value: { original_reference_id: 'w0129' },
+        },
+        messagesUk,
+      ),
+    ).toBe('Основна заявка: w0129');
+    expect(
+      presentEventBody(
+        {
+          event_type: 'repeat_request',
+          comment: null,
+          new_value: { duplicate_reference_id: 'w0292', message: ' Pani wysłała ponownie ' },
+        },
+        messagesEn,
+      ),
+    ).toBe('Lead w0292: Pani wysłała ponownie');
+    expect(presentEventTitle('repeat_request', messagesPl)).toBe('Ponowne zgłoszenie');
+  });
+
   it('translates event title by locale without changing comment body', () => {
     const bundles = [messagesUk, messagesPl, messagesEn];
     const titles = bundles.map((bundle) => presentEventTitle('taken', bundle));

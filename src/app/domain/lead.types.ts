@@ -68,7 +68,9 @@ export type LeadEventType =
   | 'attachment'
   | 'lead_updated'
   | 'office_work'
-  | 'question';
+  | 'question'
+  | 'marked_duplicate'
+  | 'repeat_request';
 
 /** `loss_reasons.code` from Supabase; mock labels cover CRM defaults. */
 export type CloseReason = string;
@@ -173,6 +175,11 @@ export interface LeadClose {
   readonly actorId: string;
 }
 
+export interface LeadDuplicateOf {
+  readonly id: string;
+  readonly referenceId: string;
+}
+
 export interface CallStatusActor {
   readonly actorId: string;
   readonly actorName: string;
@@ -183,6 +190,8 @@ export interface Lead {
   readonly referenceId: string;
   readonly version?: number;
   readonly archivedAt?: string | null;
+  /** The original lead when this one was marked as its repeat request. */
+  readonly duplicateOf?: LeadDuplicateOf | null;
   readonly name: string;
   readonly phone: string;
   readonly email: string | null;

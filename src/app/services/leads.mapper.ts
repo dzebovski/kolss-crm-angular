@@ -243,6 +243,8 @@ function mapEventType(eventType: string): LeadEventType {
     lead_edited: 'lead_updated',
     lead_assigned: 'comment',
     question: 'question',
+    marked_duplicate: 'marked_duplicate',
+    repeat_request: 'repeat_request',
   };
   return map[eventType] ?? 'comment';
 }
@@ -637,6 +639,12 @@ export function mapLeadDetail(row: LeadListRow, relations: LeadDetailRelations):
     referenceId: row.reference_id,
     version: row.version ?? 1,
     archivedAt: row.archived_at ?? null,
+    duplicateOf: row.duplicate_of_lead_id
+      ? {
+          id: row.duplicate_of_lead_id,
+          referenceId: row.duplicate_of_reference_id ?? '',
+        }
+      : null,
     name: row.name ?? 'Без імені',
     phone: formatPhoneDisplay(row.phone, officeCode),
     email: row.email,

@@ -7,6 +7,25 @@
     display: grid;
   }
 
+  .lead-duplicate-note {
+    margin: 0 0 var(--ui-space-3);
+    padding: 0.7rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ui-border);
+    border-radius: 0.9rem;
+    background: var(--ui-surface-raised);
+    color: var(--ui-text-muted);
+    font-size: 0.875rem;
+
+    a {
+      color: var(--ui-action);
+      font-weight: 600;
+    }
+  }
+
   .lead-control-bar {
     min-height: 2.25rem;
     margin-bottom: var(--ui-space-3);

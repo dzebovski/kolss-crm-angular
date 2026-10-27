@@ -165,6 +165,11 @@ export class LeadsService {
     await this.api.deleteLead(leadId);
   }
 
+  /** Closes `leadId` as a repeat request of `originalLeadId` (same office). */
+  async markDuplicate(leadId: string, originalLeadId: string): Promise<void> {
+    await this.api.markLeadDuplicate(leadId, originalLeadId);
+  }
+
   async updateHistoryEvent(
     leadId: string,
     eventId: string,

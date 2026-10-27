@@ -50,6 +50,7 @@ import {
   type LeadQuestionDialogResult,
 } from './lead-question-dialog';
 import { EditLeadDialog } from './edit-lead-dialog';
+import { LeadDuplicateDialog, type LeadDuplicateDialogData } from './lead-duplicate-dialog';
 import {
   AppointmentDrawer,
   type AppointmentDrawerData,
@@ -308,6 +309,25 @@ export class LeadDetailView {
 
   protected canDeleteLead(): boolean {
     return leadPolicy.canDeleteLead(this.leadPolicyContext());
+  }
+
+  protected canMarkDuplicate(lead: Lead): boolean {
+    return leadPolicy.canMarkDuplicate(this.leadPolicyContext(), lead);
+  }
+
+  protected async openDuplicateDialog(lead: Lead): Promise<void> {
+    if (!this.canMarkDuplicate(lead)) return;
+    const marked = await firstValueFrom(
+      this.dialog
+        .open<LeadDuplicateDialog, LeadDuplicateDialogData, boolean>(LeadDuplicateDialog, {
+          data: { lead },
+          ariaLabelledBy: 'lead-duplicate-dialog-title',
+        })
+        .afterClosed(),
+    );
+    if (!marked) return;
+    await this.leadResource.reload();
+    this.changed.emit();
   }
 
   protected async confirmArchiveLead(lead: Lead): Promise<void> {

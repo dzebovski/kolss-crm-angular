@@ -120,12 +120,14 @@ export class LeadActionsPanel {
   readonly canArchiveLead = input(false);
   readonly canManageArchivedLead = input(false);
   readonly canDeleteLead = input(false);
+  readonly canMarkDuplicate = input(false);
   readonly runActivity = input.required<(action: () => Promise<void>) => Promise<void>>();
 
   readonly reopenRequested = output<void>();
   readonly restoreRequested = output<void>();
   readonly archiveRequested = output<void>();
   readonly deletePermanentlyRequested = output<void>();
+  readonly duplicateRequested = output<void>();
   readonly appointmentRequested = output<VisitAppointmentKind>();
 
   protected readonly isTerminal = leadIsTerminal;

@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.40.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.41.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -283,6 +283,12 @@ export class KolssApiClient {
 
   deleteLead(id: string): Promise<void> {
     return this.post(`/v1/leads/${encodeURIComponent(id)}/delete`, {}).then(() => undefined);
+  }
+
+  markLeadDuplicate(id: string, originalLeadId: string): Promise<void> {
+    return this.post(`/v1/leads/${encodeURIComponent(id)}/duplicate`, { originalLeadId }).then(
+      () => undefined,
+    );
   }
 
   appointments(query: {

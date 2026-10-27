@@ -132,6 +132,23 @@ export function presentEventBody(row: RawLeadEventRow, bundle: MessageBundle | n
     return translate(bundle, 'clientStatus.new_lead');
   }
 
+  if (eventType === 'marked_duplicate') {
+    const reference = isRecord(row.new_value) ? row.new_value['original_reference_id'] : null;
+    return typeof reference === 'string' && reference
+      ? translate(bundle, 'event.markedDuplicateBody', { reference })
+      : '';
+  }
+
+  if (eventType === 'repeat_request') {
+    if (!isRecord(row.new_value)) return '';
+    const reference = row.new_value['duplicate_reference_id'];
+    const message = row.new_value['message'];
+    if (typeof reference !== 'string' || !reference) return '';
+    return typeof message === 'string' && message.trim()
+      ? translate(bundle, 'event.repeatRequestBody', { reference, message: message.trim() })
+      : translate(bundle, 'event.repeatRequestBodyNoMessage', { reference });
+  }
+
   if (eventType === 'created') {
     if (comment && !isLegacySystemComment(comment)) return comment;
     const source = extractCreatedSource(row.new_value);

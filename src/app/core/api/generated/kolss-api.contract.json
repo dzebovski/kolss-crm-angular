@@ -1,6 +1,6 @@
 {
-  "version": "2.40.0",
-  "sha256": "3383179791085d0e325138c5095c207ed0e397eb49d4162d265f1ce2b3dd06ab",
+  "version": "2.41.0",
+  "sha256": "c27facd06406c994357671d8386396f30aa14be471c6f107941ebd42b7df613b",
   "operationIds": [
     "healthLive",
     "healthReady",
@@ -31,6 +31,7 @@
     "archiveLead",
     "restoreLead",
     "deleteLead",
+    "markLeadDuplicate",
     "listAppointments",
     "createAppointment",
     "updateAppointment",

@@ -86,9 +86,11 @@
   .terminal-summary__copy {
     min-width: 0;
   }
-  .lead-delete {
+  .lead-extra-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
+    gap: 0.5rem;
   }
   .terminal-summary__actions {
     display: flex;

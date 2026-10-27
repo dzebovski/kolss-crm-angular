@@ -74,6 +74,9 @@ export interface Lead {
   client_status_changed_at: string;
   assigned_to: string | null;
   loss_reason: string | null;
+  /** Set when the lead was marked as a repeat request of another lead (API 2.41.0). */
+  duplicate_of_lead_id?: string | null;
+  duplicate_of_reference_id?: string | null;
   converted_project_id: string | null;
   estimated_budget: number | null;
   estimated_budget_currency?: 'UAH' | 'USD' | 'EUR' | 'PLN';

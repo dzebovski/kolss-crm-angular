@@ -6,13 +6,14 @@ import {
   canChangeLeadManager,
   canEditLead,
   canDeleteLead,
+  canMarkDuplicate,
   canManageArchivedLead,
   canMutateEvent,
   canRestoreLeads,
   type LeadPolicyContext,
 } from './lead.policy';
 
-type LeadFixture = Pick<Lead, 'archivedAt' | 'officeCode' | 'clientStatus'>;
+type LeadFixture = Pick<Lead, 'archivedAt' | 'officeCode' | 'clientStatus' | 'duplicateOf'>;
 type EventFixture = Pick<LeadEvent, 'actorId'>;
 
 function permissions(
@@ -254,6 +255,26 @@ describe('lead.policy', () => {
       expect(canManageArchivedLead(ctx, lead({ archivedAt: '2026-07-01T00:00:00.000Z' }))).toBe(
         false,
       );
+    });
+  });
+
+  describe('canMarkDuplicate', () => {
+    const inKyiv = context({ userOffices: [{ code: 'kyiv' }] });
+
+    it('allows an office member on an open or closed lead of their office', () => {
+      expect(canMarkDuplicate(inKyiv, lead({ clientStatus: 'new_lead' }))).toBe(true);
+      expect(canMarkDuplicate(inKyiv, lead({ clientStatus: 'closed_lost' }))).toBe(true);
+    });
+
+    it('denies archived, contract, already-duplicate and other-office leads', () => {
+      expect(canMarkDuplicate(inKyiv, lead({ archivedAt: '2026-10-01T00:00:00.000Z' }))).toBe(
+        false,
+      );
+      expect(canMarkDuplicate(inKyiv, lead({ clientStatus: 'contract_signed' }))).toBe(false);
+      expect(
+        canMarkDuplicate(inKyiv, lead({ duplicateOf: { id: 'lead-1', referenceId: 'w0129' } })),
+      ).toBe(false);
+      expect(canMarkDuplicate(inKyiv, lead({ officeCode: 'warsaw' }))).toBe(false);
     });
   });
 

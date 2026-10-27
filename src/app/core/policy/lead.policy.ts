@@ -95,6 +95,15 @@ export function canRestoreLeads(context: LeadPolicyContext): boolean {
   return context.permissions?.canRestoreLeads ?? false;
 }
 
+/** Can the current user mark this lead as a repeat request of another lead ("Duplicate of…"). */
+export function canMarkDuplicate(
+  context: LeadPolicyContext,
+  lead: Pick<Lead, 'archivedAt' | 'officeCode' | 'clientStatus' | 'duplicateOf'>,
+): boolean {
+  if (lead.archivedAt || lead.duplicateOf || lead.clientStatus === 'contract_signed') return false;
+  return inUserOffice(context, lead.officeCode);
+}
+
 /** Can the current user permanently delete this lead, archived or not (super admin only). */
 export function canDeleteLead(context: LeadPolicyContext): boolean {
   return canRestoreLeads(context);

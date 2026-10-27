@@ -83,17 +83,30 @@
   </div>
 }
 
-@if (canDeleteLead() && !currentLead.archivedAt) {
-  <div class="lead-delete">
-    <app-ui-button
-      variant="danger"
-      size="small"
-      [loading]="deletingLead()"
-      (pressed)="deletePermanentlyRequested.emit()"
-    >
-      <app-ui-icon name="delete" [size]="16" />
-      {{ i18n.t('lead.delete') }}
-    </app-ui-button>
+@if (canMarkDuplicate() || (canDeleteLead() && !currentLead.archivedAt)) {
+  <div class="lead-extra-actions">
+    @if (canMarkDuplicate()) {
+      <app-ui-button
+        variant="secondary"
+        size="small"
+        [disabled]="pending()"
+        (pressed)="duplicateRequested.emit()"
+      >
+        <app-ui-icon name="content_copy" [size]="16" />
+        {{ i18n.t('lead.duplicate') }}
+      </app-ui-button>
+    }
+    @if (canDeleteLead() && !currentLead.archivedAt) {
+      <app-ui-button
+        variant="danger"
+        size="small"
+        [loading]="deletingLead()"
+        (pressed)="deletePermanentlyRequested.emit()"
+      >
+        <app-ui-icon name="delete" [size]="16" />
+        {{ i18n.t('lead.delete') }}
+      </app-ui-button>
+    }
   </div>
 }
 
