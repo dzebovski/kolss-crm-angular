@@ -83,6 +83,20 @@
   </div>
 }
 
+@if (canDeleteLead() && !currentLead.archivedAt) {
+  <div class="lead-delete">
+    <app-ui-button
+      variant="danger"
+      size="small"
+      [loading]="deletingLead()"
+      (pressed)="deletePermanentlyRequested.emit()"
+    >
+      <app-ui-icon name="delete" [size]="16" />
+      {{ i18n.t('lead.delete') }}
+    </app-ui-button>
+  </div>
+}
+
 @if (currentLead.contract) {
   <aside class="terminal-summary terminal-summary--success">
     <div class="terminal-summary__copy">

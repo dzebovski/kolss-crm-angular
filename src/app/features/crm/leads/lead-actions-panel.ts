@@ -119,6 +119,7 @@ export class LeadActionsPanel {
   readonly deletingLead = input(false);
   readonly canArchiveLead = input(false);
   readonly canManageArchivedLead = input(false);
+  readonly canDeleteLead = input(false);
   readonly runActivity = input.required<(action: () => Promise<void>) => Promise<void>>();
 
   readonly reopenRequested = output<void>();

@@ -963,6 +963,7 @@ export const messagesUk = {
   'lead.reopen': 'Відкрити',
   'lead.thinkingBanner': 'Клієнт на паузі. Можна активувати лід знову в загальну чергу.',
   'leads.activatedAt': 'Активовано: {date}',
+  'lead.delete': 'Видалити заявку',
   'lead.deletePermanently': 'Видалити остаточно',
   'lead.deletePermanentlyTitle': 'Видалити заявку назавжди',
   'lead.deletePermanentlyDesc': 'Заявку «{name}» буде видалено без можливості відновлення.',

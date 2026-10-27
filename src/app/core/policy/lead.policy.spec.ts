@@ -5,6 +5,7 @@ import {
   canAskLeadQuestion,
   canChangeLeadManager,
   canEditLead,
+  canDeleteLead,
   canManageArchivedLead,
   canMutateEvent,
   canRestoreLeads,
@@ -253,6 +254,21 @@ describe('lead.policy', () => {
       expect(canManageArchivedLead(ctx, lead({ archivedAt: '2026-07-01T00:00:00.000Z' }))).toBe(
         false,
       );
+    });
+  });
+
+  describe('canDeleteLead', () => {
+    it('allows only a super admin to delete a lead', () => {
+      expect(
+        canDeleteLead(
+          context({ isSuperAdmin: true, permissions: permissions({ canRestoreLeads: true }) }),
+        ),
+      ).toBe(true);
+      expect(
+        canDeleteLead(
+          context({ permissions: permissions({ canEditLeadFields: true, canArchiveLeads: true }) }),
+        ),
+      ).toBe(false);
     });
   });
 

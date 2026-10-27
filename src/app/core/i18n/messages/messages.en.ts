@@ -964,6 +964,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'lead.reopen': 'Open',
   'lead.thinkingBanner': 'Client is on pause. You can activate the lead back into the queue.',
   'leads.activatedAt': 'Activated: {date}',
+  'lead.delete': 'Delete lead',
   'lead.deletePermanently': 'Delete permanently',
   'lead.deletePermanentlyTitle': 'Delete lead permanently',
   'lead.deletePermanentlyDesc': 'Lead "{name}" will be deleted with no way to restore it.',

@@ -967,6 +967,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'lead.reopen': 'Otwórz',
   'lead.thinkingBanner': 'Klient na pauzie. Możesz ponownie aktywować lead do kolejki.',
   'leads.activatedAt': 'Aktywowano: {date}',
+  'lead.delete': 'Usuń zgłoszenie',
   'lead.deletePermanently': 'Usuń trwale',
   'lead.deletePermanentlyTitle': 'Usuń zgłoszenie na zawsze',
   'lead.deletePermanentlyDesc':

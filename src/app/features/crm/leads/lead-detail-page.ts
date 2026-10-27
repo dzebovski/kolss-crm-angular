@@ -306,6 +306,10 @@ export class LeadDetailView {
     return leadPolicy.canManageArchivedLead(this.leadPolicyContext(), lead);
   }
 
+  protected canDeleteLead(): boolean {
+    return leadPolicy.canDeleteLead(this.leadPolicyContext());
+  }
+
   protected async confirmArchiveLead(lead: Lead): Promise<void> {
     if (!this.canArchiveLead(lead) || this.deletingLead()) return;
 
@@ -353,7 +357,7 @@ export class LeadDetailView {
   }
 
   protected async confirmDeleteLead(lead: Lead): Promise<void> {
-    if (!this.canManageArchivedLead(lead) || this.deletingLead()) return;
+    if (!this.canDeleteLead() || this.deletingLead()) return;
 
     const confirmed = await firstValueFrom(
       this.dialog

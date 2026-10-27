@@ -95,6 +95,11 @@ export function canRestoreLeads(context: LeadPolicyContext): boolean {
   return context.permissions?.canRestoreLeads ?? false;
 }
 
+/** Can the current user permanently delete this lead, archived or not (super admin only). */
+export function canDeleteLead(context: LeadPolicyContext): boolean {
+  return canRestoreLeads(context);
+}
+
 /** Can the current user restore/permanently delete this specific archived lead. */
 export function canManageArchivedLead(
   context: LeadPolicyContext,
