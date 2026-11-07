@@ -1,0 +1,43 @@
+@use '../../../../../styles/v2/type';
+
+// Same card frame as the lead timeline (Project card board: 16/24px head, 4/24/12px list).
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-project-timeline__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-4) var(--v2-space-5);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-project-timeline__title {
+  @include type.text(section-title);
+
+  margin: 0;
+}
+
+.v2-project-timeline__list {
+  padding: var(--v2-space-1) var(--v2-space-5) var(--v2-space-3);
+}
+
+.v2-project-timeline__status {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+  margin: 0;
+  padding: var(--v2-space-4) 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-project-timeline__status--error {
+  color: var(--v2-danger);
+}

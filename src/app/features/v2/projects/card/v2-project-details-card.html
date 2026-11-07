@@ -1,0 +1,78 @@
+<div class="v2-details__head">
+  <h2 class="v2-details__title">
+    {{ 'v2.projectCard.details.title' | translate }}
+    <span class="v2-details__collected">{{ 'v2.projectCard.details.collected' | translate }}</span>
+  </h2>
+  <!-- TODO(v2): no API path edits the lead through the project yet (Q-P12). -->
+  <button
+    type="button"
+    appV2Button
+    size="sm"
+    disabled
+    [attr.title]="'v2.projectCard.editSoon' | translate"
+  >
+    {{ 'v2.projectCard.details.edit' | translate }}
+  </button>
+</div>
+
+@if (loading()) {
+  <p class="v2-details__status" role="status">{{ 'v2.projectCard.details.loading' | translate }}</p>
+} @else if (loadError()) {
+  <div class="v2-details__status v2-details__status--error" role="alert">
+    {{ 'v2.projectCard.details.error' | translate }}
+    <button type="button" appV2Button size="sm" (click)="retry.emit()">
+      {{ 'v2.leads.retry' | translate }}
+    </button>
+  </div>
+} @else {
+  <div class="v2-details__body">
+    <dl class="v2-details__grid">
+      @for (field of fields(); track field.labelKey) {
+        <div class="v2-details__field">
+          <dt>{{ field.labelKey | translate }}</dt>
+          <dd [class.v2-details__unset]="!field.value">
+            {{ field.value ?? ('v2.card.notSet' | translate) }}
+          </dd>
+          @if (field.sub) {
+            <dd class="v2-details__sub">{{ field.sub }}</dd>
+          }
+        </div>
+      }
+    </dl>
+
+    <div class="v2-details__lower">
+      <div class="v2-details__about">
+        <span class="v2-details__label">{{ 'v2.leadInfo.about' | translate }}</span>
+        @if (about(); as text) {
+          <p class="v2-details__about-text">{{ text }}</p>
+        } @else {
+          <p class="v2-details__about-text v2-details__unset">{{ 'v2.card.notSet' | translate }}</p>
+        }
+      </div>
+
+      <div class="v2-details__checklist">
+        <span class="v2-details__label">{{ 'v2.projectCard.checklist' | translate }}</span>
+        <ul class="v2-details__items">
+          @for (item of checklist(); track item.labelKey) {
+            <li class="v2-details__item" [attr.data-done]="item.done">
+              <span class="v2-details__box" aria-hidden="true">
+                @if (item.done) {
+                  <svg width="12" height="12" viewBox="0 0 24 24">
+                    <path d="M5 12l5 5L19 7" />
+                  </svg>
+                }
+              </span>
+              {{ item.labelKey | translate }}
+              <span class="v2-details__sr">
+                {{
+                  (item.done ? 'v2.projectCard.checklist.done' : 'v2.projectCard.checklist.open')
+                    | translate
+                }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+}

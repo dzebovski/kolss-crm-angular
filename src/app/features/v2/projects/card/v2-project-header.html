@@ -1,0 +1,102 @@
+@let current = project();
+
+<div class="v2-project-header__top">
+  <div class="v2-project-header__identity">
+    <span class="v2-project-header__eyebrow">
+      {{ 'v2.projectCard.eyebrow' | translate }}
+      @if (products()) {
+        · {{ products() }}
+      }
+    </span>
+    <div class="v2-project-header__title">
+      <h1 class="v2-project-header__name">
+        {{ current.clientName || ('v2.card.noName' | translate) }}
+      </h1>
+      <app-v2-code-chip [code]="current.code" />
+    </div>
+    <span class="v2-project-header__created">
+      {{ 'v2.projectCard.created' | translate: { date: created() } }} ·
+      <a class="v2-project-header__lead-link" [routerLink]="['/v2/leads', current.leadId]">
+        {{ 'v2.projectCard.fromLead' | translate: { code: current.code } }}
+      </a>
+    </span>
+  </div>
+
+  <div class="v2-project-header__actions">
+    <button type="button" appV2Button [disabled]="!canComment()" (click)="addComment.emit()">
+      {{ 'v2.projectCard.addComment' | translate }}
+    </button>
+    <!-- TODO(v2): no write path for the client's contacts on a project (Q-P12). -->
+    <button type="button" appV2Button disabled [attr.title]="'v2.projectCard.editSoon' | translate">
+      {{ 'v2.card.editContact' | translate }}
+    </button>
+    @if (!cancelled()) {
+      <button
+        type="button"
+        appV2Button
+        class="v2-project-header__cancel"
+        [disabled]="!canCancel()"
+        [attr.title]="lockHint() || null"
+        (click)="cancelProject.emit()"
+      >
+        {{ 'v2.projectCard.cancel' | translate }}
+      </button>
+    }
+  </div>
+</div>
+
+<dl class="v2-project-header__grid">
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.card.phone' | translate }}</dt>
+    <dd>
+      @if (phoneHref(); as href) {
+        <a class="v2-project-header__phone" [href]="href">{{ current.client.phone }}</a>
+      } @else {
+        <span class="v2-project-header__unset">{{ 'v2.card.notSet' | translate }}</span>
+      }
+    </dd>
+  </div>
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.card.email' | translate }}</dt>
+    <dd [class.v2-project-header__unset]="!current.client.email">
+      {{ current.client.email ?? ('v2.card.notSet' | translate) }}
+    </dd>
+  </div>
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.projectCard.row.address' | translate }}</dt>
+    <dd [class.v2-project-header__unset]="!current.client.cityRegion">
+      {{ current.client.cityRegion ?? ('v2.card.notSet' | translate) }}
+    </dd>
+  </div>
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.projectCard.showroom' | translate }}</dt>
+    <dd [class.v2-project-header__unset]="!showroomKey()">
+      @if (showroomKey(); as key) {
+        {{ key | translate }}
+      } @else {
+        {{ 'v2.card.notSet' | translate }}
+      }
+    </dd>
+  </div>
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.card.manager' | translate }}</dt>
+    <dd [class.v2-project-header__unset]="!current.manager">
+      {{ current.manager?.name ?? ('common.unassigned' | translate) }}
+    </dd>
+    <dd class="v2-project-header__designer">
+      @if (current.designer; as designer) {
+        {{ 'v2.projectCard.designer' | translate: { name: designer.name } }}
+      } @else {
+        {{ 'v2.projectCard.designerNotSet' | translate }}
+      }
+    </dd>
+  </div>
+</dl>
+
+<app-v2-project-stage-bar
+  [project]="current"
+  [now]="now()"
+  [canChange]="canChangeStatus()"
+  [lockHint]="lockHint()"
+  (changeStatus)="changeStatus.emit()"
+/>

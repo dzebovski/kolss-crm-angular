@@ -1,0 +1,149 @@
+// Status bar of the Project card board. `#b9dcc8` (finished connector), 24px circles and 12px
+// step labels are board values without a token. Pipeline 3 has ten steps: the labels sit under
+// the circles (wrapping to two lines) and the tracker always takes its own row; below 960px it
+// scrolls sideways.
+:host {
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  background: var(--v2-ground);
+  border-top: 1px solid var(--v2-line-soft);
+  border-radius: 0 0 var(--v2-radius-lg) var(--v2-radius-lg);
+}
+
+.v2-stage__bar {
+  display: grid;
+  grid-template-areas:
+    'status action'
+    'steps steps';
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--v2-space-4) 20px;
+  padding: var(--v2-space-4) var(--v2-space-6);
+}
+
+.v2-stage__status {
+  grid-area: status;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2) var(--v2-space-3);
+  min-width: 0;
+}
+
+.v2-stage__event {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-stage__event-date {
+  color: var(--v2-ink);
+  font-weight: 500;
+}
+
+.v2-stage__steps {
+  grid-area: steps;
+  display: flex;
+  align-items: flex-start;
+  overflow-x: auto;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v2-stage__step {
+  display: flex;
+  flex: 0 1 96px;
+  flex-direction: column;
+  min-width: 72px;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.v2-stage__bar > button {
+  grid-area: action;
+  align-self: start;
+}
+
+// Narrow screens: the status, then the button under it, then the scrolling tracker.
+@container (max-width: 560px) {
+  .v2-stage__bar {
+    grid-template-areas:
+      'status'
+      'action'
+      'steps';
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--v2-space-4);
+  }
+
+  .v2-stage__bar > button {
+    justify-self: start;
+  }
+}
+
+.v2-stage__circle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-subtle);
+  font-size: 11px;
+  font-weight: 600;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+.v2-stage__label {
+  overflow-wrap: break-word;
+  color: var(--v2-subtle);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.v2-stage__step[data-state='done'] {
+  .v2-stage__circle {
+    background: var(--v2-success-bg);
+    color: var(--v2-success-ink);
+  }
+
+  .v2-stage__label {
+    color: var(--v2-ink-2);
+  }
+}
+
+.v2-stage__step[data-state='current'] {
+  .v2-stage__circle {
+    color: var(--v2-on-ink);
+  }
+
+  .v2-stage__label {
+    color: var(--v2-ink);
+    font-weight: 600;
+  }
+}
+
+.v2-stage__line {
+  flex: 1 1 8px;
+  min-width: 8px;
+  height: 2px;
+  margin-top: 11px;
+  border-radius: 2px;
+  background: var(--v2-line);
+}
+
+.v2-stage__line[data-state='done'] {
+  background: #b9dcc8;
+}

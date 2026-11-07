@@ -1,0 +1,304 @@
+@use '../../../../../styles/v2/interactive';
+@use '../../../../../styles/v2/type';
+
+// Values from the Project card board (Contract and payments). The 56px icon tile, the 8px bar and
+// the payments grid columns (32 / 150 / 120 / 1fr / 220) are board values without a token.
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-contract__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-4) var(--v2-space-5);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-contract__title {
+  @include type.text(section-title);
+
+  margin: 0;
+}
+
+.v2-contract__none {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-5);
+  padding: 28px var(--v2-space-5);
+}
+
+.v2-contract__none-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+
+  svg {
+    stroke-width: 1.5;
+  }
+}
+
+.v2-contract__none-text {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+}
+
+.v2-contract__none-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.v2-contract__none-hint {
+  max-width: 560px;
+  color: var(--v2-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.v2-contract__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px var(--v2-space-5);
+}
+
+.v2-contract__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  align-items: end;
+  gap: var(--v2-space-5);
+  margin: 0;
+}
+
+.v2-contract__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+  min-width: 0;
+
+  dt {
+    color: var(--v2-muted);
+    font-size: 12px;
+  }
+
+  dd {
+    @include type.text(value);
+
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.v2-contract__file {
+  display: flex;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.v2-contract__file-link,
+.v2-contract__receipt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--v2-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(none);
+}
+
+.v2-contract__file-link {
+  gap: var(--v2-space-2);
+  height: 36px;
+  padding: 0 var(--v2-space-3);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.v2-contract__receipt {
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.v2-contract__file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-contract__no-file {
+  color: var(--v2-subtle);
+  font-size: 13px;
+}
+
+.v2-contract__balance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+  padding: 14px var(--v2-space-4);
+  border-radius: 12px;
+  background: var(--v2-ground);
+}
+
+.v2-contract__balance-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+  font-size: 14px;
+}
+
+.v2-contract__balance-row > span {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--v2-space-1);
+}
+
+.v2-contract__muted {
+  color: var(--v2-muted);
+}
+
+.v2-contract__fully-paid {
+  color: var(--v2-success-ink);
+  font-weight: 600;
+}
+
+.v2-contract__bar {
+  position: relative;
+  display: flex;
+  height: 8px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-line);
+}
+
+.v2-contract__bar-fill {
+  height: 100%;
+  background: var(--v2-status-success);
+
+  &:first-child {
+    border-radius: var(--v2-radius-pill) 0 0 var(--v2-radius-pill);
+  }
+}
+
+// The intro payment credited to the main contract: blue (`status-later`), before its own payments.
+.v2-contract__bar-fill--credited {
+  background: var(--v2-status-later);
+}
+
+// The 50% mark of the main contract: a 2px tick over the bar (12px tall, board value).
+.v2-contract__bar-mark {
+  position: absolute;
+  top: -2px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 12px;
+  border-radius: 1px;
+  background: var(--v2-ink);
+}
+
+.v2-contract__target {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-contract__target--reached {
+  color: var(--v2-success-ink);
+}
+
+.v2-contract__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+
+  th,
+  td {
+    padding: 0 var(--v2-space-2) 0 0;
+    border-bottom: 1px solid var(--v2-line-soft);
+    font-weight: 400;
+  }
+
+  th {
+    height: 36px;
+    color: var(--v2-muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  td {
+    height: 48px;
+  }
+
+  th:nth-child(1),
+  td:nth-child(1) {
+    width: 32px;
+  }
+
+  th:nth-child(2),
+  td:nth-child(2) {
+    width: 150px;
+  }
+
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: 120px;
+  }
+
+  th:nth-child(5),
+  td:nth-child(5) {
+    width: 220px;
+    max-width: 220px;
+  }
+}
+
+.v2-contract__share {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-contract__empty {
+  margin: -6px 0 0;
+  color: var(--v2-muted);
+  font-size: 14px;
+}
+
+.v2-contract__error {
+  margin: 0;
+  color: var(--v2-danger);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .v2-contract__none {
+    flex-wrap: wrap;
+  }
+}

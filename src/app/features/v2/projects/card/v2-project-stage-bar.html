@@ -1,0 +1,51 @@
+@let current = project();
+
+<div class="v2-stage__bar">
+  <div class="v2-stage__status">
+    <app-v2-project-status-pill [status]="current.status" />
+    @if (nextEvent(); as event) {
+      <span class="v2-stage__event">
+        {{ event.labelKey | translate }}:
+        <span class="v2-stage__event-date">{{ event.date }}</span>
+      </span>
+    }
+  </div>
+
+  <ol class="v2-stage__steps" [attr.aria-label]="'v2.projectCard.stages' | translate">
+    @for (step of steps(); track step.stage; let last = $last) {
+      <li
+        class="v2-stage__step"
+        [attr.data-state]="step.state"
+        [attr.aria-current]="step.state === 'current' ? 'step' : null"
+      >
+        <span
+          class="v2-stage__circle"
+          [style.background]="step.state === 'current' ? step.color : null"
+        >
+          @if (step.state === 'done') {
+            <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12l5 5L19 7" />
+            </svg>
+          } @else {
+            {{ step.number }}
+          }
+        </span>
+        <span class="v2-stage__label">{{ stageLabel(step.stage) | translate }}</span>
+      </li>
+      @if (!last) {
+        <li class="v2-stage__line" [attr.data-state]="step.state" aria-hidden="true"></li>
+      }
+    }
+  </ol>
+
+  <button
+    type="button"
+    appV2Button
+    size="sm"
+    [disabled]="!canChange()"
+    [attr.title]="lockHint() || null"
+    (click)="changeStatus.emit()"
+  >
+    {{ 'v2.projectCard.changeStatus' | translate }}
+  </button>
+</div>

@@ -1,0 +1,143 @@
+@use '../../../../../styles/v2/interactive';
+
+// Page frame from the Project card board: the sections stack with the shell's 16px gap.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-project__breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+  font-size: 13px;
+}
+
+.v2-project__crumb-link {
+  color: var(--v2-muted);
+  text-decoration: none;
+
+  @include interactive.states(none);
+
+  &:hover {
+    color: var(--v2-ink);
+  }
+}
+
+.v2-project__crumb-divider {
+  color: var(--v2-faint);
+}
+
+.v2-project__crumb-current {
+  font-weight: 500;
+}
+
+// Read-only hint under the status bar (Project-card-read-only board).
+.v2-project__hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--v2-space-3) var(--v2-space-4);
+  border-radius: 12px;
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+
+  svg {
+    flex-shrink: 0;
+  }
+}
+
+.v2-project__split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--v2-space-4);
+}
+
+// Intro and main contract side by side, equal width.
+.v2-project__split--even {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.v2-project__docs-note {
+  margin: 0;
+  color: var(--v2-subtle);
+  font-size: 14px;
+}
+
+.v2-project__docs-note--error {
+  color: var(--v2-danger);
+  font-size: 12px;
+}
+
+// Error and not-found panels (Project-card-error / -not-found boards). `#fffafa` and `#f1c5c0`
+// are board values without a token.
+.v2-project__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--v2-space-2);
+  padding: 48px var(--v2-space-6);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+  text-align: center;
+}
+
+.v2-project__panel--error {
+  background: #fffafa;
+  border-color: #f1c5c0;
+}
+
+.v2-project__panel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+}
+
+.v2-project__panel--error .v2-project__panel-icon {
+  background: var(--v2-danger-bg);
+  color: var(--v2-danger);
+}
+
+.v2-project__panel-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.v2-project__panel-hint {
+  max-width: 460px;
+  color: var(--v2-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.v2-project__panel-actions {
+  display: flex;
+  gap: var(--v2-space-2);
+  margin-top: 10px;
+}
+
+@media (max-width: 1100px) {
+  .v2-project__split,
+  .v2-project__split--even {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

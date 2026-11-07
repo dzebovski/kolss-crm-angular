@@ -1,0 +1,157 @@
+<nav class="v2-project__breadcrumb" [attr.aria-label]="'v2.projectCard.breadcrumb' | translate">
+  <a class="v2-project__crumb-link" routerLink="/v2/projects">
+    {{ 'v2.projectCard.crumb' | translate }}
+  </a>
+  @if (project(); as current) {
+    <span class="v2-project__crumb-divider" aria-hidden="true">/</span>
+    <span class="v2-project__crumb-current" aria-current="page">
+      {{ current.code }}
+      @if (products()) {
+        · {{ products() }}
+      }
+      — {{ current.clientName || ('v2.card.noName' | translate) }}
+    </span>
+  }
+</nav>
+
+@if (loading()) {
+  <app-v2-project-skeleton />
+} @else if (loadFailed()) {
+  <div class="v2-project__panel v2-project__panel--error" role="alert">
+    <span class="v2-project__panel-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7.5v5.5" />
+        <path d="M12 16.5h.01" />
+      </svg>
+    </span>
+    <span class="v2-project__panel-title">{{ 'v2.projectCard.error.title' | translate }}</span>
+    <span class="v2-project__panel-hint">{{ 'v2.projectCard.error.hint' | translate }}</span>
+    <div class="v2-project__panel-actions">
+      <button type="button" appV2Button variant="primary" (click)="retry()">
+        {{ 'v2.leads.retry' | translate }}
+      </button>
+      <a appV2Button routerLink="/v2/projects">{{ 'v2.projectCard.backToProjects' | translate }}</a>
+    </div>
+  </div>
+} @else if (notFound()) {
+  <div class="v2-project__panel" role="status">
+    <span class="v2-project__panel-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-3.5-3.5" />
+      </svg>
+    </span>
+    <span class="v2-project__panel-title">{{ 'v2.projectCard.notFound.title' | translate }}</span>
+    <span class="v2-project__panel-hint">{{ 'v2.projectCard.notFound.hint' | translate }}</span>
+    <div class="v2-project__panel-actions">
+      <a appV2Button routerLink="/v2/projects">{{ 'v2.projectCard.backToProjects' | translate }}</a>
+    </div>
+  </div>
+} @else if (project(); as current) {
+  @let allowed = actions()!;
+
+  @if (current.cancellation; as cancellation) {
+    <app-v2-project-cancel-banner
+      [cancellation]="cancellation"
+      [now]="now()"
+      [canRestore]="allowed.canRestore"
+      [lockHint]="lockHint()"
+      (restore)="restoreProject()"
+    />
+  }
+
+  @if (lockHint(); as hint) {
+    <div class="v2-project__hint" role="note">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="11" width="14" height="9" rx="2" />
+        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+      </svg>
+      <span>{{ hint }}</span>
+    </div>
+  }
+
+  <app-v2-project-header
+    [project]="current"
+    [lead]="leadCard()"
+    [products]="products()"
+    [now]="now()"
+    [canChangeStatus]="allowed.canChangeStatus"
+    [canCancel]="allowed.canCancel"
+    [canComment]="allowed.canComment"
+    [lockHint]="lockHint()"
+    (changeStatus)="changeStatus()"
+    (cancelProject)="cancelProject()"
+    (addComment)="addComment()"
+  />
+
+  <app-v2-project-details-card
+    [card]="leadCard()"
+    [columns]="leadColumns()"
+    [projectType]="current.projectType"
+    [now]="now()"
+    [loading]="leadLoading()"
+    [loadError]="leadFailed()"
+    (retry)="reloadLead()"
+  />
+
+  <div class="v2-project__split">
+    <app-v2-project-estimate-card
+      [estimate]="current.estimate"
+      [canEdit]="allowed.canEditEstimate"
+      [lockHint]="lockHint()"
+      (edit)="editEstimate()"
+    />
+
+    @if (leadCard(); as lead) {
+      <app-v2-lead-documents-card
+        [lead]="lead"
+        [now]="now()"
+        [canAdd]="canAddDocuments()"
+        (changed)="reloadLead()"
+      />
+    } @else {
+      <app-v2-info-card [title]="'v2.docs.title' | translate">
+        @if (leadFailed()) {
+          <p class="v2-project__docs-note v2-project__docs-note--error" role="alert">
+            {{ 'v2.projectCard.details.error' | translate }}
+          </p>
+          <button type="button" appV2Button size="sm" (click)="reloadLead()">
+            {{ 'v2.leads.retry' | translate }}
+          </button>
+        } @else {
+          <p class="v2-project__docs-note" role="status">{{ 'common.loading' | translate }}</p>
+        }
+      </app-v2-info-card>
+    }
+  </div>
+
+  <div class="v2-project__split v2-project__split--even">
+    @for (kind of contractKinds; track kind) {
+      <app-v2-project-contract-card
+        [kind]="kind"
+        [contract]="current.contracts[kind]"
+        [payments]="current.payments"
+        [now]="now()"
+        [canAddContract]="
+          kind === 'intro' ? allowed.canAddIntroContract : allowed.canAddMainContract
+        "
+        [canAddPayment]="allowed.canAddPayment"
+        [lockHint]="lockHint()"
+        [fileError]="fileError()?.kind === kind ? fileError()!.message : ''"
+        (addContract)="addContract(kind)"
+        (addPayment)="addPayment()"
+        (openFile)="openFile($event, kind)"
+      />
+    }
+  </div>
+
+  <app-v2-project-timeline
+    [items]="timeline()"
+    [now]="now()"
+    [personName]="personName"
+    [loading]="timelineLoading()"
+    [loadError]="timelineFailed()"
+    (retry)="reloadTimeline()"
+  />
+}
