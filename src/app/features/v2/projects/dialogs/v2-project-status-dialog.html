@@ -1,0 +1,62 @@
+@let errors = shown();
+
+<app-v2-dialog
+  [title]="'v2.projectCard.changeStatus' | translate"
+  [subtitle]="subtitle"
+  width="status"
+  [hint]="hint()"
+  [cancelLabel]="'v2.projectPopup.cancel' | translate"
+  [saveLabel]="'v2.projectPopup.status.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="touched.set(true)"
+>
+  @if (error(); as message) {
+    <app-v2-project-notice tone="danger">{{ message }}</app-v2-project-notice>
+  }
+
+  <app-v2-field-group
+    [label]="'v2.projectPopup.status.label' | translate"
+    [required]="true"
+    [error]="errors.status ?? ''"
+  >
+    <app-v2-card-select [options]="options()" [formField]="fields.status" />
+  </app-v2-field-group>
+
+  @if (prepayment(); as text) {
+    <app-v2-project-notice>{{ text }}</app-v2-project-notice>
+  }
+  @if (unpaid(); as text) {
+    <app-v2-project-notice>{{ text }}</app-v2-project-notice>
+  }
+
+  @if (eventLabelKey(); as labelKey) {
+    <div class="v2-status-popup__row">
+      <app-v2-form-field
+        [label]="labelKey | translate"
+        [hint]="'v2.projectPopup.status.eventHint' | translate"
+        [error]="errors.eventDate ?? ''"
+      >
+        <input type="date" [formField]="fields.eventDate" />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'v2.projectPopup.status.time' | translate">
+        <input type="time" [formField]="fields.eventTime" />
+      </app-v2-form-field>
+    </div>
+  }
+
+  <app-v2-form-field
+    [label]="'v2.timeline.comment' | translate"
+    [required]="!!prepayment()"
+    [hint]="
+      (prepayment() ? 'v2.projectPopup.status.commentAdminHint' : 'v2.projectPopup.timelineHint')
+        | translate
+    "
+    [error]="errors.comment ?? ''"
+  >
+    <textarea rows="3" [formField]="fields.comment"></textarea>
+  </app-v2-form-field>
+</app-v2-dialog>

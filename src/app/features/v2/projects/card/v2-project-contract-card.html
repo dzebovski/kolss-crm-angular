@@ -1,23 +1,59 @@
 <div class="v2-contract__head">
   <h2 class="v2-contract__title">{{ keys().title | translate }}</h2>
   @if (contract(); as current) {
-    @if (!current.fullyPaid) {
-      <button
-        type="button"
-        appV2Button
-        size="sm"
-        variant="primary"
-        [disabled]="!canAddPayment()"
-        [attr.title]="lockHint() || null"
-        (click)="addPayment.emit()"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 5v14" />
-          <path d="M5 12h14" />
-        </svg>
-        {{ 'v2.projectCard.payment.add' | translate }}
-      </button>
-    }
+    <div class="v2-contract__actions">
+      @if (canEdit()) {
+        <button
+          type="button"
+          class="v2-contract__icon"
+          [attr.aria-label]="'v2.projectPopup.contract.edit' | translate"
+          [attr.title]="'v2.projectPopup.contract.edit' | translate"
+          (click)="editContract.emit()"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 20h4L19 9l-4-4L4 16Z" />
+            <path d="m13.5 6.5 4 4" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="v2-contract__icon v2-contract__icon--danger"
+          [disabled]="rows().length > 0"
+          [attr.aria-label]="'v2.projectPopup.contract.delete' | translate"
+          [attr.title]="
+            (rows().length > 0
+              ? 'v2.projectPopup.contract.deleteBlocked'
+              : 'v2.projectPopup.contract.delete'
+            ) | translate
+          "
+          (click)="deleteContract.emit()"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M6 7l1 13h10l1-13" />
+            <path d="M9 7V4h6v3" />
+          </svg>
+        </button>
+      }
+      @if (!current.fullyPaid) {
+        <button
+          type="button"
+          appV2Button
+          size="sm"
+          variant="primary"
+          [disabled]="!canAddPayment()"
+          [attr.title]="lockHint() || null"
+          (click)="addPayment.emit()"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
+          {{ 'v2.projectCard.payment.add' | translate }}
+        </button>
+      }
+    </div>
   }
 </div>
 
@@ -122,6 +158,11 @@
           <th scope="col">{{ 'v2.projectCard.payment.date' | translate }}</th>
           <th scope="col">{{ 'v2.projectCard.row.note' | translate }}</th>
           <th scope="col">{{ 'v2.projectCard.payment.receipt' | translate }}</th>
+          @if (canEdit()) {
+            <th scope="col">
+              <span class="v2-contract__sr">{{ 'v2.projectPopup.actions' | translate }}</span>
+            </th>
+          }
         </tr>
       </thead>
       <tbody>
@@ -145,6 +186,40 @@
                 </button>
               }
             </td>
+            @if (canEdit()) {
+              <td class="v2-contract__row-actions">
+                <button
+                  type="button"
+                  class="v2-contract__icon"
+                  [attr.aria-label]="
+                    'v2.projectPopup.payment.editRow' | translate: { number: row.number }
+                  "
+                  [attr.title]="'v2.projectPopup.payment.edit' | translate"
+                  (click)="editPayment.emit(row.payment)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 20h4L19 9l-4-4L4 16Z" />
+                    <path d="m13.5 6.5 4 4" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="v2-contract__icon v2-contract__icon--danger"
+                  [attr.aria-label]="
+                    'v2.projectPopup.payment.deleteRow' | translate: { number: row.number }
+                  "
+                  [attr.title]="'v2.projectPopup.payment.delete' | translate"
+                  (click)="deletePayment.emit(row.payment)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 7h16" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M6 7l1 13h10l1-13" />
+                    <path d="M9 7V4h6v3" />
+                  </svg>
+                </button>
+              </td>
+            }
           </tr>
         }
       </tbody>
@@ -152,7 +227,7 @@
     @if (rows().length === 0) {
       <p class="v2-contract__empty">{{ 'v2.projectCard.payment.none' | translate }}</p>
     }
-    @if (fileError(); as message) {
+    @if (error(); as message) {
       <p class="v2-contract__error" role="alert">{{ message }}</p>
     }
   </div>

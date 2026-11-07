@@ -20,7 +20,7 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
 
 // Grey banner of a cancelled project (Project-card-cancelled board): date, who, reasons, comment
 // and "Restore project" with its inline "Restore to …?" confirmation. `restore` fires after the
-// confirmation; the page performs the restore (P5).
+// confirmation; the page performs the restore and passes `busy` / `error` back.
 @Component({
   selector: 'app-v2-project-cancel-banner',
   imports: [TranslatePipe, V2Button],
@@ -50,6 +50,9 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
       @if (cancellation().comment; as comment) {
         <span class="v2-cancel__comment">{{ comment }}</span>
       }
+      @if (error(); as message) {
+        <span class="v2-cancel__error" role="alert">{{ message }}</span>
+      }
     </div>
     @if (asking()) {
       <div class="v2-cancel__confirm" role="group">
@@ -59,7 +62,14 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
         <button type="button" appV2Button size="sm" (click)="asking.set(false)">
           {{ 'v2.projectCard.keepCancelled' | translate }}
         </button>
-        <button type="button" appV2Button size="sm" variant="primary" (click)="confirm()">
+        <button
+          type="button"
+          appV2Button
+          size="sm"
+          variant="primary"
+          [disabled]="busy()"
+          (click)="confirm()"
+        >
           {{ 'v2.projectCard.restoreConfirm' | translate }}
         </button>
       </div>
@@ -67,7 +77,7 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
       <button
         type="button"
         appV2Button
-        [disabled]="!canRestore()"
+        [disabled]="!canRestore() || busy()"
         [attr.title]="lockHint() || null"
         (click)="asking.set(true)"
       >
@@ -128,6 +138,10 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
       color: var(--v2-muted);
     }
 
+    .v2-cancel__error {
+      color: var(--v2-danger);
+    }
+
     .v2-cancel__confirm {
       display: flex;
       flex-shrink: 0;
@@ -149,6 +163,9 @@ export class V2ProjectCancelBanner {
   readonly canRestore = input(false);
   /** Tooltip of the locked Restore button (the read-only hint). */
   readonly lockHint = input('');
+  /** The page is restoring; a failed restore shows `error`. */
+  readonly busy = input(false);
+  readonly error = input('');
   readonly restore = output<void>();
 
   protected readonly asking = signal(false);

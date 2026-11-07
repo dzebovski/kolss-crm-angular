@@ -278,6 +278,65 @@ svg {
     width: 220px;
     max-width: 220px;
   }
+
+  th:nth-child(6),
+  td:nth-child(6) {
+    width: 72px;
+    padding-right: 0;
+  }
+}
+
+.v2-contract__actions,
+.v2-contract__row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--v2-space-1);
+}
+
+.v2-contract__row-actions {
+  height: 48px;
+}
+
+.v2-contract__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-muted);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--v2-hover-overlay);
+    color: var(--v2-ink);
+  }
+
+  &--danger:hover:not(:disabled) {
+    color: var(--v2-danger);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--v2-ink);
+    outline-offset: 1px;
+  }
+}
+
+.v2-contract__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .v2-contract__share {
@@ -300,5 +359,31 @@ svg {
 @media (max-width: 1100px) {
   .v2-contract__none {
     flex-wrap: wrap;
+  }
+}
+
+// Phone: the note column gives way so amount, date, receipt and the row actions fit.
+@media (max-width: 560px) {
+  .v2-contract__head,
+  .v2-contract__balance-row {
+    flex-wrap: wrap;
+  }
+
+  .v2-contract__table {
+    th:nth-child(4),
+    td:nth-child(4) {
+      display: none;
+    }
+
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: auto;
+    }
+
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: auto;
+      max-width: 96px;
+    }
   }
 }

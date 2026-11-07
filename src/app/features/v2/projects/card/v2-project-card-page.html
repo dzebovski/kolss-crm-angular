@@ -57,7 +57,9 @@
       [now]="now()"
       [canRestore]="allowed.canRestore"
       [lockHint]="lockHint()"
-      (restore)="restoreProject()"
+      [busy]="act.restoring()"
+      [error]="act.restoreError()"
+      (restore)="act.restoreProject()"
     />
   }
 
@@ -80,9 +82,9 @@
     [canCancel]="allowed.canCancel"
     [canComment]="allowed.canComment"
     [lockHint]="lockHint()"
-    (changeStatus)="changeStatus()"
-    (cancelProject)="cancelProject()"
-    (addComment)="addComment()"
+    (changeStatus)="act.changeStatus()"
+    (cancelProject)="act.cancelProject()"
+    (addComment)="act.addComment()"
   />
 
   <app-v2-project-details-card
@@ -100,7 +102,7 @@
       [estimate]="current.estimate"
       [canEdit]="allowed.canEditEstimate"
       [lockHint]="lockHint()"
-      (edit)="editEstimate()"
+      (edit)="act.editEstimate()"
     />
 
     @if (leadCard(); as lead) {
@@ -137,11 +139,16 @@
           kind === 'intro' ? allowed.canAddIntroContract : allowed.canAddMainContract
         "
         [canAddPayment]="allowed.canAddPayment"
+        [canEdit]="allowed.canChangeStatus"
         [lockHint]="lockHint()"
-        [fileError]="fileError()?.kind === kind ? fileError()!.message : ''"
-        (addContract)="addContract(kind)"
-        (addPayment)="addPayment()"
-        (openFile)="openFile($event, kind)"
+        [error]="act.blockError()?.kind === kind ? act.blockError()!.message : ''"
+        (addContract)="act.addContract(kind)"
+        (addPayment)="act.addPayment(kind)"
+        (editContract)="act.editContract(kind)"
+        (deleteContract)="act.deleteContract(kind)"
+        (editPayment)="act.editPayment($event)"
+        (deletePayment)="act.deletePayment($event)"
+        (openFile)="act.openFile($event, kind)"
       />
     }
   </div>

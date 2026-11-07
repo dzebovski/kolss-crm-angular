@@ -1,5 +1,4 @@
-import { Component, computed, inject, input, resource, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { Component, computed, inject, input, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { KolssApiError } from '@core/api/generated/kolss-api.client';
@@ -11,18 +10,17 @@ import { SessionService } from '@core/session/session.service';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
 import { v2ProjectActions } from '@domain/v2/project-status';
 import { v2ProjectTimeline } from '@domain/v2/project-timeline';
-import type { V2Project, V2ProjectContractKind } from '@domain/v2/project.types';
+import type { V2ProjectContractKind } from '@domain/v2/project.types';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2ProjectsService } from '@services/v2/v2-projects.service';
 import { V2_NOW } from '../../core/v2-clock';
 import { V2LeadDocumentsCard } from '../../leads/card/v2-lead-documents-card';
-import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import { V2Button } from '../../ui/v2-button';
 import { V2InfoCard } from '../../ui/v2-info-card';
 import { V2_PRODUCT_LABEL } from '../../ui/v2-lead-labels';
 import { V2ProjectCancelBanner } from './v2-project-cancel-banner';
-import { V2ProjectCommentDialog, type V2ProjectCommentData } from './v2-project-comment-dialog';
+import { V2ProjectCardActions } from './v2-project-card-actions';
 import { V2ProjectContractCard } from './v2-project-contract-card';
 import { V2ProjectDetailsCard } from './v2-project-details-card';
 import { V2ProjectEstimateCard } from './v2-project-estimate-card';
@@ -33,9 +31,9 @@ import { V2ProjectTimeline } from './v2-project-timeline';
 // Project card (`/v2/projects/:projectId`, P4, pipeline 3): breadcrumb, cancelled banner or
 // read-only hint, header with the 10-step tracker, project details + checklist (read live from
 // the lead), estimate, documents (the lead's documents card), the intro and main contracts with
-// their payments, and the timeline. Actions follow `v2ProjectActions`. Add comment works here;
-// the other popups (Change status with the 50% check, Add contract, Add payment, Edit estimate,
-// Cancel, Restore) are P5: the handlers below are the seams it fills in.
+// their payments, and the timeline. Actions follow `v2ProjectActions`; the popups (P5) close with
+// the updated project: Change status (50% check before Production), Add / edit / delete contract
+// and payment, Edit estimate, Cancel, Restore (inline in the banner), Add comment.
 @Component({
   selector: 'app-v2-project-card-page',
   imports: [
@@ -52,6 +50,7 @@ import { V2ProjectTimeline } from './v2-project-timeline';
     V2ProjectSkeleton,
     V2ProjectTimeline,
   ],
+  providers: [V2ProjectCardActions],
   templateUrl: './v2-project-card-page.html',
   styleUrl: './v2-project-card-page.scss',
 })
@@ -63,7 +62,8 @@ export class V2ProjectCardPage {
   private readonly session = inject(SessionService);
   private readonly i18n = inject(I18nService);
   private readonly clock = inject(V2_NOW);
-  private readonly dialogs = inject(V2DialogService);
+
+  protected readonly act = inject(V2ProjectCardActions);
 
   /** Route parameter `:projectId`, bound through `withComponentInputBinding()`. */
   readonly projectId = input.required<string>();
@@ -182,11 +182,6 @@ export class V2ProjectCardPage {
   });
 
   protected readonly contractKinds: readonly V2ProjectContractKind[] = ['intro', 'main'];
-  /** A failed contract file or receipt download, shown in the block it came from. */
-  protected readonly fileError = signal<{
-    readonly kind: V2ProjectContractKind;
-    readonly message: string;
-  } | null>(null);
 
   protected retry(): void {
     this.projectResource.reload();
@@ -205,57 +200,9 @@ export class V2ProjectCardPage {
     this.timelineResource.reload();
   }
 
-  /** Every mutation answers with the whole project; the timeline follows `lastActivityAt`. */
-  private applyProject(project: V2Project): void {
-    this.projectResource.set(project);
-  }
-
-  protected async addComment(): Promise<void> {
-    const project = this.project();
-    if (!project || !this.actions()?.canComment) return;
-    const ref = this.dialogs.open<V2Project | null, V2ProjectCommentData>(V2ProjectCommentDialog, {
-      projectId: project.id,
-      subtitle: `${project.code} · ${project.clientName}`,
-    });
-    const updated = await firstValueFrom(ref.closed);
-    if (updated) this.applyProject(updated);
-  }
-
-  protected changeStatus(): void {
-    // TODO(P5): open the Change status popup (`v2ProjectPrepaymentCheck` before Production).
-  }
-
-  protected addContract(kind: V2ProjectContractKind): void {
-    // TODO(P5): open the Add contract popup for `kind`.
-    void kind;
-  }
-
-  protected editEstimate(): void {
-    // TODO(P5): open the Edit estimate popup.
-  }
-
-  protected addPayment(): void {
-    // TODO(P5): open the Add payment popup.
-  }
-
-  protected cancelProject(): void {
-    // TODO(P5): open the Cancel project popup.
-  }
-
-  protected restoreProject(): void {
-    // TODO(P5): call V2ProjectsService.restore() and reload the project.
-  }
-
-  protected async openFile(fileId: string, kind: V2ProjectContractKind): Promise<void> {
-    this.fileError.set(null);
-    try {
-      await this.projects.openFile(fileId);
-    } catch (error) {
-      const message = this.i18n.localizeError(
-        error instanceof Error ? error.message : 'error.actionFailed',
-      );
-      this.fileError.set({ kind, message });
-    }
+  constructor() {
+    // Every mutation answers with the whole project; the timeline follows `lastActivityAt`.
+    this.act.connect(this.project, (project) => this.projectResource.set(project));
   }
 
   private policyContext(): leadPolicy.LeadPolicyContext {

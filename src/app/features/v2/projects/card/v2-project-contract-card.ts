@@ -32,7 +32,8 @@ const KEYS = {
 // 50% must be paid before Production). Empty state with Add contract, or the contract fields, the
 // paid bar (credited intro + own payments, 50% mark on the main contract) and its payments.
 // Presentational: the page opens the P5 popups and downloads files.
-// TODO(v2): edit / delete on the contract and payment rows (P5 popups).
+// Edit / delete on the contract and on each payment row follow `canEdit`; a contract with
+// payments cannot be deleted (delete its payments first).
 @Component({
   selector: 'app-v2-project-contract-card',
   imports: [TranslatePipe, V2Button],
@@ -51,9 +52,16 @@ export class V2ProjectContractCard {
   readonly canAddPayment = input(false);
   /** The read-only hint, also the tooltip of the locked buttons; empty while the user can act. */
   readonly lockHint = input('');
-  readonly fileError = input('');
+  /** Contract and payment edit / delete (manager and admins, same rule as Change status). */
+  readonly canEdit = input(false);
+  /** A failed download or delete, shown in this block. */
+  readonly error = input('');
   readonly addContract = output<void>();
   readonly addPayment = output<void>();
+  readonly editContract = output<void>();
+  readonly deleteContract = output<void>();
+  readonly editPayment = output<V2ProjectPayment>();
+  readonly deletePayment = output<V2ProjectPayment>();
   /** A contract file or receipt was clicked; the page downloads it. */
   readonly openFile = output<string>();
 

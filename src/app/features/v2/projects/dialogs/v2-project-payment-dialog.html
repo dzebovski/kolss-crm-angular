@@ -1,0 +1,88 @@
+@let errors = shown();
+
+<app-v2-dialog
+  [title]="(editing ? 'v2.projectPopup.payment.edit' : 'v2.projectCard.payment.add') | translate"
+  [subtitle]="subtitle"
+  width="form"
+  [hint]="hint()"
+  [cancelLabel]="'v2.projectPopup.cancel' | translate"
+  [saveLabel]="(editing ? 'v2.projectPopup.saveChanges' : 'v2.projectCard.payment.add') | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="touched.set(true)"
+>
+  @if (error(); as message) {
+    <app-v2-project-notice tone="danger">{{ message }}</app-v2-project-notice>
+  }
+
+  @if (contractOptions.length > 1) {
+    <app-v2-field-group
+      [label]="'v2.projectPopup.payment.contract' | translate"
+      [required]="true"
+      [error]="errors.contract ?? ''"
+    >
+      <app-v2-chip-select
+        [ariaLabel]="'v2.projectPopup.payment.contract' | translate"
+        [options]="contractOptions"
+        [formField]="fields.contract"
+      />
+    </app-v2-field-group>
+  } @else if (errors.contract; as message) {
+    <app-v2-project-notice tone="danger">{{ message }}</app-v2-project-notice>
+  }
+
+  <app-v2-form-field
+    [label]="'v2.projectPopup.payment.amount' | translate"
+    [required]="true"
+    [hint]="amountHint()"
+    [error]="errors.amount ?? ''"
+  >
+    <input type="text" inputmode="decimal" [formField]="fields.amount" />
+  </app-v2-form-field>
+  @if (quick().length) {
+    <div
+      class="v2-payment-popup__quick"
+      role="group"
+      [attr.aria-label]="'v2.projectPopup.payment.quick' | translate"
+    >
+      @for (item of quick(); track item.key) {
+        <button
+          type="button"
+          class="v2-payment-popup__chip"
+          [class.v2-payment-popup__chip--on]="model().amount === item.text"
+          [attr.aria-pressed]="model().amount === item.text"
+          (click)="pickQuick(item.text)"
+        >
+          {{ item.label }}
+        </button>
+      }
+    </div>
+  }
+
+  <app-v2-form-field
+    [label]="'v2.projectCard.payment.date' | translate"
+    [required]="true"
+    [error]="errors.paidOn ?? ''"
+  >
+    <input type="date" [formField]="fields.paidOn" />
+  </app-v2-form-field>
+
+  <app-v2-form-field
+    [label]="'v2.projectCard.row.note' | translate"
+    [hint]="'v2.projectPopup.payment.noteHint' | translate"
+    [error]="errors.note ?? ''"
+  >
+    <input type="text" [formField]="fields.note" />
+  </app-v2-form-field>
+
+  <app-v2-field-group [label]="'v2.projectCard.payment.receipt' | translate">
+    <app-v2-project-file-field
+      [current]="data.payment?.file?.fileName ?? null"
+      [disabled]="saving()"
+      [(file)]="file"
+    />
+  </app-v2-field-group>
+</app-v2-dialog>
