@@ -251,3 +251,46 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+// Drag a card to another column (opens Change status). The preview and placeholder are CDK
+// clones of the card, so the card styles above still apply to them.
+.v2-kanban__card.cdk-drag {
+  cursor: grab;
+}
+
+.v2-kanban__card.cdk-drag-preview {
+  box-sizing: border-box;
+  box-shadow: var(--v2-shadow-menu);
+  cursor: grabbing;
+  transform: rotate(1.5deg);
+}
+
+.v2-kanban__card.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+
+.v2-kanban__card[aria-busy] {
+  opacity: 0.6;
+}
+
+.v2-kanban__column.cdk-drop-list-dragging {
+  outline: 2px dashed var(--v2-line-strong);
+  outline-offset: -2px;
+}
+
+// While a card is dragged, the contract columns show they take no drops.
+.v2-kanban--dragging .v2-kanban__column--locked {
+  opacity: 0.5;
+}
+
+.v2-kanban__move-error {
+  margin: 0 0 var(--v2-space-3);
+  color: var(--v2-danger);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-kanban__card.cdk-drag-preview {
+    transform: none;
+  }
+}

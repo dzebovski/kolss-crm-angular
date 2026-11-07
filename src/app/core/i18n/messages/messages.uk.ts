@@ -176,6 +176,9 @@ export const messagesUk = {
   'v2.projects.view.kanban': 'Канбан',
   'v2.projects.kanban': 'Канбан проєктів',
   'v2.projects.kanban.empty': 'Немає проєктів',
+  'v2.projects.kanban.contractOnly': 'Встановлюється додаванням договору',
+  'v2.projects.kanban.moveLocked':
+    'Ви не можете змінити етап {code}: це можуть лише його менеджер і адміни.',
   'v2.projects.kanban.more': 'Показати ще {count}',
   'v2.projects.kanban.estimate': 'Кошторис',
   'v2.projects.kanban.cancelled': 'Скасовані: {count}',

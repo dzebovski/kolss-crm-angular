@@ -178,6 +178,9 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.projects.view.kanban': 'Kanban',
   'v2.projects.kanban': 'Projects kanban',
   'v2.projects.kanban.empty': 'No projects',
+  'v2.projects.kanban.contractOnly': 'Set by adding the contract',
+  'v2.projects.kanban.moveLocked':
+    'You can’t change the stage of {code}: only its manager and admins can.',
   'v2.projects.kanban.more': 'Show {count} more',
   'v2.projects.kanban.estimate': 'Estimate',
   'v2.projects.kanban.cancelled': 'Cancelled: {count}',

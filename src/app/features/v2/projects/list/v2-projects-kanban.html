@@ -10,8 +10,13 @@
     </button>
   </app-v2-state-panel>
 } @else {
+  @if (moveError(); as message) {
+    <p class="v2-kanban__move-error" role="alert">{{ message }}</p>
+  }
   <section
     class="v2-kanban"
+    cdkDropListGroup
+    [class.v2-kanban--dragging]="dragging()"
     [attr.aria-label]="'v2.projects.kanban' | translate"
     [attr.aria-busy]="loading() || null"
   >
@@ -35,7 +40,16 @@
       }
     } @else {
       @for (column of columns(); track column.status) {
-        <section class="v2-kanban__column" [attr.aria-labelledby]="'v2-kanban-' + column.status">
+        <section
+          class="v2-kanban__column"
+          cdkDropList
+          [cdkDropListData]="column.status"
+          [cdkDropListEnterPredicate]="canEnter"
+          [cdkDropListSortingDisabled]="true"
+          [class.v2-kanban__column--locked]="!column.droppable"
+          [attr.aria-labelledby]="'v2-kanban-' + column.status"
+          (cdkDropListDropped)="drop($event)"
+        >
           <h2 class="v2-kanban__head" [id]="'v2-kanban-' + column.status">
             <span
               class="v2-kanban__dot"
@@ -49,7 +63,14 @@
           @if (column.cards.length) {
             <ul class="v2-kanban__cards">
               @for (card of column.cards; track card.project.id) {
-                <li class="v2-kanban__card">
+                <li
+                  class="v2-kanban__card"
+                  cdkDrag
+                  [cdkDragData]="card.project"
+                  [attr.aria-busy]="moving() === card.project.id || null"
+                  (cdkDragStarted)="dragging.set(true)"
+                  (cdkDragEnded)="dragging.set(false)"
+                >
                   <div class="v2-kanban__card-top">
                     <app-v2-code-chip [code]="card.project.code" size="sm" />
                     @if (card.title) {
@@ -94,7 +115,12 @@
               }
             </ul>
           } @else {
-            <p class="v2-kanban__empty">{{ 'v2.projects.kanban.empty' | translate }}</p>
+            <p class="v2-kanban__empty">
+              {{
+                (column.droppable ? 'v2.projects.kanban.empty' : 'v2.projects.kanban.contractOnly')
+                  | translate
+              }}
+            </p>
           }
 
           @if (column.moreError) {
