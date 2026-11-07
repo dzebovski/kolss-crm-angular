@@ -32,6 +32,7 @@ const appointment: Appointment = {
   endsAt: '2026-07-23T08:00:00.000Z',
   status: 'scheduled',
   comment: null,
+  purpose: null,
   version: 1,
   hasConflict: false,
   isOutsideWorkingHours: false,

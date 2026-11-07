@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.41.0' as const;
+export const API_CONTRACT_VERSION = '2.42.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -355,6 +355,8 @@ export interface AdminUserRow {
 export type AppointmentStatus = 'scheduled' | 'visited' | 'no_show' | 'canceled' | 'rescheduled';
 export type AppointmentKind = 'showroom' | 'measurement' | 'office_work';
 export type AppointmentWarning = 'manager_overlap' | 'outside_working_hours';
+/** Why a showroom meeting takes place (2.42.0): getting to know the client or a project presentation. */
+export type AppointmentPurpose = 'intro' | 'presentation';
 
 export interface Appointment {
   readonly id: string;
@@ -379,6 +381,8 @@ export interface Appointment {
   readonly endsAt: string;
   readonly status: AppointmentStatus;
   readonly comment: string | null;
+  /** Showroom meetings only (2.42.0). */
+  readonly purpose: AppointmentPurpose | null;
   readonly version: number;
   readonly hasConflict: boolean;
   readonly isOutsideWorkingHours: boolean;
@@ -406,6 +410,8 @@ export interface CreateAppointmentRequest {
   readonly durationMinutes: number;
   readonly responsibleManagerId: string;
   readonly comment?: string;
+  /** Showroom meetings only (2.42.0). */
+  readonly purpose?: AppointmentPurpose | '';
 }
 
 export interface UpdateAppointmentRequest {
@@ -413,6 +419,8 @@ export interface UpdateAppointmentRequest {
   readonly durationMinutes?: number;
   readonly responsibleManagerId?: string;
   readonly comment?: string;
+  /** Showroom meetings only (2.42.0); `''` clears it. */
+  readonly purpose?: AppointmentPurpose | '';
   readonly status?: 'visited' | 'no_show' | 'canceled';
 }
 
@@ -666,22 +674,21 @@ export interface LeadEventCorrectionResponse {
 }
 
 /**
- * CRM v2 projects (2.32.0, task P1; pipeline 2.1 since 2.36.0, task P1b). Pipeline order: estimate →
- * intro_contract → measure → design → main_contract → prepayment (target 50%) → factory (sent to
- * factory) → production → final_payment → installation → completed; `cancelled` is outside the
- * order. Stages move by hand (backwards allowed); only adding a contract sets `intro_contract` /
+ * CRM v2 projects (2.32.0, task P1; pipeline 2.1 since 2.36.0, P1b; pipeline 3 since 2.42.0, P1c).
+ * Pipeline order: estimate → showroom_meeting → intro_contract → design (measurement and design) →
+ * factory_review → presentation → main_contract → production → installation → completed;
+ * `cancelled` is outside the order. Production or later needs 50% of the main contract paid. Stages move by hand (backwards allowed); only adding a contract sets `intro_contract` /
  * `main_contract`, only cancelling sets `cancelled`; payments never move the stage.
  */
 export type ProjectStatus =
   | 'estimate'
+  | 'showroom_meeting'
   | 'intro_contract'
-  | 'measure'
   | 'design'
+  | 'factory_review'
+  | 'presentation'
   | 'main_contract'
-  | 'prepayment'
-  | 'factory'
   | 'production'
-  | 'final_payment'
   | 'installation'
   | 'completed'
   | 'cancelled';
@@ -732,7 +739,7 @@ export interface ProjectContract {
   readonly creditedAmount: number;
   /** total - paidAmount - creditedAmount, never below 0. */
   readonly remainingAmount: number;
-  /** Main contract only: 50% of the total rounded up to the cent. A target, not a gate. */
+  /** Main contract only: 50% of the total rounded up to the cent; paid + credited must reach it before production (2.42.0). */
   readonly target50Amount: number | null;
   readonly file: ProjectFileRef | null;
 }
@@ -750,7 +757,7 @@ export interface ProjectPayment {
   readonly file: ProjectFileRef | null;
 }
 
-/** Details kept per stage; dates live on the project. Only `measure` carries details since 2.36.0. */
+/** Legacy per-stage details (no longer written since 2.42.0); dates live on the project. */
 export interface ProjectStageDetails {
   readonly measure?: {
     readonly responsibleId?: string;
@@ -923,19 +930,26 @@ export interface ChangeProjectStatusRequest {
   readonly eventDate?: string | null;
   /** `HH:MM`. */
   readonly eventTime?: string | null;
+  /** @deprecated Accepted and ignored since 2.42.0. */
   readonly responsibleId?: string | null;
+  /** @deprecated Accepted and ignored since 2.42.0. */
   readonly address?: string | null;
+  /** @deprecated Accepted and ignored since 2.42.0. */
   readonly done?: boolean | null;
+  /** @deprecated Accepted and ignored since 2.42.0. */
   readonly result?: string | null;
-  /** Optional, goes to the timeline. */
+  /**
+   * Optional, goes to the timeline. Required when an admin moves a project to production or later
+   * with less than 50% paid; a manager gets `409 prepayment_required` (2.42.0).
+   */
   readonly comment?: string | null;
 }
 
 export interface CancelProjectRequest {
   /** At least one. */
   readonly reasons: readonly ProjectCancelReason[];
-  /** Required when `other` is picked. */
-  readonly comment?: string | null;
+  /** Required for every reason since 2.42.0. */
+  readonly comment: string;
   readonly cancelFutureEvents?: boolean;
 }
 
@@ -1017,9 +1031,11 @@ export interface ProjectBoardColumn {
   readonly nextCursor: string;
 }
 
-/** `GET /v1/projects/board`: all 12 statuses in pipeline order, `cancelled` last. */
+/** `GET /v1/projects/board`: the 10 pipeline stages in order; cancelled only as a count (2.42.0). */
 export interface ProjectBoard {
+  /** Matching projects in the columns (cancelled excluded). */
   readonly total: number;
+  readonly cancelledCount: number;
   readonly columns: readonly ProjectBoardColumn[];
 }
 

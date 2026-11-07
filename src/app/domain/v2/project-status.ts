@@ -1,61 +1,65 @@
 import type { MessageKey } from '@core/i18n/messages';
-import type { ProjectStageDetails } from '@core/api/generated/kolss-api.types';
-import type { V2Project, V2ProjectSchedule, V2ProjectStatus } from './project.types';
+import type {
+  V2Project,
+  V2ProjectContract,
+  V2ProjectSchedule,
+  V2ProjectStatus,
+} from './project.types';
 
-/** Every status in pipeline order, `cancelled` last (the order of the API's board columns). */
+/**
+ * Every status in pipeline order, `cancelled` last. Pipeline 3 (owner decision 2026-11-07, API
+ * 2.42.0): measurement and design are one stage; payments are shown on the card, not as stages.
+ */
 export const V2_PROJECT_STATUSES: readonly V2ProjectStatus[] = [
   'estimate',
+  'showroom_meeting',
   'intro_contract',
-  'measure',
   'design',
+  'factory_review',
+  'presentation',
   'main_contract',
-  'prepayment',
-  'factory',
   'production',
-  'final_payment',
   'installation',
   'completed',
   'cancelled',
 ];
 
-/** The eleven steps of the stage tracker (every status except `cancelled`), in order. */
+/** The ten steps of the stage tracker and the kanban columns (every status except `cancelled`). */
 export const V2_PROJECT_STAGES = [
   'estimate',
+  'showroom_meeting',
   'intro_contract',
-  'measure',
   'design',
+  'factory_review',
+  'presentation',
   'main_contract',
-  'prepayment',
-  'factory',
   'production',
-  'final_payment',
   'installation',
   'completed',
 ] as const satisfies readonly V2ProjectStatus[];
 
 export type V2ProjectStage = (typeof V2_PROJECT_STAGES)[number];
 
-/** Status chips and kanban columns: the stages, then Cancelled. */
+/** Status chips of the list: the stages, then Cancelled (on the kanban Cancelled is a filter). */
 export const V2_PROJECT_FILTER_ORDER: readonly V2ProjectStatus[] = [
   ...V2_PROJECT_STAGES,
   'cancelled',
 ];
 
 /**
- * Colours of the status dot and stage circle, all from existing tokens (the boards use the same
- * hex values). The money stages (contracts, prepayment, final payment) share the green of
- * "Successful call"; factory shares the teal of production.
+ * Colours of the status dot and stage circle, all from existing tokens. Client meetings
+ * (showroom, presentation) share the violet of "Invited to showroom"; the contract stages the green
+ * of "Successful call"; the factory review the teal of production.
  */
 export const V2_PROJECT_STATUS_COLOR: Readonly<Record<V2ProjectStatus, string>> = {
   estimate: 'var(--v2-status-thinking)',
+  showroom_meeting: 'var(--v2-status-invited)',
   intro_contract: 'var(--v2-status-success)',
-  measure: 'var(--v2-status-later)',
-  design: 'var(--v2-status-invited)',
+  design: 'var(--v2-status-later)',
+  factory_review: 'var(--v2-status-production)',
+  presentation: 'var(--v2-status-invited)',
   main_contract: 'var(--v2-status-success)',
-  prepayment: 'var(--v2-status-success)',
-  factory: 'var(--v2-status-production)',
   production: 'var(--v2-status-production)',
-  final_payment: 'var(--v2-status-success)',
   installation: 'var(--v2-status-installation)',
   completed: 'var(--v2-status-project)',
   cancelled: 'var(--v2-status-lost)',
@@ -69,8 +73,9 @@ const CHANGEABLE: readonly V2ProjectStatus[] = V2_PROJECT_STAGES.filter(
 /** Stages with their own name for the next event; every other open stage uses the generic one. */
 const NEXT_EVENT_KEY: Partial<Record<V2ProjectStatus, MessageKey>> = {
   estimate: 'v2.project.nextEvent.estimate',
-  measure: 'v2.project.nextEvent.measure',
+  showroom_meeting: 'v2.project.nextEvent.showroom_meeting',
   design: 'v2.project.nextEvent.design',
+  presentation: 'v2.project.nextEvent.presentation',
   production: 'v2.project.nextEvent.production',
   installation: 'v2.project.nextEvent.installation',
 };
@@ -90,7 +95,7 @@ export function v2IsChangeableProjectStatus(status: V2ProjectStatus): boolean {
   return CHANGEABLE.includes(status);
 }
 
-/** Position in the stage tracker (0–10); -1 for `cancelled`. */
+/** Position in the stage tracker (0–9); -1 for `cancelled`. */
 export function v2ProjectStageIndex(status: V2ProjectStatus): number {
   return (V2_PROJECT_STAGES as readonly V2ProjectStatus[]).indexOf(status);
 }
@@ -113,10 +118,27 @@ export function v2IsProjectClosed(status: V2ProjectStatus): boolean {
   return status === 'completed' || status === 'cancelled';
 }
 
-/** Whether the stage's own work is logged (Took place ticked); only the measurement has it. */
-export function v2ProjectStageDone(status: V2ProjectStatus, details: ProjectStageDetails): boolean {
-  if (status === 'measure') return details.measure?.done === true;
-  return false;
+/**
+ * 50% rule (pipeline 3, API 2.42.0): moving from a stage before Production to Production or later
+ * needs paid + credited ≥ 50% of the main contract total; no main contract counts as 0%.
+ * `blocked` — a manager cannot move (the API answers 409 `prepayment_required`);
+ * `needsComment` — an office admin / super admin may move with a required comment.
+ * `isAdmin` must come from `@core/policy` (server permissions), never from the role string.
+ */
+export type V2PrepaymentCheck = 'ok' | 'blocked' | 'needsComment';
+
+export function v2ProjectPrepaymentCheck(input: {
+  readonly current: V2ProjectStatus;
+  readonly next: V2ProjectStatus;
+  readonly main: Pick<V2ProjectContract, 'target50Reached'> | null;
+  readonly isAdmin: boolean;
+}): V2PrepaymentCheck {
+  const production = v2ProjectStageIndex('production');
+  const crosses =
+    v2ProjectStageIndex(input.current) < production &&
+    v2ProjectStageIndex(input.next) >= production;
+  if (!crosses || input.main?.target50Reached === true) return 'ok';
+  return input.isAdmin ? 'needsComment' : 'blocked';
 }
 
 export type V2ProjectNextEvent =
@@ -132,7 +154,7 @@ export type V2ProjectNextEvent =
 
 /**
  * The list's "Next event" cell. Overdue compares calendar days (`now` is the viewer's local day);
- * `done` is the measurement "Took place" flag, which the list does not have (pass `false`).
+ * `done` marks the event as held (e.g. a visited calendar appointment); the list passes nothing.
  */
 export function v2ProjectNextEvent(
   input: {

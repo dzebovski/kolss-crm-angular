@@ -45,7 +45,7 @@ const project = (patch: Partial<Project> = {}): Project => ({
   clientId: 'cl1',
   officeId: 'o1',
   code: 'W0231',
-  status: 'prepayment',
+  status: 'main_contract',
   projectType: 'measure',
   eventDate: '2026-10-05',
   eventTime: null,
@@ -217,7 +217,7 @@ describe('toV2ProjectListItem', () => {
       code: 'W0231',
       clientName: 'Marta Zielińska',
       products: ['kitchen'],
-      status: 'measure',
+      status: 'design',
       projectType: null,
       eventDate: '2026-09-29',
       eventTime: '10:00',
@@ -242,14 +242,13 @@ describe('toV2ProjectFacets', () => {
     expect(facets.total).toBe(5);
     expect(facets.status).toEqual({
       estimate: 2,
+      showroom_meeting: 0,
       intro_contract: 0,
-      measure: 0,
       design: 0,
+      factory_review: 0,
+      presentation: 0,
       main_contract: 0,
-      prepayment: 0,
-      factory: 0,
       production: 0,
-      final_payment: 0,
       installation: 0,
       completed: 0,
       cancelled: 1,
@@ -258,15 +257,17 @@ describe('toV2ProjectFacets', () => {
 });
 
 describe('toV2ProjectBoard', () => {
-  it('turns an empty next cursor into null', () => {
+  it('turns an empty next cursor into null and keeps the cancelled count', () => {
     const board = toV2ProjectBoard({
       total: 1,
+      cancelledCount: 3,
       columns: [
         { status: 'estimate', count: 1, items: [], nextCursor: '' },
-        { status: 'measure', count: 30, items: [], nextCursor: 'abc' },
+        { status: 'design', count: 30, items: [], nextCursor: 'abc' },
       ],
     });
     expect(board.columns.map((column) => column.nextCursor)).toEqual([null, 'abc']);
+    expect(board.cancelledCount).toBe(3);
   });
 });
 

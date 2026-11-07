@@ -4,7 +4,7 @@ import {
   v2IsChangeableProjectStatus,
   v2ProjectActions,
   v2ProjectNextEvent,
-  v2ProjectStageDone,
+  v2ProjectPrepaymentCheck,
   v2ProjectStageState,
 } from './project-status';
 import type { V2Project, V2ProjectContract, V2ProjectEstimate } from './project.types';
@@ -44,9 +44,9 @@ const project = (patch: Partial<ActionInput>): ActionInput => ({
 });
 
 describe('project statuses', () => {
-  it('has twelve statuses and an eleven-step tracker without Cancelled', () => {
-    expect(V2_PROJECT_STATUSES).toHaveLength(12);
-    expect(V2_PROJECT_STAGES).toHaveLength(11);
+  it('has eleven statuses and a ten-step tracker without Cancelled (pipeline 3)', () => {
+    expect(V2_PROJECT_STATUSES).toHaveLength(11);
+    expect(V2_PROJECT_STAGES).toHaveLength(10);
     expect(V2_PROJECT_STATUSES.at(-1)).toBe('cancelled');
     expect(V2_PROJECT_STAGES).not.toContain('cancelled');
   });
@@ -55,12 +55,11 @@ describe('project statuses', () => {
     const pickable = V2_PROJECT_STATUSES.filter(v2IsChangeableProjectStatus);
     expect(pickable).toEqual([
       'estimate',
-      'measure',
+      'showroom_meeting',
       'design',
-      'prepayment',
-      'factory',
+      'factory_review',
+      'presentation',
       'production',
-      'final_payment',
       'installation',
       'completed',
     ]);
@@ -75,7 +74,7 @@ describe('project statuses', () => {
 
   it('completes no step for Cancelled', () => {
     expect(V2_PROJECT_STAGES.map((stage) => v2ProjectStageState('cancelled', stage))).toEqual(
-      Array(11).fill('upcoming'),
+      Array(10).fill('upcoming'),
     );
   });
 });
@@ -98,29 +97,55 @@ describe('next event', () => {
 
   it('names the event after the status, with a generic name for the other stages', () => {
     expect(
-      v2ProjectNextEvent({ status: 'measure', schedule: schedule('2026-09-29') }, NOW),
+      v2ProjectNextEvent({ status: 'showroom_meeting', schedule: schedule('2026-09-29') }, NOW),
     ).toEqual({
       kind: 'planned',
-      labelKey: 'v2.project.nextEvent.measure',
+      labelKey: 'v2.project.nextEvent.showroom_meeting',
       schedule: schedule('2026-09-29'),
       overdue: false,
     });
     expect(
-      v2ProjectNextEvent({ status: 'factory', schedule: schedule('2026-09-29') }, NOW),
+      v2ProjectNextEvent({ status: 'factory_review', schedule: schedule('2026-09-29') }, NOW),
     ).toMatchObject({ labelKey: 'v2.project.nextEvent.generic' });
   });
 
   it('is overdue only when the day has passed, today is not late', () => {
     const at = (date: string, done?: boolean) =>
-      v2ProjectNextEvent({ status: 'measure', schedule: schedule(date), done }, NOW);
+      v2ProjectNextEvent({ status: 'design', schedule: schedule(date), done }, NOW);
     expect(at('2026-09-24')).toMatchObject({ overdue: true });
     expect(at('2026-09-28')).toMatchObject({ overdue: false });
     expect(at('2026-09-24', true)).toMatchObject({ overdue: false });
   });
+});
 
-  it('reads the Took place flag of the measurement only', () => {
-    expect(v2ProjectStageDone('measure', { measure: { done: true } })).toBe(true);
-    expect(v2ProjectStageDone('design', { measure: { done: true } })).toBe(false);
+describe('50% before production', () => {
+  const check = (
+    current: Parameters<typeof v2ProjectPrepaymentCheck>[0]['current'],
+    next: Parameters<typeof v2ProjectPrepaymentCheck>[0]['next'],
+    reached: boolean | null,
+    isAdmin = false,
+  ) =>
+    v2ProjectPrepaymentCheck({
+      current,
+      next,
+      main: reached === null ? null : { target50Reached: reached },
+      isAdmin,
+    });
+
+  it('does not apply before production or once there', () => {
+    expect(check('design', 'presentation', null)).toBe('ok');
+    expect(check('production', 'installation', false)).toBe('ok');
+  });
+
+  it('blocks a manager below 50% or without a main contract, also when skipping stages', () => {
+    expect(check('main_contract', 'production', false)).toBe('blocked');
+    expect(check('presentation', 'installation', false)).toBe('blocked');
+    expect(check('factory_review', 'production', null)).toBe('blocked');
+  });
+
+  it('passes at 50% and asks an admin for a comment below it', () => {
+    expect(check('main_contract', 'production', true)).toBe('ok');
+    expect(check('main_contract', 'production', false, true)).toBe('needsComment');
   });
 });
 

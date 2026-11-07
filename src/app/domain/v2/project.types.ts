@@ -60,7 +60,7 @@ export interface V2ProjectContract {
   /** Main contract: the paid intro amount credited to it; zero for the intro contract. */
   readonly credited: V2Money;
   readonly remaining: V2Money;
-  /** Main contract only: 50% of the total. A target shown on the card, never a gate. */
+  /** Main contract only: 50% of the total; must be paid (with the credit) before Production. */
   readonly target50: V2Money | null;
   /** Whole percent of the total covered by payments and the credit, 0–100. */
   readonly percentPaid: number;
@@ -180,9 +180,11 @@ export interface V2ProjectBoardColumn {
   readonly nextCursor: string | null;
 }
 
-/** Kanban: all 12 statuses in pipeline order, `cancelled` last. */
+/** Kanban: the ten pipeline stages in order; cancelled projects only as a count (a filter). */
 export interface V2ProjectBoard {
+  /** Projects in the columns (cancelled excluded). */
   readonly total: number;
+  readonly cancelledCount: number;
   readonly columns: readonly V2ProjectBoardColumn[];
 }
 

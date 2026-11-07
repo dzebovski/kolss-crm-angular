@@ -170,6 +170,7 @@ export function toV2ProjectListItem(item: ProjectListItem): V2ProjectListItem {
 export function toV2ProjectBoard(board: ProjectBoard): V2ProjectBoard {
   return {
     total: board.total,
+    cancelledCount: board.cancelledCount,
     columns: board.columns.map((column) => ({
       status: column.status,
       count: column.count,

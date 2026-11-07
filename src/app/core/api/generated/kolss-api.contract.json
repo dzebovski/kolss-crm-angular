@@ -1,6 +1,6 @@
 {
-  "version": "2.41.0",
-  "sha256": "c27facd06406c994357671d8386396f30aa14be471c6f107941ebd42b7df613b",
+  "version": "2.42.0",
+  "sha256": "da7fea4174bc0bc2ead1590bc7ecc75250feaa0f2a6e7bb67a5b1fd9051a5782",
   "operationIds": [
     "healthLive",
     "healthReady",
