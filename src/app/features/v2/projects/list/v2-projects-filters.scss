@@ -1,0 +1,94 @@
+@use '../../../../../styles/v2/interactive';
+
+// Values from Projects-list.dc.html (Filters). 20px side padding, 14px row gap, 300px search,
+// 210px manager select and the 32px Clear filters button are board values without a token.
+:host {
+  display: block;
+}
+
+.v2-pfilters {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--v2-space-4) 20px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-pfilters__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-3);
+}
+
+.v2-pfilters__search {
+  width: 300px;
+  max-width: 100%;
+}
+
+.v2-pfilters__manager {
+  width: 210px;
+  max-width: 100%;
+}
+
+.v2-pfilters__manager--skeleton {
+  display: block;
+  height: var(--v2-control-md);
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-sm);
+}
+
+.v2-pfilters__spacer {
+  flex-grow: 1;
+}
+
+.v2-pfilters__clear {
+  display: flex;
+  align-items: center;
+  height: var(--v2-control-sm);
+  padding: 0 var(--v2-space-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+.v2-pfilters__chips-row {
+  gap: var(--v2-space-2);
+  padding-top: 14px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.v2-pfilters__label {
+  margin-right: var(--v2-space-1);
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-pfilters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+}
+
+.v2-pfilters__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--v2-radius-pill);
+}
+
+// A selected chip is filled with `ink`: the dot gets the kit's white ring to stay visible.
+.v2-pfilters__chips [aria-pressed='true'] .v2-pfilters__dot {
+  box-shadow: 0 0 0 2px var(--v2-on-ink);
+}

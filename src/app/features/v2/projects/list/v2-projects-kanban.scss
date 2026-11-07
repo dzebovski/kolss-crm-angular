@@ -1,0 +1,253 @@
+@use '../../../../../styles/v2/interactive';
+
+// Projects kanban: not drawn, built from the design system. Columns sit on the page `ground`
+// as `surface-sunk` lanes; cards reuse the table's type (14px 600 name, 13px muted meta, 22px
+// avatar). The 272px column width keeps four columns visible on a 1440px board; the rest scroll
+// sideways. Values without a token: 272px column, 22px avatar, 10px card padding.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-3);
+  min-width: 0;
+}
+
+.v2-kanban {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--v2-space-3);
+  overflow-x: auto;
+  padding-bottom: var(--v2-space-2);
+  scroll-padding-inline: var(--v2-space-2);
+}
+
+.v2-kanban__column {
+  display: flex;
+  flex: 0 0 272px;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+  box-sizing: border-box;
+  padding: var(--v2-space-2);
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-kanban__head {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  min-height: 28px;
+  margin: 0;
+  padding: 0 var(--v2-space-1);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.v2-kanban__dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--v2-radius-pill);
+}
+
+.v2-kanban__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-kanban__count {
+  margin-left: auto;
+  color: var(--v2-muted);
+  font-weight: 500;
+}
+
+.v2-kanban__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v2-kanban__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--v2-space-3);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+  box-shadow: var(--v2-shadow-control);
+
+  @include interactive.transition;
+
+  &:hover {
+    border-color: var(--v2-line-hover);
+  }
+
+  // The stretched name link draws the focus ring around the whole card.
+  &:has(.v2-kanban__name:focus-visible) {
+    @include interactive.focus-ring;
+  }
+}
+
+.v2-kanban__card-top {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  min-width: 0;
+}
+
+.v2-kanban__title {
+  overflow: hidden;
+  color: var(--v2-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-kanban__name {
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+
+  &::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    content: '';
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+.v2-kanban__card:hover .v2-kanban__name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.v2-kanban__estimate,
+.v2-kanban__next {
+  font-size: 13px;
+}
+
+.v2-kanban__next--late {
+  color: var(--v2-danger);
+}
+
+.v2-kanban__muted {
+  color: var(--v2-muted);
+}
+
+.v2-kanban__manager {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-kanban__avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-pill);
+  color: var(--v2-ink-2);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.v2-kanban__empty {
+  margin: 0;
+  padding: var(--v2-space-4) var(--v2-space-2);
+  border: 1px dashed var(--v2-line-strong);
+  border-radius: var(--v2-radius-md);
+  color: var(--v2-subtle);
+  font-size: 13px;
+  text-align: center;
+}
+
+.v2-kanban__error {
+  margin: 0;
+  padding: 0 var(--v2-space-1);
+  color: var(--v2-danger);
+  font-size: 13px;
+}
+
+.v2-kanban__more,
+.v2-kanban__cancelled {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--v2-space-2);
+  height: var(--v2-control-sm);
+  padding: 0 var(--v2-space-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--v2-radius-xs);
+  color: var(--v2-ink-2);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+}
+
+.v2-kanban__cancelled {
+  align-self: flex-start;
+  color: var(--v2-muted);
+}
+
+// Loading skeleton: `surface` bars pulsing in the column shape, unless motion is reduced.
+.v2-kanban__card--skeleton {
+  box-shadow: none;
+}
+
+.v2-kanban__bar {
+  display: block;
+  height: 12px;
+  background: var(--v2-surface-sunk);
+  border-radius: var(--v2-radius-xs);
+  animation: v2-kanban-skeleton 1.2s ease-in-out infinite;
+
+  &--sm {
+    height: 10px;
+  }
+}
+
+.v2-kanban__head .v2-kanban__bar {
+  background: var(--v2-line);
+}
+
+@keyframes v2-kanban-skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-kanban__bar {
+    animation: none;
+  }
+}
+
+.v2-kanban__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,127 @@
+// Values from Projects-list.dc.html: title row as the leads board (the -6px pull of the result
+// count is a board value without a token).
+:host {
+  display: contents;
+}
+
+.v2-projects__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-5);
+}
+
+.v2-projects__create {
+  gap: var(--v2-space-2);
+  margin-bottom: var(--v2-space-2);
+  padding: 0 14px;
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+}
+
+// Result count on the left, the List / Kanban switch on the right (not drawn).
+.v2-projects__result-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+}
+
+.v2-projects__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  // One line of the 16px count, kept while loading so nothing below moves.
+  min-height: 22px;
+  margin-bottom: -6px;
+  line-height: 22px;
+}
+
+// Not drawn: a loading placeholder the size of "12 projects · all offices · sorted by …".
+.v2-projects__result-skeleton {
+  align-self: center;
+  width: 280px;
+  max-width: 100%;
+  height: 14px;
+  border-radius: var(--v2-radius-xs);
+  background: var(--v2-surface-sunk);
+  animation: v2-projects-skeleton 1.2s ease-in-out infinite;
+}
+
+@keyframes v2-projects-skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-projects__result-skeleton {
+    animation: none;
+  }
+}
+
+.v2-projects__result-count {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.v2-projects__result-noun {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.v2-projects__result-context {
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+// "No projects match these filters" inside the table card (the board's 24px / 20px margin).
+.v2-projects__state {
+  margin: var(--v2-space-5) 20px;
+}
+
+.v2-projects__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.v2-projects__retry-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+// Not drawn on the board (design gap): "Showing X of Y" and "Show N more" centred under the table.
+.v2-projects__more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--v2-space-2);
+}
+
+.v2-projects__progress {
+  margin: 0;
+  color: var(--v2-muted);
+  font-size: 13px;
+}
+
+.v2-projects__more-error {
+  margin: 0;
+  color: var(--v2-danger);
+  font-size: 13px;
+}

@@ -1,0 +1,107 @@
+<section
+  class="v2-ptable"
+  [attr.aria-label]="'v2.projects.list' | translate"
+  [attr.aria-busy]="busy() || null"
+>
+  <div class="v2-ptable__scroll">
+    <div class="v2-ptable__row v2-ptable__head">
+      <span>{{ 'v2.projects.col.created' | translate }}</span>
+      <span>{{ 'v2.projects.col.client' | translate }}</span>
+      <span>{{ 'v2.projects.col.status' | translate }}</span>
+      <span>{{ 'v2.projects.col.nextEvent' | translate }}</span>
+      <span>{{ 'v2.projects.col.comment' | translate }}</span>
+    </div>
+
+    @for (row of rows(); track row.project.id) {
+      <!-- The row is a mouse shortcut; the client name link is the accessible way in. -->
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+      <div
+        class="v2-ptable__row v2-ptable__item"
+        (click)="openRow($event, row.project.id)"
+        (auxclick)="openRow($event, row.project.id)"
+      >
+        <span class="v2-ptable__created">{{ row.created }}</span>
+
+        <div class="v2-ptable__client">
+          <div class="v2-ptable__line">
+            <app-v2-code-chip [code]="row.project.code" size="sm" />
+            <a class="v2-ptable__name" [routerLink]="['/v2/projects', row.project.id]">{{
+              row.project.clientName
+            }}</a>
+            @if (row.title) {
+              <span class="v2-ptable__title">· {{ row.title }}</span>
+            }
+          </div>
+          <div class="v2-ptable__line">
+            <span class="v2-ptable__avatar" aria-hidden="true">{{ row.managerInitials }}</span>
+            <span class="v2-ptable__manager">{{
+              row.project.manager?.name ?? ('common.unassigned' | translate)
+            }}</span>
+          </div>
+        </div>
+
+        <div>
+          <app-v2-project-status-pill [status]="row.project.status" />
+        </div>
+
+        <div class="v2-ptable__stack">
+          @switch (row.next.kind) {
+            @case ('planned') {
+              <span class="v2-ptable__next" [class.v2-ptable__next--late]="row.next.overdue">{{
+                row.nextDay
+              }}</span>
+              <span class="v2-ptable__age"
+                >{{ row.next.labelKey | translate }}
+                @if (row.next.overdue) {
+                  <span class="v2-ptable__late">
+                    · {{ 'v2.projects.nextEvent.resultNotLogged' | translate }}</span
+                  >
+                }
+              </span>
+            }
+            @case ('closed') {
+              <span class="v2-ptable__none">{{ 'v2.projects.nextEvent.closed' | translate }}</span>
+            }
+            @default {
+              <span class="v2-ptable__none">{{
+                'v2.projects.nextEvent.notPlanned' | translate
+              }}</span>
+            }
+          }
+        </div>
+
+        <div class="v2-ptable__stack">
+          @if (row.project.lastComment; as comment) {
+            <span class="v2-ptable__comment">{{ comment.text }}</span>
+            <span class="v2-ptable__age">{{ row.commentAge }}</span>
+          } @else {
+            <span class="v2-ptable__age" aria-hidden="true">—</span>
+          }
+        </div>
+      </div>
+    }
+
+    @if (busy() && !rows().length) {
+      <!-- Loading skeleton (Projects-list-loading board): the real rows' grid, no spinners. -->
+      <div class="v2-ptable__skeleton" aria-hidden="true">
+        @for (row of skeletonRows; track $index) {
+          <div class="v2-ptable__row v2-ptable__item">
+            <div class="v2-ptable__stack v2-ptable__skeleton-stack">
+              <span class="v2-ptable__bar" [style.width.%]="row.created"></span>
+              <span class="v2-ptable__bar v2-ptable__bar--sm" style="width: 40%"></span>
+            </div>
+            <div class="v2-ptable__stack v2-ptable__skeleton-stack">
+              <span class="v2-ptable__bar" [style.width.%]="row.client"></span>
+              <span class="v2-ptable__bar v2-ptable__bar--sm" style="width: 40%"></span>
+            </div>
+            <span class="v2-ptable__bar" [style.width.%]="row.status"></span>
+            <span class="v2-ptable__bar" [style.width.%]="row.next"></span>
+            <span class="v2-ptable__bar" [style.width.%]="row.comment"></span>
+          </div>
+        }
+      </div>
+    }
+
+    <ng-content />
+  </div>
+</section>

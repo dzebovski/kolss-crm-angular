@@ -1,0 +1,58 @@
+<section class="v2-pfilters" [attr.aria-label]="'v2.projects.filters' | translate">
+  <div class="v2-pfilters__row">
+    <app-v2-search-field
+      class="v2-pfilters__search"
+      [value]="search()"
+      [ariaLabel]="'v2.projects.search' | translate"
+      [placeholder]="'v2.projects.searchPlaceholder' | translate"
+      (valueChange)="searchChange.emit($event)"
+    />
+
+    @if (managersLoading()) {
+      <!-- The select would keep its first option if the chosen manager arrived later. -->
+      <span class="v2-pfilters__manager v2-pfilters__manager--skeleton" aria-hidden="true"></span>
+    } @else {
+      <app-v2-select
+        class="v2-pfilters__manager"
+        [ariaLabel]="'v2.projects.manager' | translate"
+        [options]="managerOptions()"
+        [value]="manager()"
+        (valueChange)="managerChange.emit($event)"
+      />
+    }
+
+    <div class="v2-pfilters__spacer"></div>
+
+    @if (filtersActive()) {
+      <button type="button" class="v2-pfilters__clear" (click)="clear.emit()">
+        {{ 'v2.projects.clearFilters' | translate }}
+      </button>
+    }
+  </div>
+
+  @if (showStatuses()) {
+    <div class="v2-pfilters__row v2-pfilters__chips-row">
+      <span class="v2-pfilters__label" id="v2-pfilters-status">{{
+        'v2.projects.statusFilter' | translate
+      }}</span>
+      <div class="v2-pfilters__chips" role="group" aria-labelledby="v2-pfilters-status">
+        @for (chip of statusChips(); track chip.value) {
+          <button
+            type="button"
+            appV2FilterChip
+            [selected]="chip.selected"
+            [count]="chip.count"
+            (click)="statusToggle.emit(chip.value)"
+          >
+            <span
+              class="v2-pfilters__dot"
+              [style.background]="chip.color"
+              aria-hidden="true"
+            ></span>
+            {{ chip.labelKey | translate }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+</section>

@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 
 export type V2StatePanelTone = 'error' | 'empty' | 'neutral';
-export type V2StatePanelIcon = 'alert' | 'people' | 'search';
+export type V2StatePanelIcon = 'alert' | 'people' | 'search' | 'folder';
 
 // State panel of the Clients boards (Clients-list-error / -empty, Client-card-error / -not-found):
 // a 44px icon circle, a 16px title, a hint of at most 460px and the actions below. `error` is the
@@ -26,6 +26,11 @@ export type V2StatePanelIcon = 'alert' | 'people' | 'search';
           @case ('search') {
             <circle cx="11" cy="11" r="7" />
             <path d="M20 20l-3.5-3.5" />
+          }
+          @case ('folder') {
+            <path
+              d="M3.5 7.5a2 2 0 0 1 2-2H9l2 2.5h7.5a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"
+            />
           }
         }
       </svg>

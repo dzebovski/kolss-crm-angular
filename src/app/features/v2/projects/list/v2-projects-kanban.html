@@ -1,0 +1,131 @@
+@if (failed()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'v2.projects.error.title' | translate"
+    [hint]="'v2.projects.error.hint' | translate"
+  >
+    <button type="button" appV2Button variant="primary" (click)="retry()">
+      {{ 'v2.projects.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else {
+  <section
+    class="v2-kanban"
+    [attr.aria-label]="'v2.projects.kanban' | translate"
+    [attr.aria-busy]="loading() || null"
+  >
+    @if (loading()) {
+      <p class="v2-kanban__sr-only" role="status">{{ 'v2.projects.loading' | translate }}</p>
+      @for (status of skeletonColumns; track status) {
+        <div class="v2-kanban__column" aria-hidden="true">
+          <div class="v2-kanban__head">
+            <span class="v2-kanban__bar" style="width: 60%"></span>
+          </div>
+          <div class="v2-kanban__cards">
+            @for (card of [1, 2]; track card) {
+              <div class="v2-kanban__card v2-kanban__card--skeleton">
+                <span class="v2-kanban__bar" style="width: 40%"></span>
+                <span class="v2-kanban__bar" style="width: 80%"></span>
+                <span class="v2-kanban__bar v2-kanban__bar--sm" style="width: 55%"></span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    } @else {
+      @for (column of columns(); track column.status) {
+        <section class="v2-kanban__column" [attr.aria-labelledby]="'v2-kanban-' + column.status">
+          <h2 class="v2-kanban__head" [id]="'v2-kanban-' + column.status">
+            <span
+              class="v2-kanban__dot"
+              [style.background]="column.color"
+              aria-hidden="true"
+            ></span>
+            <span class="v2-kanban__label">{{ column.labelKey | translate }}</span>
+            <span class="v2-kanban__count">{{ column.count }}</span>
+          </h2>
+
+          @if (column.cards.length) {
+            <ul class="v2-kanban__cards">
+              @for (card of column.cards; track card.project.id) {
+                <li class="v2-kanban__card">
+                  <div class="v2-kanban__card-top">
+                    <app-v2-code-chip [code]="card.project.code" size="sm" />
+                    @if (card.title) {
+                      <span class="v2-kanban__title">{{ card.title }}</span>
+                    }
+                  </div>
+                  <!-- The name link covers the whole card (::after), so the card opens on click. -->
+                  <a class="v2-kanban__name" [routerLink]="['/v2/projects', card.project.id]">{{
+                    card.project.clientName
+                  }}</a>
+                  @if (card.estimate) {
+                    <span class="v2-kanban__estimate">
+                      <span class="v2-kanban__muted">{{
+                        'v2.projects.kanban.estimate' | translate
+                      }}</span>
+                      {{ card.estimate }}
+                    </span>
+                  }
+                  @switch (card.next.kind) {
+                    @case ('planned') {
+                      <span
+                        class="v2-kanban__next"
+                        [class.v2-kanban__next--late]="card.next.overdue"
+                      >
+                        {{ card.nextDay }}
+                        <span class="v2-kanban__muted">· {{ card.next.labelKey | translate }}</span>
+                      </span>
+                    }
+                    @case ('notPlanned') {
+                      <span class="v2-kanban__next v2-kanban__muted">{{
+                        'v2.projects.nextEvent.notPlanned' | translate
+                      }}</span>
+                    }
+                  }
+                  <div class="v2-kanban__manager">
+                    <span class="v2-kanban__avatar" aria-hidden="true">{{
+                      card.managerInitials
+                    }}</span>
+                    {{ card.project.manager?.name ?? ('common.unassigned' | translate) }}
+                  </div>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="v2-kanban__empty">{{ 'v2.projects.kanban.empty' | translate }}</p>
+          }
+
+          @if (column.moreError) {
+            <p class="v2-kanban__error" role="alert">{{ column.moreError }}</p>
+          }
+          @if (column.hasMore) {
+            <button
+              type="button"
+              class="v2-kanban__more"
+              [attr.aria-busy]="column.loadingMore || null"
+              [disabled]="column.loadingMore"
+              (click)="showMore(column.status)"
+            >
+              {{
+                'v2.projects.kanban.more' | translate: { count: column.count - column.cards.length }
+              }}
+            </button>
+          }
+        </section>
+      }
+    }
+  </section>
+
+  @if (cancelledCount() > 0) {
+    <button type="button" class="v2-kanban__cancelled" (click)="showCancelled.emit()">
+      <span
+        class="v2-kanban__dot"
+        style="background: var(--v2-status-lost)"
+        aria-hidden="true"
+      ></span>
+      {{ 'v2.projects.kanban.cancelled' | translate: { count: cancelledCount() } }}
+    </button>
+  }
+}

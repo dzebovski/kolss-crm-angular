@@ -1,0 +1,131 @@
+<div class="v2-projects__title-row">
+  <app-v2-sales-tabs current="projects" />
+
+  <!-- TODO(v2): the board links New project to the Create project popup, which opens from a
+       lead. Until the owner decides on a project without a lead (crm-v2-owner.md, Q-PL1) the
+       button leads to the leads list; the hint is its tooltip and accessible description. -->
+  <a
+    appV2Button
+    variant="primary"
+    class="v2-projects__create"
+    routerLink="/v2/leads"
+    aria-describedby="v2-projects-create-hint"
+    [attr.title]="'v2.projects.create.hint' | translate"
+  >
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+    {{ 'v2.projects.create' | translate }}
+  </a>
+  <span id="v2-projects-create-hint" class="v2-projects__sr-only">{{
+    'v2.projects.create.hint' | translate
+  }}</span>
+</div>
+
+<div class="v2-projects__result-row">
+  <div class="v2-projects__result" aria-live="polite">
+    @if (total() !== null && !failed()) {
+      <span class="v2-projects__result-count">{{ total() }}</span>
+      <span class="v2-projects__result-noun">{{ shownNoun() }}</span>
+      <span class="v2-projects__result-context"
+        >· {{ officeLabel() }} · {{ 'v2.projects.context' | translate }}</span
+      >
+    } @else if (loading()) {
+      <!-- Keeps the row's height while the counts load, so the page below doesn't jump. -->
+      <span class="v2-projects__result-skeleton" aria-hidden="true"></span>
+    }
+  </div>
+  <app-v2-segmented-control
+    [options]="viewOptions()"
+    [value]="query().view"
+    [ariaLabel]="'v2.projects.view' | translate"
+    (valueChange)="onView($event)"
+  />
+</div>
+
+<app-v2-projects-filters
+  [search]="searchText()"
+  [manager]="query().manager"
+  [managersLoading]="managersLoading()"
+  [managerOptions]="managerOptions()"
+  [statusChips]="statusChips()"
+  [showStatuses]="!kanban()"
+  [filtersActive]="filtersActive()"
+  (searchChange)="onSearch($event)"
+  (managerChange)="onManager($event)"
+  (statusToggle)="toggleStatus($event)"
+  (clear)="clearFilters()"
+/>
+
+@if (noProjects()) {
+  <app-v2-state-panel
+    tone="empty"
+    icon="folder"
+    [title]="'v2.projects.none.title' | translate"
+    [hint]="'v2.projects.none.hint' | translate"
+  >
+    <a appV2Button variant="primary" routerLink="/v2/leads">{{
+      'v2.projects.none.action' | translate
+    }}</a>
+  </app-v2-state-panel>
+} @else if (kanban()) {
+  <app-v2-projects-kanban [filters]="filters()" [now]="now()" (showCancelled)="openCancelled()" />
+} @else if (failed()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'v2.projects.error.title' | translate"
+    [hint]="'v2.projects.error.hint' | translate"
+  >
+    <button type="button" appV2Button variant="primary" (click)="retry()">
+      <svg
+        class="v2-projects__retry-icon"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path d="M20 12a8 8 0 1 1-2.6-5.9" />
+        <path d="M20 4v5h-5" />
+      </svg>
+      {{ 'v2.projects.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else {
+  <app-v2-projects-table [projects]="shownProjects()" [now]="now()" [busy]="loading()">
+    @if (loading()) {
+      <!-- The table draws the skeleton; this tells screen readers. -->
+      <p class="v2-projects__sr-only" role="status">{{ 'v2.projects.loading' | translate }}</p>
+    } @else if (noResults()) {
+      <app-v2-empty-state
+        class="v2-projects__state"
+        layout="list"
+        [title]="'v2.projects.empty.title' | translate"
+        [hint]="'v2.projects.empty.hint' | translate"
+      />
+    }
+  </app-v2-projects-table>
+
+  @if (shownProjects().length > 0) {
+    <!-- Not drawn on the board (design gap): the leads list pattern, centred under the table. -->
+    <div class="v2-projects__more">
+      <p class="v2-projects__progress" aria-live="polite">{{ progress() }}</p>
+      @if (moreError(); as message) {
+        <p class="v2-projects__more-error" role="alert">{{ message }}</p>
+      }
+      @if (hasMore()) {
+        <button
+          type="button"
+          appV2Button
+          variant="secondary"
+          [attr.aria-busy]="loadingMore() || null"
+          [disabled]="loadingMore()"
+          (click)="showMore()"
+        >
+          {{ 'v2.projects.showMore' | translate: { count: moreCount() } }}
+        </button>
+      }
+    </div>
+  }
+}
