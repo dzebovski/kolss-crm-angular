@@ -40,6 +40,7 @@ describe('v2 lead card mapper', () => {
       projectType: null,
       responsibleManagerId: null,
       clientId: null,
+      convertedProjectId: null,
     });
   });
 
@@ -68,6 +69,7 @@ describe('v2 lead card mapper', () => {
       projectType: null,
       responsibleManagerId: null,
       clientId: null,
+      convertedProjectId: null,
     });
   });
 
@@ -89,6 +91,13 @@ describe('v2 lead card mapper', () => {
       checklistProduct: true,
       clientInformed: true,
     });
+  });
+
+  it("maps the lead's project link", () => {
+    expect(v2LeadColumnsFromRow({ converted_project_id: 'project-1' }).convertedProjectId).toBe(
+      'project-1',
+    );
+    expect(v2LeadColumnsFromRow({ converted_project_id: '' }).convertedProjectId).toBeNull();
   });
 
   it('maps the fill-info project fields and drops an unknown project type', () => {

@@ -62,7 +62,7 @@
         <span>{{ contactShowroomKey | translate }}</span>
         <span>{{ channelLabels[leadContext().channel] | translate }}</span>
       </div>
-      <!-- TODO(v2): C7 owns the contact edit flow. -->
+      <!-- Edit contact info opens from the lead card header; no nested popup is drawn, so this stays disabled. -->
       <button type="button" class="v2-status__contact-edit" disabled>
         {{ 'v2.card.editContact' | translate }}
       </button>

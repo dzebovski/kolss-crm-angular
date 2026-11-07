@@ -252,7 +252,6 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.card.openProject': 'Otwórz projekt',
   'v2.card.eyebrow': 'Lead',
   'v2.card.createProject': 'Utwórz projekt',
-  'v2.card.createProject.soon': 'Tworzenie projektu będzie dostępne wkrótce',
   'v2.card.editContact': 'Edytuj dane kontaktowe',
   'v2.card.phone': 'Telefon',
   'v2.card.email': 'E-mail',
@@ -1939,6 +1938,27 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.projectCard.commentTooLong': 'Maksymalnie {max} znaków',
   'v2.projectCard.commentHint': 'Widoczny dla wszystkich, którzy otwierają ten projekt',
   'v2.projectCard.commentPlaceholder': 'Np. klient poprosił o przeniesienie prezentacji na piątek',
+  'v2.createProject.title': 'Utwórz projekt',
+  'v2.createProject.subtitle':
+    'Zamień tego leada w projekt. Lead dostaje status Projekt i liczy się jako sukces; projekt zaczyna od etapu Wycena.',
+  'v2.createProject.hint': 'Lead przechodzi do Projektu i liczy się jako sukces',
+  'v2.createProject.cancel': 'Nie twórz',
+  'v2.createProject.save': 'Utwórz projekt',
+  'v2.createProject.created': 'Utworzono',
+  'v2.createProject.createdHint': 'Ustalone w chwili wpłynięcia leada',
+  'v2.createProject.estimateSection': 'WSTĘPNA WYCENA',
+  'v2.createProject.estimateHint':
+    'Opcjonalnie. Wpisz to, co już wiesz; zmienisz to na karcie projektu aż do umowy głównej.',
+  'v2.createProject.done': 'Lead ma teraz status Projekt.',
+  'v2.createProject.estimateFailed':
+    'Projekt utworzono, ale wycena nie została zapisana. Dodaj ją na karcie projektu.',
+  'v2.createProject.partialSave':
+    'Część zmian zapisano, ale projekt nie został jeszcze utworzony. Spróbuj ponownie.',
+  'v2.createProject.error.exists':
+    'Ten lead ma już projekt. Zamknij okno, aby zobaczyć odświeżoną kartę.',
+  'v2.createProject.error.terminal':
+    'Lead jest zamknięty jako utracony. Otwórz go ponownie przed utworzeniem projektu.',
+  'v2.createProject.error.forbidden': 'Nie możesz utworzyć projektu dla tego leada.',
   'v2.projectPopup.cancel': 'Anuluj',
   'v2.projectPopup.cancelKeep': 'Zostaw projekt',
   'v2.projectPopup.saveChanges': 'Zapisz zmiany',

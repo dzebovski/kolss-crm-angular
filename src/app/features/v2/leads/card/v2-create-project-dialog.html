@@ -1,0 +1,215 @@
+<app-v2-dialog
+  [title]="'v2.createProject.title' | translate"
+  [subtitle]="'v2.createProject.subtitle' | translate"
+  [leadContext]="leadContext()"
+  width="form"
+  [hint]="'v2.createProject.hint' | translate"
+  [cancelLabel]="'v2.createProject.cancel' | translate"
+  [saveLabel]="'v2.createProject.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="missingCount()"
+  [hasUnsavedInput]="hasUnsavedInput()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (saveError(); as message) {
+    <p class="v2-create-project__error" role="alert">{{ message }}</p>
+  }
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.editContact.contactSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.editContact.fullName' | translate"
+      [required]="true"
+      [hint]="'v2.editContact.fullNameHint' | translate"
+      [error]="nameError()"
+    >
+      <input cdkFocusInitial autocomplete="name" [formField]="fields.name" />
+    </app-v2-form-field>
+    <div class="v2-create-project__pair">
+      <app-v2-form-field
+        [label]="'v2.card.phone' | translate"
+        [required]="true"
+        [hint]="'v2.editContact.phoneHint' | translate"
+        [error]="phoneError()"
+      >
+        <app-v2-phone-input
+          [value]="model().phone"
+          [countryCode]="phoneCountryCode"
+          [placeholder]="phonePlaceholder"
+          (valueChange)="setPhone($event)"
+          (touch)="phoneBlurred.set(true)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field
+        [label]="'v2.card.email' | translate"
+        [hint]="'v2.editContact.emailHint' | translate"
+        [error]="emailError()"
+      >
+        <input
+          type="email"
+          autocomplete="email"
+          [formField]="fields.email"
+          (blur)="emailBlurred.set(true)"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.editContact.showroomSourceSection' | translate }}</h3>
+    <app-v2-field-group
+      [label]="'v2.editContact.showroom' | translate"
+      [required]="true"
+      [hint]="'v2.editContact.showroomHint' | translate"
+    >
+      <div class="v2-create-project__showrooms">
+        @for (showroom of showrooms; track showroom) {
+          <!-- A lead never changes office (owner decision 09-29): the other showroom stays disabled. -->
+          <button
+            type="button"
+            class="v2-create-project__showroom"
+            [class.v2-create-project__showroom--on]="showroom === officeCode"
+            [attr.aria-pressed]="showroom === officeCode"
+            [disabled]="showroom !== officeCode"
+          >
+            <span aria-hidden="true"></span>
+            <strong>{{ officeConfig[showroom].showroomCardLabelKey | translate }}</strong>
+            <small>{{ officeConfig[showroom].showroomCardSubKey | translate }}</small>
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+
+    <app-v2-field-group [label]="'v2.editContact.source' | translate">
+      <div class="v2-create-project__channels">
+        @for (channel of channels; track channel) {
+          <button
+            type="button"
+            class="v2-create-project__chip"
+            [class.v2-create-project__chip--on]="model().channel === channel"
+            [attr.aria-pressed]="model().channel === channel"
+            [disabled]="channel === 'other'"
+            (click)="selectChannel(channel)"
+          >
+            {{ channelLabels[channel] | translate }}
+          </button>
+        }
+      </div>
+    </app-v2-field-group>
+    @if (model().channel === 'referral') {
+      <app-v2-form-field
+        [label]="'v2.editContact.referredBy' | translate"
+        [required]="true"
+        [hint]="'v2.editContact.referredByHint' | translate"
+        [error]="referredByError()"
+      >
+        <input autocomplete="off" [formField]="fields.referredBy" />
+      </app-v2-form-field>
+    }
+    <div class="v2-create-project__pair">
+      <!-- The creation time is fixed when the lead comes in; the API has no way to change it. -->
+      <app-v2-form-field
+        [label]="'v2.createProject.created' | translate"
+        [hint]="'v2.createProject.createdHint' | translate"
+      >
+        <input readonly disabled [value]="createdText()" />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.leadInfo.request' | translate }}</h3>
+    <app-v2-product-chips [(selected)]="products" />
+    <div class="v2-create-project__pair">
+      <app-v2-form-field [label]="'v2.card.budget' | translate" [error]="budgetError()">
+        <app-v2-budget-input
+          [value]="model().budget"
+          [currency]="model().currency"
+          [placeholder]="'v2.leadInfo.budgetPlaceholder' | translate"
+          [currencyLabel]="'v2.popup.success.currency' | translate"
+          (valueChange)="setBudget($event)"
+          (currencyChange)="setCurrency($event)"
+          (touch)="budgetBlurred.set(true)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'v2.card.location' | translate">
+        <input
+          autocomplete="off"
+          [placeholder]="'v2.leadInfo.locationPlaceholder' | translate"
+          [formField]="fields.location"
+        />
+      </app-v2-form-field>
+    </div>
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.leadInfo.documents' | translate }}</h3>
+    <app-v2-document-picker [(documents)]="documents" [disabled]="saving()" />
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.leadInfo.aboutSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.leadInfo.about' | translate"
+      [hint]="'v2.leadInfo.aboutHint' | translate"
+    >
+      <textarea rows="4" [formField]="fields.aboutClient"></textarea>
+    </app-v2-form-field>
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.popup.success.checklist' | translate }}</h3>
+    <app-v2-field-group [error]="informedError()">
+      <p class="v2-create-project__progress">
+        {{ 'v2.popup.success.checklistProgress' | translate: { count: checklistDoneCount() } }}
+      </p>
+      <div class="v2-create-project__checklist">
+        @for (item of checklist; track item.field) {
+          <label class="v2-create-project__check">
+            <input
+              type="checkbox"
+              [checked]="model()[item.field]"
+              (change)="toggleChecklist(item.field)"
+            />
+            <span>{{ item.label | translate }}</span>
+          </label>
+        }
+        <label class="v2-create-project__check v2-create-project__check--required">
+          <input
+            type="checkbox"
+            [checked]="model().clientInformed"
+            (change)="toggleChecklist('clientInformed')"
+          />
+          <span>{{ 'v2.popup.success.clientInformed' | translate }}</span>
+          <b aria-hidden="true">*</b>
+          <small>{{ 'v2.popup.success.clientInformedHint' | translate }}</small>
+        </label>
+      </div>
+    </app-v2-field-group>
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.createProject.estimateSection' | translate }}</h3>
+    <p class="v2-create-project__progress">{{ 'v2.createProject.estimateHint' | translate }}</p>
+    <app-v2-project-estimate-fields [fields]="estimateFields" [errors]="shownEstimateErrors()" />
+  </section>
+
+  <section class="v2-create-project__section">
+    <h3>{{ 'v2.leadInfo.projectSection' | translate }}</h3>
+    <app-v2-form-field
+      [label]="'v2.leadInfo.responsibleManager' | translate"
+      [required]="true"
+      [error]="managerError()"
+      [hint]="'v2.leadInfo.managerTeam' | translate: { showroom: (showroomLabelKey | translate) }"
+    >
+      <select [formField]="fields.responsibleManagerId">
+        <option value="" disabled>{{ 'v2.leadInfo.chooseManager' | translate }}</option>
+        @for (manager of managers(); track manager.id) {
+          <option [value]="manager.id">{{ manager.name }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+  </section>
+</app-v2-dialog>

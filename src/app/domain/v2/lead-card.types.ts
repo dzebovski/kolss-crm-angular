@@ -44,6 +44,8 @@ export interface V2LeadColumns {
   readonly responsibleManagerId: string | null;
   /** The lead's client (API 2.35.0); the code chip links to its card. */
   readonly clientId: string | null;
+  /** The lead's single project (`converted_project_id`, P1); null while it has none. */
+  readonly convertedProjectId: string | null;
 }
 
 export interface V2LeadBudget {
@@ -89,6 +91,8 @@ export interface V2LeadCard {
   readonly status: V2LeadDisplayStatus;
   /** When the lead became a project (`v2_status_changed_at`); null for any other status. */
   readonly projectAt: string | null;
+  /** The project created from this lead; null for any other status or a hand-converted lead. */
+  readonly projectId: string | null;
   readonly rating: V2LeadRating | null;
   readonly createdAt: string;
   readonly lastUpdate: V2LeadLastUpdate;

@@ -17,16 +17,14 @@
   </div>
 
   <div class="v2-card-header__actions">
-    <!-- TODO(v2): the Project entity and the Create project flow come later (roadmap "Later"). -->
     <button
       type="button"
       appV2Button
       variant="primary"
       size="lg"
       class="v2-card-header__action"
-      aria-disabled="true"
-      aria-describedby="v2-create-project-hint"
-      [attr.title]="'v2.card.createProject.soon' | translate"
+      [disabled]="!canCreateProject()"
+      (click)="createProject.emit()"
     >
       <svg
         width="16"
@@ -40,9 +38,6 @@
       </svg>
       {{ 'v2.card.createProject' | translate }}
     </button>
-    <span id="v2-create-project-hint" class="v2-card-header__sr-only">
-      {{ 'v2.card.createProject.soon' | translate }}
-    </span>
     <button
       type="button"
       appV2Button

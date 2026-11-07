@@ -251,7 +251,6 @@ export const messagesUk = {
   'v2.card.openProject': 'Відкрити проєкт',
   'v2.card.eyebrow': 'Лід',
   'v2.card.createProject': 'Створити проєкт',
-  'v2.card.createProject.soon': "Створення проєкту з'явиться найближчим часом",
   'v2.card.editContact': 'Редагувати контакти',
   'v2.card.phone': 'Телефон',
   'v2.card.email': 'E-mail',
@@ -1930,6 +1929,27 @@ export const messagesUk = {
   'v2.projectCard.commentTooLong': 'Не більше {max} символів',
   'v2.projectCard.commentHint': 'Бачать усі, хто відкриває цей проєкт',
   'v2.projectCard.commentPlaceholder': 'Напр. клієнт попросив перенести презентацію на п’ятницю',
+  'v2.createProject.title': 'Створити проєкт',
+  'v2.createProject.subtitle':
+    'Перетворіть цей лід на проєкт. Лід отримає статус «Проєкт» і рахуватиметься як успіх; проєкт починається з етапу «Оцінка».',
+  'v2.createProject.hint': 'Лід переходить у «Проєкт» і рахується як успіх',
+  'v2.createProject.cancel': 'Не створювати',
+  'v2.createProject.save': 'Створити проєкт',
+  'v2.createProject.created': 'Створено',
+  'v2.createProject.createdHint': 'Фіксується, коли лід надійшов',
+  'v2.createProject.estimateSection': 'ПОПЕРЕДНІЙ КОШТОРИС',
+  'v2.createProject.estimateHint':
+    'Необов’язково. Заповніть те, що вже відомо; змінити можна в картці проєкту до основного договору.',
+  'v2.createProject.done': 'Лід тепер у статусі «Проєкт».',
+  'v2.createProject.estimateFailed':
+    'Проєкт створено, але кошторис не збережено. Додайте його в картці проєкту.',
+  'v2.createProject.partialSave':
+    'Частину змін збережено, але проєкт ще не створено. Спробуйте ще раз.',
+  'v2.createProject.error.exists':
+    'У цього ліда вже є проєкт. Закрийте вікно, щоб побачити оновлену картку.',
+  'v2.createProject.error.terminal':
+    'Лід закрито як втрачений. Відновіть його перед створенням проєкту.',
+  'v2.createProject.error.forbidden': 'Ви не можете створити проєкт для цього ліда.',
   'v2.projectPopup.cancel': 'Скасувати',
   'v2.projectPopup.cancelKeep': 'Залишити проєкт',
   'v2.projectPopup.saveChanges': 'Зберегти зміни',

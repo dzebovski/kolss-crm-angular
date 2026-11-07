@@ -13,7 +13,7 @@ import {
   type V2PendingDocument,
 } from '@domain/v2/lead-documents';
 import type { V2LeadCard, V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
-import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
+import { v2ValidatePhone } from '@domain/v2/phone-mask';
 import { v2StoredPhone } from '@domain/v2/phone-storage';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
 import {
@@ -31,6 +31,11 @@ import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
 import { V2PhoneInput } from '../../ui/v2-phone-input';
 import { V2DocumentPicker } from './v2-document-picker';
 import { V2ProductChips } from './v2-product-chips';
+import {
+  V2_PICKABLE_CHANNELS,
+  v2EmailValid,
+  v2PhoneValidationMessage,
+} from '../../ui/v2-contact-validation';
 
 export interface V2EditContactData {
   readonly lead: Lead;
@@ -49,16 +54,6 @@ interface ContactModel {
   location: string;
   aboutClient: string;
 }
-
-const PICKABLE_CHANNELS: readonly V2LeadChannel[] = [
-  'office',
-  'phone',
-  'website',
-  'meta_ads',
-  'google_ads',
-  'referral',
-];
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 @Component({
   selector: 'app-v2-edit-contact-dialog',
@@ -85,7 +80,7 @@ export class V2EditContactDialog {
 
   protected readonly channelLabels = V2_CHANNEL_LABEL;
   protected readonly channels: readonly V2LeadChannel[] =
-    this.data.card.channel === 'other' ? [...PICKABLE_CHANNELS, 'other'] : PICKABLE_CHANNELS;
+    this.data.card.channel === 'other' ? [...V2_PICKABLE_CHANNELS, 'other'] : V2_PICKABLE_CHANNELS;
   protected readonly officeConfig = OFFICE_CONFIG;
   protected readonly showrooms = OFFICE_IDS;
   protected readonly phoneCountryCode = OFFICE_CONFIG[this.data.lead.officeCode].phoneCountryCode;
@@ -120,7 +115,7 @@ export class V2EditContactDialog {
   protected readonly phoneError = computed(() => {
     const result = this.phoneValidation();
     if (!this.attempted() && !this.phoneBlurred()) return '';
-    return phoneValidationMessage(result, this.i18n);
+    return v2PhoneValidationMessage(result, this.i18n);
   });
   protected readonly emailError = computed(() =>
     (this.attempted() || this.emailBlurred()) && !this.emailValid()
@@ -215,8 +210,7 @@ export class V2EditContactDialog {
   }
 
   private emailValid(): boolean {
-    const email = this.model().email.trim();
-    return !email || EMAIL_PATTERN.test(email);
+    return v2EmailValid(this.model().email);
   }
 
   private budgetValid(): boolean {
@@ -290,19 +284,6 @@ export class V2EditContactDialog {
     if (value.location.trim() !== this.initial.location.trim()) count++;
     if (value.aboutClient.trim() !== this.initial.aboutClient.trim()) count++;
     return count;
-  }
-}
-
-function phoneValidationMessage(result: V2PhoneValidation, i18n: I18nService): string {
-  switch (result.kind) {
-    case 'ok':
-      return '';
-    case 'empty':
-      return i18n.t('v2.editContact.phoneRequired');
-    case 'noCode':
-      return i18n.t('v2.editContact.phoneCode');
-    case 'incomplete':
-      return i18n.t('v2.editContact.phoneIncomplete', { count: result.missingDigits });
   }
 }
 

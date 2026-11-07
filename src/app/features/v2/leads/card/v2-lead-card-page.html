@@ -61,16 +61,21 @@
     @if (meta.projectDate; as projectDate) {
       <div class="v2-card__project-banner">
         <span>{{ 'v2.card.projectBanner' | translate: { date: projectDate } }}</span>
-        <!-- TODO(v2): the Project entity doesn't exist yet; the link has no target. -->
-        <span class="v2-card__project-link">{{ 'v2.card.openProject' | translate }}</span>
+        @if (lead.projectId; as projectId) {
+          <a class="v2-card__project-link" [routerLink]="['/v2/projects', projectId]">{{
+            'v2.card.openProject' | translate
+          }}</a>
+        }
       </div>
     }
 
     <app-v2-lead-card-header
       [card]="lead"
       [managerName]="managerName()"
-      [canEdit]="canEdit()"
+      [canEdit]="canEditContact()"
+      [canCreateProject]="canCreateProject()"
       (editContact)="openEditContact()"
+      (createProject)="openCreateProject()"
     />
 
     @if (suggestion(); as suggestion) {

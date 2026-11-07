@@ -74,6 +74,7 @@ export function v2LeadColumnsFromRow(row: unknown): V2LeadColumns {
     projectType: oneOf(record['project_type'], PROJECT_TYPES),
     responsibleManagerId: text(record['responsible_manager_id']),
     clientId: text(record['client_id']),
+    convertedProjectId: text(record['converted_project_id']),
   };
 }
 
@@ -101,6 +102,7 @@ export function toV2LeadCard(lead: Lead, columns: V2LeadColumns): V2LeadCard {
     channel: columns.channel ?? channelFromSource(lead.source),
     status,
     projectAt: status === 'project' ? columns.v2StatusChangedAt : null,
+    projectId: columns.convertedProjectId,
     rating: columns.rating,
     createdAt: lead.sourceCreatedAt,
     lastUpdate: v2LeadLastUpdate(lead),

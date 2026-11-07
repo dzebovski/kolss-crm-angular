@@ -16,17 +16,16 @@ import {
 } from '@domain/v2/client-form';
 import type { V2Client } from '@domain/v2/client.types';
 import { v2PluralCategory } from '@domain/v2/plural';
-import { v2ValidatePhone, type V2PhoneValidation } from '@domain/v2/phone-mask';
+import { v2ValidatePhone } from '@domain/v2/phone-mask';
 import { V2ClientsService } from '@services/v2/v2-clients.service';
 import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import { V2PhoneInput } from '../../ui/v2-phone-input';
+import { v2EmailValid, v2PhoneValidationMessage } from '../../ui/v2-contact-validation';
 
 export interface V2ClientEditData {
   readonly client: V2Client;
 }
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 const LANGUAGE_KEY = {
   pl: 'v2.client.lang.pl',
@@ -73,17 +72,14 @@ export class V2ClientEditDialog {
     const value = this.model().secondPhone;
     return !value.trim() || v2ClientApiPhone(value) !== null;
   });
-  private readonly emailValid = computed(() => {
-    const email = this.model().email.trim();
-    return !email || EMAIL_PATTERN.test(email);
-  });
+  private readonly emailValid = computed(() => v2EmailValid(this.model().email));
 
   protected readonly nameError = computed(() =>
     this.attempted() && !this.model().name.trim() ? this.i18n.t('v2.editContact.nameRequired') : '',
   );
   protected readonly phoneError = computed(() =>
     this.attempted() || this.phoneBlurred()
-      ? phoneValidationMessage(this.phoneValidation(), this.i18n)
+      ? v2PhoneValidationMessage(this.phoneValidation(), this.i18n)
       : '',
   );
   protected readonly phone2Error = computed(() =>
@@ -164,18 +160,5 @@ export class V2ClientEditDialog {
       return this.i18n.t('v2.client.edit.mergedAway');
     }
     return this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed');
-  }
-}
-
-function phoneValidationMessage(result: V2PhoneValidation, i18n: I18nService): string {
-  switch (result.kind) {
-    case 'ok':
-      return '';
-    case 'empty':
-      return i18n.t('v2.editContact.phoneRequired');
-    case 'noCode':
-      return i18n.t('v2.editContact.phoneCode');
-    case 'incomplete':
-      return i18n.t('v2.editContact.phoneIncomplete', { count: result.missingDigits });
   }
 }

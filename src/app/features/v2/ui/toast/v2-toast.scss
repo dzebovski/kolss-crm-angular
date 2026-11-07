@@ -1,0 +1,16 @@
+@use '../../../../../styles/v2/tokens';
+
+:host {
+  @include tokens.tokens;
+
+  display: block;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: var(--v2-space-3) var(--v2-space-4);
+  border-radius: var(--v2-radius-md);
+  background: var(--v2-ink);
+  box-shadow: var(--v2-shadow-menu);
+  color: var(--v2-on-ink);
+  font-family: var(--v2-font-sans);
+  font-size: 14px;
+  line-height: 1.4;
+}

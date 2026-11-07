@@ -7,7 +7,7 @@ import {
   signal,
   type WritableSignal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AuthService } from '@core/auth/auth.service';
@@ -30,11 +30,17 @@ import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2LeadDocumentsService } from '@services/v2/v2-lead-documents.service';
 import { V2_NOW } from '../../core/v2-clock';
 import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
+import { V2ToastService } from '../../ui/toast/v2-toast';
 import { V2Button } from '../../ui/v2-button';
 import { V2EmptyState } from '../../ui/v2-empty-state';
 import { V2_CHANNEL_LABEL } from '../../ui/v2-lead-labels';
 import { V2LeadActionPanel, type V2CallResult, type V2StatusChange } from './v2-lead-action-panel';
 import { V2CommentDialog, type V2CommentData } from './v2-comment-dialog';
+import {
+  V2CreateProjectDialog,
+  type V2CreateProjectData,
+  type V2CreateProjectResult,
+} from './v2-create-project-dialog';
 import { V2CurrentStatusCard } from './v2-current-status-card';
 import { V2LeadInfoDialog, type V2LeadInfoData } from './v2-lead-info-dialog';
 import { V2StatusDialog, type V2StatusDialogData } from './v2-status-dialog';
@@ -79,6 +85,8 @@ export class V2LeadCardPage {
   private readonly i18n = inject(I18nService);
   private readonly dialogs = inject(V2DialogService);
   private readonly clock = inject(V2_NOW);
+  private readonly router = inject(Router);
+  private readonly toast = inject(V2ToastService);
 
   readonly leadId = input.required<string>();
 
@@ -222,6 +230,12 @@ export class V2LeadCardPage {
     const lead = this.loaded()?.lead;
     return lead ? leadPolicy.canEditLead(this.policyContext(), lead) : false;
   });
+  /** A project locks the lead: Edit contact info goes with the other lead actions (P2). */
+  protected readonly canEditContact = computed(
+    () => this.canEdit() && this.card()?.status !== 'project',
+  );
+  /** The API needs edit access and refuses a lost or already converted lead (`409`). */
+  protected readonly canCreateProject = computed(() => this.canEdit() && this.actionsEnabled());
 
   protected readonly meta = computed(() => {
     const card = this.card();
@@ -382,13 +396,39 @@ export class V2LeadCardPage {
   protected async openEditContact(): Promise<void> {
     const loaded = this.loaded();
     const card = this.card();
-    if (!loaded || !card || !this.canEdit()) return;
+    if (!loaded || !card || !this.canEditContact()) return;
     const ref = this.dialogs.open<boolean, V2EditContactData>(V2EditContactDialog, {
       lead: loaded.lead,
       card,
       columns: loaded.columns,
     });
     if (await firstValueFrom(ref.closed)) this.leadResource.reload();
+  }
+
+  /**
+   * Create project (P2): the popup saves the lead, creates the project and its estimate. On
+   * success the person lands on the new project card (in Estimate). When the popup closes without
+   * a project, the lead is reloaded because a failed save may have changed it (or a project
+   * already existed).
+   */
+  protected async openCreateProject(): Promise<void> {
+    const loaded = this.loaded();
+    if (!loaded || !this.canCreateProject()) return;
+    const ref = this.dialogs.open<V2CreateProjectResult, V2CreateProjectData>(
+      V2CreateProjectDialog,
+      { ...loaded, employees: this.employees(), now: this.now() },
+    );
+    const result = await firstValueFrom(ref.closed);
+    if (!result) {
+      this.leadResource.reload();
+      return;
+    }
+    this.toast.show(
+      this.i18n.t(
+        result.estimateSaved ? 'v2.createProject.done' : 'v2.createProject.estimateFailed',
+      ),
+    );
+    await this.router.navigate(['/v2/projects', result.project.id]);
   }
 
   private policyContext(): leadPolicy.LeadPolicyContext {

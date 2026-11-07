@@ -254,7 +254,6 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.card.openProject': 'Open project',
   'v2.card.eyebrow': 'Lead',
   'v2.card.createProject': 'Create project',
-  'v2.card.createProject.soon': 'Creating a project is coming soon',
   'v2.card.editContact': 'Edit contact info',
   'v2.card.phone': 'Phone',
   'v2.card.email': 'E-mail',
@@ -1930,6 +1929,27 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.projectCard.commentTooLong': 'At most {max} characters',
   'v2.projectCard.commentHint': 'Visible to everyone who opens this project',
   'v2.projectCard.commentPlaceholder': 'e.g. The client asked to move the presentation to Friday',
+  'v2.createProject.title': 'Create project',
+  'v2.createProject.subtitle':
+    'Turn this lead into a project. The lead moves to status Project and counts as a success; the project starts at the Estimate stage.',
+  'v2.createProject.hint': 'Lead moves to Project and counts as a success',
+  'v2.createProject.cancel': 'Cancel creating',
+  'v2.createProject.save': 'Create project',
+  'v2.createProject.created': 'Created',
+  'v2.createProject.createdHint': 'Fixed when the lead came in',
+  'v2.createProject.estimateSection': 'PRELIMINARY ESTIMATE',
+  'v2.createProject.estimateHint':
+    'Optional. Fill in what you already know; you can change it on the project card until the main contract.',
+  'v2.createProject.done': 'The lead is now in status Project.',
+  'v2.createProject.estimateFailed':
+    'The project is created, but the estimate was not saved. Add it on the project card.',
+  'v2.createProject.partialSave':
+    'Some changes were saved, but the project was not created yet. Try again.',
+  'v2.createProject.error.exists':
+    'This lead already has a project. Close this window to see the updated card.',
+  'v2.createProject.error.terminal':
+    'The lead is closed as lost. Reopen it before creating a project.',
+  'v2.createProject.error.forbidden': 'You can’t create a project for this lead.',
   'v2.projectPopup.cancel': 'Cancel',
   'v2.projectPopup.cancelKeep': 'Keep project',
   'v2.projectPopup.saveChanges': 'Save changes',

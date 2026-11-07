@@ -25,8 +25,12 @@ export class V2LeadCardHeader {
   readonly card = input.required<V2LeadCard>();
   /** Null when the lead has no manager or the name isn't known. */
   readonly managerName = input<string | null>(null);
+  /** Edit contact info: off while the lead is a project (its actions are locked). */
   readonly canEdit = input(false);
+  /** Create project: an editable lead that is not lost, archived or already a project. */
+  readonly canCreateProject = input(false);
   readonly editContact = output<void>();
+  readonly createProject = output<void>();
 
   protected readonly productLabels = V2_PRODUCT_LABEL;
 
