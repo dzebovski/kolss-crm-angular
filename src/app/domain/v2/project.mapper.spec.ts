@@ -4,6 +4,7 @@ import {
   v2PaymentsNewestFirst,
   v2PercentOf,
   v2ProjectBalance,
+  v2ProjectMoneyCell,
 } from './project-money';
 import {
   toV2Project,
@@ -226,6 +227,25 @@ describe('project money', () => {
       otherCurrencies: true,
     });
     expect(v2ProjectBalance(pln(100), [pln(150)])?.remaining).toEqual(pln(-50));
+  });
+
+  it('builds the Estimate · paid cell of the list', () => {
+    const pln = (amount: number) => ({ amount, currency: 'PLN' as const });
+    expect(
+      v2ProjectMoneyCell(pln(40000), [pln(12000), { amount: 0, currency: 'EUR' }], 'en'),
+    ).toEqual({
+      estimate: '40\u00a0000\u00a0zł',
+      paid: '12\u00a0000\u00a0zł',
+      percent: 30,
+    });
+    expect(v2ProjectMoneyCell(null, [], 'en')).toEqual({
+      estimate: null,
+      paid: null,
+      percent: null,
+    });
+    expect(
+      v2ProjectMoneyCell(pln(100), [{ amount: 50, currency: 'EUR' }], 'en').percent,
+    ).toBeNull();
   });
 
   it('sorts payments by day, then by entry time', () => {

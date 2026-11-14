@@ -3,6 +3,7 @@ import type { LocaleCode } from '@domain/i18n.types';
 import { calendarDayDiff, formatV2CardDate, formatV2RelativeTime } from '@domain/v2/date-format';
 import type { V2LeadProduct } from '@domain/v2/lead-card.types';
 import { v2Initials } from '@domain/v2/lead-list.rules';
+import { v2ProjectMoneyCell, type V2ProjectMoneyCell } from '@domain/v2/project-money';
 import { v2ProjectNextEvent, type V2ProjectNextEvent } from '@domain/v2/project-status';
 import type { V2ProjectListItem, V2ProjectSchedule } from '@domain/v2/project.types';
 import { V2_PRODUCT_LABEL } from '../../ui/v2-lead-labels';
@@ -17,6 +18,7 @@ export interface V2ProjectRow {
   readonly next: V2ProjectNextEvent;
   readonly nextDay: string;
   readonly commentAge: string;
+  readonly money: V2ProjectMoneyCell;
 }
 
 export function toV2ProjectRow(
@@ -41,6 +43,7 @@ export function toV2ProjectRow(
     commentAge: project.lastComment
       ? formatV2RelativeTime(project.lastComment.at, now, locale)
       : '',
+    money: v2ProjectMoneyCell(project.estimate, project.paidTotals, locale),
   };
 }
 

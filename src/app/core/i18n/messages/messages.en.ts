@@ -148,6 +148,8 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.projects.col.status': 'Status',
   'v2.projects.col.nextEvent': 'Next event',
   'v2.projects.col.comment': 'Last comment',
+  'v2.projects.col.money': 'Estimate · paid',
+  'v2.projects.money.noEstimate': 'No estimate',
   'v2.projects.nextEvent.closed': 'Closed',
   'v2.projects.nextEvent.notPlanned': 'Not planned',
   'v2.projects.nextEvent.resultNotLogged': 'result not logged',

@@ -146,6 +146,8 @@ export const messagesUk = {
   'v2.projects.col.status': 'Статус',
   'v2.projects.col.nextEvent': 'Наступна подія',
   'v2.projects.col.comment': 'Останній коментар',
+  'v2.projects.col.money': 'Кошторис · оплачено',
+  'v2.projects.money.noEstimate': 'Без кошторису',
   'v2.projects.nextEvent.closed': 'Закрито',
   'v2.projects.nextEvent.notPlanned': 'Не заплановано',
   'v2.projects.nextEvent.resultNotLogged': 'результат не внесено',

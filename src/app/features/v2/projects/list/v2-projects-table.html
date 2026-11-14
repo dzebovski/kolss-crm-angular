@@ -9,6 +9,7 @@
       <span>{{ 'v2.projects.col.client' | translate }}</span>
       <span>{{ 'v2.projects.col.status' | translate }}</span>
       <span>{{ 'v2.projects.col.nextEvent' | translate }}</span>
+      <span>{{ 'v2.projects.col.money' | translate }}</span>
       <span>{{ 'v2.projects.col.comment' | translate }}</span>
     </div>
 
@@ -71,6 +72,24 @@
         </div>
 
         <div class="v2-ptable__stack">
+          @if (row.money.estimate; as estimate) {
+            <span class="v2-ptable__money">{{ estimate }}</span>
+          } @else {
+            <span class="v2-ptable__none">{{ 'v2.projects.money.noEstimate' | translate }}</span>
+          }
+          <span class="v2-ptable__age">
+            @if (row.money.paid; as paid) {
+              {{ 'v2.projectCard.paidTotal' | translate }} {{ paid }}
+              @if (row.money.percent !== null) {
+                · {{ row.money.percent }}%
+              }
+            } @else {
+              {{ 'v2.projectCard.paidNone' | translate }}
+            }
+          </span>
+        </div>
+
+        <div class="v2-ptable__stack">
           @if (row.project.lastComment; as comment) {
             <span class="v2-ptable__comment">{{ comment.text }}</span>
             <span class="v2-ptable__age">{{ row.commentAge }}</span>
@@ -96,6 +115,7 @@
             </div>
             <span class="v2-ptable__bar" [style.width.%]="row.status"></span>
             <span class="v2-ptable__bar" [style.width.%]="row.next"></span>
+            <span class="v2-ptable__bar" [style.width.%]="row.status"></span>
             <span class="v2-ptable__bar" [style.width.%]="row.comment"></span>
           </div>
         }

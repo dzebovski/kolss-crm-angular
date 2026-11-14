@@ -10,7 +10,7 @@ import { V2ProjectStatusPill } from '../../ui/v2-project-status-pill';
 import { toV2ProjectRow, type V2ProjectRow } from './v2-projects-rows';
 
 // Projects table of the Projects-list board: header (Created, Client · manager, Status, Next
-// event, Last comment) and flat rows, newest first. The whole row opens the v2 project card
+// event, Estimate · paid (P13), Last comment) and flat rows, newest first. The whole row opens the v2 project card
 // (as in the leads table), except after selecting its text; the client name stays the link for
 // the keyboard and screen readers. The states (empty results) are projected below the rows.
 @Component({

@@ -1,6 +1,7 @@
 @use '../../../../../styles/v2/interactive';
 
-// Values from Projects-list.dc.html. Column widths 112 / 1.25fr / 200 / 190 / 1.6fr with a 24px
+// Values from Projects-list.dc.html (P13 adds the 160px Estimate · paid column). Column widths
+// 112 / 1.25fr / 200 / 190 / 160 / 1.6fr with a 24px
 // gap, 44px header, 14/20px row padding, 22px avatar and 6px line gap are board values without
 // a token; the skeleton rows use the loading board's 18px padding.
 :host {
@@ -21,11 +22,11 @@
 
 .v2-ptable__row {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1.25fr) 200px 190px minmax(0, 1.6fr);
+  grid-template-columns: 112px minmax(0, 1.25fr) 200px 190px 160px minmax(0, 1.6fr);
   align-items: center;
   column-gap: var(--v2-space-5);
   box-sizing: border-box;
-  min-width: 980px;
+  min-width: 1160px;
   padding: 0 20px;
 }
 
@@ -126,9 +127,11 @@
   min-width: 0;
 }
 
-.v2-ptable__next {
+.v2-ptable__next,
+.v2-ptable__money {
   font-size: 14px;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 // Overdue and not marked done: the date and the "result not logged" note turn red.

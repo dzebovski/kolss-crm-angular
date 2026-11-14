@@ -147,6 +147,8 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.projects.col.status': 'Status',
   'v2.projects.col.nextEvent': 'Następne zdarzenie',
   'v2.projects.col.comment': 'Ostatni komentarz',
+  'v2.projects.col.money': 'Wycena · zapłacono',
+  'v2.projects.money.noEstimate': 'Bez wyceny',
   'v2.projects.nextEvent.closed': 'Zamknięty',
   'v2.projects.nextEvent.notPlanned': 'Niezaplanowane',
   'v2.projects.nextEvent.resultNotLogged': 'wynik nie został zapisany',
