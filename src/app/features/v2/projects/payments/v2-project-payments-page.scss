@@ -1,0 +1,303 @@
+@use '../../../../../styles/v2/interactive';
+@use '../../../../../styles/v2/type';
+
+// Payments page (P10; no board): the card page's frame — breadcrumb, then cards with the shell's
+// 16px gap. The table turns into stacked rows on narrow screens.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+}
+
+.v2-payments__breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--v2-space-2);
+  font-size: 13px;
+}
+
+.v2-payments__crumb-link {
+  color: var(--v2-muted);
+  text-decoration: none;
+
+  @include interactive.states(none);
+
+  &:hover {
+    color: var(--v2-ink);
+  }
+}
+
+.v2-payments__crumb-divider {
+  color: var(--v2-faint);
+}
+
+.v2-payments__crumb-current {
+  font-weight: 500;
+}
+
+.v2-payments__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-4);
+  padding: var(--v2-space-5);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+.v2-payments__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+}
+
+.v2-payments__title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+}
+
+.v2-payments__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.v2-payments__head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+}
+
+.v2-payments__totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--v2-space-4);
+  margin: 0;
+
+  dt {
+    @include type.text(card-label);
+
+    color: var(--v2-muted);
+  }
+
+  dd {
+    margin: var(--v2-space-1) 0 0;
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.v2-payments__total {
+  min-width: 0;
+}
+
+.v2-payments__unset {
+  color: var(--v2-subtle);
+  font-weight: 400 !important;
+}
+
+.v2-payments__overpaid {
+  color: var(--v2-danger);
+}
+
+.v2-payments__totals .v2-payments__sub {
+  color: var(--v2-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.v2-payments__section-title {
+  @include type.text(card-label);
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.v2-payments__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    padding: 0 var(--v2-space-3) var(--v2-space-2) 0;
+    border-bottom: 1px solid var(--v2-line);
+    color: var(--v2-muted);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--v2-space-3) var(--v2-space-3) var(--v2-space-3) 0;
+    border-bottom: 1px solid var(--v2-line-soft);
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+.v2-payments__table .v2-payments__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.v2-payments__amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.v2-payments__basis {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.v2-payments__note {
+  max-width: 260px;
+  overflow-wrap: anywhere;
+}
+
+.v2-payments__muted {
+  color: var(--v2-muted);
+}
+
+.v2-payments__link {
+  padding: 0;
+  max-width: 200px;
+  overflow: hidden;
+  background: none;
+  border: 0;
+  color: var(--v2-ink);
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+
+  @include interactive.states(none);
+
+  &:focus-visible {
+    border-radius: 2px;
+    @include interactive.focus-ring;
+  }
+}
+
+.v2-payments__table .v2-payments__row-actions {
+  padding-right: 0;
+  text-align: right;
+  white-space: nowrap;
+
+  > * + * {
+    margin-left: var(--v2-space-2);
+  }
+}
+
+.v2-payments__empty {
+  margin: 0;
+  color: var(--v2-subtle);
+  font-size: 13px;
+}
+
+.v2-payments__error {
+  margin: 0;
+  color: var(--v2-danger);
+  font-size: 13px;
+}
+
+.v2-payments__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Loading, error and not-found panels (as on the project card).
+.v2-payments__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--v2-space-2);
+  margin: 0;
+  padding: 48px var(--v2-space-6);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+  color: var(--v2-muted);
+  text-align: center;
+}
+
+.v2-payments__panel--error {
+  background: #fffafa;
+  border-color: #f1c5c0;
+}
+
+.v2-payments__panel-title {
+  color: var(--v2-ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.v2-payments__panel-hint {
+  max-width: 460px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.v2-payments__panel-actions {
+  display: flex;
+  gap: var(--v2-space-2);
+  margin-top: 10px;
+}
+
+// Narrow screens: every payment is a small stacked block, the header row is hidden.
+@media (max-width: 720px) {
+  .v2-payments__table {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--v2-space-1) var(--v2-space-3);
+      padding: var(--v2-space-3) 0;
+      border-bottom: 1px solid var(--v2-line-soft);
+    }
+
+    tr:last-child {
+      border-bottom: 0;
+    }
+
+    td {
+      padding: 0;
+      border: 0;
+    }
+
+    .v2-payments__num {
+      text-align: right;
+    }
+
+    .v2-payments__note,
+    .v2-payments__row-actions {
+      grid-column: 1 / -1;
+      max-width: none;
+      text-align: left;
+    }
+  }
+}

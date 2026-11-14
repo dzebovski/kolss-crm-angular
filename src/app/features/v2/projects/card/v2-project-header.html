@@ -127,8 +127,9 @@
       {{ paid() ?? ('v2.projectCard.paidNone' | translate) }}
     </dd>
     <dd class="v2-project-header__sub">
-      {{ 'v2.projectCard.paymentCount' | translate: { count: current.payments.length } }}
-      <!-- TODO(v2) P10: link to /v2/projects/:id/payments. -->
+      <a class="v2-project-header__link" [routerLink]="['/v2/projects', current.id, 'payments']">
+        {{ 'v2.projectCard.paymentCount' | translate: { count: current.payments.length } }}
+      </a>
     </dd>
     @if (allowed.canAddPayment) {
       <dd>

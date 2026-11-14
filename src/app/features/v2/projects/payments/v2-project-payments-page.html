@@ -1,0 +1,170 @@
+<nav class="v2-payments__breadcrumb" [attr.aria-label]="'v2.projectCard.breadcrumb' | translate">
+  <a class="v2-payments__crumb-link" routerLink="/v2/projects">
+    {{ 'v2.projectCard.crumb' | translate }}
+  </a>
+  @if (project(); as current) {
+    <span class="v2-payments__crumb-divider" aria-hidden="true">/</span>
+    <a class="v2-payments__crumb-link" [routerLink]="['/v2/projects', current.id]">
+      {{ current.code }} — {{ current.clientName || ('v2.card.noName' | translate) }}
+    </a>
+    <span class="v2-payments__crumb-divider" aria-hidden="true">/</span>
+    <span class="v2-payments__crumb-current" aria-current="page">
+      {{ 'v2.projectPayments.title' | translate }}
+    </span>
+  }
+</nav>
+
+@if (loading()) {
+  <p class="v2-payments__panel" role="status">{{ 'common.loading' | translate }}</p>
+} @else if (loadFailed()) {
+  <div class="v2-payments__panel v2-payments__panel--error" role="alert">
+    <span class="v2-payments__panel-title">{{ 'v2.projectCard.error.title' | translate }}</span>
+    <span class="v2-payments__panel-hint">{{ 'v2.projectCard.error.hint' | translate }}</span>
+    <div class="v2-payments__panel-actions">
+      <button type="button" appV2Button variant="primary" (click)="retry()">
+        {{ 'v2.leads.retry' | translate }}
+      </button>
+      <a appV2Button routerLink="/v2/projects">{{ 'v2.projectCard.backToProjects' | translate }}</a>
+    </div>
+  </div>
+} @else if (notFound()) {
+  <div class="v2-payments__panel" role="status">
+    <span class="v2-payments__panel-title">{{ 'v2.projectCard.notFound.title' | translate }}</span>
+    <span class="v2-payments__panel-hint">{{ 'v2.projectCard.notFound.hint' | translate }}</span>
+    <div class="v2-payments__panel-actions">
+      <a appV2Button routerLink="/v2/projects">{{ 'v2.projectCard.backToProjects' | translate }}</a>
+    </div>
+  </div>
+} @else if (project(); as current) {
+  <section class="v2-payments__card" [attr.aria-label]="'v2.projectPayments.summary' | translate">
+    <div class="v2-payments__head">
+      <div class="v2-payments__title-row">
+        <h1 class="v2-payments__title">{{ 'v2.projectPayments.title' | translate }}</h1>
+        <app-v2-code-chip [code]="current.code" size="sm" />
+      </div>
+      <div class="v2-payments__head-actions">
+        <a appV2Button size="sm" [routerLink]="['/v2/projects', current.id]">
+          {{ 'v2.projectPayments.backToProject' | translate }}
+        </a>
+        @if (canPay()) {
+          <button type="button" appV2Button variant="primary" size="sm" (click)="act.addPayment()">
+            {{ 'v2.projectCard.payment.add' | translate }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <dl class="v2-payments__totals">
+      <div class="v2-payments__total">
+        <dt>{{ 'v2.projectCard.estimateTotal' | translate }}</dt>
+        <dd [class.v2-payments__unset]="!estimate()">
+          {{ estimate() ?? ('v2.card.notSet' | translate) }}
+        </dd>
+      </div>
+      <div class="v2-payments__total">
+        <dt>{{ 'v2.projectCard.paidTotal' | translate }}</dt>
+        <dd [class.v2-payments__unset]="!paid()">
+          {{ paid() ?? ('v2.projectCard.paidNone' | translate) }}
+        </dd>
+      </div>
+      @if (balance(); as left) {
+        <div class="v2-payments__total">
+          <dt>
+            {{
+              (left.overpaid ? 'v2.projectPayments.overpaid' : 'v2.projectPayments.remaining')
+                | translate
+            }}
+          </dt>
+          <dd [class.v2-payments__overpaid]="left.overpaid">{{ left.text }}</dd>
+          @if (left.otherCurrencies) {
+            <dd class="v2-payments__sub">
+              {{ 'v2.projectPayments.otherCurrencies' | translate }}
+            </dd>
+          }
+        </div>
+      }
+    </dl>
+  </section>
+
+  @if (act.headerError() || act.fileError(); as message) {
+    <p class="v2-payments__error" role="alert">{{ message }}</p>
+  }
+
+  <section class="v2-payments__card" aria-labelledby="v2-payments-list">
+    <h2 class="v2-payments__section-title" id="v2-payments-list">
+      {{ 'v2.projectPayments.list' | translate }}
+    </h2>
+
+    @if (rows().length) {
+      <table class="v2-payments__table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'v2.projectCard.payment.date' | translate }}</th>
+            <th scope="col" class="v2-payments__num">
+              {{ 'v2.projectPopup.payment.amount' | translate }}
+            </th>
+            <th scope="col">{{ 'v2.projectPopup.payment.basis' | translate }}</th>
+            <th scope="col">{{ 'v2.projectCard.row.note' | translate }}</th>
+            <th scope="col">{{ 'v2.projectCard.payment.receipt' | translate }}</th>
+            <th scope="col">{{ 'v2.projectPayments.addedBy' | translate }}</th>
+            @if (canPay()) {
+              <th scope="col">
+                <span class="v2-payments__sr-only">{{
+                  'v2.projectPayments.actions' | translate
+                }}</span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.payment.id) {
+            <tr>
+              <td>{{ row.day }}</td>
+              <td class="v2-payments__num v2-payments__amount">{{ row.amount }}</td>
+              <td>
+                <span class="v2-payments__basis">{{ row.basisKey | translate }}</span>
+              </td>
+              <td class="v2-payments__note">{{ row.payment.note ?? '—' }}</td>
+              <td>
+                @if (row.payment.file; as file) {
+                  <button type="button" class="v2-payments__link" (click)="act.openFile(file.id)">
+                    {{ file.fileName }}
+                  </button>
+                } @else {
+                  <span class="v2-payments__muted">{{
+                    'v2.projectPayments.noReceipt' | translate
+                  }}</span>
+                }
+              </td>
+              <td class="v2-payments__muted">{{ row.payment.createdByName }}</td>
+              @if (canPay()) {
+                <td class="v2-payments__row-actions">
+                  <button
+                    type="button"
+                    appV2Button
+                    size="sm"
+                    [attr.aria-label]="('common.edit' | translate) + ' ' + row.amount"
+                    (click)="act.editPayment(row.payment)"
+                  >
+                    {{ 'common.edit' | translate }}
+                  </button>
+                  <button
+                    type="button"
+                    appV2Button
+                    size="sm"
+                    [attr.aria-label]="('common.delete' | translate) + ' ' + row.amount"
+                    (click)="act.deletePayment(row.payment)"
+                  >
+                    {{ 'common.delete' | translate }}
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <p class="v2-payments__empty">{{ 'v2.projectPayments.empty' | translate }}</p>
+    }
+  </section>
+}

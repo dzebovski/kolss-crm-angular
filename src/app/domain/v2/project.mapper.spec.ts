@@ -1,5 +1,10 @@
 import type { Project, ProjectListItem } from '@core/api/generated/kolss-api.types';
-import { formatV2Money, v2PercentOf } from './project-money';
+import {
+  formatV2Money,
+  v2PaymentsNewestFirst,
+  v2PercentOf,
+  v2ProjectBalance,
+} from './project-money';
 import {
   toV2Project,
   toV2ProjectBoard,
@@ -210,5 +215,26 @@ describe('project money', () => {
     expect(formatV2Money({ amount: 40000, currency: 'PLN' }, 'en')).toBe('40\u00a0000\u00a0zł');
     expect(formatV2Money({ amount: 1250.5, currency: 'EUR' }, 'en')).toBe('1\u00a0250.50\u00a0€');
     expect(formatV2Money({ amount: 1250.5, currency: 'UAH' }, 'uk')).toBe('1\u00a0250,50\u00a0₴');
+  });
+
+  it('counts the remaining amount in the estimate currency only', () => {
+    const pln = (amount: number) => ({ amount, currency: 'PLN' as const });
+    expect(v2ProjectBalance(null, [pln(10)])).toBeNull();
+    expect(v2ProjectBalance(pln(1000.1), [pln(500.05), { amount: 20, currency: 'EUR' }])).toEqual({
+      paid: pln(500.05),
+      remaining: pln(500.05),
+      otherCurrencies: true,
+    });
+    expect(v2ProjectBalance(pln(100), [pln(150)])?.remaining).toEqual(pln(-50));
+  });
+
+  it('sorts payments by day, then by entry time', () => {
+    const base = toV2Project(project()).payments[0];
+    const sorted = v2PaymentsNewestFirst([
+      { ...base, id: 'a', paidOn: '2026-09-01', createdAt: '2026-09-03T10:00:00Z' },
+      { ...base, id: 'b', paidOn: '2026-09-02', createdAt: '2026-09-02T10:00:00Z' },
+      { ...base, id: 'c', paidOn: '2026-09-01', createdAt: '2026-09-04T10:00:00Z' },
+    ]);
+    expect(sorted.map((payment) => payment.id)).toEqual(['b', 'c', 'a']);
   });
 });
