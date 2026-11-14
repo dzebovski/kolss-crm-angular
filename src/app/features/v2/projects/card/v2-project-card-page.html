@@ -97,8 +97,13 @@
     [commentsLoading]="timelineLoading()"
     [now]="now()"
     [canComment]="allowed.canComment"
+    [canUpload]="allowed.canUploadDocument"
+    [canDelete]="canDeleteDocument()"
+    [uploading]="act.uploading()"
     [error]="act.fileError()"
     (openDocument)="act.openFile($event)"
+    (upload)="act.uploadDocuments($event)"
+    (deleteDocument)="act.deleteDocument($event)"
     (addComment)="act.addComment()"
   />
 

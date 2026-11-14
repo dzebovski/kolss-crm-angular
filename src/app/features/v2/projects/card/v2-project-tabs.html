@@ -36,11 +36,34 @@
   >
     <div class="v2-tabs__section-head">
       <h3 class="v2-tabs__section-title">{{ 'v2.projectCard.documents.uploaded' | translate }}</h3>
-      <!-- TODO(v2) P11: upload and delete. -->
-      <button type="button" appV2Button size="sm" disabled>
+      <button
+        type="button"
+        appV2Button
+        size="sm"
+        [disabled]="!canUpload() || !!uploading()"
+        [attr.aria-busy]="!!uploading() || null"
+        (click)="picker.click()"
+      >
         {{ 'v2.projectCard.documents.upload' | translate }}
       </button>
+      <input
+        #picker
+        class="v2-tabs__file-input"
+        type="file"
+        multiple
+        accept=".pdf,.jpg,.jpeg,.png,.heic"
+        tabindex="-1"
+        aria-hidden="true"
+        (change)="choose($event)"
+      />
     </div>
+    @if (uploading(); as progress) {
+      <p class="v2-tabs__uploading" role="status">
+        {{ 'v2.projectCard.documents.uploading' | translate: progress }}
+      </p>
+    } @else if (canUpload()) {
+      <p class="v2-tabs__hint">{{ 'v2.projectCard.documents.hint' | translate }}</p>
+    }
     @for (row of documentRows(); track row.id) {
       <div class="v2-tabs__row">
         <span class="v2-tabs__file-icon" aria-hidden="true">
@@ -53,9 +76,22 @@
           <span class="v2-tabs__row-name">{{ row.name }}</span>
           <span class="v2-tabs__row-meta">{{ row.meta }}</span>
         </span>
-        <button type="button" appV2Button size="sm" (click)="openDocument.emit(row.id)">
-          {{ 'v2.projectCard.documents.open' | translate }}
-        </button>
+        <span class="v2-tabs__row-actions">
+          <button type="button" appV2Button size="sm" (click)="openDocument.emit(row.id)">
+            {{ 'v2.projectCard.documents.open' | translate }}
+          </button>
+          @if (row.deletable) {
+            <button
+              type="button"
+              appV2Button
+              size="sm"
+              [attr.aria-label]="('common.delete' | translate) + ' ' + row.name"
+              (click)="deleteDocument.emit(row.document)"
+            >
+              {{ 'common.delete' | translate }}
+            </button>
+          }
+        </span>
       </div>
     } @empty {
       <p class="v2-tabs__empty">{{ 'v2.projectCard.documents.empty' | translate }}</p>

@@ -18,8 +18,8 @@ const GENERATED = [
   'v2.projectCard.generate.main',
 ] as const satisfies readonly MessageKey[];
 
-// Tabs of Project card v4 (owner decisions 2026-11-14): Documents (list + download; upload and
-// delete come with P11, generation with P14) and Statuses & tasks (comments; tasks and meetings
+// Tabs of Project card v4 (owner decisions 2026-11-14): Documents (upload several files, list,
+// download, delete — P11; generation comes with P14) and Statuses & tasks (comments; tasks and meetings
 // come with P12). Comments are read here, the timeline only notes them.
 @Component({
   selector: 'app-v2-project-tabs',
@@ -36,9 +36,16 @@ export class V2ProjectTabs {
   readonly commentsLoading = input(false);
   readonly now = input.required<Date>();
   readonly canComment = input(false);
-  /** A failed download. */
+  readonly canUpload = input(false);
+  /** Whether the current user may delete this document (uploader, manager, admins). */
+  readonly canDelete = input<(document: V2ProjectDocument) => boolean>(() => false);
+  /** The upload in progress, if any. */
+  readonly uploading = input<{ readonly name: string; readonly percent: number } | null>(null);
+  /** A failed upload, delete or download. */
   readonly error = input('');
   readonly openDocument = output<string>();
+  readonly upload = output<readonly File[]>();
+  readonly deleteDocument = output<V2ProjectDocument>();
   readonly addComment = output<void>();
 
   protected readonly tab = signal<V2ProjectTab>('documents');
@@ -50,8 +57,11 @@ export class V2ProjectTabs {
 
   protected readonly documentRows = computed(() => {
     const locale = this.i18n.locale();
+    const canDelete = this.canDelete();
     return this.documents().map((document) => ({
+      document,
       id: document.id,
+      deletable: canDelete(document),
       name: document.fileName,
       meta: [
         v2FormatFileSize(document.sizeBytes),
@@ -72,6 +82,13 @@ export class V2ProjectTabs {
       text: comment.text ?? '',
     }));
   });
+
+  protected choose(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    input.value = '';
+    if (files.length) this.upload.emit(files);
+  }
 
   /** Arrow keys move between the two tabs (WAI-ARIA tabs pattern). */
   protected onKey(event: KeyboardEvent): void {

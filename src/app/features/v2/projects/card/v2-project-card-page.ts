@@ -2,11 +2,14 @@ import { Component, computed, inject, input, resource } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { KolssApiError } from '@core/api/generated/kolss-api.client';
+import { AuthService } from '@core/auth/auth.service';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { toV2LeadCard } from '@domain/v2/lead-card.mapper';
+import { v2CanDeleteProjectDocument } from '@domain/v2/project-files';
 import { v2ProjectActions } from '@domain/v2/project-status';
 import { v2ProjectTimeline } from '@domain/v2/project-timeline';
+import type { V2ProjectDocument } from '@domain/v2/project.types';
 import { UsersService } from '@services/users.service';
 import { V2LeadCardService } from '@services/v2/v2-lead-card.service';
 import { V2ProjectsService } from '@services/v2/v2-projects.service';
@@ -46,6 +49,7 @@ export class V2ProjectCardPage {
   private readonly usersService = inject(UsersService);
   private readonly i18n = inject(I18nService);
   private readonly clock = inject(V2_NOW);
+  private readonly auth = inject(AuthService);
 
   protected readonly act = inject(V2ProjectCardActions);
 
@@ -135,6 +139,16 @@ export class V2ProjectCardPage {
   protected readonly actions = computed(() => {
     const project = this.project();
     return project ? v2ProjectActions(project) : null;
+  });
+  /** Delete in the Documents tab: the uploader, the project manager and admins. */
+  protected readonly canDeleteDocument = computed(() => {
+    const project = this.project();
+    const access = {
+      canUploadDocument: this.actions()?.canUploadDocument ?? false,
+      canEdit: project?.canEdit ?? false,
+    };
+    const userId = this.auth.profile()?.id ?? null;
+    return (document: V2ProjectDocument) => v2CanDeleteProjectDocument(document, access, userId);
   });
   /** Read-only hint under the status bar; the same text is the tooltip of the locked buttons. */
   protected readonly lockHint = computed(() => {

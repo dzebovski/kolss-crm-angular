@@ -2010,6 +2010,11 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.projectCard.documents.upload': 'Upload',
   'v2.projectCard.documents.open': 'Open',
   'v2.projectCard.documents.empty': 'No documents yet.',
+  'v2.projectCard.documents.hint': 'PDF, JPG, PNG or HEIC, up to 25 MB',
+  'v2.projectCard.documents.uploading': 'Uploading {name} — {percent}%',
+  'v2.projectCard.documents.deleteTitle': 'Delete document {name}?',
+  'v2.projectCard.documents.deleteText':
+    'The file disappears from the project. This cannot be undone.',
   'v2.projectCard.generate.title': 'Generate',
   'v2.projectCard.generate.soon': 'Coming later',
   'v2.projectCard.generate.estimate': 'Preliminary estimate',

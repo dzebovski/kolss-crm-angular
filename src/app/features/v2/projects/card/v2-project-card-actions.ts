@@ -5,7 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { I18nService } from '@core/i18n/i18n.service';
 import { formatV2Money } from '@domain/v2/project-money';
 import { v2ProjectActions } from '@domain/v2/project-status';
-import type { V2Project, V2ProjectPayment } from '@domain/v2/project.types';
+import { v2ProjectFileError } from '@domain/v2/project-files';
+import type { V2Project, V2ProjectDocument, V2ProjectPayment } from '@domain/v2/project.types';
 import { V2ClientsService } from '@services/v2/v2-clients.service';
 import { V2ProjectsService } from '@services/v2/v2-projects.service';
 import {
@@ -68,8 +69,10 @@ export class V2ProjectCardActions {
   readonly headerError = signal('');
   readonly restoring = signal(false);
   readonly restoreError = signal('');
-  /** A failed document download. */
+  /** A failed document upload, delete or download. */
   readonly fileError = signal('');
+  /** The document being uploaded now and its progress (0–100). */
+  readonly uploading = signal<{ readonly name: string; readonly percent: number } | null>(null);
 
   async addComment(): Promise<void> {
     const project = this.project();
@@ -185,6 +188,53 @@ export class V2ProjectCardActions {
       this.restoreError.set(this.errorText(error));
     } finally {
       this.restoring.set(false);
+    }
+  }
+
+  /**
+   * Uploads the chosen files one by one (presigned PUT, then confirm). A wrong type or size skips
+   * that file; the first failure is shown in the tabs and the rest still upload.
+   */
+  async uploadDocuments(files: readonly File[]): Promise<void> {
+    if (!this.actions()?.canUploadDocument || this.uploading() || !files.length) return;
+    this.fileError.set('');
+    const failures: string[] = [];
+    for (const file of files) {
+      const project = this.project();
+      if (!project) break;
+      const invalid = v2ProjectFileError(file);
+      if (invalid) {
+        const key = invalid === 'type' ? 'v2.projectPopup.fileType' : 'v2.projectPopup.fileSize';
+        failures.push(`${file.name}: ${this.i18n.t(key)}`);
+        continue;
+      }
+      this.uploading.set({ name: file.name, percent: 0 });
+      try {
+        const fileId = await this.projects.uploadFile(project.id, 'document', file, (percent) =>
+          this.uploading.set({ name: file.name, percent }),
+        );
+        this.apply(await this.projects.addDocument(project.id, fileId));
+      } catch (error) {
+        failures.push(`${file.name}: ${this.errorText(error)}`);
+      }
+    }
+    this.uploading.set(null);
+    if (failures.length) this.fileError.set(failures.join(' · '));
+  }
+
+  async deleteDocument(document: V2ProjectDocument): Promise<void> {
+    const project = this.project();
+    if (!project) return;
+    const confirmed = await this.confirm({
+      title: this.i18n.t('v2.projectCard.documents.deleteTitle', { name: document.fileName }),
+      text: this.i18n.t('v2.projectCard.documents.deleteText'),
+    });
+    if (!confirmed) return;
+    this.fileError.set('');
+    try {
+      this.apply(await this.projects.deleteDocument(project.id, document.id));
+    } catch (error) {
+      this.fileError.set(this.errorText(error));
     }
   }
 

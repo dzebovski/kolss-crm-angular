@@ -180,3 +180,24 @@ svg {
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+
+.v2-tabs__file-input {
+  display: none;
+}
+
+.v2-tabs__hint,
+.v2-tabs__uploading {
+  margin: calc(var(--v2-space-2) * -1) 0 0;
+  color: var(--v2-subtle);
+  font-size: 12px;
+}
+
+.v2-tabs__uploading {
+  color: var(--v2-ink-2);
+}
+
+.v2-tabs__row-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--v2-space-2);
+}
