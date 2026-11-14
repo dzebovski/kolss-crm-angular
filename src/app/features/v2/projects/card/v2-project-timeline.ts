@@ -5,14 +5,14 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { formatV2CardDate, formatV2Time } from '@domain/v2/date-format';
 import { v2ProjectDay } from '@domain/v2/project-card';
 import { formatV2Money } from '@domain/v2/project-money';
-import { v2ProjectStatusLabelKey } from '@domain/v2/project-status';
-import type { V2ProjectRowValue, V2ProjectTimelineItem } from '@domain/v2/project-timeline';
+import { V2_PROJECT_STATUS_COLOR, v2ProjectStatusLabelKey } from '@domain/v2/project-status';
+import type {
+  V2ProjectRowValue,
+  V2ProjectTimelineItem,
+  V2ProjectTimelineTone,
+} from '@domain/v2/project-timeline';
 import { V2Button } from '../../ui/v2-button';
-import {
-  V2TimelineEntry,
-  type V2TimelineChange,
-  type V2TimelineRow,
-} from '../../ui/v2-timeline-entry';
+import { V2_PAYMENT_BASIS_LABEL } from '../dialogs/v2-project-payment-labels';
 import { V2_CANCEL_REASON_LABEL } from './v2-project-cancel-banner';
 
 const PROJECT_TYPE_LABEL = {
@@ -21,12 +21,18 @@ const PROJECT_TYPE_LABEL = {
   contract: 'v2.leadInfo.projectContract',
 } as const;
 
-// Timeline card of the Project card board: every project event of API 2.42.0 (created, status,
-// estimate, intro / main contract and payment changes, details, comments, measurement visits,
-// cancel / restore). Add comment lives in the header.
+function toneColor(tone: V2ProjectTimelineTone): string {
+  if (tone === 'ink') return 'var(--v2-ink)';
+  if (tone === 'faint') return 'var(--v2-faint)';
+  return V2_PROJECT_STATUS_COLOR[tone];
+}
+
+// Timeline of Project card v4 (owner decisions 2026-11-14): events only, one short line each —
+// title, a few facts, author and time ("Comment added · Name"). Comments themselves are read in
+// the Statuses & tasks tab; another event's note shows clipped at the end of its line.
 @Component({
   selector: 'app-v2-project-timeline',
-  imports: [TranslatePipe, V2Button, V2TimelineEntry],
+  imports: [TranslatePipe, V2Button],
   template: `
     <div class="v2-project-timeline__head">
       <h2 class="v2-project-timeline__title">{{ 'v2.timeline.title' | translate }}</h2>
@@ -42,23 +48,34 @@ const PROJECT_TYPE_LABEL = {
           </button>
         </div>
       } @else {
-        @for (entry of entries(); track entry.id; let last = $last) {
-          <app-v2-timeline-entry
-            [date]="entry.date"
-            [time]="entry.time"
-            [title]="entry.title"
-            [author]="entry.author"
-            [tone]="entry.tone"
-            [last]="last"
-            [change]="entry.change"
-            [rows]="entry.rows"
-            [text]="entry.text"
-          />
-        } @empty {
-          <p class="v2-project-timeline__status">
-            {{ 'v2.projectCard.timeline.empty' | translate }}
-          </p>
-        }
+        <ol class="v2-project-timeline__lines">
+          @for (entry of entries(); track entry.id) {
+            <li class="v2-project-timeline__line">
+              <span
+                class="v2-project-timeline__dot"
+                [style.background]="entry.color"
+                aria-hidden="true"
+              ></span>
+              <span class="v2-project-timeline__text" [attr.title]="entry.full">
+                <span class="v2-project-timeline__event">{{ entry.title }}</span>
+                @for (fact of entry.facts; track $index) {
+                  <span class="v2-project-timeline__fact"> · {{ fact }}</span>
+                }
+                <span class="v2-project-timeline__author"> · {{ entry.author }}</span>
+                @if (entry.note) {
+                  <span class="v2-project-timeline__note"> — {{ entry.note }}</span>
+                }
+              </span>
+              <time class="v2-project-timeline__time" [attr.datetime]="entry.at">
+                {{ entry.date }}, {{ entry.time }}
+              </time>
+            </li>
+          } @empty {
+            <li class="v2-project-timeline__status">
+              {{ 'v2.projectCard.timeline.empty' | translate }}
+            </li>
+          }
+        </ol>
       }
     </div>
   `,
@@ -78,33 +95,31 @@ export class V2ProjectTimeline {
   protected readonly entries = computed(() =>
     this.items().map((item) => {
       const locale = this.i18n.locale();
-      const change: V2TimelineChange | null = item.change && {
-        from: {
-          label: this.i18n.t(v2ProjectStatusLabelKey(item.change.from)),
-          tone: item.change.from,
-        },
-        to: { label: this.i18n.t(v2ProjectStatusLabelKey(item.change.to)), tone: item.change.to },
-      };
-      const rows: readonly V2TimelineRow[] = item.rows.map((row) => ({
-        key: this.i18n.t(row.labelKey),
-        value: this.rowValue(row.value),
-      }));
-      // Text is the event comment; "created" adds the lead it came from.
-      const text =
-        item.text ??
-        (item.leadCode
-          ? this.i18n.t('v2.projectCard.event.createdText', { code: item.leadCode })
-          : null);
+      const facts: string[] = [];
+      if (item.change) {
+        facts.push(
+          `${this.i18n.t(v2ProjectStatusLabelKey(item.change.from))} → ${this.i18n.t(
+            v2ProjectStatusLabelKey(item.change.to),
+          )}`,
+        );
+      }
+      for (const row of item.rows) facts.push(this.rowValue(row.value));
+      if (item.leadCode) facts.push(item.leadCode);
+      // A comment is read in the Statuses & tasks tab; other notes are clipped on the line.
+      const note = item.type === 'comment' ? null : item.text;
+      const title = this.i18n.t(item.titleKey);
+      const author = item.actorName ?? this.i18n.t('v2.card.system');
       return {
         id: item.id,
+        at: item.at,
         date: formatV2CardDate(item.at, this.now(), locale),
         time: formatV2Time(item.at),
-        title: this.i18n.t(item.titleKey),
-        author: item.actorName ?? this.i18n.t('v2.card.system'),
-        tone: item.tone,
-        change,
-        rows,
-        text,
+        title,
+        facts,
+        author,
+        note,
+        color: toneColor(item.tone),
+        full: [title, ...facts, author].join(' · ') + (note ? ` — ${note}` : ''),
       };
     }),
   );
@@ -120,11 +135,10 @@ export class V2ProjectTimeline {
         return this.i18n.t(PROJECT_TYPE_LABEL[value.type]);
       case 'money':
         return formatV2Money(value.money, locale);
-      case 'moneyOf':
-        return this.i18n.t('v2.projectCard.event.moneyOf', {
-          paid: formatV2Money(value.paid, locale),
-          total: formatV2Money(value.total, locale),
-        });
+      case 'removed':
+        return this.i18n.t('v2.projectCard.event.removed');
+      case 'basis':
+        return this.i18n.t(V2_PAYMENT_BASIS_LABEL[value.basis]);
       case 'day': {
         const day = formatV2CardDate(v2ProjectDay(value.day), this.now(), locale);
         return value.time ? `${day}, ${value.time}` : day;
@@ -137,18 +151,6 @@ export class V2ProjectTimeline {
           .join(', ');
       case 'futureEventsRemoved':
         return this.i18n.t('v2.projectCard.event.futureRemoved');
-      case 'prepaymentOverride':
-        return this.i18n.t('v2.projectCard.event.prepaymentOverride');
-      case 'contractKind':
-        return this.i18n.t(
-          value.contractKind === 'intro'
-            ? 'v2.projectCard.intro.title'
-            : 'v2.projectCard.main.title',
-        );
-      case 'estimateLine':
-        return value.money
-          ? formatV2Money(value.money, locale)
-          : this.i18n.t('v2.projectCard.event.lineRemoved');
       case 'dateTime':
         return `${formatV2CardDate(value.at, this.now(), locale)}, ${formatV2Time(value.at)}`;
     }

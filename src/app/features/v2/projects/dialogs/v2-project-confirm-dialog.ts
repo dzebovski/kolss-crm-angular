@@ -1,17 +1,19 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, inject } from '@angular/core';
 
-import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
+import { V2DialogShell, type V2DialogPrimaryVariant } from '../../ui/dialog/v2-dialog-shell';
 
 export interface V2ProjectConfirmData {
   readonly title: string;
   readonly text: string;
   readonly confirmLabel: string;
   readonly cancelLabel: string;
+  /** Red for deletes (default), the regular primary for Project finished. */
+  readonly variant?: V2DialogPrimaryVariant;
 }
 
-// Confirm step of Delete contract / Delete payment: a status popup with the red primary button,
-// as Delete task. The caller deletes when this closes with `true`.
+// Confirm step of Delete payment (red primary button, as Delete task) and Project finished. The
+// caller acts when this closes with `true`.
 @Component({
   selector: 'app-v2-project-confirm-dialog',
   imports: [V2DialogShell],
@@ -21,7 +23,7 @@ export interface V2ProjectConfirmData {
       width="status"
       [cancelLabel]="data.cancelLabel"
       [saveLabel]="data.confirmLabel"
-      primaryVariant="danger"
+      [primaryVariant]="data.variant ?? 'danger'"
       (save)="dialogRef.close(true)"
     >
       <p class="v2-project-confirm__text">{{ data.text }}</p>

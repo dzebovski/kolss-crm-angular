@@ -1,8 +1,4 @@
-import type {
-  Project,
-  ProjectContract,
-  ProjectListItem,
-} from '@core/api/generated/kolss-api.types';
+import type { Project, ProjectListItem } from '@core/api/generated/kolss-api.types';
 import { formatV2Money, v2PercentOf } from './project-money';
 import {
   toV2Project,
@@ -11,91 +7,48 @@ import {
   toV2ProjectListItem,
 } from './project.mapper';
 
-const introContract: ProjectContract = {
-  id: 'ci',
-  kind: 'intro',
-  number: 'KW/2026/041-I',
-  signedOn: '2026-09-20',
-  totalAmount: 500,
-  currency: 'PLN',
-  paidAmount: 500,
-  creditedAmount: 0,
-  remainingAmount: 0,
-  target50Amount: null,
-  file: null,
-};
-
-const mainContract: ProjectContract = {
-  id: 'cm',
-  kind: 'main',
-  number: 'KW/2026/041',
-  signedOn: '2026-09-25',
-  totalAmount: 80000,
-  currency: 'PLN',
-  paidAmount: 39500,
-  creditedAmount: 500,
-  remainingAmount: 40000,
-  target50Amount: 40000,
-  file: { id: 'f1', fileName: 'contract.pdf', sizeBytes: 1024 },
-};
-
 const project = (patch: Partial<Project> = {}): Project => ({
   id: 'p1',
   leadId: 'l1',
   clientId: 'cl1',
   officeId: 'o1',
   code: 'W0231',
-  status: 'main_contract',
+  status: 'contract_signing',
   projectType: 'measure',
   eventDate: '2026-10-05',
   eventTime: null,
-  statusDetails: {},
   manager: { id: 'm1', name: 'Kasia Nowak' },
   designer: null,
   client: { name: 'Marta Zielińska', phone: '+48 601 334 812', email: null, cityRegion: null },
+  description: '  Kitchen and wardrobe  ',
   createdAt: '2026-09-24T10:00:00Z',
   createdByName: 'Kasia Nowak',
   statusChangedAt: '2026-09-25T10:00:00Z',
   lastActivityAt: '2026-09-25T10:00:00Z',
   cancellation: null,
-  estimate: {
-    lines: {
-      kitchen: { amount: 60000, currency: 'PLN', note: 'Oak' },
-      appliances: null,
-      installation: { amount: 3000, currency: 'EUR', note: null },
-      countertop: null,
-    },
-    totals: [
-      { amount: 60000, currency: 'PLN' },
-      { amount: 3000, currency: 'EUR' },
-    ],
-    locked: true,
-  },
-  introDefault: { amount: 500, currency: 'PLN' },
-  contracts: { intro: introContract, main: mainContract },
-  contract: mainContract,
+  estimate: { amount: 63000, currency: 'PLN' },
+  paidTotals: [{ amount: 500, currency: 'PLN' }],
   payments: [
     {
       id: 'pay0',
-      contractId: 'ci',
-      contractKind: 'intro',
       amount: 500,
+      currency: 'PLN',
       paidOn: '2026-09-20',
+      basis: 'receipt',
       note: null,
       createdAt: '2026-09-20T16:10:00Z',
       createdByName: 'Kasia Nowak',
-      file: null,
+      file: { id: 'f1', fileName: 'receipt.pdf', sizeBytes: 1024 },
     },
+  ],
+  documents: [
     {
-      id: 'pay1',
-      contractId: 'cm',
-      contractKind: 'main',
-      amount: 39500,
-      paidOn: '2026-09-25',
-      note: 'Prepayment',
-      createdAt: '2026-09-25T16:10:00Z',
-      createdByName: 'Kasia Nowak',
-      file: null,
+      id: 'd1',
+      fileName: 'contract.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 2048,
+      createdAt: '2026-09-25T10:00:00Z',
+      uploadedBy: { id: 'm1', name: 'Kasia Nowak' },
     },
   ],
   permissions: { canEdit: true },
@@ -103,63 +56,31 @@ const project = (patch: Partial<Project> = {}): Project => ({
 });
 
 describe('toV2Project', () => {
-  it('counts the credited intro amount towards the main contract and its 50% target', () => {
-    const main = toV2Project(project()).contracts.main;
-    expect(main).toMatchObject({
-      kind: 'main',
-      total: { amount: 80000, currency: 'PLN' },
-      paid: { amount: 39500, currency: 'PLN' },
-      credited: { amount: 500, currency: 'PLN' },
-      remaining: { amount: 40000, currency: 'PLN' },
-      target50: { amount: 40000, currency: 'PLN' },
-      percentPaid: 50,
-      fullyPaid: false,
-      target50Reached: true,
+  it('maps payments with their own currency and basis', () => {
+    expect(toV2Project(project()).payments[0]).toMatchObject({
+      amount: { amount: 500, currency: 'PLN' },
+      basis: 'receipt',
+      file: { id: 'f1', fileName: 'receipt.pdf', sizeBytes: 1024 },
     });
   });
 
-  it('keeps the intro contract without a target', () => {
-    const intro = toV2Project(project()).contracts.intro;
-    expect(intro).toMatchObject({ target50: null, target50Reached: false, fullyPaid: true });
+  it('maps the estimate total, paid totals, documents and trimmed description', () => {
+    const mapped = toV2Project(project());
+    expect(mapped.estimate).toEqual({ amount: 63000, currency: 'PLN' });
+    expect(mapped.paidTotals).toEqual([{ amount: 500, currency: 'PLN' }]);
+    expect(mapped.documents[0]).toMatchObject({ id: 'd1', uploadedBy: { id: 'm1' } });
+    expect(mapped.description).toBe('Kitchen and wardrobe');
   });
 
-  it('attaches every payment to its own contract', () => {
-    const payments = toV2Project(project()).payments;
-    expect(payments.map((payment) => payment.contractKind)).toEqual(['intro', 'main']);
-    expect(payments[1]).toMatchObject({
-      amount: { amount: 39500, currency: 'PLN' },
-      sharePercent: 49,
-    });
-  });
-
-  it('maps the estimate lines, totals and lock', () => {
-    const { estimate } = toV2Project(project());
-    expect(estimate.lines.kitchen).toEqual({
-      money: { amount: 60000, currency: 'PLN' },
-      note: 'Oak',
-    });
-    expect(estimate.lines.appliances).toBeNull();
-    expect(estimate.totals).toHaveLength(2);
-    expect(estimate.locked).toBe(true);
-  });
-
-  it('maps a project without contracts, event, manager or intro default', () => {
+  it('maps a project without estimate, event, manager or description', () => {
     const mapped = toV2Project(
-      project({
-        contracts: { intro: null, main: null },
-        contract: null,
-        payments: [],
-        eventDate: null,
-        manager: null,
-        introDefault: null,
-      }),
+      project({ estimate: null, eventDate: null, manager: null, description: ' ' }),
     );
     expect(mapped).toMatchObject({
-      contracts: { intro: null, main: null },
-      payments: [],
+      estimate: null,
       schedule: null,
       manager: null,
-      introDefault: null,
+      description: null,
     });
   });
 
@@ -183,11 +104,14 @@ describe('toV2Project', () => {
           cancelledByName: 'Paweł Mazur',
           reasons: ['postponed_renovation'],
           comment: null,
-          statusBeforeCancel: 'design',
+          statusBeforeCancel: 'measurement_design',
         },
       }),
     );
-    expect(mapped.cancellation).toMatchObject({ previousStatus: 'design', comment: null });
+    expect(mapped.cancellation).toMatchObject({
+      previousStatus: 'measurement_design',
+      comment: null,
+    });
     expect(mapped.canEdit).toBe(false);
   });
 
@@ -200,7 +124,7 @@ describe('toV2Project', () => {
           cancelledByName: 'Paweł Mazur',
           reasons: ['other'],
           comment: 'x',
-          statusBeforeCancel: 'express',
+          statusBeforeCancel: 'design',
         },
       }),
     );
@@ -209,7 +133,7 @@ describe('toV2Project', () => {
 });
 
 describe('toV2ProjectListItem', () => {
-  it('maps the event to a schedule', () => {
+  it('maps the event to a schedule and keeps the money', () => {
     const item: ProjectListItem = {
       id: 'p1',
       leadId: 'l1',
@@ -217,20 +141,22 @@ describe('toV2ProjectListItem', () => {
       code: 'W0231',
       clientName: 'Marta Zielińska',
       products: ['kitchen'],
-      status: 'design',
+      status: 'measurement_design',
       projectType: null,
       eventDate: '2026-09-29',
       eventTime: '10:00',
       manager: null,
       designer: null,
-      estimateTotals: [{ amount: 90000, currency: 'PLN' }],
+      estimate: { amount: 90000, currency: 'PLN' },
+      paidTotals: [],
       createdAt: '2026-09-24T10:00:00Z',
       lastComment: null,
     };
     expect(toV2ProjectListItem(item)).toMatchObject({
       schedule: { date: '2026-09-29', time: '10:00' },
       manager: null,
-      estimateTotals: [{ amount: 90000, currency: 'PLN' }],
+      estimate: { amount: 90000, currency: 'PLN' },
+      paidTotals: [],
       lastComment: null,
     });
   });
@@ -238,17 +164,17 @@ describe('toV2ProjectListItem', () => {
 
 describe('toV2ProjectFacets', () => {
   it('fills the statuses the API leaves out with 0', () => {
-    const facets = toV2ProjectFacets({ total: 5, status: { estimate: 2, cancelled: 1 } });
+    const facets = toV2ProjectFacets({
+      total: 5,
+      status: { preliminary_estimate: 2, cancelled: 1 },
+    });
     expect(facets.total).toBe(5);
     expect(facets.status).toEqual({
-      estimate: 2,
-      showroom_meeting: 0,
-      intro_contract: 0,
-      design: 0,
-      factory_review: 0,
-      presentation: 0,
-      main_contract: 0,
-      production: 0,
+      preliminary_estimate: 2,
+      measurement_design: 0,
+      factory_approval: 0,
+      contract_signing: 0,
+      production_delivery: 0,
       installation: 0,
       completed: 0,
       cancelled: 1,
@@ -257,16 +183,18 @@ describe('toV2ProjectFacets', () => {
 });
 
 describe('toV2ProjectBoard', () => {
-  it('turns an empty next cursor into null and keeps the cancelled count', () => {
+  it('turns an empty next cursor into null and keeps the final counts', () => {
     const board = toV2ProjectBoard({
       total: 1,
+      completedCount: 2,
       cancelledCount: 3,
       columns: [
-        { status: 'estimate', count: 1, items: [], nextCursor: '' },
-        { status: 'design', count: 30, items: [], nextCursor: 'abc' },
+        { status: 'preliminary_estimate', count: 1, items: [], nextCursor: '' },
+        { status: 'measurement_design', count: 30, items: [], nextCursor: 'abc' },
       ],
     });
     expect(board.columns.map((column) => column.nextCursor)).toEqual([null, 'abc']);
+    expect(board.completedCount).toBe(2);
     expect(board.cancelledCount).toBe(3);
   });
 });
@@ -279,8 +207,8 @@ describe('project money', () => {
   });
 
   it('groups thousands and shows decimals only when present', () => {
-    expect(formatV2Money({ amount: 40000, currency: 'PLN' }, 'en')).toBe('40 000 zł');
-    expect(formatV2Money({ amount: 1250.5, currency: 'EUR' }, 'en')).toBe('1 250.50 €');
-    expect(formatV2Money({ amount: 1250.5, currency: 'UAH' }, 'uk')).toBe('1 250,50 ₴');
+    expect(formatV2Money({ amount: 40000, currency: 'PLN' }, 'en')).toBe('40\u00a0000\u00a0zł');
+    expect(formatV2Money({ amount: 1250.5, currency: 'EUR' }, 'en')).toBe('1\u00a0250.50\u00a0€');
+    expect(formatV2Money({ amount: 1250.5, currency: 'UAH' }, 'uk')).toBe('1\u00a0250,50\u00a0₴');
   });
 });

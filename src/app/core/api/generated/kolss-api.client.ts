@@ -6,7 +6,6 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 import type {
   AddProjectCommentRequest,
-  AddProjectContractRequest,
   AddProjectPaymentRequest,
   CancelProjectRequest,
   ChangeProjectStatusRequest,
@@ -21,6 +20,7 @@ import type {
   CreateManagerTaskRequest,
   CreateProjectFileUploadRequest,
   CreateProjectRequest,
+  FinishProjectRequest,
   CreateTaskListRequest,
   LeadDocument,
   LeadDocumentUpload,
@@ -46,7 +46,6 @@ import type {
   TaskList,
   UpdateClientRequest,
   UpdateManagerTaskRequest,
-  UpdateProjectContractRequest,
   UpdateProjectDetailsRequest,
   UpdateProjectEstimateRequest,
   UpdateProjectPaymentRequest,
@@ -526,12 +525,9 @@ export class KolssApiClient {
     return this.post(`/v1/projects/${encodeURIComponent(id)}/restore`, {});
   }
 
-  addProjectContract(
-    id: string,
-    body: AddProjectContractRequest,
-    idempotencyKey?: string,
-  ): Promise<Project> {
-    return this.post(`/v1/projects/${encodeURIComponent(id)}/contract`, body, idempotencyKey);
+  /** Project finished (2.43.0): installation → completed. */
+  finishProject(id: string, body: FinishProjectRequest = {}): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/finish`, body);
   }
 
   addProjectPayment(
@@ -540,24 +536,6 @@ export class KolssApiClient {
     idempotencyKey?: string,
   ): Promise<Project> {
     return this.post(`/v1/projects/${encodeURIComponent(id)}/payments`, body, idempotencyKey);
-  }
-
-  updateProjectContract(
-    id: string,
-    contractId: string,
-    body: UpdateProjectContractRequest,
-  ): Promise<Project> {
-    return this.patch(
-      `/v1/projects/${encodeURIComponent(id)}/contracts/${encodeURIComponent(contractId)}`,
-      body,
-    );
-  }
-
-  /** Only a contract without payments (409 `contract_has_payments`). */
-  deleteProjectContract(id: string, contractId: string): Promise<Project> {
-    return this.delete(
-      `/v1/projects/${encodeURIComponent(id)}/contracts/${encodeURIComponent(contractId)}`,
-    );
   }
 
   updateProjectPayment(
@@ -577,12 +555,24 @@ export class KolssApiClient {
     );
   }
 
-  /** Step 1 of a contract file / receipt upload: presigned direct upload (2.32.0). */
+  /** Step 1 of a document / receipt upload: presigned direct upload (2.32.0). */
   createProjectFileUpload(
     id: string,
     body: CreateProjectFileUploadRequest,
   ): Promise<ProjectFileUpload> {
     return this.post(`/v1/projects/${encodeURIComponent(id)}/files/uploads`, body);
+  }
+
+  /** Step 2 for a document: verifies the upload and adds it to the Documents tab (2.43.0). */
+  confirmProjectDocument(id: string, fileId: string): Promise<Project> {
+    return this.post(`/v1/projects/${encodeURIComponent(id)}/files`, { fileId });
+  }
+
+  /** The uploader, the project manager and admins (2.43.0). */
+  deleteProjectDocument(id: string, fileId: string): Promise<Project> {
+    return this.delete(
+      `/v1/projects/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`,
+    );
   }
 
   dashboard(query: Readonly<Record<string, string | null | undefined>> = {}): Promise<{

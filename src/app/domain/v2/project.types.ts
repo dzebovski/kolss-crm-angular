@@ -1,16 +1,14 @@
 import type {
   ProjectCancelReason,
-  ProjectContractKind,
   ProjectCurrency,
-  ProjectEstimateLineKey,
   ProjectEventType,
-  ProjectStageDetails,
+  ProjectPaymentBasis,
   ProjectStatus,
   ProjectType,
 } from '@core/api/generated/kolss-api.types';
 
 /**
- * CRM v2 project view models (pipeline 2.1, API 2.36.0). Screens take these, not
+ * CRM v2 project view models (pipeline 4, API 2.43.0). Screens take these, not
  * the raw API DTOs. Dates stay ISO strings (`YYYY-MM-DD` office-local dates, ISO timestamps);
  * the UI formats them with `date-format.ts`.
  */
@@ -19,8 +17,6 @@ export type V2ProjectStatus = ProjectStatus;
 export type V2ProjectType = ProjectType;
 export type V2ProjectCurrency = ProjectCurrency;
 export type V2ProjectCancelReason = ProjectCancelReason;
-export type V2ProjectContractKind = ProjectContractKind;
-export type V2EstimateLineKey = ProjectEstimateLineKey;
 export type V2ProjectEventType = ProjectEventType;
 
 /** An amount in major units (at most 2 decimals) with its currency. */
@@ -49,56 +45,30 @@ export interface V2ProjectSchedule {
   readonly time: string | null;
 }
 
-export interface V2ProjectContract {
-  readonly id: string;
-  readonly kind: V2ProjectContractKind;
-  readonly number: string;
-  readonly signedOn: string;
-  readonly total: V2Money;
-  /** Payments recorded on this contract. */
-  readonly paid: V2Money;
-  /** Main contract: the paid intro amount credited to it; zero for the intro contract. */
-  readonly credited: V2Money;
-  readonly remaining: V2Money;
-  /** Main contract only: 50% of the total; must be paid (with the credit) before Production. */
-  readonly target50: V2Money | null;
-  /** Whole percent of the total covered by payments and the credit, 0–100. */
-  readonly percentPaid: number;
-  readonly fullyPaid: boolean;
-  /** Paid plus credited has reached the 50% target (always false without one). */
-  readonly target50Reached: boolean;
-  readonly file: V2ProjectFile | null;
-}
+/** What a payment is recorded against: receipt, invoice, contract or other. */
+export type V2ProjectPaymentBasis = ProjectPaymentBasis;
 
-export interface V2ProjectContracts {
-  readonly intro: V2ProjectContract | null;
-  readonly main: V2ProjectContract | null;
-}
-
-export interface V2EstimateLine {
-  readonly money: V2Money;
-  readonly note: string | null;
-}
-
-/** Four optional lines; `totals` is the sum per currency. Read-only once `locked`. */
-export interface V2ProjectEstimate {
-  readonly lines: Readonly<Record<V2EstimateLineKey, V2EstimateLine | null>>;
-  readonly totals: readonly V2Money[];
-  readonly locked: boolean;
-}
-
+/** A standalone payment (pipeline 4, API 2.43.0): any amount, no contract. */
 export interface V2ProjectPayment {
   readonly id: string;
-  readonly contractId: string;
-  readonly contractKind: V2ProjectContractKind;
   readonly amount: V2Money;
+  /** `YYYY-MM-DD`. */
   readonly paidOn: string;
+  readonly basis: V2ProjectPaymentBasis;
   readonly note: string | null;
   readonly createdAt: string;
   readonly createdByName: string;
   readonly file: V2ProjectFile | null;
-  /** Whole percent of its contract's total this payment covers. */
-  readonly sharePercent: number;
+}
+
+/** A file of the Documents tab; download with `KolssApiClient.fileDownloadURL(id)`. */
+export interface V2ProjectDocument {
+  readonly id: string;
+  readonly fileName: string;
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly createdAt: string;
+  readonly uploadedBy: V2ProjectPerson | null;
 }
 
 export interface V2ProjectCancellation {
@@ -120,6 +90,7 @@ export interface V2Project {
   /** Client code, e.g. `W0231`. */
   readonly code: string;
   readonly clientName: string;
+  /** Contacts of the linked client (falling back to the lead). */
   readonly client: {
     readonly phone: string | null;
     readonly email: string | null;
@@ -128,7 +99,6 @@ export interface V2Project {
   readonly status: V2ProjectStatus;
   readonly projectType: V2ProjectType | null;
   readonly schedule: V2ProjectSchedule | null;
-  readonly stageDetails: ProjectStageDetails;
   readonly manager: V2ProjectPerson | null;
   readonly designer: V2ProjectPerson | null;
   readonly createdAt: string;
@@ -136,12 +106,16 @@ export interface V2Project {
   readonly statusChangedAt: string;
   readonly lastActivityAt: string;
   readonly cancellation: V2ProjectCancellation | null;
-  readonly estimate: V2ProjectEstimate;
-  /** The office's default intro amount to prefill; null where none is configured. */
-  readonly introDefault: V2Money | null;
-  readonly contracts: V2ProjectContracts;
-  /** Payments of both contracts, oldest first. */
+  /** The lead's "About the client". */
+  readonly description: string | null;
+  /** Preliminary estimate total; null when not set. */
+  readonly estimate: V2Money | null;
+  /** Payments summed per currency. */
+  readonly paidTotals: readonly V2Money[];
+  /** Oldest first. */
   readonly payments: readonly V2ProjectPayment[];
+  /** Newest first. */
+  readonly documents: readonly V2ProjectDocument[];
   /** Server decision: the responsible manager and admins act, everyone else only views. */
   readonly canEdit: boolean;
 }
@@ -159,8 +133,8 @@ export interface V2ProjectListItem {
   readonly schedule: V2ProjectSchedule | null;
   readonly manager: V2ProjectPerson | null;
   readonly designer: V2ProjectPerson | null;
-  /** Estimate total per currency; empty when no line is set. */
-  readonly estimateTotals: readonly V2Money[];
+  readonly estimate: V2Money | null;
+  readonly paidTotals: readonly V2Money[];
   readonly createdAt: string;
   readonly lastComment: { readonly text: string; readonly at: string } | null;
 }
@@ -180,10 +154,11 @@ export interface V2ProjectBoardColumn {
   readonly nextCursor: string | null;
 }
 
-/** Kanban: the ten pipeline stages in order; cancelled projects only as a count (a filter). */
+/** Kanban: the six stages in order; completed and cancelled only as counts (filters). */
 export interface V2ProjectBoard {
-  /** Projects in the columns (cancelled excluded). */
+  /** Projects in the columns (completed and cancelled excluded). */
   readonly total: number;
+  readonly completedCount: number;
   readonly cancelledCount: number;
   readonly columns: readonly V2ProjectBoardColumn[];
 }

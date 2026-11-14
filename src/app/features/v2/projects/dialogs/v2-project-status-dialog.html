@@ -26,13 +26,6 @@
     <app-v2-card-select [options]="options()" [formField]="fields.status" />
   </app-v2-field-group>
 
-  @if (prepayment(); as text) {
-    <app-v2-project-notice>{{ text }}</app-v2-project-notice>
-  }
-  @if (unpaid(); as text) {
-    <app-v2-project-notice>{{ text }}</app-v2-project-notice>
-  }
-
   @if (eventLabelKey(); as labelKey) {
     <div class="v2-status-popup__row">
       <app-v2-form-field
@@ -50,11 +43,7 @@
 
   <app-v2-form-field
     [label]="'v2.timeline.comment' | translate"
-    [required]="!!prepayment()"
-    [hint]="
-      (prepayment() ? 'v2.projectPopup.status.commentAdminHint' : 'v2.projectPopup.timelineHint')
-        | translate
-    "
+    [hint]="'v2.projectPopup.timelineHint' | translate"
     [error]="errors.comment ?? ''"
   >
     <textarea rows="3" [formField]="fields.comment"></textarea>

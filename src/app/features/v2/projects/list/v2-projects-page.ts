@@ -292,7 +292,12 @@ export class V2ProjectsPage {
     this.navigate({ view });
   }
 
-  /** From the kanban's "Cancelled: N": the list filtered by Cancelled. */
+  /** From the kanban's "Completed: N": the list filtered by Completed. */
+  protected openCompleted(): void {
+    this.navigate({ view: 'list', statuses: ['completed'] });
+  }
+
+  /** From the kanban's "Closed: N": the list filtered by Closed. */
   protected openCancelled(): void {
     this.navigate({ view: 'list', statuses: ['cancelled'] });
   }

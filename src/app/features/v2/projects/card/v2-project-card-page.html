@@ -51,9 +51,9 @@
 } @else if (project(); as current) {
   @let allowed = actions()!;
 
-  @if (current.cancellation; as cancellation) {
+  @if (current.status === 'cancelled' || current.status === 'completed') {
     <app-v2-project-cancel-banner
-      [cancellation]="cancellation"
+      [project]="current"
       [now]="now()"
       [canRestore]="allowed.canRestore"
       [lockHint]="lockHint()"
@@ -75,86 +75,32 @@
 
   <app-v2-project-header
     [project]="current"
-    [lead]="leadCard()"
     [products]="products()"
     [now]="now()"
-    [canChangeStatus]="allowed.canChangeStatus"
-    [canCancel]="allowed.canCancel"
-    [canComment]="allowed.canComment"
+    [actions]="allowed"
     [lockHint]="lockHint()"
-    (changeStatus)="act.changeStatus()"
     [editingClient]="act.clientLoading()"
-    [clientError]="act.clientError()"
-    (cancelProject)="act.cancelProject()"
-    (addComment)="act.addComment()"
+    [finishing]="act.finishing()"
+    [error]="act.headerError()"
+    (changeStatus)="act.changeStatus()"
     (editClient)="editClient()"
+    (addComment)="act.addComment()"
+    (cancelProject)="act.cancelProject()"
+    (finishProject)="act.finishProject()"
+    (editEstimate)="act.editEstimate()"
+    (addPayment)="act.addPayment()"
   />
 
-  <app-v2-project-details-card
-    [card]="leadCard()"
-    [columns]="leadColumns()"
-    [projectType]="current.projectType"
+  <app-v2-project-tabs
+    [documents]="current.documents"
+    [comments]="comments()"
+    [commentsLoading]="timelineLoading()"
     [now]="now()"
-    [loading]="leadLoading()"
-    [loadError]="leadFailed()"
-    (retry)="reloadLead()"
+    [canComment]="allowed.canComment"
+    [error]="act.fileError()"
+    (openDocument)="act.openFile($event)"
+    (addComment)="act.addComment()"
   />
-
-  <div class="v2-project__split">
-    <app-v2-project-estimate-card
-      [estimate]="current.estimate"
-      [canEdit]="allowed.canEditEstimate"
-      [lockHint]="lockHint()"
-      (edit)="act.editEstimate()"
-    />
-
-    @if (leadCard(); as lead) {
-      <app-v2-lead-documents-card
-        [lead]="lead"
-        [now]="now()"
-        [canAdd]="canAddDocuments()"
-        (changed)="reloadLead()"
-      />
-    } @else {
-      <app-v2-info-card [title]="'v2.docs.title' | translate">
-        @if (leadFailed()) {
-          <p class="v2-project__docs-note v2-project__docs-note--error" role="alert">
-            {{ 'v2.projectCard.details.error' | translate }}
-          </p>
-          <button type="button" appV2Button size="sm" (click)="reloadLead()">
-            {{ 'v2.leads.retry' | translate }}
-          </button>
-        } @else {
-          <p class="v2-project__docs-note" role="status">{{ 'common.loading' | translate }}</p>
-        }
-      </app-v2-info-card>
-    }
-  </div>
-
-  <div class="v2-project__split v2-project__split--even">
-    @for (kind of contractKinds; track kind) {
-      <app-v2-project-contract-card
-        [kind]="kind"
-        [contract]="current.contracts[kind]"
-        [payments]="current.payments"
-        [now]="now()"
-        [canAddContract]="
-          kind === 'intro' ? allowed.canAddIntroContract : allowed.canAddMainContract
-        "
-        [canAddPayment]="allowed.canAddPayment"
-        [canEdit]="allowed.canChangeStatus"
-        [lockHint]="lockHint()"
-        [error]="act.blockError()?.kind === kind ? act.blockError()!.message : ''"
-        (addContract)="act.addContract(kind)"
-        (addPayment)="act.addPayment(kind)"
-        (editContract)="act.editContract(kind)"
-        (deleteContract)="act.deleteContract(kind)"
-        (editPayment)="act.editPayment($event)"
-        (deletePayment)="act.deletePayment($event)"
-        (openFile)="act.openFile($event, kind)"
-      />
-    }
-  </div>
 
   <app-v2-project-timeline
     [items]="timeline()"

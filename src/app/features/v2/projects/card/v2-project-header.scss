@@ -1,8 +1,8 @@
 @use '../../../../../styles/v2/interactive';
 @use '../../../../../styles/v2/type';
 
-// Values from the Project card board (header card). 24/32px and 18/32px paddings and the 5-column
-// contact grid are board values without a token; `#f1c5c0` (Cancel project border) too.
+// Header card of Project card v4. 18/20px paddings come from the old Project card board;
+// `#f1c5c0` (Close project border) too. The grid has six fields.
 :host {
   display: flex;
   flex-direction: column;
@@ -77,7 +77,7 @@
 
 .v2-project-header__grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--v2-space-6);
   margin: 0;
   padding: 18px var(--v2-space-6) 20px;
@@ -115,10 +115,40 @@
   font-weight: 400;
 }
 
-.v2-project-header__field .v2-project-header__designer {
+.v2-project-header__field .v2-project-header__sub {
   color: var(--v2-muted);
   font-size: 12px;
   font-weight: 400;
+}
+
+// Description: the lead's "About the client", at most three lines.
+.v2-project-header__description {
+  display: -webkit-box;
+  margin: calc(var(--v2-space-2) * -1) var(--v2-space-6) var(--v2-space-4);
+  overflow: hidden;
+  color: var(--v2-ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+// Text button under a field value (Edit estimate, Add payment).
+.v2-project-header__link {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--v2-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+
+  @include interactive.states(none);
 }
 
 // The board is desktop only (1440px); G7 adapts it. Until then the grid and actions wrap.
@@ -128,12 +158,18 @@
   }
 
   .v2-project-header__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .v2-project-header__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .v2-project-header__error {
-  margin: 8px 0 0;
+  margin: 0 var(--v2-space-6) var(--v2-space-3);
   font-size: 13px;
   color: var(--v2-danger);
 }

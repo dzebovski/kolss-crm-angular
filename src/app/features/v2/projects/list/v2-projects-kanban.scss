@@ -205,8 +205,15 @@
 }
 
 .v2-kanban__cancelled {
-  align-self: flex-start;
   color: var(--v2-muted);
+}
+
+// Completed and Closed: counts that open the filtered list.
+.v2-kanban__finals {
+  display: flex;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  gap: var(--v2-space-2);
 }
 
 // Loading skeleton: `surface` bars pulsing in the column shape, unless motion is reduced.

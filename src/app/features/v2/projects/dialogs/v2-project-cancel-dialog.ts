@@ -142,9 +142,9 @@ export class V2ProjectCancelDialog {
 
   /** Money already received: refunds happen outside the CRM (Project-cancel board). */
   protected readonly paidWarning = computed(() => {
-    const paid = [this.project.contracts.intro, this.project.contracts.main]
-      .filter((contract) => contract && contract.paid.amount > 0)
-      .map((contract) => formatV2Money(contract!.paid, this.i18n.locale()));
+    const paid = this.project.paidTotals
+      .filter((money) => money.amount > 0)
+      .map((money) => formatV2Money(money, this.i18n.locale()));
     return paid.length
       ? this.i18n.t('v2.projectPopup.cancel.paid', { amount: paid.join(' + ') })
       : null;

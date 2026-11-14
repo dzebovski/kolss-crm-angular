@@ -53,7 +53,7 @@ interface Column {
   readonly status: V2ProjectStatus;
   readonly labelKey: ReturnType<typeof v2ProjectStatusLabelKey>;
   readonly color: string;
-  /** Cards can be dropped here; the contract stages are set only by Add contract. */
+  /** Cards can be dropped on every stage column. */
   readonly droppable: boolean;
   readonly count: number;
   readonly cards: readonly Card[];
@@ -96,6 +96,7 @@ export class V2ProjectsKanban {
   readonly now = input.required<Date>();
   /** The viewer asked to see the cancelled projects (the page switches to the filtered list). */
   readonly showCancelled = output<void>();
+  readonly showCompleted = output<void>();
 
   private readonly apiQuery = computed(() =>
     toV2ProjectsApiQuery({ ...this.filters(), statuses: [] }),
@@ -115,6 +116,9 @@ export class V2ProjectsKanban {
     () => this.boardResource.isLoading() && !this.boardResource.hasValue(),
   );
   protected readonly failed = computed(() => this.boardResource.status() === 'error');
+  protected readonly completedCount = computed(() =>
+    this.boardResource.hasValue() ? this.boardResource.value().completedCount : 0,
+  );
   protected readonly cancelledCount = computed(() =>
     this.boardResource.hasValue() ? this.boardResource.value().cancelledCount : 0,
   );
@@ -145,7 +149,7 @@ export class V2ProjectsKanban {
         count: column.count,
         cards: [...column.items, ...extra.items].map((project) => ({
           ...toV2ProjectRow(project, now, locale, t),
-          estimate: project.estimateTotals.map((total) => formatV2Money(total, locale)).join(' + '),
+          estimate: project.estimate ? formatV2Money(project.estimate, locale) : '',
         })),
         hasMore: !!cursor,
         loadingMore: extra.loading,
@@ -176,7 +180,7 @@ export class V2ProjectsKanban {
     } finally {
       this.moving.set(null);
     }
-    if (!project.canEdit || project.status === 'cancelled') {
+    if (!project.canEdit || project.status === 'cancelled' || project.status === 'completed') {
       this.moveError.set(this.i18n.t('v2.projects.kanban.moveLocked', { code: project.code }));
       return;
     }

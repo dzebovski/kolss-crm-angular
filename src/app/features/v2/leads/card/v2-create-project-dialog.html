@@ -193,7 +193,7 @@
   <section class="v2-create-project__section">
     <h3>{{ 'v2.createProject.estimateSection' | translate }}</h3>
     <p class="v2-create-project__progress">{{ 'v2.createProject.estimateHint' | translate }}</p>
-    <app-v2-project-estimate-fields [fields]="estimateFields" [errors]="shownEstimateErrors()" />
+    <app-v2-project-estimate-fields [fields]="estimateFields" [error]="shownEstimateError()" />
   </section>
 
   <section class="v2-create-project__section">

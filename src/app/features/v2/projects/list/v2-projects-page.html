@@ -70,7 +70,12 @@
     }}</a>
   </app-v2-state-panel>
 } @else if (kanban()) {
-  <app-v2-projects-kanban [filters]="filters()" [now]="now()" (showCancelled)="openCancelled()" />
+  <app-v2-projects-kanban
+    [filters]="filters()"
+    [now]="now()"
+    (showCancelled)="openCancelled()"
+    (showCompleted)="openCompleted()"
+  />
 } @else if (failed()) {
   <app-v2-state-panel
     tone="error"

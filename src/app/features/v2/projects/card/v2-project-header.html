@@ -1,4 +1,5 @@
 @let current = project();
+@let allowed = actions();
 
 <div class="v2-project-header__top">
   <div class="v2-project-header__identity">
@@ -23,7 +24,7 @@
   </div>
 
   <div class="v2-project-header__actions">
-    <button type="button" appV2Button [disabled]="!canComment()" (click)="addComment.emit()">
+    <button type="button" appV2Button [disabled]="!allowed.canComment" (click)="addComment.emit()">
       {{ 'v2.projectCard.addComment' | translate }}
     </button>
     <button
@@ -35,23 +36,38 @@
     >
       {{ 'v2.card.editContact' | translate }}
     </button>
-    @if (!cancelled()) {
+    @if (!final()) {
       <button
         type="button"
         appV2Button
         class="v2-project-header__cancel"
-        [disabled]="!canCancel()"
+        [disabled]="!allowed.canCancel"
         [attr.title]="lockHint() || null"
         (click)="cancelProject.emit()"
       >
         {{ 'v2.projectCard.cancel' | translate }}
       </button>
+      <button
+        type="button"
+        appV2Button
+        variant="primary"
+        [disabled]="!allowed.canFinish || finishing()"
+        [attr.aria-busy]="finishing() || null"
+        [attr.title]="finishHint()"
+        (click)="finishProject.emit()"
+      >
+        {{ 'v2.projectCard.finish' | translate }}
+      </button>
     }
   </div>
 </div>
 
-@if (clientError(); as error) {
-  <p class="v2-project-header__error" role="alert">{{ error }}</p>
+@if (current.description; as description) {
+  <p class="v2-project-header__description">{{ description }}</p>
+}
+
+@if (error(); as message) {
+  <p class="v2-project-header__error" role="alert">{{ message }}</p>
 }
 
 <dl class="v2-project-header__grid">
@@ -78,21 +94,11 @@
     </dd>
   </div>
   <div class="v2-project-header__field">
-    <dt>{{ 'v2.projectCard.showroom' | translate }}</dt>
-    <dd [class.v2-project-header__unset]="!showroomKey()">
-      @if (showroomKey(); as key) {
-        {{ key | translate }}
-      } @else {
-        {{ 'v2.card.notSet' | translate }}
-      }
-    </dd>
-  </div>
-  <div class="v2-project-header__field">
     <dt>{{ 'v2.card.manager' | translate }}</dt>
     <dd [class.v2-project-header__unset]="!current.manager">
       {{ current.manager?.name ?? ('common.unassigned' | translate) }}
     </dd>
-    <dd class="v2-project-header__designer">
+    <dd class="v2-project-header__sub">
       @if (current.designer; as designer) {
         {{ 'v2.projectCard.designer' | translate: { name: designer.name } }}
       } @else {
@@ -100,12 +106,44 @@
       }
     </dd>
   </div>
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.projectCard.estimateTotal' | translate }}</dt>
+    <dd [class.v2-project-header__unset]="!estimate()">
+      {{ estimate() ?? ('v2.card.notSet' | translate) }}
+    </dd>
+    @if (allowed.canEditEstimate) {
+      <dd>
+        <button type="button" class="v2-project-header__link" (click)="editEstimate.emit()">
+          {{
+            (estimate() ? 'v2.projectCard.estimateEdit' : 'v2.projectCard.estimateSet') | translate
+          }}
+        </button>
+      </dd>
+    }
+  </div>
+  <div class="v2-project-header__field">
+    <dt>{{ 'v2.projectCard.paidTotal' | translate }}</dt>
+    <dd [class.v2-project-header__unset]="!paid()">
+      {{ paid() ?? ('v2.projectCard.paidNone' | translate) }}
+    </dd>
+    <dd class="v2-project-header__sub">
+      {{ 'v2.projectCard.paymentCount' | translate: { count: current.payments.length } }}
+      <!-- TODO(v2) P10: link to /v2/projects/:id/payments. -->
+    </dd>
+    @if (allowed.canAddPayment) {
+      <dd>
+        <button type="button" class="v2-project-header__link" (click)="addPayment.emit()">
+          {{ 'v2.projectCard.payment.add' | translate }}
+        </button>
+      </dd>
+    }
+  </div>
 </dl>
 
 <app-v2-project-stage-bar
   [project]="current"
   [now]="now()"
-  [canChange]="canChangeStatus()"
+  [canChange]="allowed.canChangeStatus"
   [lockHint]="lockHint()"
   (changeStatus)="changeStatus.emit()"
 />

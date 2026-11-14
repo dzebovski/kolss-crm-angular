@@ -1,0 +1,117 @@
+<div class="v2-tabs__list" role="tablist" [attr.aria-label]="'v2.projectCard.tabs' | translate">
+  @for (item of tabs; track item.id) {
+    <button
+      type="button"
+      role="tab"
+      class="v2-tabs__tab"
+      [id]="'v2-project-tab-' + item.id"
+      [class.v2-tabs__tab--current]="tab() === item.id"
+      [attr.aria-selected]="tab() === item.id"
+      [attr.aria-controls]="'v2-project-panel-' + item.id"
+      [attr.tabindex]="tab() === item.id ? 0 : -1"
+      (click)="tab.set(item.id)"
+      (keydown)="onKey($event)"
+    >
+      {{ item.labelKey | translate }}
+      @if (item.id === 'documents' && documents().length) {
+        <span class="v2-tabs__count">{{ documents().length }}</span>
+      }
+      @if (item.id === 'statuses' && comments().length) {
+        <span class="v2-tabs__count">{{ comments().length }}</span>
+      }
+    </button>
+  }
+</div>
+
+@if (error(); as message) {
+  <p class="v2-tabs__error" role="alert">{{ message }}</p>
+}
+
+@if (tab() === 'documents') {
+  <div
+    class="v2-tabs__panel"
+    role="tabpanel"
+    id="v2-project-panel-documents"
+    aria-labelledby="v2-project-tab-documents"
+  >
+    <div class="v2-tabs__section-head">
+      <h3 class="v2-tabs__section-title">{{ 'v2.projectCard.documents.uploaded' | translate }}</h3>
+      <!-- TODO(v2) P11: upload and delete. -->
+      <button type="button" appV2Button size="sm" disabled>
+        {{ 'v2.projectCard.documents.upload' | translate }}
+      </button>
+    </div>
+    @for (row of documentRows(); track row.id) {
+      <div class="v2-tabs__row">
+        <span class="v2-tabs__file-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+            <path d="M14 3v5h5" />
+          </svg>
+        </span>
+        <span class="v2-tabs__row-text">
+          <span class="v2-tabs__row-name">{{ row.name }}</span>
+          <span class="v2-tabs__row-meta">{{ row.meta }}</span>
+        </span>
+        <button type="button" appV2Button size="sm" (click)="openDocument.emit(row.id)">
+          {{ 'v2.projectCard.documents.open' | translate }}
+        </button>
+      </div>
+    } @empty {
+      <p class="v2-tabs__empty">{{ 'v2.projectCard.documents.empty' | translate }}</p>
+    }
+
+    <div class="v2-tabs__generate">
+      <div class="v2-tabs__section-head">
+        <h3 class="v2-tabs__section-title">{{ 'v2.projectCard.generate.title' | translate }}</h3>
+        <span class="v2-tabs__soon">{{ 'v2.projectCard.generate.soon' | translate }}</span>
+      </div>
+      <div class="v2-tabs__generate-list">
+        <!-- TODO(v2) P14: document generation. -->
+        @for (key of generated; track key) {
+          <button type="button" appV2Button size="sm" disabled>{{ key | translate }}</button>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <div
+    class="v2-tabs__panel"
+    role="tabpanel"
+    id="v2-project-panel-statuses"
+    aria-labelledby="v2-project-tab-statuses"
+  >
+    <div class="v2-tabs__section-head">
+      <h3 class="v2-tabs__section-title">{{ 'v2.projectCard.comments' | translate }}</h3>
+      <button
+        type="button"
+        appV2Button
+        size="sm"
+        [disabled]="!canComment()"
+        (click)="addComment.emit()"
+      >
+        {{ 'v2.projectCard.addComment' | translate }}
+      </button>
+    </div>
+    @if (commentsLoading()) {
+      <p class="v2-tabs__empty" role="status">{{ 'common.loading' | translate }}</p>
+    } @else {
+      @for (row of commentRows(); track row.id) {
+        <article class="v2-tabs__comment">
+          <div class="v2-tabs__row-meta">
+            <span class="v2-tabs__comment-author">{{ row.author }}</span> · {{ row.at }}
+          </div>
+          <p class="v2-tabs__comment-text">{{ row.text }}</p>
+        </article>
+      } @empty {
+        <p class="v2-tabs__empty">{{ 'v2.projectCard.comments.empty' | translate }}</p>
+      }
+    }
+
+    <div class="v2-tabs__section-head">
+      <h3 class="v2-tabs__section-title">{{ 'v2.projectCard.tasksMeetings' | translate }}</h3>
+    </div>
+    <!-- TODO(v2) P12: tasks and meetings of the project. -->
+    <p class="v2-tabs__empty">{{ 'v2.projectCard.tasksMeetings.soon' | translate }}</p>
+  </div>
+}

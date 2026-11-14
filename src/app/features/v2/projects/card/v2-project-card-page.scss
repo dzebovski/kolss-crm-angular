@@ -59,29 +59,6 @@ svg {
   }
 }
 
-.v2-project__split {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--v2-space-4);
-}
-
-// Intro and main contract side by side, equal width.
-.v2-project__split--even {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.v2-project__docs-note {
-  margin: 0;
-  color: var(--v2-subtle);
-  font-size: 14px;
-}
-
-.v2-project__docs-note--error {
-  color: var(--v2-danger);
-  font-size: 12px;
-}
-
 // Error and not-found panels (Project-card-error / -not-found boards). `#fffafa` and `#f1c5c0`
 // are board values without a token.
 .v2-project__panel {
@@ -133,11 +110,4 @@ svg {
   display: flex;
   gap: var(--v2-space-2);
   margin-top: 10px;
-}
-
-@media (max-width: 1100px) {
-  .v2-project__split,
-  .v2-project__split--even {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }

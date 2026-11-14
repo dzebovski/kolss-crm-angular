@@ -7,7 +7,7 @@ import type { V2ProjectStatus } from '@domain/v2/project.types';
 /** List or kanban (owner decision 2026-10-23: Projects = kanban + list). */
 export type V2ProjectsView = 'list' | 'kanban';
 
-/** Deep-linkable filters: `?view=kanban&q=…&manager=<uuid>&status=design,production`. */
+/** Deep-linkable filters: `?view=kanban&q=…&manager=<uuid>&status=factory_approval,installation`. */
 export interface V2ProjectsQuery {
   readonly view: V2ProjectsView;
   readonly q: string;

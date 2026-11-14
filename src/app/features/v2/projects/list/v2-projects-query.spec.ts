@@ -6,13 +6,13 @@ describe('v2 projects list query', () => {
       view: 'kanban',
       q: 'kow',
       manager: 'm-1',
-      status: 'production,bogus,measure,showroom_meeting',
+      status: 'installation,bogus,production,measurement_design',
     });
     expect(query).toEqual({
       view: 'kanban',
       q: 'kow',
       manager: 'm-1',
-      statuses: ['showroom_meeting', 'production'],
+      statuses: ['measurement_design', 'installation'],
     });
   });
 
@@ -37,8 +37,8 @@ describe('v2 projects list query', () => {
         view: 'kanban',
         q: ' W02 ',
         manager: 'm-1',
-        statuses: ['design', 'cancelled'],
+        statuses: ['factory_approval', 'cancelled'],
       }),
-    ).toEqual({ view: 'kanban', q: 'W02', manager: 'm-1', status: 'design,cancelled' });
+    ).toEqual({ view: 'kanban', q: 'W02', manager: 'm-1', status: 'factory_approval,cancelled' });
   });
 });

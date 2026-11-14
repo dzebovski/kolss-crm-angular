@@ -116,10 +116,7 @@
             </ul>
           } @else {
             <p class="v2-kanban__empty">
-              {{
-                (column.droppable ? 'v2.projects.kanban.empty' : 'v2.projects.kanban.contractOnly')
-                  | translate
-              }}
+              {{ 'v2.projects.kanban.empty' | translate }}
             </p>
           }
 
@@ -144,14 +141,28 @@
     }
   </section>
 
-  @if (cancelledCount() > 0) {
-    <button type="button" class="v2-kanban__cancelled" (click)="showCancelled.emit()">
-      <span
-        class="v2-kanban__dot"
-        style="background: var(--v2-status-lost)"
-        aria-hidden="true"
-      ></span>
-      {{ 'v2.projects.kanban.cancelled' | translate: { count: cancelledCount() } }}
-    </button>
+  @if (completedCount() > 0 || cancelledCount() > 0) {
+    <div class="v2-kanban__finals">
+      @if (completedCount() > 0) {
+        <button type="button" class="v2-kanban__cancelled" (click)="showCompleted.emit()">
+          <span
+            class="v2-kanban__dot"
+            style="background: var(--v2-status-project)"
+            aria-hidden="true"
+          ></span>
+          {{ 'v2.projects.kanban.completed' | translate: { count: completedCount() } }}
+        </button>
+      }
+      @if (cancelledCount() > 0) {
+        <button type="button" class="v2-kanban__cancelled" (click)="showCancelled.emit()">
+          <span
+            class="v2-kanban__dot"
+            style="background: var(--v2-status-lost)"
+            aria-hidden="true"
+          ></span>
+          {{ 'v2.projects.kanban.cancelled' | translate: { count: cancelledCount() } }}
+        </button>
+      }
+    </div>
   }
 }

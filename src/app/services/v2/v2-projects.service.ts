@@ -3,16 +3,15 @@ import { inject, Service } from '@angular/core';
 import { KolssApiClient } from '@core/api/generated/kolss-api.client';
 import type {
   AddProjectCommentRequest,
-  AddProjectContractRequest,
   AddProjectPaymentRequest,
   CancelProjectRequest,
   ChangeProjectStatusRequest,
   CreateProjectRequest,
+  FinishProjectRequest,
   ProjectBoardQuery,
   ProjectFileKind,
   ProjectListQuery,
   UpdateLeadInfoRequest,
-  UpdateProjectContractRequest,
   UpdateProjectDetailsRequest,
   UpdateProjectEstimateRequest,
   UpdateProjectPaymentRequest,
@@ -81,7 +80,7 @@ export class V2ProjectsService {
     return toV2Project(await this.api.createProjectFromLead(leadId, body, idempotencyKey));
   }
 
-  /** Moves to any stage but the contract ones and Cancelled, or updates the current stage's details. */
+  /** Moves to any of the six stages (both directions), or updates the current stage's event. */
   async changeStatus(id: string, body: ChangeProjectStatusRequest): Promise<V2Project> {
     return toV2Project(await this.api.changeProjectStatus(id, body));
   }
@@ -90,6 +89,12 @@ export class V2ProjectsService {
     return toV2Project(await this.api.cancelProject(id, body));
   }
 
+  /** Project finished: Installation → Completed. */
+  async finish(id: string, body: FinishProjectRequest = {}): Promise<V2Project> {
+    return toV2Project(await this.api.finishProject(id, body));
+  }
+
+  /** Reopens a completed or closed project. */
   async restore(id: string): Promise<V2Project> {
     return toV2Project(await this.api.restoreProject(id));
   }
@@ -108,12 +113,12 @@ export class V2ProjectsService {
     return toV2Project(await this.api.updateProjectLeadInfo(id, body, leadVersion));
   }
 
-  /** Lines replace, `null` removes, omitted lines stay; 409 `estimate_locked` after a main contract. */
+  /** Sets the preliminary estimate total; `{amount: null}` clears it. */
   async updateEstimate(id: string, body: UpdateProjectEstimateRequest): Promise<V2Project> {
     return toV2Project(await this.api.updateProjectEstimate(id, body));
   }
 
-  /** Any user with office access may comment; a cancelled project answers 409. */
+  /** Any user with office access may comment; a completed or closed project answers 409. */
   async addComment(
     id: string,
     body: AddProjectCommentRequest,
@@ -122,32 +127,7 @@ export class V2ProjectsService {
     return toV2Project(await this.api.addProjectComment(id, body, idempotencyKey));
   }
 
-  /**
-   * Adds the intro or main contract (`kind`, default main) and moves the status forward to
-   * `intro_contract` / `main_contract`; upload the optional file first with `uploadFile`.
-   */
-  async addContract(
-    id: string,
-    body: AddProjectContractRequest,
-    idempotencyKey?: string,
-  ): Promise<V2Project> {
-    return toV2Project(await this.api.addProjectContract(id, body, idempotencyKey));
-  }
-
-  async updateContract(
-    id: string,
-    contractId: string,
-    body: UpdateProjectContractRequest,
-  ): Promise<V2Project> {
-    return toV2Project(await this.api.updateProjectContract(id, contractId, body));
-  }
-
-  /** Only a contract without payments; delete its payments first. */
-  async deleteContract(id: string, contractId: string): Promise<V2Project> {
-    return toV2Project(await this.api.deleteProjectContract(id, contractId));
-  }
-
-  /** Payments never move the status; `body.contractId` picks the contract (default: main). */
+  /** A standalone payment; payments never move the stage. */
   async addPayment(
     id: string,
     body: AddProjectPaymentRequest,
@@ -169,8 +149,8 @@ export class V2ProjectsService {
   }
 
   /**
-   * Contract file / receipt: presigned upload straight to storage. Returns the file id for
-   * `addContract` / `addPayment`, which verify the object and mark it ready.
+   * Document / receipt: presigned upload straight to storage. Returns the file id for
+   * `addDocument` / `addPayment`, which verify the object and mark it ready.
    */
   async uploadFile(
     projectId: string,
@@ -187,7 +167,17 @@ export class V2ProjectsService {
     return signed.fileId;
   }
 
-  /** Opens a contract file / receipt through its signed download URL. */
+  /** Confirms an uploaded `document` file: it appears in the Documents tab. */
+  async addDocument(id: string, fileId: string): Promise<V2Project> {
+    return toV2Project(await this.api.confirmProjectDocument(id, fileId));
+  }
+
+  /** The uploader, the project manager and admins. */
+  async deleteDocument(id: string, fileId: string): Promise<V2Project> {
+    return toV2Project(await this.api.deleteProjectDocument(id, fileId));
+  }
+
+  /** Opens a document / receipt through its signed download URL. */
   openFile(fileId: string): Promise<void> {
     return this.documents.download(fileId);
   }

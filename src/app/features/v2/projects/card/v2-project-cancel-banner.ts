@@ -6,7 +6,7 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { formatV2CardDate, formatV2Time } from '@domain/v2/date-format';
 import { v2ProjectRestoreStatus } from '@domain/v2/project-card';
 import { v2ProjectStatusLabelKey } from '@domain/v2/project-status';
-import type { V2ProjectCancelReason, V2ProjectCancellation } from '@domain/v2/project.types';
+import type { V2Project, V2ProjectCancelReason } from '@domain/v2/project.types';
 import { V2Button } from '../../ui/v2-button';
 
 export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> = {
@@ -18,25 +18,33 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
   other: 'v2.projectCard.reason.other',
 };
 
-// Grey banner of a cancelled project (Project-card-cancelled board): date, who, reasons, comment
-// and "Restore project" with its inline "Restore to …?" confirmation. `restore` fires after the
-// confirmation; the page performs the restore and passes `busy` / `error` back.
+// Grey banner of a final project: closed (Project-card-cancelled board: date, who, reasons,
+// comment) or finished (date). Both offer "Restore project" with an inline "Restore to …?"
+// confirmation. `restore` fires after the confirmation; the page restores and passes `busy` /
+// `error` back.
 @Component({
   selector: 'app-v2-project-cancel-banner',
   imports: [TranslatePipe, V2Button],
   template: `
+    @let cancellation = project().cancellation;
     <span class="v2-cancel__icon" aria-hidden="true">
       <svg width="18" height="18" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M5.6 5.6l12.8 12.8" />
+        @if (finished()) {
+          <path d="M5 12l5 5L19 7" />
+        } @else {
+          <circle cx="12" cy="12" r="9" />
+          <path d="M5.6 5.6l12.8 12.8" />
+        }
       </svg>
     </span>
     <div class="v2-cancel__text">
       <span class="v2-cancel__title">
-        @if (cancellation().cancelledByName) {
+        @if (finished()) {
+          {{ 'v2.projectCard.finished.title' | translate: { date: when() } }}
+        } @else if (cancellation?.cancelledByName) {
           {{
             'v2.projectCard.cancelled.title'
-              | translate: { date: when(), name: cancellation().cancelledByName }
+              | translate: { date: when(), name: cancellation!.cancelledByName }
           }}
         } @else {
           {{ 'v2.projectCard.cancelled.titleNoName' | translate: { date: when() } }}
@@ -47,7 +55,7 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
           {{ 'v2.projectCard.cancelled.reasons' | translate: { reasons: list } }}
         </span>
       }
-      @if (cancellation().comment; as comment) {
+      @if (cancellation?.comment; as comment) {
         <span class="v2-cancel__comment">{{ comment }}</span>
       }
       @if (error(); as message) {
@@ -60,7 +68,10 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
           {{ 'v2.projectCard.restoreAsk' | translate: { status: restoreLabel() } }}
         </span>
         <button type="button" appV2Button size="sm" (click)="asking.set(false)">
-          {{ 'v2.projectCard.keepCancelled' | translate }}
+          {{
+            (finished() ? 'v2.projectCard.keepFinished' : 'v2.projectCard.keepCancelled')
+              | translate
+          }}
         </button>
         <button
           type="button"
@@ -158,7 +169,8 @@ export const V2_CANCEL_REASON_LABEL: Record<V2ProjectCancelReason, MessageKey> =
 export class V2ProjectCancelBanner {
   private readonly i18n = inject(I18nService);
 
-  readonly cancellation = input.required<V2ProjectCancellation>();
+  /** A completed or cancelled project. */
+  readonly project = input.required<V2Project>();
   readonly now = input.required<Date>();
   readonly canRestore = input(false);
   /** Tooltip of the locked Restore button (the read-only hint). */
@@ -170,18 +182,22 @@ export class V2ProjectCancelBanner {
 
   protected readonly asking = signal(false);
 
+  protected readonly finished = computed(() => this.project().status === 'completed');
   protected readonly when = computed(() => {
-    const at = this.cancellation().cancelledAt;
+    const project = this.project();
+    const at = this.finished()
+      ? project.statusChangedAt
+      : (project.cancellation?.cancelledAt ?? project.statusChangedAt);
     return `${formatV2CardDate(at, this.now(), this.i18n.locale())}, ${formatV2Time(at)}`;
   });
   protected readonly reasons = computed(() => {
-    const labels = this.cancellation().reasons.map((reason) =>
+    const labels = (this.project().cancellation?.reasons ?? []).map((reason) =>
       this.i18n.t(V2_CANCEL_REASON_LABEL[reason]),
     );
     return labels.length ? labels.join(', ') : null;
   });
   protected readonly restoreLabel = computed(() =>
-    this.i18n.t(v2ProjectStatusLabelKey(v2ProjectRestoreStatus(this.cancellation()))),
+    this.i18n.t(v2ProjectStatusLabelKey(v2ProjectRestoreStatus(this.project()))),
   );
 
   protected confirm(): void {

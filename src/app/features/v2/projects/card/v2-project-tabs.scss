@@ -1,0 +1,182 @@
+@use '../../../../../styles/v2/interactive';
+@use '../../../../../styles/v2/type';
+
+// Tabs card of Project card v4 (design-system card frame; tab underline as the Sales tabs).
+:host {
+  display: flex;
+  flex-direction: column;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.v2-tabs__list {
+  display: flex;
+  gap: var(--v2-space-6);
+  padding: 0 var(--v2-space-5);
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--v2-space-4) 0 13px;
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--v2-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  @include interactive.transition;
+
+  &:hover {
+    color: var(--v2-ink);
+  }
+
+  &:focus-visible {
+    border-radius: 2px;
+    @include interactive.focus-ring;
+  }
+}
+
+.v2-tabs__tab--current {
+  border-bottom-color: var(--v2-ink);
+  color: var(--v2-ink);
+}
+
+.v2-tabs__count {
+  padding: 0 6px;
+  border-radius: var(--v2-radius-pill);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-tabs__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-3);
+  padding: var(--v2-space-4) var(--v2-space-5) var(--v2-space-5);
+}
+
+.v2-tabs__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--v2-space-3);
+}
+
+.v2-tabs__section-title {
+  @include type.text(card-label);
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.v2-tabs__row {
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-tabs__file-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface-sunk);
+  color: var(--v2-ink-2);
+}
+
+.v2-tabs__row-text {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.v2-tabs__row-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v2-tabs__row-meta {
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+
+.v2-tabs__empty {
+  margin: 0;
+  padding: var(--v2-space-2) 0;
+  color: var(--v2-subtle);
+  font-size: 13px;
+}
+
+.v2-tabs__error {
+  margin: var(--v2-space-3) var(--v2-space-5) 0;
+  color: var(--v2-danger);
+  font-size: 13px;
+}
+
+.v2-tabs__generate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-3);
+  margin-top: var(--v2-space-2);
+  padding: var(--v2-space-4);
+  border: 1px dashed var(--v2-line-strong);
+  border-radius: 12px;
+}
+
+.v2-tabs__generate-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--v2-space-2);
+}
+
+.v2-tabs__soon {
+  color: var(--v2-subtle);
+  font-size: 12px;
+}
+
+.v2-tabs__comment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v2-space-1);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.v2-tabs__comment-author {
+  color: var(--v2-ink);
+  font-weight: 500;
+}
+
+.v2-tabs__comment-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}

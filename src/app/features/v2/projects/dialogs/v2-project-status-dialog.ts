@@ -2,16 +2,13 @@ import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, computed, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 
-import { KolssApiError } from '@core/api/generated/kolss-api.client';
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { formatV2Money } from '@domain/v2/project-money';
 import { v2IsPastDay, v2LocalDay } from '@domain/v2/project-forms';
 import {
   V2_PROJECT_STAGES,
   v2IsChangeableProjectStatus,
   v2ProjectNextEventLabelKey,
-  v2ProjectPrepaymentCheck,
   v2ProjectStatusLabelKey,
 } from '@domain/v2/project-status';
 import type { V2Project, V2ProjectStatus } from '@domain/v2/project.types';
@@ -36,12 +33,9 @@ interface StatusModel {
   comment: string;
 }
 
-// Change status (Project-status board, pipeline 3): the eight stages a user can pick (the
-// contract stages are set by Add contract, Cancelled by Cancel project), the next event date and
-// time, and a timeline comment. Picking the current stage edits its event. The 50% rule: moving
-// to Production or later with less than 50% of the main contract paid is refused for a manager
-// (409 `prepayment_required`) and needs a comment from an admin (400 on `comment`); the popup
-// warns before saving and maps both answers. Closes with the updated project.
+// Change status (pipeline 4): any of the six stages, both directions (Completed comes from
+// Project finished, Closed from Close project), the next event date and time, and a timeline
+// comment. Picking the current stage edits its event. Closes with the updated project.
 @Component({
   selector: 'app-v2-project-status-dialog',
   imports: [
@@ -87,8 +81,6 @@ export class V2ProjectStatusDialog {
   protected readonly saving = signal(false);
   protected readonly error = signal('');
   protected readonly touched = signal(false);
-  /** The API asked for a comment (admin moving on with less than 50% paid). */
-  private readonly commentRequired = signal(false);
 
   protected readonly subtitle = `${this.project.code} · ${this.project.clientName}`;
 
@@ -99,50 +91,14 @@ export class V2ProjectStatusDialog {
       sub:
         status === this.current
           ? this.i18n.t('v2.projectPopup.status.current')
-          : status === 'completed'
-            ? this.i18n.t('v2.projectPopup.status.closes')
-            : this.i18n.t(v2ProjectNextEventLabelKey(status)!),
+          : this.i18n.t(v2ProjectNextEventLabelKey(status)!),
     })),
   );
 
   private readonly next = computed(() => (this.model().status || null) as V2ProjectStatus | null);
-  /** Completed has no next event. */
   protected readonly eventLabelKey = computed(() => {
     const next = this.next();
     return next ? v2ProjectNextEventLabelKey(next) : null;
-  });
-
-  /** Less than 50% paid and the move crosses into Production. */
-  protected readonly prepayment = computed(() => {
-    const next = this.next();
-    if (!next) return null;
-    const main = this.project.contracts.main;
-    const check = v2ProjectPrepaymentCheck({
-      current: this.current,
-      next,
-      main,
-      isAdmin: false,
-    });
-    if (check === 'ok') return null;
-    const locale = this.i18n.locale();
-    return main
-      ? this.i18n.t('v2.projectPopup.status.prepayment', {
-          percent: main.percentPaid,
-          target: formatV2Money(main.target50 ?? main.total, locale),
-        })
-      : this.i18n.t('v2.projectPopup.status.prepaymentNoContract');
-  });
-
-  /** Completing with money still due is allowed, with a warning (Project-status board). */
-  protected readonly unpaid = computed(() => {
-    if (this.next() !== 'completed') return null;
-    const main = this.project.contracts.main;
-    if (!main) return this.i18n.t('v2.projectPopup.status.noContract');
-    return main.remaining.amount > 0
-      ? this.i18n.t('v2.projectPopup.status.unpaid', {
-          amount: formatV2Money(main.remaining, this.i18n.locale()),
-        })
-      : null;
   });
 
   private readonly errors = computed(() => {
@@ -168,8 +124,6 @@ export class V2ProjectStatusDialog {
       errors.eventDate = this.i18n.t('v2.projectPopup.datePast');
     if (value.eventTime && !value.eventDate)
       errors.eventDate = this.i18n.t('v2.projectPopup.status.dateForTime');
-    if (this.commentRequired() && !value.comment.trim())
-      errors.comment = this.i18n.t('v2.projectPopup.status.commentRequired');
     if (value.comment.trim().length > 1000)
       errors.comment = this.i18n.t('v2.projectCard.commentTooLong', { max: 1000 });
     return errors;
@@ -208,21 +162,9 @@ export class V2ProjectStatusDialog {
       });
       this.dialogRef.close(project);
     } catch (error) {
-      if (error instanceof KolssApiError && error.code === 'prepayment_required') {
-        this.error.set(this.i18n.t('v2.projectPopup.status.prepaymentBlocked'));
-      } else if (
-        error instanceof KolssApiError &&
-        error.status === 400 &&
-        this.prepayment() &&
-        !value.comment.trim()
-      ) {
-        this.commentRequired.set(true);
-        this.touched.set(true);
-      } else {
-        this.error.set(
-          this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
-        );
-      }
+      this.error.set(
+        this.i18n.localizeError(error instanceof Error ? error.message : 'error.actionFailed'),
+      );
     } finally {
       this.saving.set(false);
     }

@@ -4,21 +4,19 @@ import { form, FormField } from '@angular/forms/signals';
 
 import { I18nService } from '@core/i18n/i18n.service';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { formatV2Money } from '@domain/v2/project-money';
+import { V2_PROJECT_CURRENCIES } from '@domain/v2/project-money';
 import {
-  v2AddMoney,
+  V2_PAYMENT_BASES,
   v2AmountText,
   v2IsFutureDay,
   v2LocalDay,
   v2ParseAmount,
-  v2PaymentLimit,
-  v2PaymentQuickAmounts,
 } from '@domain/v2/project-forms';
 import type {
   V2Project,
-  V2ProjectContract,
-  V2ProjectContractKind,
+  V2ProjectCurrency,
   V2ProjectPayment,
+  V2ProjectPaymentBasis,
 } from '@domain/v2/project.types';
 import { V2ProjectsService } from '@services/v2/v2-projects.service';
 import { v2LiveNow } from '../../core/v2-clock';
@@ -26,30 +24,31 @@ import { V2DialogShell } from '../../ui/dialog/v2-dialog-shell';
 import { V2FieldGroup } from '../../ui/dialog/v2-field-group';
 import { V2FormField } from '../../ui/dialog/v2-form-field';
 import { V2ChipSelect, type V2ChipOption } from '../../ui/v2-chip-select';
+import { V2Select } from '../../ui/v2-select';
 import { V2ProjectFileField } from './v2-project-file-field';
 import { V2ProjectNotice } from './v2-project-notice';
+import { V2_PAYMENT_BASIS_LABEL } from './v2-project-payment-labels';
 
 export interface V2ProjectPaymentData {
   readonly project: V2Project;
-  /** The contract block the popup was opened from. */
-  readonly kind?: V2ProjectContractKind;
   /** Set in edit mode. */
   readonly payment?: V2ProjectPayment;
 }
 
 interface PaymentModel {
-  contract: string;
   amount: string;
+  currency: string;
   paidOn: string;
+  basis: string;
   note: string;
 }
 
 const NOTE_MAX = 300;
 
-// Add / edit payment (Project-add-payment board, pipeline 3): to which contract (only when both
-// still have something to pay), amount with quick amounts (500 / 1000 zł, 10%, up to 50%,
-// remaining), date (not in the future), note and one optional receipt. Never above the remaining
-// balance; payments never move the stage. Closes with the updated project.
+// Add / edit payment (pipeline 4, owner decisions 2026-11-14; no board): a standalone record —
+// amount + currency, date (not in the future), basis (receipt, invoice, contract, other), note
+// and one optional receipt. Any amount; payments never move the stage. Closes with the updated
+// project.
 @Component({
   selector: 'app-v2-project-payment-dialog',
   imports: [
@@ -61,37 +60,14 @@ const NOTE_MAX = 300;
     V2FormField,
     V2ProjectFileField,
     V2ProjectNotice,
+    V2Select,
   ],
   templateUrl: './v2-project-payment-dialog.html',
   styles: `
-    .v2-payment-popup__quick {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--v2-space-2);
-      margin-top: calc(var(--v2-space-2) * -1);
-    }
-
-    .v2-payment-popup__chip {
-      height: 28px;
-      padding: 0 10px;
-      background: var(--v2-surface);
-      border: 1px solid var(--v2-line-strong);
-      border-radius: var(--v2-radius-pill);
-      color: var(--v2-ink-2);
-      font: inherit;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .v2-payment-popup__chip--on {
-      background: var(--v2-ink);
-      border-color: var(--v2-ink);
-      color: var(--v2-on-ink);
-    }
-
-    .v2-payment-popup__chip:focus-visible {
-      outline: 2px solid var(--v2-ink);
-      outline-offset: 2px;
+    .v2-payment-popup__money {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      gap: var(--v2-space-3);
     }
   `,
 })
@@ -106,42 +82,31 @@ export class V2ProjectPaymentDialog {
   protected readonly editing = !!this.data.payment;
   protected readonly subtitle = `${this.project.code} · ${this.project.clientName}`;
 
-  /** Contracts a payment can go to: the edited payment's, or those with a balance left. */
-  private readonly payable: readonly V2ProjectContract[] = (() => {
-    const { intro, main } = this.project.contracts;
-    const payment = this.data.payment;
-    if (payment) {
-      const own = this.project.contracts[payment.contractKind];
-      return own ? [own] : [];
-    }
-    return [intro, main].filter(
-      (contract): contract is V2ProjectContract => !!contract && contract.remaining.amount > 0,
-    );
-  })();
-
-  protected readonly contractOptions: readonly V2ChipOption[] = this.payable.map((contract) => ({
-    id: contract.kind,
-    label: this.i18n.t(
-      contract.kind === 'intro' ? 'v2.projectCard.intro.title' : 'v2.projectCard.main.title',
-    ),
+  protected readonly currencies = V2_PROJECT_CURRENCIES.map((code) => ({
+    value: code,
+    label: code,
+  }));
+  protected readonly bases: readonly V2ChipOption[] = V2_PAYMENT_BASES.map((basis) => ({
+    id: basis,
+    label: this.i18n.t(V2_PAYMENT_BASIS_LABEL[basis]),
   }));
 
   private readonly initial: PaymentModel = (() => {
     const payment = this.data.payment;
     if (payment) {
       return {
-        contract: payment.contractKind,
         amount: v2AmountText(payment.amount.amount, this.i18n.locale()),
+        currency: payment.amount.currency,
         paidOn: payment.paidOn,
+        basis: payment.basis,
         note: payment.note ?? '',
       };
     }
-    const preferred = this.payable.find((contract) => contract.kind === this.data.kind);
-    const fallback = this.payable.find((contract) => contract.kind === 'main') ?? this.payable[0];
     return {
-      contract: (preferred ?? fallback)?.kind ?? '',
       amount: '',
+      currency: this.project.estimate?.currency ?? this.project.paidTotals[0]?.currency ?? 'PLN',
       paidOn: v2LocalDay(this.liveNow()),
+      basis: '',
       note: '',
     };
   })();
@@ -155,53 +120,12 @@ export class V2ProjectPaymentDialog {
   /** One key per popup, so a retried save after a lost response is not stored twice. */
   private readonly idempotencyKey = crypto.randomUUID();
 
-  protected readonly contract = computed(
-    () => this.payable.find((item) => item.kind === this.model().contract) ?? null,
-  );
-  private readonly limit = computed(() => {
-    const contract = this.contract();
-    return contract ? v2PaymentLimit(contract, this.data.payment?.amount.amount ?? 0) : 0;
-  });
-
-  protected readonly quick = computed(() => {
-    const contract = this.contract();
-    if (!contract || this.editing) return [];
-    const locale = this.i18n.locale();
-    return v2PaymentQuickAmounts(contract).map((quick) => {
-      const money = formatV2Money({ ...contract.total, amount: quick.amount }, locale);
-      const text = v2AmountText(quick.amount, locale);
-      return {
-        key: `${quick.kind}-${quick.amount}`,
-        text,
-        label:
-          quick.kind === 'fixed'
-            ? money
-            : this.i18n.t(`v2.projectPopup.payment.quick.${quick.kind}`, { amount: money }),
-      };
-    });
-  });
-
-  protected readonly amountHint = computed(() => {
-    const contract = this.contract();
-    if (!contract) return '';
-    return this.i18n.t('v2.projectPopup.payment.remaining', {
-      amount: formatV2Money({ ...contract.total, amount: this.limit() }, this.i18n.locale()),
-    });
-  });
-
   private readonly errors = computed(() => {
     const value = this.model();
     const errors: Partial<Record<keyof PaymentModel, string>> = {};
-    if (!this.contract()) errors.contract = this.i18n.t('v2.projectPopup.payment.pickContract');
-    const amount = v2ParseAmount(value.amount);
-    if (amount === null) errors.amount = this.i18n.t('v2.projectPopup.amountMissing');
-    else if (this.contract() && amount > this.limit())
-      errors.amount = this.i18n.t('v2.projectPopup.payment.overBalance', {
-        amount: formatV2Money(
-          { ...this.contract()!.total, amount: this.limit() },
-          this.i18n.locale(),
-        ),
-      });
+    if (v2ParseAmount(value.amount) === null)
+      errors.amount = this.i18n.t('v2.projectPopup.amountMissing');
+    if (!value.basis) errors.basis = this.i18n.t('v2.projectPopup.payment.basisMissing');
     if (!value.paidOn) errors.paidOn = this.i18n.t('v2.projectPopup.payment.dateMissing');
     else if (v2IsFutureDay(value.paidOn, v2LocalDay(this.liveNow())))
       errors.paidOn = this.i18n.t('v2.projectPopup.payment.dateFuture');
@@ -217,24 +141,6 @@ export class V2ProjectPaymentDialog {
     () => JSON.stringify(this.model()) !== JSON.stringify(this.initial) || this.file() !== null,
   );
 
-  /** "Paid after this: 25 000 zł of 50 000 zł" (credited intro included on the main contract). */
-  protected readonly hint = computed(() => {
-    const contract = this.contract();
-    const amount = v2ParseAmount(this.model().amount);
-    if (!contract || amount === null) return this.i18n.t('v2.projectPopup.timelineHint');
-    const before =
-      contract.paid.amount + contract.credited.amount - (this.data.payment?.amount.amount ?? 0);
-    const locale = this.i18n.locale();
-    return this.i18n.t('v2.projectPopup.payment.after', {
-      paid: formatV2Money(v2AddMoney({ ...contract.total, amount: before }, amount), locale),
-      total: formatV2Money(contract.total, locale),
-    });
-  });
-
-  protected pickQuick(text: string): void {
-    this.model.update((value) => ({ ...value, amount: text }));
-  }
-
   protected async save(): Promise<void> {
     if (this.saving() || this.invalid()) return;
     if (this.editing && !this.hasUnsavedInput()) {
@@ -244,6 +150,8 @@ export class V2ProjectPaymentDialog {
     const value = this.model();
     const amount = v2ParseAmount(value.amount)!;
     const note = value.note.trim();
+    const currency = value.currency as V2ProjectCurrency;
+    const basis = value.basis as V2ProjectPaymentBasis;
     this.saving.set(true);
     this.error.set('');
     try {
@@ -255,16 +163,19 @@ export class V2ProjectPaymentDialog {
       const project = payment
         ? await this.projects.updatePayment(this.project.id, payment.id, {
             ...(amount !== payment.amount.amount && { amount }),
+            ...(currency !== payment.amount.currency && { currency }),
             ...(value.paidOn !== payment.paidOn && { paidOn: value.paidOn }),
+            ...(basis !== payment.basis && { basis }),
             ...(note !== (payment.note ?? '') && { note }),
             ...(fileId && { fileId }),
           })
         : await this.projects.addPayment(
             this.project.id,
             {
-              contractId: this.contract()!.id,
               amount,
+              currency,
               paidOn: value.paidOn,
+              basis,
               note: note || null,
               fileId: fileId ?? null,
             },

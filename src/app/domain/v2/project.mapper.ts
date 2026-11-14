@@ -1,9 +1,7 @@
 import type {
   Project,
   ProjectBoard,
-  ProjectContract,
-  ProjectEstimate,
-  ProjectEstimateLine,
+  ProjectDocument,
   ProjectEvent,
   ProjectFacetsResponse,
   ProjectFileRef,
@@ -12,16 +10,12 @@ import type {
   ProjectPayment,
   ProjectPerson,
 } from '@core/api/generated/kolss-api.types';
-import { V2_ESTIMATE_LINES, v2PercentOf } from './project-money';
 import { V2_PROJECT_STATUSES } from './project-status';
 import type {
-  V2EstimateLine,
-  V2EstimateLineKey,
   V2Money,
   V2Project,
   V2ProjectBoard,
-  V2ProjectContract,
-  V2ProjectEstimate,
+  V2ProjectDocument,
   V2ProjectFacets,
   V2ProjectFile,
   V2ProjectListItem,
@@ -52,60 +46,31 @@ function toMoney(money: ProjectMoney): V2Money {
   return { amount: money.amount, currency: money.currency };
 }
 
-function toContract(contract: ProjectContract): V2ProjectContract {
-  const money = (amount: number): V2Money => ({ amount, currency: contract.currency });
-  const covered = contract.paidAmount + contract.creditedAmount;
-  return {
-    id: contract.id,
-    kind: contract.kind,
-    number: contract.number,
-    signedOn: contract.signedOn,
-    total: money(contract.totalAmount),
-    paid: money(contract.paidAmount),
-    credited: money(contract.creditedAmount),
-    remaining: money(contract.remainingAmount),
-    target50: contract.target50Amount === null ? null : money(contract.target50Amount),
-    percentPaid: v2PercentOf(covered, contract.totalAmount),
-    fullyPaid: contract.remainingAmount <= 0,
-    target50Reached: contract.target50Amount !== null && covered >= contract.target50Amount,
-    file: toFile(contract.file),
-  };
-}
-
-function toPayment(payment: ProjectPayment, contract: ProjectContract): V2ProjectPayment {
+function toPayment(payment: ProjectPayment): V2ProjectPayment {
   return {
     id: payment.id,
-    contractId: payment.contractId,
-    contractKind: payment.contractKind,
-    amount: { amount: payment.amount, currency: contract.currency },
+    amount: { amount: payment.amount, currency: payment.currency },
     paidOn: payment.paidOn,
+    basis: payment.basis,
     note: payment.note,
     createdAt: payment.createdAt,
     createdByName: payment.createdByName,
     file: toFile(payment.file),
-    sharePercent: v2PercentOf(payment.amount, contract.totalAmount),
   };
 }
 
-function toEstimateLine(line: ProjectEstimateLine | null): V2EstimateLine | null {
-  return line ? { money: { amount: line.amount, currency: line.currency }, note: line.note } : null;
-}
-
-function toEstimate(estimate: ProjectEstimate): V2ProjectEstimate {
-  const lines = Object.fromEntries(
-    V2_ESTIMATE_LINES.map((key) => [key, toEstimateLine(estimate.lines[key])]),
-  ) as Record<V2EstimateLineKey, V2EstimateLine | null>;
-  return { lines, totals: estimate.totals.map(toMoney), locked: estimate.locked };
+function toDocument(document: ProjectDocument): V2ProjectDocument {
+  return {
+    id: document.id,
+    fileName: document.fileName,
+    mimeType: document.mimeType,
+    sizeBytes: document.sizeBytes,
+    createdAt: document.createdAt,
+    uploadedBy: toPerson(document.uploadedBy),
+  };
 }
 
 export function toV2Project(project: Project): V2Project {
-  const { intro, main } = project.contracts;
-  const payments: V2ProjectPayment[] = [];
-  for (const payment of project.payments) {
-    // A payment belongs to one contract; the currency comes from it.
-    const contract = [intro, main].find((candidate) => candidate?.id === payment.contractId);
-    if (contract) payments.push(toPayment(payment, contract));
-  }
   return {
     id: project.id,
     leadId: project.leadId,
@@ -121,7 +86,6 @@ export function toV2Project(project: Project): V2Project {
     status: project.status,
     projectType: project.projectType,
     schedule: toSchedule(project.eventDate, project.eventTime),
-    stageDetails: project.statusDetails,
     manager: toPerson(project.manager),
     designer: toPerson(project.designer),
     createdAt: project.createdAt,
@@ -137,13 +101,11 @@ export function toV2Project(project: Project): V2Project {
           previousStatus: toStatus(project.cancellation.statusBeforeCancel),
         }
       : null,
-    estimate: toEstimate(project.estimate),
-    introDefault: project.introDefault ? toMoney(project.introDefault) : null,
-    contracts: {
-      intro: intro ? toContract(intro) : null,
-      main: main ? toContract(main) : null,
-    },
-    payments,
+    description: project.description?.trim() || null,
+    estimate: project.estimate ? toMoney(project.estimate) : null,
+    paidTotals: project.paidTotals.map(toMoney),
+    payments: project.payments.map(toPayment),
+    documents: project.documents.map(toDocument),
     canEdit: project.permissions.canEdit,
   };
 }
@@ -161,7 +123,8 @@ export function toV2ProjectListItem(item: ProjectListItem): V2ProjectListItem {
     schedule: toSchedule(item.eventDate, item.eventTime),
     manager: toPerson(item.manager),
     designer: toPerson(item.designer),
-    estimateTotals: item.estimateTotals.map(toMoney),
+    estimate: item.estimate ? toMoney(item.estimate) : null,
+    paidTotals: item.paidTotals.map(toMoney),
     createdAt: item.createdAt,
     lastComment: item.lastComment ? { text: item.lastComment.text, at: item.lastComment.at } : null,
   };
@@ -170,6 +133,7 @@ export function toV2ProjectListItem(item: ProjectListItem): V2ProjectListItem {
 export function toV2ProjectBoard(board: ProjectBoard): V2ProjectBoard {
   return {
     total: board.total,
+    completedCount: board.completedCount,
     cancelledCount: board.cancelledCount,
     columns: board.columns.map((column) => ({
       status: column.status,

@@ -31,9 +31,8 @@ import type { V2LeadColumns, V2LeadProduct } from '@domain/v2/lead-card.types';
 import type { V2LeadChannel } from '@domain/v2/lead-view.types';
 import { v2ValidatePhone } from '@domain/v2/phone-mask';
 import {
-  v2EstimateErrorCount,
-  v2EstimateFormChanges,
-  v2EstimateFormErrors,
+  v2EstimateFormChange,
+  v2EstimateFormError,
   v2EstimateFormInitial,
 } from '@domain/v2/project-estimate-form';
 import type { V2Project } from '@domain/v2/project.types';
@@ -74,10 +73,10 @@ export type V2CreateProjectResult =
   { readonly project: V2Project; readonly estimateSaved: boolean } | undefined;
 
 // Create project (board `Create-project`, pipeline 3): the Edit contact and Fill lead info fields
-// in one popup, then the project with its preliminary estimate (four optional lines instead of
-// the board's project types; every project starts in Estimate). The lead is saved first
+// in one popup, then the project with its preliminary estimate (one optional total; every
+// project starts in Preliminary estimate). The lead is saved first
 // (contact, then info, so the optimistic version chains), then `POST /v1/leads/{id}/project`
-// (moves the lead to status Project and links it), then the estimate lines. If a lead step
+// (moves the lead to status Project and links it), then the estimate. If a lead step
 // fails, the lead is reloaded so a retry only sends what is still unsaved; the idempotency key
 // stays the same for the project request.
 @Component({
@@ -152,11 +151,11 @@ export class V2CreateProjectDialog {
     OFFICE_CONFIG[this.data.lead.officeCode].currency,
     this.i18n.locale(),
   );
-  protected readonly estimate = signal(structuredClone(this.estimateInitial));
+  protected readonly estimate = signal({ ...this.estimateInitial });
   protected readonly estimateFields = form(this.estimate);
-  private readonly estimateErrors = computed(() => v2EstimateFormErrors(this.estimate()));
-  protected readonly shownEstimateErrors = computed(() =>
-    this.attempted() ? this.estimateErrors() : {},
+  private readonly estimateError = computed(() => v2EstimateFormError(this.estimate()));
+  protected readonly shownEstimateError = computed(() =>
+    this.attempted() ? this.estimateError() : null,
   );
   protected readonly saving = signal(false);
   protected readonly saveError = signal('');
@@ -228,7 +227,7 @@ export class V2CreateProjectDialog {
     if (!value.clientInformed) count++;
     if (!value.responsibleManagerId) count++;
     count += v2DocumentLocalErrorCount(this.documents());
-    count += v2EstimateErrorCount(this.estimateErrors());
+    if (this.estimateError()) count++;
     return count;
   });
   protected readonly invalid = computed(() => this.missingCount() > 0);
@@ -287,10 +286,10 @@ export class V2CreateProjectDialog {
 
   /** The project exists by now: a failed estimate must not undo it, the page says so instead. */
   private async saveEstimate(project: V2Project): Promise<boolean> {
-    const lines = v2EstimateFormChanges(this.estimate(), this.estimateInitial, null);
-    if (!Object.keys(lines).length) return true;
+    const change = v2EstimateFormChange(this.estimate(), this.estimateInitial, null);
+    if (!change) return true;
     try {
-      await this.projects.updateEstimate(project.id, { lines });
+      await this.projects.updateEstimate(project.id, change);
       return true;
     } catch {
       return false;
