@@ -131,3 +131,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.v2-project-header__error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--v2-danger);
+}

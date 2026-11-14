@@ -83,8 +83,11 @@
     [canComment]="allowed.canComment"
     [lockHint]="lockHint()"
     (changeStatus)="act.changeStatus()"
+    [editingClient]="act.clientLoading()"
+    [clientError]="act.clientError()"
     (cancelProject)="act.cancelProject()"
     (addComment)="act.addComment()"
+    (editClient)="editClient()"
   />
 
   <app-v2-project-details-card

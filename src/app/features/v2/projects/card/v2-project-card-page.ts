@@ -192,6 +192,14 @@ export class V2ProjectCardPage {
     this.projectResource.reload();
   }
 
+  /** Edit client info changed the shared client: the project and its lead show its contacts. */
+  protected async editClient(): Promise<void> {
+    if (await this.act.editClient()) {
+      this.projectResource.reload();
+      this.leadResource.reload();
+    }
+  }
+
   protected reloadLead(): void {
     this.leadResource.reload();
   }

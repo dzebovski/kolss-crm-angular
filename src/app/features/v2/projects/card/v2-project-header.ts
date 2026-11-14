@@ -12,9 +12,9 @@ import { V2CodeChip } from '../../ui/v2-code-chip';
 import { V2ProjectStageBar } from './v2-project-stage-bar';
 
 // Header card of the Project card board: eyebrow, client name + code, "created from lead",
-// Add comment / Edit contact info / Cancel project, the contact grid (manager and designer) and
-// the status bar. Presentational: Add comment asks the page to focus the timeline composer; Edit
-// contact info stays disabled until there is a write path for the client's contacts (Q-P12).
+// Add comment / Edit client info / Close project, the contact grid (manager and designer) and
+// the status bar. Presentational: the page opens the popups (Edit client info edits the shared
+// client record, off while the project has no client).
 @Component({
   selector: 'app-v2-project-header',
   imports: [RouterLink, TranslatePipe, V2Button, V2CodeChip, V2ProjectStageBar],
@@ -35,7 +35,12 @@ export class V2ProjectHeader {
   readonly canComment = input(false);
   /** The read-only hint, also the tooltip of the locked buttons; empty while the user can act. */
   readonly lockHint = input('');
+  /** Edit client info is loading the client. */
+  readonly editingClient = input(false);
+  /** A failed client load for Edit client info. */
+  readonly clientError = input('');
   readonly changeStatus = output<void>();
+  readonly editClient = output<void>();
   readonly addComment = output<void>();
   readonly cancelProject = output<void>();
 

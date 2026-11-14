@@ -26,8 +26,13 @@
     <button type="button" appV2Button [disabled]="!canComment()" (click)="addComment.emit()">
       {{ 'v2.projectCard.addComment' | translate }}
     </button>
-    <!-- TODO(v2): no write path for the client's contacts on a project (Q-P12). -->
-    <button type="button" appV2Button disabled [attr.title]="'v2.projectCard.editSoon' | translate">
+    <button
+      type="button"
+      appV2Button
+      [disabled]="!current.clientId || editingClient()"
+      [attr.aria-busy]="editingClient() || null"
+      (click)="editClient.emit()"
+    >
       {{ 'v2.card.editContact' | translate }}
     </button>
     @if (!cancelled()) {
@@ -44,6 +49,10 @@
     }
   </div>
 </div>
+
+@if (clientError(); as error) {
+  <p class="v2-project-header__error" role="alert">{{ error }}</p>
+}
 
 <dl class="v2-project-header__grid">
   <div class="v2-project-header__field">

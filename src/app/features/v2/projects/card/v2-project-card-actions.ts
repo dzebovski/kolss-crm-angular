@@ -6,7 +6,12 @@ import { I18nService } from '@core/i18n/i18n.service';
 import { formatV2Money } from '@domain/v2/project-money';
 import { v2ProjectActions } from '@domain/v2/project-status';
 import type { V2Project, V2ProjectContractKind, V2ProjectPayment } from '@domain/v2/project.types';
+import { V2ClientsService } from '@services/v2/v2-clients.service';
 import { V2ProjectsService } from '@services/v2/v2-projects.service';
+import {
+  V2ClientEditDialog,
+  type V2ClientEditData,
+} from '../../clients/card/v2-client-edit-dialog';
 import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import {
   V2ProjectCancelDialog,
@@ -42,6 +47,7 @@ import { V2ProjectCommentDialog, type V2ProjectCommentData } from './v2-project-
 export class V2ProjectCardActions {
   private readonly dialogs = inject(V2DialogService);
   private readonly projects = inject(V2ProjectsService);
+  private readonly clients = inject(V2ClientsService);
   private readonly i18n = inject(I18nService);
 
   private project: () => V2Project | null = () => null;
@@ -58,6 +64,9 @@ export class V2ProjectCardActions {
     this.apply = apply;
   }
 
+  /** Edit client info: loading the client before its popup opens, and a failed load. */
+  readonly clientLoading = signal(false);
+  readonly clientError = signal('');
   readonly restoring = signal(false);
   readonly restoreError = signal('');
   /** A failed file download or delete, shown in the contract block it came from. */
@@ -116,6 +125,32 @@ export class V2ProjectCardActions {
       project,
       payment,
     }));
+  }
+
+  /**
+   * Edit client info: the project's client is the same record as its lead's, so this opens the
+   * client page's Edit client popup. Resolves `true` when something was saved.
+   */
+  async editClient(): Promise<boolean> {
+    const clientId = this.project()?.clientId;
+    if (!clientId || this.clientLoading()) return false;
+    this.clientLoading.set(true);
+    this.clientError.set('');
+    let client;
+    try {
+      client = await this.clients.get(clientId);
+    } catch (error) {
+      this.clientError.set(this.errorText(error));
+      return false;
+    } finally {
+      this.clientLoading.set(false);
+    }
+    if (!client.canEdit) {
+      this.clientError.set(this.i18n.t('v2.projectCard.clientReadOnly'));
+      return false;
+    }
+    const ref = this.dialogs.open<boolean, V2ClientEditData>(V2ClientEditDialog, { client });
+    return (await firstValueFrom(ref.closed)) === true;
   }
 
   cancelProject(): Promise<void> {
