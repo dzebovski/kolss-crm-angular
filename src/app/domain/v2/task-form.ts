@@ -21,7 +21,10 @@ export const V2_NEW_TASK_LINK_KINDS: readonly V2NewTaskLinkKind[] = [
   'list',
 ];
 
-/** The API refuses client and project links until those features can validate them (T1). */
+/**
+ * Choices of the "Linked to" picker. Project links exist since API 2.44.0 (P12) but the picker
+ * has no project search yet: a project task is created from the project card, which fixes the link.
+ */
 export function v2TaskLinkKindAvailable(kind: V2NewTaskLinkKind): boolean {
   return kind !== 'client' && kind !== 'project';
 }
@@ -90,7 +93,10 @@ export function v2CreateTaskRequest(
     dueTime: hasDate && draft.time ? draft.time : null,
     note: note || null,
     listId: draft.linkKind === 'list' ? draft.linkId : null,
-    link: draft.linkKind === 'lead' ? { type: 'lead', id: draft.linkId } : null,
+    link:
+      draft.linkKind === 'lead' || draft.linkKind === 'project'
+        ? { type: draft.linkKind, id: draft.linkId }
+        : null,
   };
 }
 

@@ -14,8 +14,17 @@ import type {
   UpdateLeadInfoRequest,
   UpdateProjectDetailsRequest,
   UpdateProjectEstimateRequest,
+  UpdateAppointmentRequest,
   UpdateProjectPaymentRequest,
 } from '@core/api/generated/kolss-api.types';
+import {
+  toV2ProjectActivities,
+  toV2ProjectMeeting,
+  v2MeetingStartsAtLocal,
+  type V2MeetingDraft,
+  type V2ProjectActivities,
+  type V2ProjectMeeting,
+} from '@domain/v2/project-meetings';
 import {
   toV2Project,
   toV2ProjectBoard,
@@ -175,6 +184,41 @@ export class V2ProjectsService {
   /** The uploader, the project manager and admins. */
   async deleteDocument(id: string, fileId: string): Promise<V2Project> {
     return toV2Project(await this.api.deleteProjectDocument(id, fileId));
+  }
+
+  /** Tasks and meetings of the Statuses & tasks tab (P12). */
+  async activities(id: string): Promise<V2ProjectActivities> {
+    return toV2ProjectActivities(await this.api.projectActivities(id));
+  }
+
+  /** Books a project meeting; it never changes the lead's statuses (API 2.44.0). */
+  async createMeeting(
+    projectId: string,
+    draft: V2MeetingDraft,
+    idempotencyKey: string,
+  ): Promise<V2ProjectMeeting> {
+    const comment = draft.comment.trim();
+    const response = await this.api.createAppointment(
+      {
+        projectId,
+        kind: draft.kind,
+        startsAtLocal: v2MeetingStartsAtLocal(draft),
+        durationMinutes: draft.duration,
+        responsibleManagerId: draft.managerId,
+        ...(comment && { comment }),
+      },
+      idempotencyKey,
+    );
+    return toV2ProjectMeeting(response.appointment);
+  }
+
+  /** Reschedule (date, time, duration, manager, comment) or record the outcome. */
+  async updateMeeting(
+    meeting: V2ProjectMeeting,
+    body: UpdateAppointmentRequest,
+  ): Promise<V2ProjectMeeting> {
+    const response = await this.api.updateAppointment(meeting.id, meeting.version, body);
+    return toV2ProjectMeeting(response.appointment);
   }
 
   /** Opens a document / receipt through its signed download URL. */

@@ -188,6 +188,7 @@ describe('AppointmentDrawer', () => {
       ],
       appointment: {
         id: 'appointment-visited',
+        projectId: null,
         lead: {
           id: 'lead-1',
           referenceId: 'k0001',
@@ -281,6 +282,7 @@ describe('AppointmentDrawer', () => {
       ],
       appointment: {
         id: 'appointment-canceled',
+        projectId: null,
         lead: {
           id: 'lead-1',
           referenceId: 'k0001',
@@ -850,6 +852,7 @@ describe('AppointmentDrawer', () => {
       managers: [],
       appointment: {
         id: 'office-work-canceled',
+        projectId: null,
         lead: {
           id: 'lead-1',
           referenceId: 'k0001',

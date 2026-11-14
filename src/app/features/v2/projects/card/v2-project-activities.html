@@ -1,0 +1,115 @@
+@if (error(); as message) {
+  <p class="v2-activities__error" role="alert">{{ message }}</p>
+}
+
+<div class="v2-activities__head">
+  <h3 class="v2-activities__title">{{ 'v2.projectMeetings.tasks' | translate }}</h3>
+  <button type="button" appV2Button size="sm" [disabled]="!canPlan()" (click)="addTask.emit()">
+    {{ 'v2.projectMeetings.addTask' | translate }}
+  </button>
+</div>
+
+@if (loading()) {
+  <p class="v2-activities__empty" role="status">{{ 'common.loading' | translate }}</p>
+} @else if (loadError()) {
+  <p class="v2-activities__empty" role="alert">
+    {{ 'v2.projectMeetings.loadError' | translate }}
+    <button type="button" class="v2-activities__link" (click)="retry.emit()">
+      {{ 'v2.leads.retry' | translate }}
+    </button>
+  </p>
+} @else {
+  @for (row of taskRows(); track row.task.id) {
+    <div class="v2-activities__row" [class.v2-activities__row--done]="row.done">
+      <input
+        type="checkbox"
+        class="v2-activities__check"
+        [checked]="row.done"
+        [disabled]="!row.task.canManage || busyId() === row.task.id"
+        [attr.aria-label]="
+          (row.done ? 'v2.projectMeetings.reopenTask' : 'v2.tasks.markDone') | translate
+        "
+        (change)="toggleTask.emit(row.task)"
+      />
+      <span class="v2-activities__text">
+        <span class="v2-activities__name">{{ row.task.title }}</span>
+        <span class="v2-activities__meta" [class.v2-activities__meta--late]="row.overdue">{{
+          row.meta
+        }}</span>
+      </span>
+    </div>
+  } @empty {
+    <p class="v2-activities__empty">{{ 'v2.projectMeetings.noTasks' | translate }}</p>
+  }
+}
+
+<div class="v2-activities__head">
+  <h3 class="v2-activities__title">{{ 'v2.projectMeetings.meetings' | translate }}</h3>
+  <button type="button" appV2Button size="sm" [disabled]="!canPlan()" (click)="addMeeting.emit()">
+    {{ 'v2.projectMeetings.add' | translate }}
+  </button>
+</div>
+
+@if (!loading() && !loadError()) {
+  @for (row of meetingRows(); track row.meeting.id) {
+    <div class="v2-activities__row v2-activities__row--meeting">
+      <span class="v2-activities__text">
+        <span class="v2-activities__name">
+          {{ row.kindKey | translate }}
+          <span
+            class="v2-activities__status"
+            [attr.data-status]="row.meeting.status"
+            [class.v2-activities__status--due]="row.needsOutcome"
+            >{{ row.statusKey | translate }}</span
+          >
+        </span>
+        <span class="v2-activities__meta">{{ row.when }} · {{ row.manager }}</span>
+        @if (row.meeting.comment) {
+          <span class="v2-activities__comment">{{ row.meeting.comment }}</span>
+        }
+      </span>
+      @if (row.canChange) {
+        <span class="v2-activities__actions" [attr.aria-busy]="busyId() === row.meeting.id || null">
+          <button
+            type="button"
+            appV2Button
+            size="sm"
+            [disabled]="busyId() === row.meeting.id"
+            (click)="outcome.emit({ meeting: row.meeting, status: 'visited' })"
+          >
+            {{ 'v2.projectMeetings.held' | translate }}
+          </button>
+          <button
+            type="button"
+            appV2Button
+            size="sm"
+            [disabled]="busyId() === row.meeting.id"
+            (click)="outcome.emit({ meeting: row.meeting, status: 'no_show' })"
+          >
+            {{ 'v2.projectMeetings.noShow' | translate }}
+          </button>
+          <button
+            type="button"
+            appV2Button
+            size="sm"
+            [disabled]="busyId() === row.meeting.id"
+            (click)="reschedule.emit(row.meeting)"
+          >
+            {{ 'v2.projectMeetings.reschedule' | translate }}
+          </button>
+          <button
+            type="button"
+            appV2Button
+            size="sm"
+            [disabled]="busyId() === row.meeting.id"
+            (click)="outcome.emit({ meeting: row.meeting, status: 'canceled' })"
+          >
+            {{ 'v2.projectMeetings.cancel' | translate }}
+          </button>
+        </span>
+      }
+    </div>
+  } @empty {
+    <p class="v2-activities__empty">{{ 'v2.projectMeetings.noMeetings' | translate }}</p>
+  }
+}

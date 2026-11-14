@@ -131,4 +131,36 @@ describe('v2ProjectTimeline', () => {
     expect(item.actorName).toBeNull();
     expect(item.rows).toEqual([]);
   });
+
+  it('maps project meetings with their outcome and tasks with their title', () => {
+    const items = v2ProjectTimeline(
+      [
+        entry({
+          id: 'a',
+          type: 'meeting_status_changed',
+          newValue: { kind: 'measurement', status: 'no_show', startsAt: '2026-11-20T09:00:00Z' },
+        }),
+        entry({
+          id: 'b',
+          type: 'meeting_scheduled',
+          newValue: { kind: 'showroom', status: 'scheduled' },
+        }),
+        entry({ id: 'c', type: 'task_added', newValue: { title: ' Order the worktop ' } }),
+      ],
+      'W0218',
+    );
+    expect(items[0]).toMatchObject({
+      titleKey: 'v2.projectCard.event.meetingNoShow',
+      rows: [
+        {
+          labelKey: 'v2.projectMeetings.kind.measurement',
+          value: { kind: 'dateTime', at: '2026-11-20T09:00:00Z' },
+        },
+      ],
+    });
+    expect(items[1]).toMatchObject({ titleKey: 'v2.projectCard.event.meetingScheduled', rows: [] });
+    expect(items[2].rows).toEqual([
+      { labelKey: 'v2.projectMeetings.task', value: { kind: 'text', text: 'Order the worktop' } },
+    ]);
+  });
 });

@@ -45,6 +45,7 @@ const manager = {
 
 const appointment: Appointment = {
   id: 'appointment-1',
+  projectId: null,
   lead: {
     id: 'lead-1',
     referenceId: 'k0001',

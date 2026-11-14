@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.43.0' as const;
+export const API_CONTRACT_VERSION = '2.44.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -366,6 +366,8 @@ export interface Appointment {
     readonly name: string;
     readonly phone: string;
   };
+  /** Set for a project meeting (2.44.0); it never changes the lead's statuses. */
+  readonly projectId: string | null;
   readonly office: {
     readonly id: string;
     readonly code: string;
@@ -403,8 +405,10 @@ export interface AppointmentMutationResponse {
   readonly warnings: readonly AppointmentWarning[];
 }
 
+/** Exactly one of `leadId` and `projectId` (a project meeting, 2.44.0). */
 export interface CreateAppointmentRequest {
-  readonly leadId: string;
+  readonly leadId?: string;
+  readonly projectId?: string;
   readonly kind?: AppointmentKind;
   readonly startsAtLocal: string;
   readonly durationMinutes: number;
@@ -474,7 +478,7 @@ export interface CreateManagerTaskRequest {
   readonly note?: string | null;
   /** Puts the task on a task list; exclusive with `link` (2.33.0). */
   readonly listId?: string | null;
-  /** Only `lead` is accepted for now; `project` and `client` are reserved (2.33.0). */
+  /** `lead` and (2.44.0) `project`; `client` is reserved (2.33.0). */
   readonly link?: TaskLinkRequest | null;
 }
 
@@ -870,7 +874,19 @@ export type ProjectEventType =
   | 'details_updated'
   | 'lead_info_updated'
   | 'comment'
-  | 'measurement_visit';
+  | 'measurement_visit'
+  /** 2.44.0: project meetings and tasks. */
+  | 'meeting_scheduled'
+  | 'meeting_rescheduled'
+  | 'meeting_updated'
+  | 'meeting_status_changed'
+  | 'task_added';
+
+/** `GET /v1/projects/{id}/activities` (2.44.0). */
+export interface ProjectActivities {
+  readonly tasks: readonly TaskFeedItem[];
+  readonly meetings: readonly Appointment[];
+}
 
 export interface ProjectEvent {
   readonly id: string;

@@ -36,6 +36,8 @@ export interface V2NewTaskData {
   readonly lists: readonly V2TaskList[];
   /** "Add task to this list": the popup opens linked to it. */
   readonly listId: string | null;
+  /** "Add task" on a project card (P12): the link is fixed to this project and its office. */
+  readonly project?: { readonly id: string; readonly officeId: string; readonly label: string };
 }
 
 const ERROR_KEY = {
@@ -67,8 +69,8 @@ export class V2NewTaskDialog {
   private readonly me = this.auth.sessionContext()?.user.id ?? '';
   private readonly initial: V2NewTaskDraft = {
     title: '',
-    linkKind: this.data.listId ? 'list' : 'none',
-    linkId: this.data.listId ?? '',
+    linkKind: this.data.project ? 'project' : this.data.listId ? 'list' : 'none',
+    linkId: this.data.project?.id ?? this.data.listId ?? '',
     assigneeId: '',
     date: v2TaskIsoDate(this.liveNow()),
     time: '',
@@ -81,6 +83,8 @@ export class V2NewTaskDialog {
     maxLength(path.note, 5000);
   });
   protected readonly lists = this.data.lists;
+  /** The fixed project link, shown instead of the "Linked to" picker. */
+  protected readonly project = this.data.project ?? null;
   protected readonly linkKinds = V2_NEW_TASK_LINK_KINDS;
   protected readonly linkLabel = V2_TASK_LINK_LABEL;
 
@@ -159,6 +163,7 @@ export class V2NewTaskDialog {
   }
 
   private leadOfficeId(): string | null {
+    if (this.data.project) return this.data.project.officeId;
     const code = this.pickedLead()?.officeId;
     if (!code) return null;
     return (

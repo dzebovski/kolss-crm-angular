@@ -73,6 +73,10 @@ describe('v2CreateTaskRequest', () => {
       listId: null,
       link: { type: 'lead', id: 'X' },
     });
+    expect(v2CreateTaskRequest(draft({ linkKind: 'project', linkId: 'P' }), 'o1').link).toEqual({
+      type: 'project',
+      id: 'P',
+    });
   });
 });
 

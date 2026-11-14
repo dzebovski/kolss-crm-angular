@@ -6,6 +6,10 @@ import { I18nService } from '@core/i18n/i18n.service';
 import { formatV2Money } from '@domain/v2/project-money';
 import { v2ProjectActions } from '@domain/v2/project-status';
 import { v2ProjectFileError } from '@domain/v2/project-files';
+import type { V2ProjectMeeting } from '@domain/v2/project-meetings';
+import type { V2Task } from '@domain/v2/task.types';
+import type { CrmEmployee } from '@services/users.service';
+import { V2TasksService } from '@services/v2/v2-tasks.service';
 import type { V2Project, V2ProjectDocument, V2ProjectPayment } from '@domain/v2/project.types';
 import { V2ClientsService } from '@services/v2/v2-clients.service';
 import { V2ProjectsService } from '@services/v2/v2-projects.service';
@@ -13,6 +17,7 @@ import {
   V2ClientEditDialog,
   type V2ClientEditData,
 } from '../../clients/card/v2-client-edit-dialog';
+import { V2NewTaskDialog, type V2NewTaskData } from '../../tasks/v2-new-task-dialog';
 import { V2DialogService } from '../../ui/dialog/v2-dialog.service';
 import {
   V2ProjectCancelDialog,
@@ -26,6 +31,10 @@ import {
   V2ProjectEstimateDialog,
   type V2ProjectEstimateData,
 } from '../dialogs/v2-project-estimate-dialog';
+import {
+  V2ProjectMeetingDialog,
+  type V2ProjectMeetingData,
+} from '../dialogs/v2-project-meeting-dialog';
 import {
   V2ProjectPaymentDialog,
   type V2ProjectPaymentData,
@@ -46,6 +55,7 @@ export class V2ProjectCardActions {
   private readonly dialogs = inject(V2DialogService);
   private readonly projects = inject(V2ProjectsService);
   private readonly clients = inject(V2ClientsService);
+  private readonly tasks = inject(V2TasksService);
   private readonly i18n = inject(I18nService);
 
   private project: () => V2Project | null = () => null;
@@ -55,6 +65,23 @@ export class V2ProjectCardActions {
     const project = this.project();
     return project ? v2ProjectActions(project) : null;
   }
+
+  private employees: () => readonly CrmEmployee[] = () => [];
+  private activitiesChanged: () => void = () => undefined;
+
+  /**
+   * Statuses & tasks tab (P12): the people a task or meeting can go to, and what to reload after
+   * a task or meeting changed (its list, and the project for the timeline).
+   */
+  connectActivities(employees: () => readonly CrmEmployee[], changed: () => void): void {
+    this.employees = employees;
+    this.activitiesChanged = changed;
+  }
+
+  /** The task or meeting being changed now. */
+  readonly activityBusy = signal<string | null>(null);
+  /** A failed task or meeting change. */
+  readonly activityError = signal('');
 
   /** The page passes its project signal and how to store an updated project. */
   connect(project: () => V2Project | null, apply: (project: V2Project) => void): void {
@@ -244,6 +271,80 @@ export class V2ProjectCardActions {
       await this.projects.openFile(fileId);
     } catch (error) {
       this.fileError.set(this.errorText(error));
+    }
+  }
+
+  /** New task linked to the project (the Tasks page popup with the link fixed). */
+  async addTask(): Promise<void> {
+    const project = this.project();
+    if (!project || !this.actions()?.canComment) return;
+    const ref = this.dialogs.open<string, V2NewTaskData>(V2NewTaskDialog, {
+      employees: this.employees(),
+      lists: [],
+      listId: null,
+      project: {
+        id: project.id,
+        officeId: project.officeId,
+        label: `${project.code} · ${project.clientName}`,
+      },
+    });
+    if (await firstValueFrom(ref.closed)) this.activitiesChanged();
+  }
+
+  /** Done ⇄ to do of a manual task the user may manage. */
+  async toggleTask(task: V2Task): Promise<void> {
+    if (!task.canManage || this.activityBusy()) return;
+    await this.runActivity(task.id, () =>
+      this.tasks.setStatus(task, task.status === 'done' ? 'todo' : 'done'),
+    );
+  }
+
+  async addMeeting(): Promise<void> {
+    await this.openMeetingDialog();
+  }
+
+  async rescheduleMeeting(meeting: V2ProjectMeeting): Promise<void> {
+    await this.openMeetingDialog(meeting);
+  }
+
+  /** Held / No-show right away; Cancel after a confirm popup. */
+  async meetingOutcome(
+    meeting: V2ProjectMeeting,
+    status: 'visited' | 'no_show' | 'canceled',
+  ): Promise<void> {
+    if (this.activityBusy()) return;
+    if (status === 'canceled') {
+      const confirmed = await this.confirm({
+        title: this.i18n.t('v2.projectMeetings.cancelTitle'),
+        text: this.i18n.t('v2.projectMeetings.cancelText'),
+        confirmLabel: this.i18n.t('v2.projectMeetings.cancel'),
+      });
+      if (!confirmed) return;
+    }
+    await this.runActivity(meeting.id, () => this.projects.updateMeeting(meeting, { status }));
+  }
+
+  private async openMeetingDialog(meeting?: V2ProjectMeeting): Promise<void> {
+    const project = this.project();
+    if (!project || !this.actions()?.canComment) return;
+    const ref = this.dialogs.open<boolean, V2ProjectMeetingData>(V2ProjectMeetingDialog, {
+      project,
+      employees: this.employees(),
+      meeting,
+    });
+    if ((await firstValueFrom(ref.closed)) === true) this.activitiesChanged();
+  }
+
+  private async runActivity(id: string, run: () => Promise<unknown>): Promise<void> {
+    this.activityBusy.set(id);
+    this.activityError.set('');
+    try {
+      await run();
+      this.activitiesChanged();
+    } catch (error) {
+      this.activityError.set(this.errorText(error));
+    } finally {
+      this.activityBusy.set(null);
     }
   }
 

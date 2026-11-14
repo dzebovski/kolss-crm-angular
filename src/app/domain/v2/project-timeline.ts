@@ -77,6 +77,18 @@ const TITLE_KEY: Record<V2ProjectEventType, MessageKey> = {
   lead_info_updated: 'v2.projectCard.event.leadInfoUpdated',
   comment: 'v2.projectCard.event.comment',
   measurement_visit: 'v2.projectCard.event.measurementVisit',
+  meeting_scheduled: 'v2.projectCard.event.meetingScheduled',
+  meeting_rescheduled: 'v2.projectCard.event.meetingRescheduled',
+  meeting_updated: 'v2.projectCard.event.meetingUpdated',
+  meeting_status_changed: 'v2.projectCard.event.meetingUpdated',
+  task_added: 'v2.projectCard.event.taskAdded',
+};
+
+/** Title of a meeting outcome (`meeting_status_changed`), by the new status. */
+const MEETING_OUTCOME_KEY: Readonly<Record<string, MessageKey>> = {
+  visited: 'v2.projectCard.event.meetingHeld',
+  no_show: 'v2.projectCard.event.meetingNoShow',
+  canceled: 'v2.projectCard.event.meetingCanceled',
 };
 
 const CURRENCIES: readonly V2ProjectCurrency[] = ['PLN', 'UAH', 'EUR', 'USD'];
@@ -253,6 +265,43 @@ function toItem(entry: V2ProjectTimelineEntry, projectCode: string): V2ProjectTi
       return { ...base, tone: 'faint', change: null, rows: [] };
     case 'comment':
       return { ...base, tone: 'ink', change: null, rows: [] };
+    case 'meeting_scheduled':
+    case 'meeting_rescheduled':
+    case 'meeting_updated':
+    case 'meeting_status_changed': {
+      const startsAt = text(entry.newValue?.['startsAt']);
+      const outcome = text(entry.newValue?.['status']);
+      const kind = entry.newValue?.['kind'] === 'measurement' ? 'measurement' : 'showroom';
+      return {
+        ...base,
+        titleKey:
+          entry.type === 'meeting_status_changed' && outcome && MEETING_OUTCOME_KEY[outcome]
+            ? MEETING_OUTCOME_KEY[outcome]
+            : base.titleKey,
+        tone: 'faint',
+        change: null,
+        rows: compact([
+          startsAt && {
+            labelKey:
+              kind === 'measurement'
+                ? 'v2.projectMeetings.kind.measurement'
+                : 'v2.projectMeetings.kind.showroom',
+            value: { kind: 'dateTime', at: startsAt },
+          },
+        ]),
+      };
+    }
+    case 'task_added': {
+      const title = text(entry.newValue?.['title']);
+      return {
+        ...base,
+        tone: 'faint',
+        change: null,
+        rows: compact([
+          title && { labelKey: 'v2.projectMeetings.task', value: { kind: 'text', text: title } },
+        ]),
+      };
+    }
     case 'measurement_visit': {
       const startsAt = text(entry.newValue?.['startsAt']);
       return {

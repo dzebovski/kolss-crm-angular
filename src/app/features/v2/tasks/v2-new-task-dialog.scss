@@ -75,3 +75,9 @@
   grid-template-columns: minmax(0, 1fr) 112px;
   gap: var(--v2-space-2);
 }
+
+.v2-new-task__fixed-link {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}

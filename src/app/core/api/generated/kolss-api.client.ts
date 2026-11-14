@@ -34,6 +34,7 @@ import type {
   Project,
   ProjectBoard,
   ProjectBoardQuery,
+  ProjectActivities,
   ProjectEvent,
   ProjectFacetsResponse,
   ProjectFileUpload,
@@ -301,8 +302,11 @@ export class KolssApiClient {
     return this.get('/v1/appointments', query);
   }
 
-  createAppointment(body: CreateAppointmentRequest): Promise<AppointmentMutationResponse> {
-    return this.post('/v1/appointments', body);
+  createAppointment(
+    body: CreateAppointmentRequest,
+    idempotencyKey?: string,
+  ): Promise<AppointmentMutationResponse> {
+    return this.post('/v1/appointments', body, idempotencyKey);
   }
 
   updateAppointment(
@@ -510,6 +514,11 @@ export class KolssApiClient {
     limit?: number,
   ): Promise<{ readonly items: readonly ProjectEvent[] }> {
     return this.get(`/v1/projects/${encodeURIComponent(id)}/timeline`, { limit });
+  }
+
+  /** Tasks and meetings of a project (2.44.0). */
+  projectActivities(id: string): Promise<ProjectActivities> {
+    return this.get(`/v1/projects/${encodeURIComponent(id)}/activities`);
   }
 
   /** Changes the status, or updates the details of the current one (2.32.0). */

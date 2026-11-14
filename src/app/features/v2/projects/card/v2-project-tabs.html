@@ -16,8 +16,8 @@
       @if (item.id === 'documents' && documents().length) {
         <span class="v2-tabs__count">{{ documents().length }}</span>
       }
-      @if (item.id === 'statuses' && comments().length) {
-        <span class="v2-tabs__count">{{ comments().length }}</span>
+      @if (item.id === 'statuses' && planned()) {
+        <span class="v2-tabs__count">{{ planned() }}</span>
       }
     </button>
   }
@@ -144,10 +144,21 @@
       }
     }
 
-    <div class="v2-tabs__section-head">
-      <h3 class="v2-tabs__section-title">{{ 'v2.projectCard.tasksMeetings' | translate }}</h3>
-    </div>
-    <!-- TODO(v2) P12: tasks and meetings of the project. -->
-    <p class="v2-tabs__empty">{{ 'v2.projectCard.tasksMeetings.soon' | translate }}</p>
+    <app-v2-project-activities
+      [tasks]="tasks()"
+      [meetings]="meetings()"
+      [loading]="activitiesLoading()"
+      [loadError]="activitiesFailed()"
+      [canPlan]="canPlan()"
+      [busyId]="activityBusy()"
+      [error]="activityError()"
+      [now]="now()"
+      (retry)="retryActivities.emit()"
+      (addTask)="addTask.emit()"
+      (toggleTask)="toggleTask.emit($event)"
+      (addMeeting)="addMeeting.emit()"
+      (reschedule)="reschedule.emit($event)"
+      (outcome)="meetingOutcome.emit($event)"
+    />
   </div>
 }

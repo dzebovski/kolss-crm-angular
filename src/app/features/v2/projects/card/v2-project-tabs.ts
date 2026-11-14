@@ -6,8 +6,11 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { formatV2CardDate, formatV2Time } from '@domain/v2/date-format';
 import { v2FormatFileSize } from '@domain/v2/lead-documents';
 import type { V2ProjectTimelineItem } from '@domain/v2/project-timeline';
+import type { V2ProjectMeeting } from '@domain/v2/project-meetings';
 import type { V2ProjectDocument } from '@domain/v2/project.types';
+import type { V2Task } from '@domain/v2/task.types';
 import { V2Button } from '../../ui/v2-button';
+import { V2ProjectActivities, type V2MeetingOutcome } from './v2-project-activities';
 
 type V2ProjectTab = 'documents' | 'statuses';
 
@@ -19,11 +22,11 @@ const GENERATED = [
 ] as const satisfies readonly MessageKey[];
 
 // Tabs of Project card v4 (owner decisions 2026-11-14): Documents (upload several files, list,
-// download, delete — P11; generation comes with P14) and Statuses & tasks (comments; tasks and meetings
-// come with P12). Comments are read here, the timeline only notes them.
+// download, delete — P11; generation comes with P14) and Statuses & tasks (comments, the project's
+// tasks and meetings — P12). Comments are read here, the timeline only notes them.
 @Component({
   selector: 'app-v2-project-tabs',
-  imports: [TranslatePipe, V2Button],
+  imports: [TranslatePipe, V2Button, V2ProjectActivities],
   templateUrl: './v2-project-tabs.html',
   styleUrl: './v2-project-tabs.scss',
 })
@@ -43,6 +46,25 @@ export class V2ProjectTabs {
   readonly uploading = input<{ readonly name: string; readonly percent: number } | null>(null);
   /** A failed upload, delete or download. */
   readonly error = input('');
+  readonly tasks = input<readonly V2Task[]>([]);
+  readonly meetings = input<readonly V2ProjectMeeting[]>([]);
+  readonly activitiesLoading = input(false);
+  readonly activitiesFailed = input(false);
+  readonly canPlan = input(false);
+  readonly activityBusy = input<string | null>(null);
+  readonly activityError = input('');
+  readonly retryActivities = output<void>();
+  readonly addTask = output<void>();
+  readonly toggleTask = output<V2Task>();
+  readonly addMeeting = output<void>();
+  readonly reschedule = output<V2ProjectMeeting>();
+  readonly meetingOutcome = output<V2MeetingOutcome>();
+  /** Open tasks and scheduled meetings: the count on the Statuses & tasks tab. */
+  protected readonly planned = computed(
+    () =>
+      this.tasks().filter((task) => task.status !== 'done').length +
+      this.meetings().filter((meeting) => meeting.status === 'scheduled').length,
+  );
   readonly openDocument = output<string>();
   readonly upload = output<readonly File[]>();
   readonly deleteDocument = output<V2ProjectDocument>();

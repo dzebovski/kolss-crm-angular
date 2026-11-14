@@ -109,6 +109,25 @@ export class V2ProjectCardPage {
     () => this.timelineResource.isLoading() && !this.timelineResource.hasValue(),
   );
   protected readonly timelineFailed = computed(() => this.timelineResource.status() === 'error');
+  // Tasks and meetings of the Statuses & tasks tab (P12).
+  private readonly activitiesResource = resource({
+    params: () => this.project()?.id,
+    loader: ({ params }) => this.projects.activities(params),
+  });
+  protected readonly activities = computed(() =>
+    this.activitiesResource.hasValue() ? this.activitiesResource.value() : null,
+  );
+  protected readonly activitiesLoading = computed(
+    () => this.activitiesResource.isLoading() && !this.activitiesResource.hasValue(),
+  );
+  protected readonly activitiesFailed = computed(
+    () => this.activitiesResource.status() === 'error',
+  );
+
+  protected reloadActivities(): void {
+    this.activitiesResource.reload();
+  }
+
   /** Comments are read in the Statuses & tasks tab (newest first, as the timeline). */
   protected readonly comments = computed(() =>
     this.timeline().filter((item) => item.type === 'comment'),
@@ -190,5 +209,13 @@ export class V2ProjectCardPage {
   constructor() {
     // Every mutation answers with the whole project; the timeline follows `lastActivityAt`.
     this.act.connect(this.project, (project) => this.projectResource.set(project));
+    // A task or meeting change: its list, and the project (last activity → the timeline).
+    this.act.connectActivities(
+      () => (this.employeesResource.hasValue() ? this.employeesResource.value() : []),
+      () => {
+        this.activitiesResource.reload();
+        this.projectResource.reload();
+      },
+    );
   }
 }
