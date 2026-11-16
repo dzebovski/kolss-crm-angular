@@ -823,6 +823,7 @@ export const messagesPl: Record<MessageKey, string> = {
   'event.showroom_visit_scheduled': 'Wizyta zaplanowana',
   'event.visit_scheduled': 'Wizyta zaplanowana',
   'event.appointment_scheduled': 'Utworzono wizytę w salonie',
+  'event.measurement_scheduled': 'Zaplanowano pomiar',
   'event.visit_rescheduled': 'Wizyta przełożona',
   'event.appointment_rescheduled': 'Przełożono wizytę w salonie',
   'event.appointment_updated': 'Zaktualizowano wizytę w salonie',

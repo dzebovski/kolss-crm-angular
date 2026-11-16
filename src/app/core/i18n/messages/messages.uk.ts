@@ -821,6 +821,7 @@ export const messagesUk = {
   'event.showroom_visit_scheduled': 'Візит заплановано',
   'event.visit_scheduled': 'Візит заплановано',
   'event.appointment_scheduled': 'Запис у салон створено',
+  'event.measurement_scheduled': 'Замір заплановано',
   'event.visit_rescheduled': 'Візит перенесено',
   'event.appointment_rescheduled': 'Запис у салон перенесено',
   'event.appointment_updated': 'Запис у салон оновлено',

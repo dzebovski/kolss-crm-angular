@@ -822,6 +822,7 @@ export const messagesEn: Record<MessageKey, string> = {
   'event.showroom_visit_scheduled': 'Visit scheduled',
   'event.visit_scheduled': 'Visit scheduled',
   'event.appointment_scheduled': 'Showroom appointment created',
+  'event.measurement_scheduled': 'Measurement scheduled',
   'event.visit_rescheduled': 'Visit rescheduled',
   'event.appointment_rescheduled': 'Showroom appointment rescheduled',
   'event.appointment_updated': 'Showroom appointment updated',

@@ -5,12 +5,33 @@ import {
   isUserCommentEventType,
   presentEventBody,
   presentEventTitle,
+  presentEventTitleFromLeadEvent,
 } from './event-presenter';
 import { messagesEn } from './messages/messages.en';
 import { messagesPl } from './messages/messages.pl';
 import { messagesUk } from './messages/messages.uk';
+import type { LeadEvent } from '@domain/lead.types';
 
 describe('event-presenter', () => {
+  it('titles a measurement booking as a measurement, not a showroom appointment', () => {
+    const base = {
+      id: 'e1',
+      type: 'visit_scheduled',
+      rawType: 'appointment_scheduled',
+      comment: null,
+      actorId: 'u1',
+      occurredAt: '2026-11-16T12:43:00Z',
+    } as const;
+    const measurement: LeadEvent = { ...base, newValue: { kind: 'measurement' } };
+    const showroom: LeadEvent = { ...base, newValue: { kind: 'showroom' } };
+    const legacy: LeadEvent = { ...base, newValue: null, statusCode: 'measurement_scheduled' };
+    expect(presentEventTitleFromLeadEvent(measurement, messagesUk)).toBe('Замір заплановано');
+    expect(presentEventTitleFromLeadEvent(measurement, messagesEn)).toBe('Measurement scheduled');
+    expect(presentEventTitleFromLeadEvent(legacy, messagesPl)).toBe('Zaplanowano pomiar');
+    expect(presentEventTitleFromLeadEvent(showroom, messagesEn)).toBe(
+      'Showroom appointment created',
+    );
+  });
   it('renders manager comment as-is for user events', () => {
     const body = presentEventBody(
       {

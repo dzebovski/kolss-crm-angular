@@ -236,7 +236,18 @@ export function presentEventTitleFromLeadEvent(
   event: LeadEvent,
   bundle: MessageBundle | null,
 ): string {
+  if (event.rawType === 'appointment_scheduled' && isMeasurementAppointment(event)) {
+    return presentEventTitle('measurement_scheduled', bundle);
+  }
   return presentEventTitle(event.rawType, bundle);
+}
+
+/** Measurement bookings share the `appointment_scheduled` event; the kind lives in new_value. */
+function isMeasurementAppointment(event: LeadEvent): boolean {
+  if (isRecord(event.newValue) && typeof event.newValue['kind'] === 'string') {
+    return event.newValue['kind'] === 'measurement';
+  }
+  return event.statusCode === 'measurement_scheduled';
 }
 
 export function presentEventBodyFromLeadEvent(
