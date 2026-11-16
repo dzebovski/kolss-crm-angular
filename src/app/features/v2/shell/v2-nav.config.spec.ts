@@ -1,4 +1,4 @@
-import { buildV2Nav } from './v2-nav.config';
+import { buildV2Nav, HR_NAV_ITEMS } from './v2-nav.config';
 
 const ids = (superAdmin: boolean, isImpersonating = false) =>
   buildV2Nav({ canManageUsers: superAdmin, canImpersonate: superAdmin, isImpersonating }).map(
@@ -29,6 +29,18 @@ describe('buildV2Nav', () => {
       { section: 'reports', items: ['lead-reports', 'financial-funnel-reports'] },
       { section: 'settings', items: ['language'] },
       { section: null, items: ['logout'] },
+    ]);
+  });
+
+  it('shows only shared settings and logout in HR', () => {
+    const groups = buildV2Nav(
+      { canManageUsers: true, canImpersonate: true, isImpersonating: false },
+      HR_NAV_ITEMS,
+    );
+
+    expect(groups.map((group) => group.items.map((item) => item.id))).toEqual([
+      ['accounts', 'platform-settings', 'language', 'impersonate'],
+      ['logout'],
     ]);
   });
 

@@ -36,6 +36,14 @@ export const routes: Routes = [
     children: [],
   },
   {
+    path: 'hr',
+    pathMatch: 'full',
+    title: 'HR | KOLSS',
+    data: { workspace: 'HR' },
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/v2/shell/v2-shell').then((page) => page.V2Shell),
+  },
+  {
     path: 'v2',
     canActivate: [authGuard],
     loadChildren: () => import('./features/v2/v2.routes'),

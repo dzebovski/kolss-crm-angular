@@ -17,7 +17,13 @@ import { isSuperAdminRole } from '@core/roles/roles';
 import { SessionService } from '@core/session/session.service';
 import type { LocaleCode } from '@domain/i18n.types';
 import { V2NavIcon } from './v2-nav-icon';
-import { buildV2Nav, V2_LANGUAGES, type V2NavAction } from './v2-nav.config';
+import {
+  buildV2Nav,
+  HR_NAV_ITEMS,
+  V2_LANGUAGES,
+  type V2NavAction,
+  type V2Workspace,
+} from './v2-nav.config';
 
 export const V2_SIDE_MENU_ID = 'v2-side-menu';
 
@@ -37,6 +43,7 @@ export class V2SideMenu {
   private readonly impersonation = inject(ImpersonationService);
   private readonly session = inject(SessionService);
 
+  readonly workspace = input<V2Workspace>('CRM');
   readonly open = input.required<boolean>();
   readonly action = output<Exclude<V2NavAction, 'language'>>();
 
@@ -52,11 +59,14 @@ export class V2SideMenu {
   // Same sources as v1: accounts from the `/v1/me` capability (as `superAdminGuard`),
   // impersonation from the role (as the v1 user menu).
   protected readonly groups = computed(() =>
-    buildV2Nav({
-      canManageUsers: this.auth.me()?.permissions.canManageUsers ?? false,
-      canImpersonate: isSuperAdminRole(this.auth.profile()?.role),
-      isImpersonating: this.impersonation.isActive(),
-    }),
+    buildV2Nav(
+      {
+        canManageUsers: this.auth.me()?.permissions.canManageUsers ?? false,
+        canImpersonate: isSuperAdminRole(this.auth.profile()?.role),
+        isImpersonating: this.impersonation.isActive(),
+      },
+      this.workspace() === 'HR' ? HR_NAV_ITEMS : undefined,
+    ),
   );
 
   protected readonly languageName = computed(

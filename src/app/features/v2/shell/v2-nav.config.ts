@@ -4,6 +4,8 @@ import type { LocaleCode } from '@domain/i18n.types';
 // v2 side menu from the "KOLSS CRM v2" canvas (Main.dc.html, SIDE MENU). The menu markup
 // (N2) renders these arrays; it never hardcodes items. Order here is the order on screen.
 
+export type V2Workspace = 'CRM' | 'HR';
+
 export type V2NavSectionId = 'sales' | 'planning' | 'reports' | 'settings';
 
 /** Icon names for the 18px stroke icons drawn next to each item in the design. */
@@ -206,6 +208,10 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     action: 'logout',
   },
 ];
+
+export const HR_NAV_ITEMS = V2_NAV_ITEMS.filter(
+  (item) => item.section === null || (item.section === 'settings' && item.id !== 'design-system'),
+);
 
 export interface V2NavGroup {
   readonly section: V2NavSection | null;

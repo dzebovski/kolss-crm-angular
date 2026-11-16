@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '@core/auth/auth.service';
 import { ImpersonationService } from '@core/auth/impersonation.service';
@@ -24,12 +24,17 @@ import { V2SideMenu } from './v2-side-menu';
       <app-v2-impersonation-banner [name]="displayName()" (stop)="stopImpersonation()" />
     }
     <app-v2-header
+      [workspace]="workspace"
       [menuOpen]="menuOpen()"
       (menuToggle)="toggleMenu()"
       (action)="runNavAction($event)"
     />
     <div class="v2-shell__body">
-      <app-v2-side-menu [open]="menuOpen()" (action)="runNavAction($event)" />
+      <app-v2-side-menu
+        [workspace]="workspace"
+        [open]="menuOpen()"
+        (action)="runNavAction($event)"
+      />
       <main class="v2-shell__main">
         <router-outlet />
       </main>
@@ -43,6 +48,9 @@ export class V2Shell {
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
   private readonly dialogs = inject(V2DialogService);
+
+  protected readonly workspace =
+    inject(ActivatedRoute).snapshot.data['workspace'] === 'HR' ? 'HR' : 'CRM';
 
   // Closed by default, as on the Main board; then the viewer's last choice.
   protected readonly menuOpen = signal(readV2MenuOpen());
