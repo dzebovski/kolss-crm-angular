@@ -1,4 +1,4 @@
-// Generated contract adapter for api/openapi.yaml v2.42.0. Keep API_CONTRACT_VERSION in sync.
+// Generated contract adapter for api/openapi.yaml v2.45.0. Keep API_CONTRACT_VERSION in sync.
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -22,6 +22,29 @@ import type {
   CreateProjectRequest,
   FinishProjectRequest,
   CreateTaskListRequest,
+  CreateHrEmployeeRequest,
+  HrAbsenceRequest,
+  HrAccount,
+  HrCalendar,
+  HrCalendarQuery,
+  HrEmployeeDetail,
+  HrEntriesQuery,
+  HrEntry,
+  HrHoliday,
+  HrHolidayRequest,
+  HrMe,
+  HrMutation,
+  HrOffice,
+  HrPattern,
+  HrPatternRequest,
+  HrReport,
+  HrReportQuery,
+  HrSettingsRequest,
+  HrShiftDay,
+  HrTeam,
+  HrTeamQuery,
+  HrWeekShifts,
+  UpdateHrEmployeeRequest,
   LeadDocument,
   LeadDocumentUpload,
   LeadEventCorrectionRequest,
@@ -83,6 +106,8 @@ export class KolssApiError extends Error {
     readonly status: number,
     readonly requestId?: string,
     options?: ErrorOptions,
+    /** Per-field codes from `ApiErrorResponse.fieldErrors` (e.g. `days.2026-11-24`). */
+    readonly fieldErrors: Readonly<Record<string, string>> = {},
   ) {
     super(message, options);
     this.name = 'KolssApiError';
@@ -624,6 +649,145 @@ export class KolssApiClient {
     return this.get(`/v1/files/${encodeURIComponent(fileId)}/download-url`);
   }
 
+  // ---- HR portal (2.45.0). Every HR mutation needs Idempotency-Key, PUT/PATCH/DELETE too. ----
+
+  hrMe(): Promise<HrMe> {
+    return this.get('/v1/hr/me');
+  }
+
+  hrCalendar(query: HrCalendarQuery): Promise<HrCalendar> {
+    return this.get('/v1/hr/calendar', { ...query });
+  }
+
+  hrEntries(query: HrEntriesQuery): Promise<{ readonly items: readonly HrEntry[] }> {
+    return this.get('/v1/hr/entries', { ...query });
+  }
+
+  createHrAbsence(body: HrAbsenceRequest): Promise<HrMutation> {
+    return this.post('/v1/hr/absences', body);
+  }
+
+  updateHrAbsence(id: string, body: HrAbsenceRequest): Promise<HrMutation> {
+    return this.hrSend('PATCH', `/v1/hr/absences/${encodeURIComponent(id)}`, body);
+  }
+
+  deleteHrAbsence(id: string): Promise<HrMutation> {
+    return this.hrSend('DELETE', `/v1/hr/absences/${encodeURIComponent(id)}`);
+  }
+
+  /** Replaces the planned shifts of the week that starts on `weekStart` (a Monday). */
+  putHrWeekShifts(
+    weekStart: string,
+    days: readonly HrShiftDay[],
+    employeeId?: string,
+  ): Promise<HrWeekShifts> {
+    const query = new HttpParams({
+      fromObject: { weekStart, ...(employeeId ? { employeeId } : {}) },
+    });
+    return this.hrSend('PUT', `/v1/hr/shifts?${query.toString()}`, { days });
+  }
+
+  /** Deletes one planned or make-up shift (a make-up entry's id is its shift id). */
+  deleteHrShift(id: string): Promise<HrMutation> {
+    return this.hrSend('DELETE', `/v1/hr/shifts/${encodeURIComponent(id)}`);
+  }
+
+  hrTeam(query: HrTeamQuery): Promise<HrTeam> {
+    return this.get('/v1/hr/employees', {
+      officeId: query.officeId,
+      month: query.month,
+      includeUntracked: query.includeUntracked ? 'true' : undefined,
+    });
+  }
+
+  hrAccounts(): Promise<{ readonly items: readonly HrAccount[] }> {
+    return this.get('/v1/hr/accounts');
+  }
+
+  createHrEmployee(body: CreateHrEmployeeRequest): Promise<HrEmployeeDetail> {
+    return this.post('/v1/hr/employees', body);
+  }
+
+  hrEmployee(id: string): Promise<HrEmployeeDetail> {
+    return this.get(`/v1/hr/employees/${encodeURIComponent(id)}`);
+  }
+
+  updateHrEmployee(id: string, body: UpdateHrEmployeeRequest): Promise<HrEmployeeDetail> {
+    return this.hrSend('PATCH', `/v1/hr/employees/${encodeURIComponent(id)}`, body);
+  }
+
+  hrPatterns(employeeId: string): Promise<{ readonly items: readonly HrPattern[] }> {
+    return this.get(`/v1/hr/employees/${encodeURIComponent(employeeId)}/patterns`);
+  }
+
+  createHrPattern(
+    employeeId: string,
+    body: HrPatternRequest,
+  ): Promise<{ readonly items: readonly HrPattern[] }> {
+    return this.post(`/v1/hr/employees/${encodeURIComponent(employeeId)}/patterns`, body);
+  }
+
+  putHrLeaveLimit(employeeId: string, year: number, days: number): Promise<HrEmployeeDetail> {
+    return this.hrSend(
+      'PUT',
+      `/v1/hr/employees/${encodeURIComponent(employeeId)}/leave-limits/${year}`,
+      { days },
+    );
+  }
+
+  hrSettings(officeId: string): Promise<HrOffice> {
+    return this.get(`/v1/hr/settings/${encodeURIComponent(officeId)}`);
+  }
+
+  putHrSettings(officeId: string, body: HrSettingsRequest): Promise<HrOffice> {
+    return this.hrSend('PUT', `/v1/hr/settings/${encodeURIComponent(officeId)}`, body);
+  }
+
+  hrHolidays(officeId: string, year: number): Promise<{ readonly items: readonly HrHoliday[] }> {
+    return this.get('/v1/hr/holidays', { officeId, year });
+  }
+
+  createHrHoliday(body: HrHolidayRequest): Promise<HrHoliday> {
+    return this.post('/v1/hr/holidays', body);
+  }
+
+  updateHrHoliday(id: string, body: HrHolidayRequest): Promise<HrHoliday> {
+    return this.hrSend('PATCH', `/v1/hr/holidays/${encodeURIComponent(id)}`, body);
+  }
+
+  deleteHrHoliday(id: string): Promise<void> {
+    return this.hrSend('DELETE', `/v1/hr/holidays/${encodeURIComponent(id)}`);
+  }
+
+  hrReport(query: HrReportQuery): Promise<HrReport> {
+    return this.get('/v1/hr/reports', { ...query });
+  }
+
+  /** CSV (UTF-8 with BOM); headers in `lang`. */
+  async exportHrReport(query: HrReportQuery, lang: string): Promise<Blob> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries({ ...query, format: 'csv', lang })) {
+      if (value != null && value !== '') params = params.set(key, String(value));
+    }
+    const blob = await this.unwrap(
+      firstValueFrom(
+        this.http.get(this.baseUrl + '/v1/hr/reports/export', { params, responseType: 'blob' }),
+      ),
+    );
+    return blob;
+  }
+
+  private async hrSend<T>(
+    method: 'PUT' | 'PATCH' | 'DELETE',
+    path: string,
+    body?: unknown,
+  ): Promise<T> {
+    const headers = new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() });
+    return this.unwrap(
+      firstValueFrom(this.http.request<T>(method, this.baseUrl + path, { body, headers })),
+    );
+  }
+
   private async get<T>(
     path: string,
     query: Readonly<Record<string, string | number | readonly string[] | null | undefined>> = {},
@@ -686,6 +850,7 @@ export class KolssApiClient {
           message?: unknown;
           code?: unknown;
           requestId?: unknown;
+          fieldErrors?: unknown;
         } | null;
         const message = typeof body?.message === 'string' ? body.message : error.message;
         const requestId = typeof body?.requestId === 'string' ? ` (${body.requestId})` : '';
@@ -695,6 +860,9 @@ export class KolssApiClient {
           error.status,
           typeof body?.requestId === 'string' ? body.requestId : undefined,
           { cause: error },
+          body?.fieldErrors && typeof body.fieldErrors === 'object'
+            ? (body.fieldErrors as Record<string, string>)
+            : {},
         );
       }
       throw error;

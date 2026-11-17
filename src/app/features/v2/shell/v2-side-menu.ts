@@ -20,6 +20,7 @@ import { V2NavIcon } from './v2-nav-icon';
 import {
   buildV2Nav,
   HR_NAV_ITEMS,
+  HR_NAV_SECTIONS,
   V2_LANGUAGES,
   type V2NavAction,
   type V2Workspace,
@@ -64,8 +65,10 @@ export class V2SideMenu {
         canManageUsers: this.auth.me()?.permissions.canManageUsers ?? false,
         canImpersonate: isSuperAdminRole(this.auth.profile()?.role),
         isImpersonating: this.impersonation.isActive(),
+        canManageHr: this.auth.me()?.permissions.canManageHr ?? false,
       },
       this.workspace() === 'HR' ? HR_NAV_ITEMS : undefined,
+      this.workspace() === 'HR' ? HR_NAV_SECTIONS : undefined,
     ),
   );
 

@@ -21,7 +21,10 @@ import { waitForAuthReady } from './auth.guard';
  * missing, the second fetch erroring — is the same as before: deny access
  * and redirect, never fail open.
  */
-export function permissionGuard(requiredCheck: (me: MeResponse | null) => boolean): CanActivateFn {
+export function permissionGuard(
+  requiredCheck: (me: MeResponse | null) => boolean,
+  redirectTo: readonly string[] = ['/leads'],
+): CanActivateFn {
   return async () => {
     const auth = inject(AuthService);
     const router = inject(Router);
@@ -35,7 +38,7 @@ export function permissionGuard(requiredCheck: (me: MeResponse | null) => boolea
     }
 
     if (!requiredCheck(auth.me())) {
-      return router.createUrlTree(['/leads']);
+      return router.createUrlTree([...redirectTo]);
     }
 
     return true;
@@ -43,3 +46,9 @@ export function permissionGuard(requiredCheck: (me: MeResponse | null) => boolea
 }
 
 export const superAdminGuard = permissionGuard((me) => me?.permissions.canManageUsers ?? false);
+
+/** HR Admin screens (Team, Reports, HR settings): `/v1/me` `permissions.canManageHr`. */
+export const hrAdminGuard = permissionGuard(
+  (me) => me?.permissions.canManageHr ?? false,
+  ['/hr/calendar'],
+);

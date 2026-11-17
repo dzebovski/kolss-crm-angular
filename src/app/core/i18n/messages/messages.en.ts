@@ -1,3 +1,4 @@
+import { hrMessagesEn } from './messages.hr.en';
 import type { MessageKey } from './messages.uk';
 
 export const messagesEn: Record<MessageKey, string> = {
@@ -2071,4 +2072,5 @@ export const messagesEn: Record<MessageKey, string> = {
   'v2.projectPopup.payment.basis.other': 'Other',
   'v2.projectPopup.payment.basisMissing': 'Choose what the payment is based on',
   'v2.projectPopup.estimate.hint': 'One total; leave it empty to clear the estimate.',
+  ...hrMessagesEn,
 } as const;

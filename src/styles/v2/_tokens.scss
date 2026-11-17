@@ -47,6 +47,30 @@
   --v2-calendar-ink: #4b2f8a;
   --v2-scrim: rgba(23, 23, 26, 0.32);
 
+  // HR portal (KOLSS HR canvas, HR-components.dc.html). Absence types and the info / warning
+  // notes; the event colours match the design system's calendar event palette.
+  --v2-info-bg: #e8f0fa;
+  --v2-info-ink: #1f4f8a;
+  --v2-warning-bg: #fdf3d8;
+  --v2-warning-ink: #8a5a00;
+  --v2-warning-line: #f0dcb8;
+  --v2-event-showroom: #6d4ab8;
+  --v2-event-showroom-bg: #f1edfa;
+  --v2-event-showroom-ink: #4b2f8a;
+  --v2-event-showroom-line: #ddd3f3;
+  --v2-event-client: #0e6b64;
+  --v2-event-client-bg: #e3f4f1;
+  --v2-event-client-ink: #0b4f4a;
+  --v2-event-client-line: #c3e6df;
+  --v2-event-office: #475467;
+  --v2-event-office-bg: #eef0f3;
+  --v2-event-office-ink: #344054;
+  --v2-event-office-line: #d9dde3;
+  --v2-event-task: #a15c07;
+  --v2-event-task-bg: #fbf1e1;
+  --v2-event-task-ink: #6e3f05;
+  --v2-event-task-line: #f0dcb8;
+
   // Interaction states. Not in the design system (it defines only focus = 2px `ink` and
   // disabled = 40%): derived from `ink` so they read on `surface`, `ground` and tinted fills
   // alike. Overlays tint whatever fill a control has; `ink-*` darken/lighten the one filled

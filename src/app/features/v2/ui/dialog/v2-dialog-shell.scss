@@ -27,6 +27,11 @@
   width: min(600px, calc(100vw - 32px));
 }
 
+// HR "Plan my hours" (HR-plan-hours.dc.html, ~900px).
+.v2-dialog[data-width='wide'] {
+  width: min(920px, calc(100vw - 32px));
+}
+
 .v2-dialog__header {
   display: flex;
   flex-shrink: 0;

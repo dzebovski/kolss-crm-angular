@@ -1,0 +1,193 @@
+@use '../../../../styles/v2/type';
+@use '../../../../styles/v2/interactive';
+
+// Shared HR portal styles (KOLSS HR canvas). Values without a token are board values.
+
+// Absence type colours (HR-components.dc.html, type map T).
+@mixin type-tone($type) {
+  @if $type == vacation {
+    background: var(--v2-success-bg);
+    color: var(--v2-success-ink);
+  } @else if $type == sick {
+    background: var(--v2-danger-bg);
+    color: var(--v2-danger);
+  } @else if $type == absent {
+    background: var(--v2-surface-sunk);
+    color: var(--v2-ink-2);
+  } @else if $type == day_off_unpaid {
+    background: var(--v2-rating-medium-bg);
+    color: var(--v2-rating-medium);
+  } @else if $type == day_off_makeup {
+    background: var(--v2-surface);
+    color: var(--v2-event-task-ink);
+    box-shadow: inset 0 0 0 1px var(--v2-event-task);
+    outline: 1px dashed var(--v2-event-task);
+    outline-offset: -1px;
+  } @else if $type == makeup_day {
+    background: var(--v2-event-showroom-bg);
+    color: var(--v2-event-showroom-ink);
+  } @else if $type == remote {
+    background: var(--v2-info-bg);
+    color: var(--v2-info-ink);
+  } @else if $type == occasional {
+    background: var(--v2-event-client-bg);
+    color: var(--v2-event-client-ink);
+  } @else if $type == other {
+    background: var(--v2-event-office-bg);
+    color: var(--v2-event-office-ink);
+  }
+}
+
+$types:
+  vacation, sick, absent, day_off_unpaid, day_off_makeup, makeup_day, remote, occasional, other;
+
+// `[data-type='…']` tone rules for an element carrying the absence type.
+@mixin type-tones {
+  @each $type in $types {
+    &[data-type='#{$type}'] {
+      @include type-tone($type);
+    }
+  }
+}
+
+@mixin page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--v2-space-4);
+}
+
+@mixin page-title {
+  @include type.text('lead-name');
+
+  margin: 0;
+}
+
+@mixin page-subtitle {
+  @include type.text('caption');
+
+  margin: 6px 0 0;
+  color: var(--v2-muted);
+}
+
+@mixin card {
+  box-sizing: border-box;
+  min-width: 0;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+}
+
+@mixin icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--v2-control-md);
+  height: var(--v2-control-md);
+  padding: 0;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  cursor: pointer;
+
+  @include interactive.states(surface);
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+@mixin note($tone: neutral) {
+  @include type.text('caption');
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--v2-space-2);
+  padding: 10px 12px;
+  border-radius: var(--v2-radius-sm);
+
+  @if $tone == warn {
+    background: var(--v2-warning-bg);
+    color: var(--v2-warning-ink);
+  } @else if $tone == info {
+    background: var(--v2-info-bg);
+    color: var(--v2-info-ink);
+  } @else if $tone == error {
+    background: var(--v2-danger-bg);
+    color: var(--v2-danger);
+  } @else {
+    background: var(--v2-surface-sunk);
+    color: var(--v2-ink-2);
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 1px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+@mixin mono {
+  font-family: var(--v2-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@mixin skeleton {
+  border-radius: var(--v2-radius-xs);
+  background: var(--v2-surface-sunk);
+  animation: hr-skeleton 1.2s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@mixin tag($tone: neutral) {
+  @include type.text('label');
+
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--v2-radius-pill);
+  font-weight: 500;
+  white-space: nowrap;
+
+  @if $tone == ok {
+    background: var(--v2-success-bg);
+    color: var(--v2-success-ink);
+  } @else if $tone == warn {
+    background: var(--v2-warning-bg);
+    color: var(--v2-warning-ink);
+  } @else if $tone == danger {
+    background: var(--v2-danger-bg);
+    color: var(--v2-danger);
+  } @else {
+    background: var(--v2-surface-sunk);
+    color: var(--v2-ink-2);
+  }
+}
+
+@mixin skeleton-keyframes {
+  @keyframes hr-skeleton {
+    50% {
+      opacity: 0.5;
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { hrMessagesPl } from './messages.hr.pl';
 import type { MessageKey } from './messages.uk';
 
 export const messagesPl: Record<MessageKey, string> = {
@@ -2078,4 +2079,5 @@ export const messagesPl: Record<MessageKey, string> = {
   'v2.projectPopup.payment.basis.other': 'Inne',
   'v2.projectPopup.payment.basisMissing': 'Wybierz podstawę płatności',
   'v2.projectPopup.estimate.hint': 'Jedna kwota; puste pole usuwa wycenę.',
+  ...hrMessagesPl,
 } as const;
