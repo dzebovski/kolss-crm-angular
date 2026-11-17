@@ -1,0 +1,103 @@
+<header class="hr-pop__head">
+  <app-hr-avatar [name]="employee().displayName" />
+  <div class="hr-pop__who">
+    <span class="hr-pop__name">{{ name() }}</span>
+    <span class="hr-pop__date">{{ text.fullDay(date()) }} · {{ schedule() }}</span>
+  </div>
+  <button
+    type="button"
+    class="hr-pop__close"
+    [attr.aria-label]="'hr.close' | translate"
+    (click)="closed.emit()"
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12" />
+    </svg>
+  </button>
+</header>
+
+<div class="hr-pop__body">
+  @if (day()?.holidayName; as holiday) {
+    <p class="hr-pop__holiday">{{ holiday }}</p>
+  }
+  @if (absence(); as a) {
+    <div class="hr-pop__chip-row">
+      <app-hr-absence-chip [type]="a.type" [part]="a.part" size="md" />
+    </div>
+    <dl class="hr-pop__dl">
+      @if (planned(); as p) {
+        <dt>{{ 'hr.popover.planned' | translate }}</dt>
+        <dd [class.hr-pop__struck]="a.part === 'full_day'">{{ plannedText() }}</dd>
+      }
+      @if (a.type === 'day_off_makeup' && own() && makeupOwed() !== null) {
+        <dt>{{ 'hr.popover.makeupOwed' | translate }}</dt>
+        <dd>{{ text.plural('hr.n.days', makeupOwed()!) }}</dd>
+      }
+      @if (a.comment) {
+        <dt>{{ 'hr.popover.comment' | translate }}</dt>
+        <dd>{{ a.comment }}</dd>
+      }
+      @if (created()) {
+        <dt>{{ 'hr.popover.created' | translate }}</dt>
+        <dd>{{ created() }}</dd>
+      }
+    </dl>
+    @if (a.comment !== undefined) {
+      <p class="hr-pop__note">{{ 'hr.popover.commentPrivacy' | translate: { name: name() } }}</p>
+    }
+  } @else if (planned(); as p) {
+    <app-hr-hour-bar
+      [axisStart]="axis().open"
+      [axisEnd]="axis().close"
+      [start]="p.plannedStart"
+      [end]="p.plannedEnd"
+      [makeup]="p.isMakeup"
+    />
+    <p class="hr-pop__hours">{{ plannedText() }}</p>
+    <p class="hr-pop__muted">{{ officeRange() }}</p>
+    @if (pastLocked()) {
+      <p class="hr-pop__lock">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="5" y="11" width="14" height="10" rx="2" />
+          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+        {{ 'hr.popover.pastLocked' | translate }}
+      </p>
+    } @else if (employee().pattern?.kind === 'flexible') {
+      <p class="hr-pop__note">{{ 'hr.popover.hoursPrivacy' | translate: { name: name() } }}</p>
+    }
+  } @else {
+    <p class="hr-pop__muted">{{ 'hr.popover.noPlan' | translate }} · {{ officeRange() }}</p>
+  }
+</div>
+
+@if (access().admin || canEditAbsence() || canEditHours()) {
+  <footer class="hr-pop__foot">
+    @if (access().admin) {
+      <button type="button" appV2Button size="sm" (click)="openEmployee.emit(employee().id)">
+        {{ 'hr.popover.openEmployee' | translate }}
+      </button>
+    }
+    @if (canEditAbsence()) {
+      <button
+        type="button"
+        appV2Button
+        size="sm"
+        variant="primary"
+        (click)="editAbsence.emit(absence()!)"
+      >
+        {{ 'hr.edit' | translate }}
+      </button>
+    } @else if (canEditHours()) {
+      <button
+        type="button"
+        appV2Button
+        size="sm"
+        variant="primary"
+        (click)="editHours.emit(date())"
+      >
+        {{ 'hr.edit' | translate }}
+      </button>
+    }
+  </footer>
+}

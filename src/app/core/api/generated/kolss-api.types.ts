@@ -7,7 +7,7 @@ import type {
   ShowroomVisitRow,
 } from '@services/leads.mapper';
 
-export const API_CONTRACT_VERSION = '2.44.0' as const;
+export const API_CONTRACT_VERSION = '2.45.0' as const;
 
 /** CRM v2 lead rating (`leads.rating`, OpenAPI `LeadRating`, 2.20.0). */
 export type LeadRating = 'cold' | 'medium' | 'hot';
@@ -257,6 +257,8 @@ export interface MeResponse {
      * is meant to use it. Not consumed anywhere yet.
      */
     readonly canChangeLeadManager: boolean;
+    /** HR portal admin (super admin), 2.45.0. Optional: an older API omits it (read as false). */
+    readonly canManageHr?: boolean;
   };
 }
 
@@ -1193,4 +1195,386 @@ export interface MergeClientsRequest {
     readonly address?: 'older' | 'newer';
     readonly about?: 'older' | 'newer';
   };
+}
+
+// ---- HR portal (OpenAPI 2.45.0, tag HR, docs/HR-CONTRACT.md) ----
+
+/** Stored absence types plus `makeup_day` (a make-up shift). */
+export type HrEntryType =
+  | 'vacation'
+  | 'sick'
+  | 'day_off_unpaid'
+  | 'day_off_makeup'
+  | 'remote'
+  | 'occasional'
+  | 'other'
+  | 'makeup_day';
+
+/** `absent` replaces `sick` for colleagues (D8). */
+export type HrCellAbsenceType = Exclude<HrEntryType, 'makeup_day'> | 'absent';
+
+export type HrDayPart = 'full_day' | 'first_half' | 'second_half';
+export type HrPatternKind = 'fixed' | 'flexible';
+export type HrHolidayKind = 'public_holiday' | 'office_closed';
+
+export interface HrOfficeHours {
+  /** ISO weekday, 1 = Monday … 7 = Sunday. */
+  readonly weekday: number;
+  /** `HH:MM`; `null` when the office is closed that day. */
+  readonly opens: string | null;
+  readonly closes: string | null;
+}
+
+export interface HrOffice {
+  readonly id: string;
+  readonly code: string;
+  readonly nameUk: string;
+  readonly namePl: string;
+  readonly timeZone: string;
+  readonly defaultVacationDays: number;
+  readonly hours: readonly HrOfficeHours[];
+}
+
+export interface HrPattern {
+  readonly id: string;
+  readonly validFrom: string;
+  readonly validTo: string | null;
+  readonly kind: HrPatternKind;
+  readonly weekdays: readonly number[];
+  readonly startTime: string | null;
+  readonly endTime: string | null;
+  readonly daysPerWeek: number;
+  readonly hoursPerDay: number;
+  readonly note: string | null;
+  readonly createdAt: string;
+  readonly createdBy: string | null;
+  readonly createdByName: string | null;
+}
+
+export interface HrPatternRequest {
+  readonly kind: HrPatternKind;
+  readonly weekdays?: readonly number[];
+  readonly startTime?: string | null;
+  readonly endTime?: string | null;
+  readonly daysPerWeek?: number | null;
+  readonly hoursPerDay?: number | null;
+  /** Required except on employee create (defaults to `startedOn`). */
+  readonly validFrom?: string;
+  readonly note?: string | null;
+}
+
+export interface HrEmployee {
+  readonly id: string;
+  readonly profileId: string;
+  readonly displayName: string | null;
+  /** Super admin only. */
+  readonly email?: string | null;
+  readonly officeId: string;
+  readonly officeCode: string;
+  readonly position: string | null;
+  readonly startedOn: string;
+  readonly endedOn: string | null;
+  readonly trackedUntil: string | null;
+  readonly isTracked: boolean;
+  readonly pattern: HrPattern | null;
+}
+
+export interface HrTotals {
+  readonly normDays: number;
+  readonly plannedDays: number;
+  readonly plannedHours: number;
+  readonly vacation: number;
+  readonly sick: number;
+  readonly dayOffUnpaid: number;
+  readonly dayOffMakeup: number;
+  readonly makeupDone: number;
+  readonly remote: number;
+  readonly occasional: number;
+  readonly other: number;
+}
+
+export interface HrVacationBalance {
+  readonly year: number;
+  readonly limit: number;
+  readonly used: number;
+  readonly left: number;
+  readonly over: number;
+}
+
+export interface HrBalances {
+  readonly vacation: HrVacationBalance;
+  readonly makeupOwed: number;
+}
+
+export interface HrMe {
+  readonly tracked: boolean;
+  readonly canManageHr: boolean;
+  readonly today: string;
+  readonly month: string;
+  readonly employee: HrEmployee | null;
+  readonly office: HrOffice | null;
+  readonly editableHoursFrom: string | null;
+  readonly editableAbsencesFrom: string | null;
+  readonly monthTotals: HrTotals | null;
+  readonly vacation: HrVacationBalance | null;
+  readonly makeupOwed: number;
+  readonly nextWorkingDay: {
+    readonly date: string;
+    readonly start: string;
+    readonly end: string;
+    readonly minutes: number;
+  } | null;
+}
+
+export interface HrCellAbsence {
+  /** Own entries and super admin only. */
+  readonly id?: string;
+  readonly type: HrCellAbsenceType;
+  readonly part: HrDayPart;
+  readonly dateFrom: string;
+  readonly dateTo: string;
+  /** Own entries and super admin only. */
+  readonly comment?: string | null;
+  readonly createdAt?: string;
+  readonly createdByName?: string | null;
+}
+
+export interface HrCell {
+  readonly employeeId: string;
+  readonly date: string;
+  readonly isWorkday: boolean;
+  readonly isPatternDay: boolean;
+  readonly plannedStart: string | null;
+  readonly plannedEnd: string | null;
+  readonly plannedMinutes: number;
+  readonly shiftKind: 'planned' | 'makeup' | null;
+  readonly isMakeup: boolean;
+  readonly officeDays: number;
+  readonly absence: HrCellAbsence | null;
+}
+
+export interface HrHoliday {
+  readonly id: string;
+  readonly officeId: string;
+  readonly day: string;
+  readonly kind: HrHolidayKind;
+  readonly name: string;
+}
+
+export interface HrHolidayRequest {
+  readonly officeId: string;
+  readonly day: string;
+  readonly kind: HrHolidayKind;
+  readonly name: string;
+}
+
+export interface HrDayTotal {
+  readonly date: string;
+  readonly isOpen: boolean;
+  readonly holidayKind: HrHolidayKind | null;
+  readonly holidayName: string | null;
+  readonly inOffice: number;
+  readonly nobodyIn: boolean;
+}
+
+export interface HrCalendar {
+  readonly office: HrOffice;
+  readonly from: string;
+  readonly to: string;
+  readonly today: string;
+  readonly holidays: readonly HrHoliday[];
+  readonly people: readonly HrEmployee[];
+  readonly cells: readonly HrCell[];
+  readonly days: readonly HrDayTotal[];
+}
+
+export interface HrCalendarQuery {
+  readonly officeId?: string;
+  readonly from: string;
+  readonly to: string;
+  readonly employeeId?: string;
+}
+
+export interface HrEntry {
+  readonly id: string;
+  readonly kind: 'absence' | 'makeup';
+  readonly employeeId: string;
+  readonly type: HrEntryType;
+  readonly dateFrom: string;
+  readonly dateTo: string;
+  readonly part: HrDayPart;
+  readonly startTime: string | null;
+  readonly endTime: string | null;
+  readonly days: number;
+  readonly comment: string | null;
+  readonly createdAt: string;
+  readonly createdBy: string | null;
+  readonly createdByName: string | null;
+  readonly updatedAt: string;
+  readonly closedMonth: boolean;
+  readonly editable: boolean;
+  readonly lockReason: 'hr_past_date' | 'hr_closed_month' | null;
+}
+
+export interface HrEntriesQuery {
+  readonly employeeId?: string;
+  readonly from?: string;
+  readonly to?: string;
+  readonly type?: HrEntryType;
+}
+
+export interface HrAbsenceRequest {
+  /** Super admin only; default is the caller. */
+  readonly employeeId?: string;
+  readonly type: HrEntryType;
+  readonly dateFrom: string;
+  readonly dateTo: string;
+  readonly part?: HrDayPart;
+  readonly comment?: string | null;
+}
+
+export interface HrMutation {
+  readonly entry: HrEntry | null;
+  readonly entries?: readonly HrEntry[];
+  readonly balances: HrBalances;
+}
+
+export interface HrShiftDay {
+  readonly date: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly kind?: 'planned' | 'makeup';
+}
+
+export interface HrWeekSummary {
+  readonly plannedMinutes: number;
+  readonly plannedDays: number;
+  readonly normMinutes: number;
+  readonly normDays: number;
+  readonly warning: 'under' | 'over' | null;
+}
+
+export interface HrWeekShifts {
+  readonly weekStart: string;
+  readonly cells: readonly HrCell[];
+  readonly summary: HrWeekSummary;
+}
+
+export type HrNextWeekState = 'fixed' | 'planned' | 'missing' | 'none';
+
+export interface HrTeamRow {
+  readonly employee: HrEmployee;
+  readonly today: HrCell | null;
+  readonly month: HrTotals;
+  readonly absences: readonly { readonly type: HrEntryType; readonly days: number }[];
+  readonly vacation: HrVacationBalance;
+  readonly makeupOwed: number;
+  readonly nextWeek: HrNextWeekState;
+}
+
+export interface HrTeam {
+  readonly month: string;
+  readonly today: string;
+  readonly items: readonly HrTeamRow[];
+  readonly untrackedAccounts: number;
+}
+
+export interface HrTeamQuery {
+  readonly officeId?: string;
+  readonly month?: string;
+  readonly includeUntracked?: boolean;
+}
+
+export interface HrAccount {
+  readonly profileId: string;
+  readonly displayName: string | null;
+  readonly email: string | null;
+  readonly role: string;
+  readonly officeCodes: readonly string[];
+  readonly employeeId: string | null;
+  readonly isTracked: boolean;
+}
+
+export interface HrLeaveYear {
+  readonly year: number;
+  readonly days: number;
+  readonly isSet: boolean;
+  readonly balance: HrVacationBalance;
+}
+
+export interface HrEmployeeDetail {
+  readonly employee: HrEmployee;
+  readonly office: HrOffice;
+  readonly today: string;
+  readonly patterns: readonly HrPattern[];
+  readonly leave: readonly HrLeaveYear[];
+  readonly makeupOwed: number;
+}
+
+export interface CreateHrEmployeeRequest {
+  readonly profileId: string;
+  readonly officeId: string;
+  readonly position?: string | null;
+  readonly startedOn: string;
+  readonly pattern: HrPatternRequest;
+  readonly vacationDays?: number | null;
+}
+
+export interface UpdateHrEmployeeRequest {
+  readonly officeId?: string;
+  readonly position?: string | null;
+  readonly startedOn?: string;
+  readonly endedOn?: string | null;
+  readonly tracked?: boolean;
+}
+
+export interface HrSettingsRequest {
+  readonly defaultVacationDays: number;
+  readonly hours: readonly HrOfficeHours[];
+}
+
+export type HrReportPeriod = 'month' | 'year';
+
+export interface HrReportPerson {
+  readonly employeeId: string;
+  readonly displayName: string | null;
+  readonly position: string | null;
+  readonly isTracked: boolean;
+}
+
+export interface HrReportRow {
+  readonly person: HrReportPerson;
+  readonly totals: HrTotals;
+  readonly makeupOwed: number;
+  readonly vacationLeft: number;
+  readonly vacationOver: number;
+}
+
+export interface HrReportYearRow {
+  readonly person: HrReportPerson;
+  readonly months: readonly {
+    readonly month: string;
+    readonly plannedDays: number;
+    readonly absenceDays: number;
+    readonly isFuture: boolean;
+  }[];
+  readonly totals: HrTotals;
+  readonly vacation: HrVacationBalance;
+}
+
+export interface HrReport {
+  readonly office: HrOffice;
+  readonly period: HrReportPeriod;
+  readonly month?: string;
+  readonly year: number;
+  readonly today: string;
+  readonly rows?: readonly HrReportRow[];
+  readonly yearRows?: readonly HrReportYearRow[];
+}
+
+export interface HrReportQuery {
+  readonly officeId: string;
+  readonly period: HrReportPeriod;
+  readonly month?: string;
+  readonly year?: number;
 }

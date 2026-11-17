@@ -4,7 +4,10 @@ import type { LocaleCode } from '@domain/i18n.types';
 // v2 side menu from the "KOLSS CRM v2" canvas (Main.dc.html, SIDE MENU). The menu markup
 // (N2) renders these arrays; it never hardcodes items. Order here is the order on screen.
 
-export type V2NavSectionId = 'sales' | 'planning' | 'reports' | 'settings';
+export type V2Workspace = 'CRM' | 'HR';
+
+export type V2NavSectionId =
+  'sales' | 'planning' | 'reports' | 'team-time' | 'hr-admin' | 'settings';
 
 /** Icon names for the 18px stroke icons drawn next to each item in the design. */
 export type V2NavIcon =
@@ -20,7 +23,12 @@ export type V2NavIcon =
   | 'language'
   | 'impersonate'
   | 'design-system'
-  | 'logout';
+  | 'logout'
+  | 'hr-calendar'
+  | 'hr-me'
+  | 'hr-team'
+  | 'hr-reports'
+  | 'hr-settings';
 
 /** Menu actions that are not navigation. Their behaviour is N3. */
 export type V2NavAction = 'language' | 'impersonate' | 'stop-impersonation' | 'logout';
@@ -34,6 +42,8 @@ export interface V2NavAccess {
   readonly canManageUsers: boolean;
   readonly canImpersonate: boolean;
   readonly isImpersonating: boolean;
+  /** `/v1/me` `permissions.canManageHr` (HR Admin section). Omitted = false. */
+  readonly canManageHr?: boolean;
 }
 
 interface V2NavItemBase {
@@ -205,6 +215,69 @@ export const V2_NAV_ITEMS: readonly V2NavItem[] = [
     icon: 'logout',
     action: 'logout',
   },
+];
+
+/** HR side menu sections (HR-side.dc.html): Team time, Admin (HR admins only), Settings. */
+export const HR_NAV_SECTIONS: readonly V2NavSection[] = [
+  { id: 'team-time', labelKey: 'hr.nav.section.teamTime' },
+  { id: 'hr-admin', labelKey: 'hr.nav.section.admin' },
+  { id: 'settings', labelKey: 'v2.nav.section.settings' },
+];
+
+const canManageHr = (access: V2NavAccess): boolean => access.canManageHr ?? false;
+
+export const HR_NAV_ITEMS: readonly V2NavItem[] = [
+  {
+    id: 'hr-calendar',
+    kind: 'link',
+    section: 'team-time',
+    labelKey: 'hr.nav.calendar',
+    icon: 'hr-calendar',
+    route: '/hr/calendar',
+    v1: false,
+  },
+  {
+    id: 'hr-me',
+    kind: 'link',
+    section: 'team-time',
+    labelKey: 'hr.nav.me',
+    icon: 'hr-me',
+    route: '/hr/me',
+    v1: false,
+  },
+  {
+    id: 'hr-team',
+    kind: 'link',
+    section: 'hr-admin',
+    labelKey: 'hr.nav.team',
+    icon: 'hr-team',
+    route: '/hr/employees',
+    v1: false,
+    visible: canManageHr,
+  },
+  {
+    id: 'hr-reports',
+    kind: 'link',
+    section: 'hr-admin',
+    labelKey: 'hr.nav.reports',
+    icon: 'hr-reports',
+    route: '/hr/reports',
+    v1: false,
+    visible: canManageHr,
+  },
+  {
+    id: 'hr-settings',
+    kind: 'link',
+    section: 'hr-admin',
+    labelKey: 'hr.nav.settings',
+    icon: 'hr-settings',
+    route: '/hr/settings',
+    v1: false,
+    visible: canManageHr,
+  },
+  ...V2_NAV_ITEMS.filter(
+    (item) => item.section === null || (item.section === 'settings' && item.id !== 'design-system'),
+  ),
 ];
 
 export interface V2NavGroup {

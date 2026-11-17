@@ -1,0 +1,96 @@
+<div class="hr-week" role="grid">
+  <div class="hr-week__row hr-week__row--head" role="row">
+    <span class="hr-week__person hr-week__count" role="columnheader">{{ peopleLabel() }}</span>
+    @for (column of columns(); track column.date) {
+      <span
+        class="hr-week__head"
+        role="columnheader"
+        [class.hr-week__head--today]="column.today"
+        [class.hr-week__head--closed]="column.closed"
+      >
+        <span class="hr-week__day">{{ column.label }}</span>
+        <span class="hr-week__hours">{{ column.hours }}</span>
+      </span>
+    }
+  </div>
+
+  @for (row of rows(); track row.employee.id) {
+    <div class="hr-week__row" role="row">
+      <span class="hr-week__person" role="rowheader">
+        <app-hr-avatar [name]="row.employee.displayName" />
+        <span class="hr-week__who">
+          <span class="hr-week__name">{{ row.name }}</span>
+          <span class="hr-week__schedule">{{ row.schedule }}</span>
+        </span>
+      </span>
+      @for (cell of row.cells; track cell.column.date) {
+        <span
+          class="hr-week__slot"
+          role="gridcell"
+          [class.hr-week__slot--today]="cell.column.today"
+        >
+          <button
+            type="button"
+            class="hr-week__cell"
+            [attr.data-kind]="cell.view.kind"
+            [attr.aria-label]="cell.label"
+            (click)="onPick(row.employee, cell.view.date, $event)"
+          >
+            @switch (cell.view.kind) {
+              @case ('hours') {
+                @if (cell.column.axis; as axis) {
+                  <app-hr-hour-bar
+                    [axisStart]="axis.open"
+                    [axisEnd]="axis.close"
+                    [start]="cell.view.start"
+                    [end]="cell.view.end"
+                    [makeup]="cell.view.makeup"
+                  />
+                }
+                <span class="hr-week__text" aria-hidden="true">
+                  <span class="hr-week__range">{{ rangeText(cell.view) }}</span>
+                  <span class="hr-week__len">{{ hoursText(cell.view) }}</span>
+                </span>
+              }
+              @case ('absence') {
+                <app-hr-absence-chip
+                  [type]="cell.view.absence!.type"
+                  [part]="cell.view.absence!.part"
+                />
+                @if (cell.view.half && cell.view.minutes > 0) {
+                  <span class="hr-week__text" aria-hidden="true">
+                    <span class="hr-week__range">{{ rangeText(cell.view) }}</span>
+                  </span>
+                }
+              }
+              @case ('closed') {
+                <span class="hr-week__muted" aria-hidden="true">{{
+                  'hr.calendar.officeClosed' | translate
+                }}</span>
+              }
+              @default {
+                <span class="hr-week__muted" aria-hidden="true">{{
+                  'hr.calendar.notWorking' | translate
+                }}</span>
+              }
+            }
+          </button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="hr-week__row hr-week__row--foot" role="row">
+    <span class="hr-week__person hr-week__count" role="rowheader">
+      {{ 'hr.calendar.hoursCovered' | translate }}
+    </span>
+    @for (column of columns(); track column.date) {
+      <span class="hr-week__total" role="gridcell" [class.hr-week__total--nobody]="column.nobody">
+        @if (column.nobody) {
+          <span class="hr-week__dot" aria-hidden="true"></span>
+        }
+        {{ column.coverage }}
+      </span>
+    }
+  </div>
+</div>

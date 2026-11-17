@@ -36,6 +36,12 @@ export const routes: Routes = [
     children: [],
   },
   {
+    path: 'hr',
+    title: 'HR | KOLSS',
+    canActivate: [authGuard],
+    loadChildren: () => import('./features/hr/hr.routes'),
+  },
+  {
     path: 'v2',
     canActivate: [authGuard],
     loadChildren: () => import('./features/v2/v2.routes'),

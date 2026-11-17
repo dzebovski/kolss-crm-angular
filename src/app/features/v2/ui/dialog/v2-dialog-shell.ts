@@ -31,7 +31,7 @@ export interface V2DialogLeadContext {
 }
 
 /** Named popup widths (Popup-rules.dc.html "Closing and unsaved data"). */
-export type V2DialogWidth = 'form' | 'status' | 'documents';
+export type V2DialogWidth = 'form' | 'status' | 'documents' | 'wide';
 
 export type V2DialogPrimaryVariant = 'primary' | 'danger';
 

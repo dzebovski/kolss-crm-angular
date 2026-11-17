@@ -1,0 +1,139 @@
+@if (session.me.error() && !me()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'hr.me.error.title' | translate"
+    [hint]="'hr.errorCode' | translate: { code: errorCode() }"
+  >
+    <button type="button" appV2Button (click)="session.me.reload()">
+      {{ 'hr.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else if (!me()) {
+  <div class="hr-me__skeleton" aria-hidden="true">
+    <span class="hr-me__sk hr-me__sk--title"></span>
+    <div class="hr-me__tiles">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <span class="hr-me__sk hr-me__sk--tile"></span>
+      }
+    </div>
+    <span class="hr-me__sk hr-me__sk--card"></span>
+  </div>
+} @else if (!me()!.tracked || !employee()) {
+  <div class="hr-head">
+    <h1 class="hr-head__title">{{ 'hr.me.title' | translate }}</h1>
+  </div>
+  <app-v2-state-panel
+    tone="empty"
+    icon="people"
+    [title]="'hr.me.notTracked.title' | translate"
+    [hint]="'hr.me.notTracked.hint' | translate"
+  >
+    <a appV2Button routerLink="/hr/calendar">{{ 'hr.me.notTracked.open' | translate }}</a>
+  </app-v2-state-panel>
+} @else {
+  <div class="hr-head">
+    <div>
+      <h1 class="hr-head__title">{{ 'hr.me.title' | translate }}</h1>
+      <p class="hr-head__subtitle">{{ subtitle() }}</p>
+    </div>
+    <div class="hr-head__actions">
+      @if (flexible()) {
+        <button type="button" appV2Button (click)="planHours()">
+          {{ 'hr.planMyHours' | translate }}
+        </button>
+      }
+      <button type="button" appV2Button variant="primary" (click)="addAbsence()">
+        {{ 'hr.addAbsence' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (tiles(); as t) {
+    <div class="hr-me__tiles">
+      <app-hr-balance-tile
+        [label]="'hr.me.tile.month' | translate"
+        [value]="t.month.value"
+        [sub]="t.month.sub"
+      />
+      <app-hr-balance-tile
+        [label]="t.vacation.label"
+        [value]="t.vacation.value"
+        [sub]="t.vacation.sub"
+        [used]="t.vacation.used"
+        [limit]="t.vacation.limit"
+        [empty]="t.vacation.empty"
+      />
+      <app-hr-balance-tile
+        [label]="'hr.me.tile.makeup' | translate"
+        [value]="t.makeup.value"
+        [sub]="t.makeup.sub"
+        [empty]="t.makeup.empty"
+      />
+      <app-hr-balance-tile
+        [label]="'hr.me.tile.next' | translate"
+        [value]="t.next.value"
+        [sub]="t.next.sub"
+      />
+    </div>
+  }
+
+  <app-hr-month-card
+    [calendar]="calendar.hasValue() ? calendar.value() : undefined"
+    [employee]="employee()!"
+    [month]="month()"
+    [today]="me()!.today"
+    [editableFrom]="me()!.editableAbsencesFrom"
+    [loading]="calendar.isLoading()"
+    [note]="'hr.me.monthNote' | translate"
+    (prev)="shiftMonth(-1)"
+    (next)="shiftMonth(1)"
+    (pick)="selection.set($event)"
+  />
+
+  <section class="hr-me__entries" aria-labelledby="hr-me-entries">
+    <header class="hr-me__entries-head">
+      <h2 class="hr-me__entries-title" id="hr-me-entries">{{ 'hr.me.entries' | translate }}</h2>
+      <app-v2-segmented-control
+        [options]="periodOptions()"
+        [value]="period()"
+        [ariaLabel]="'hr.entries.period' | translate"
+        (valueChange)="period.set($event)"
+      />
+    </header>
+    <app-hr-entries-list
+      [entries]="entries.hasValue() ? entries.value() : []"
+      [busyId]="busyId()"
+      (edit)="editEntry($event)"
+      (remove)="removeEntry($event)"
+    />
+  </section>
+}
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="selection()?.anchor!"
+  [cdkConnectedOverlayOpen]="!!picked()"
+  [cdkConnectedOverlayPositions]="positions"
+  cdkConnectedOverlayPanelClass="v2-dialog-panel"
+  (overlayOutsideClick)="selection.set(null)"
+  (detach)="selection.set(null)"
+  (overlayKeydown)="$event.key === 'Escape' && selection.set(null)"
+>
+  @if (picked(); as p) {
+    <app-hr-day-popover
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      [employee]="p.employee"
+      [date]="p.date"
+      [cell]="p.cell"
+      [day]="p.day"
+      [office]="p.office"
+      [access]="access()"
+      [makeupOwed]="me()?.makeupOwed ?? null"
+      (closed)="selection.set(null)"
+      (editAbsence)="editAbsence($event)"
+      (editHours)="editHours($event)"
+    />
+  }
+</ng-template>

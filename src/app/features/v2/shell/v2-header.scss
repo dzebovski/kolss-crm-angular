@@ -1,7 +1,6 @@
 @use '../../../../styles/v2/interactive';
 
-// Values from Main.dc.html (HEADER). 64px height, 20px start padding, 3px chip padding
-// and 28px divider are board values without a design token.
+// Header dimensions from Main.dc.html.
 :host {
   display: block;
   flex-shrink: 0;
@@ -58,15 +57,70 @@
   }
 }
 
+.v2-header__workspace {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .v2-header__product {
-  padding: 3px var(--v2-space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--v2-space-1);
+  min-height: 28px;
+  padding: 0 var(--v2-space-2);
   background: var(--v2-surface-sunk);
-  border-radius: var(--v2-radius-xs);
+  border: 1px solid transparent;
+  border-radius: var(--v2-radius-sm);
   color: var(--v2-muted);
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   line-height: normal;
   letter-spacing: 0.06em;
+  cursor: pointer;
+
+  @include interactive.states(ghost);
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+}
+
+.v2-header__workspace-menu {
+  position: absolute;
+  inset: calc(100% + 8px) auto auto 0;
+  z-index: 20;
+  display: none;
+  min-width: 104px;
+  padding: var(--v2-space-1);
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-md);
+  box-shadow: var(--v2-shadow-menu);
+
+  &.is-open {
+    display: grid;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    min-height: var(--v2-control-md);
+    padding: 0 var(--v2-space-2);
+    border-radius: var(--v2-radius-sm);
+    color: var(--v2-ink);
+    font-size: 14px;
+    text-decoration: none;
+
+    @include interactive.states(ghost);
+
+    &[aria-current='true'] {
+      background: var(--v2-surface-sunk);
+      font-weight: 600;
+    }
+  }
 }
 
 .v2-header__spacer {
@@ -84,15 +138,29 @@
   @include interactive.focus-ring;
 }
 
-// The board is desktop-only (1440). On narrow screens keep the header on one line:
-// the product chip gives way.
+// Keep the workspace switcher visible at narrow widths.
 @media (max-width: 640px) {
   .v2-header {
     gap: var(--v2-space-3);
     padding: 0 var(--v2-space-4);
   }
 
-  .v2-header__product {
+  .v2-header__logo img {
+    height: 16px;
+  }
+}
+
+@media (max-width: 460px) {
+  .v2-header {
+    gap: var(--v2-space-1);
+    padding-inline: var(--v2-space-2);
+  }
+
+  .v2-header__logo img {
+    height: 13px;
+  }
+
+  .v2-header__divider {
     display: none;
   }
 }

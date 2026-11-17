@@ -1,0 +1,120 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+@use '../../../../styles/v2/interactive';
+
+// Pattern fields (HR-schedule-editor.dc.html): 2-option segmented type, 44px weekday toggles,
+// a 3-column row for fixed start / end / hours, a 2-column row for flexible.
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hr-pf__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.hr-pf__legend {
+  @include type.text('label');
+
+  padding: 0;
+  margin-bottom: 6px;
+  color: var(--v2-muted);
+}
+
+.hr-pf__hint {
+  @include type.text('caption');
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.hr-pf__hint--error {
+  color: var(--v2-danger);
+}
+
+.hr-pf__seg {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface-sunk);
+
+  button {
+    @include type.text('label');
+
+    height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--v2-radius-xs);
+    background: transparent;
+    color: var(--v2-muted);
+    font-weight: 500;
+    cursor: pointer;
+  }
+}
+
+.hr-pf__seg button.hr-pf__seg--on {
+  background: var(--v2-surface);
+  color: var(--v2-ink);
+  box-shadow: var(--v2-shadow-control);
+}
+
+.hr-pf__days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hr-pf__day {
+  @include type.text('label');
+  @include interactive.states(surface);
+
+  width: 52px;
+  height: 40px;
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface);
+  color: var(--v2-ink-2);
+  font-weight: 500;
+  cursor: pointer;
+
+  &:disabled {
+    border-style: dashed;
+    color: var(--v2-faint);
+    cursor: not-allowed;
+  }
+}
+
+.hr-pf__day--on {
+  border-color: var(--v2-ink);
+  background: var(--v2-ink);
+  color: var(--v2-surface);
+}
+
+.hr-pf__grid3,
+.hr-pf__grid2 {
+  display: grid;
+  gap: 12px;
+}
+
+.hr-pf__grid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hr-pf__grid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 560px) {
+  .hr-pf__grid3,
+  .hr-pf__grid2 {
+    grid-template-columns: 1fr;
+  }
+}

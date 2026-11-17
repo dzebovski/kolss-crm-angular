@@ -39,6 +39,7 @@
 
   <footer class="v2-dialog__footer">
     @if (!confirming()) {
+      <ng-content select="[v2DialogFooterStart]" />
       <span
         class="v2-dialog__status"
         [class.v2-dialog__status--err]="showErrorStatus()"

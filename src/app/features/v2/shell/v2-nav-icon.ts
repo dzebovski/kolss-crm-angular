@@ -74,6 +74,25 @@ import type { V2NavIcon as V2NavIconName } from './v2-nav.config';
           <rect x="3" y="14" width="7" height="7" rx="1.5" />
           <circle cx="17.5" cy="17.5" r="3.5" />
         }
+        @case ('hr-calendar') {
+          <path
+            d="M8 2v4M16 2v4M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM3 10h18"
+          />
+        }
+        @case ('hr-me') {
+          <path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7v5l3 2" />
+        }
+        @case ('hr-team') {
+          <path
+            d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+          />
+        }
+        @case ('hr-reports') {
+          <path d="M3 3v18h18M8 17v-5M13 17V8M18 17v-9" />
+        }
+        @case ('hr-settings') {
+          <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />
+        }
         @case ('logout') {
           <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
           <path d="M10 16l-4-4 4-4" />

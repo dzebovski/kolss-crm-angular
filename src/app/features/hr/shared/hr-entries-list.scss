@@ -1,0 +1,97 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+
+.hr-entries {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hr-entries__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.hr-entries__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hr-entries__dates {
+  @include type.text('body-strong');
+}
+
+.hr-entries__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.hr-entries__lock {
+  @include type.text('label');
+
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--v2-subtle);
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+  }
+}
+
+.hr-entries__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hr-entries__days {
+  @include type.text('label');
+  @include hr.mono;
+
+  color: var(--v2-ink-2);
+}
+
+.hr-entries__comment {
+  @include type.text('caption');
+
+  margin: 0;
+  color: var(--v2-ink-2);
+  overflow-wrap: anywhere;
+}
+
+.hr-entries__added {
+  @include type.text('label');
+
+  color: var(--v2-muted);
+}
+
+.hr-entries__confirm {
+  @include hr.note(error);
+
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hr-entries__confirm-text {
+  flex: 1;
+  min-width: 180px;
+}
+
+.hr-entries__empty {
+  @include type.text('caption');
+
+  padding: 20px;
+  color: var(--v2-subtle);
+  border-top: 1px solid var(--v2-line-soft);
+}

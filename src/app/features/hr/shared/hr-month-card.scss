@@ -1,0 +1,218 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+@use '../../../../styles/v2/interactive';
+
+// Month card (HR-me.dc.html): 7 equal columns, 84px cells (board value).
+.hr-mc {
+  @include hr.card;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.hr-mc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hr-mc__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hr-mc__icon {
+  @include hr.icon-button;
+
+  width: var(--v2-control-sm);
+  height: var(--v2-control-sm);
+}
+
+.hr-mc__title {
+  @include type.text('section-title');
+
+  min-width: 140px;
+  margin: 0;
+  text-align: center;
+}
+
+.hr-mc__legend-btn {
+  @include type.text('body-strong');
+
+  height: var(--v2-control-sm);
+  padding: 0 12px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line-strong);
+  border-radius: var(--v2-radius-sm);
+  font-family: inherit;
+  cursor: pointer;
+
+  @include interactive.states(surface);
+}
+
+.hr-mc__legend {
+  padding: 8px 0;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.hr-mc__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hr-mc__row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.hr-mc__wd {
+  @include type.text('label');
+
+  color: var(--v2-muted);
+  text-align: left;
+}
+
+.hr-mc__slot {
+  display: flex;
+  min-width: 0;
+}
+
+.hr-mc__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  min-height: 84px;
+  padding: 8px;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line-soft);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  @include interactive.states(surface);
+
+  &[data-kind='closed'] {
+    background: var(--v2-surface-sunk);
+    border-color: transparent;
+  }
+}
+
+.hr-mc__cell--today {
+  box-shadow: inset 0 0 0 2px var(--v2-ink);
+}
+
+.hr-mc__cell--past {
+  .hr-mc__num,
+  .hr-mc__range {
+    color: var(--v2-muted);
+  }
+}
+
+.hr-mc__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.hr-mc__num {
+  @include hr.mono;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hr-mc__today {
+  @include hr.tag;
+
+  height: 18px;
+  padding: 0 6px;
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+  font-size: 11px;
+}
+
+.hr-mc__lock {
+  fill: none;
+  stroke: var(--v2-subtle);
+  stroke-width: 2;
+}
+
+.hr-mc__range {
+  @include hr.mono;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hr-mc__len,
+.hr-mc__muted {
+  @include type.text('label');
+
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--v2-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hr-mc__mk {
+  @include type.text('label');
+
+  color: var(--v2-event-showroom-ink);
+}
+
+.hr-mc__note {
+  @include type.text('label');
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+@media (max-width: 640px) {
+  .hr-mc {
+    padding: 12px;
+  }
+
+  // Month arrows, title and Legend fit one 390px row.
+  .hr-mc__nav {
+    gap: 4px;
+  }
+
+  .hr-mc__title {
+    min-width: 0;
+  }
+
+  .hr-mc__legend-btn {
+    padding: 0 10px;
+  }
+
+  .hr-mc__row {
+    gap: 3px;
+  }
+
+  .hr-mc__cell {
+    min-height: 56px;
+    padding: 4px;
+  }
+
+  .hr-mc__len,
+  .hr-mc__mk,
+  .hr-mc__today {
+    display: none;
+  }
+
+  .hr-mc__range {
+    font-size: 10px;
+  }
+}

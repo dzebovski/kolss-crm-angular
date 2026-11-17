@@ -1,0 +1,205 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+
+// Reports (HR-reports-month / -year.dc.html). Grid columns are board values; numbers in mono,
+// zero muted, half days as 0.5.
+:host {
+  display: contents;
+}
+
+@include hr.skeleton-keyframes;
+
+.hr-head {
+  @include hr.page-head;
+}
+
+.hr-head__title {
+  @include hr.page-title;
+}
+
+.hr-head__subtitle {
+  @include hr.page-subtitle;
+}
+
+.hr-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hr-filters {
+  @include hr.card;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.hr-filters__office {
+  width: 200px;
+}
+
+.hr-filters__nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hr-filters__period {
+  @include type.text('section-title');
+
+  min-width: 140px;
+  text-align: center;
+}
+
+.hr-filters__spacer {
+  flex: 1;
+}
+
+.hr-icon-btn {
+  @include hr.icon-button;
+}
+
+.hr-caption {
+  @include type.text('caption');
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.hr-card {
+  @include hr.card;
+}
+
+.hr-scroll {
+  overflow-x: auto;
+}
+
+.hr-table--month {
+  min-width: 1180px;
+
+  .hr-tr {
+    grid-template-columns: 196px repeat(13, minmax(0, 1fr));
+  }
+}
+
+.hr-table--year {
+  min-width: 1180px;
+
+  .hr-tr {
+    grid-template-columns: 196px repeat(12, minmax(0, 1fr)) 64px 120px;
+  }
+}
+
+.hr-tr {
+  @include hr.table-row;
+
+  column-gap: 10px;
+  padding: 8px 16px;
+}
+
+.hr-th {
+  @include hr.table-head;
+
+  align-items: end;
+  padding-top: 12px;
+}
+
+.hr-total {
+  @include type.text('body-strong');
+
+  background: var(--v2-surface-sunk);
+}
+
+.hr-num {
+  @include hr.mono;
+
+  text-align: right;
+}
+
+.hr-th .hr-num {
+  font-family: inherit;
+}
+
+.hr-zero {
+  color: var(--v2-faint);
+}
+
+.hr-warn {
+  color: var(--v2-warning-ink);
+  font-weight: 600;
+}
+
+.hr-tag-warn {
+  @include hr.tag(warn);
+}
+
+.hr-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hr-person__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hr-person__name {
+  @include type.text('body-strong');
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hr-ycell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.25;
+}
+
+.hr-ycell__abs {
+  @include hr.mono;
+  @include type.text('caption');
+
+  color: var(--v2-muted);
+}
+
+.hr-future {
+  color: var(--v2-subtle);
+  font-style: italic;
+}
+
+.hr-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.hr-future-swatch {
+  font-style: italic;
+}
+
+.hr-sk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.hr-sk {
+  @include hr.skeleton;
+
+  display: block;
+  height: 14px;
+}

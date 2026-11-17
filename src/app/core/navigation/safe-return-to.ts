@@ -7,6 +7,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   '/calendar',
   '/reports',
   '/accounts',
+  '/hr',
 ] as const;
 
 export function safeAppReturnTo(value: string | null | undefined, fallback = APP_FALLBACK): string {

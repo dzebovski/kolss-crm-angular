@@ -1,0 +1,108 @@
+<section class="hr-card hr-set">
+  <h2 class="hr-sch__h2">{{ 'hr.employee.settings.title' | translate }}</h2>
+  <div class="hr-set__grid">
+    <app-v2-form-field [label]="'hr.employee.settings.office' | translate" hint=" ">
+      <select (change)="officeId.set($any($event.target).value)">
+        @for (o of offices(); track o.value) {
+          <option [value]="o.value" [selected]="o.value === officeId()">{{ o.label }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'hr.employee.settings.account' | translate"
+      [hint]="'hr.employee.settings.accountHint' | translate"
+    >
+      <div class="hr-set__account">
+        <span class="hr-set__ini" aria-hidden="true">{{ initials() }}</span>
+        <span>{{ detail().employee.email ?? name() }}</span>
+      </div>
+    </app-v2-form-field>
+    <app-v2-form-field [label]="'hr.employee.settings.position' | translate" hint=" ">
+      <input
+        maxlength="120"
+        [value]="position()"
+        (input)="position.set($any($event.target).value)"
+      />
+    </app-v2-form-field>
+    <span></span>
+    <app-v2-form-field
+      [label]="'hr.employee.settings.start' | translate"
+      [error]="startedOn() ? '' : ('hr.error.required' | translate)"
+      hint=" "
+    >
+      <input
+        type="date"
+        required
+        [value]="startedOn()"
+        (input)="startedOn.set($any($event.target).value)"
+      />
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'hr.employee.settings.end' | translate"
+      [hint]="'hr.employee.settings.endHint' | translate"
+    >
+      <input type="date" [value]="endedOn()" (input)="endedOn.set($any($event.target).value)" />
+    </app-v2-form-field>
+  </div>
+
+  <div class="hr-set__track">
+    <div>
+      <p class="hr-set__track-title">
+        {{ 'hr.employee.settings.tracked' | translate }}
+      </p>
+      <p class="hr-caption">
+        @if (detail().employee.isTracked || !untrackedFrom()) {
+          {{ 'hr.employee.settings.trackedHint' | translate }}
+        } @else {
+          {{
+            'hr.employee.settings.notTrackedNote' | translate: { date: text.date(untrackedFrom()!) }
+          }}
+        }
+      </p>
+    </div>
+    <button
+      type="button"
+      class="hr-switch"
+      role="switch"
+      [attr.aria-label]="'hr.employee.settings.tracked' | translate"
+      [attr.aria-checked]="detail().employee.isTracked"
+      [disabled]="saving()"
+      (click)="toggleTracked()"
+    >
+      <span class="hr-sr-only">{{ 'hr.employee.settings.tracked' | translate }}</span>
+    </button>
+  </div>
+
+  @if (confirmStop()) {
+    <div
+      class="hr-set__confirm"
+      role="alertdialog"
+      [attr.aria-label]="'hr.employee.stopTracking' | translate"
+    >
+      <span class="hr-set__confirm-text">
+        {{ 'hr.employee.settings.stopConfirm' | translate: { name: name() } }}
+      </span>
+      <button type="button" appV2Button size="sm" (click)="confirmStop.set(false)">
+        {{ 'hr.employee.settings.keepTracking' | translate }}
+      </button>
+      <button type="button" appV2Button size="sm" variant="danger" (click)="stop()">
+        {{ 'hr.employee.stopTracking' | translate }}
+      </button>
+    </div>
+  }
+
+  <div class="hr-set__foot">
+    <button type="button" appV2Button [disabled]="!dirty() || saving()" (click)="discard()">
+      {{ 'hr.employee.settings.discard' | translate }}
+    </button>
+    <button
+      type="button"
+      appV2Button
+      variant="primary"
+      [disabled]="!dirty() || saving()"
+      (click)="save()"
+    >
+      {{ 'hr.employee.settings.save' | translate }}
+    </button>
+  </div>
+</section>

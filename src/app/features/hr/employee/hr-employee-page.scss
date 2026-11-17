@@ -1,0 +1,199 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+@use '../../../../styles/v2/interactive';
+
+// Employee page (HR-employee-calendar.dc.html): breadcrumb, header with avatar and actions,
+// tabs, then the tab body. Calendar tab: month card (flex 999 1 560px) + tiles (flex 1 1 280px).
+:host {
+  display: contents;
+}
+
+@include hr.skeleton-keyframes;
+
+.hr-crumbs {
+  @include type.text('caption');
+
+  display: flex;
+  gap: 6px;
+  color: var(--v2-muted);
+
+  a {
+    color: inherit;
+  }
+}
+
+.hr-emp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.hr-emp-head__text {
+  flex: 1;
+  min-width: 240px;
+}
+
+.hr-emp-head__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.hr-emp-head__title {
+  @include hr.page-title;
+}
+
+.hr-emp-head__today {
+  @include hr.tag(ok);
+}
+
+.hr-emp-head__sub {
+  @include hr.page-subtitle;
+}
+
+.hr-emp-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hr-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.hr-icon-btn {
+  @include hr.icon-button;
+}
+
+.hr-off {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hr-more {
+  position: relative;
+}
+
+.hr-more__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--v2-line-soft);
+  border-radius: var(--v2-radius-sm);
+  background: var(--v2-surface);
+  box-shadow: var(--v2-shadow-menu);
+
+  button {
+    @include type.text('body');
+    @include interactive.states(surface);
+
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: var(--v2-radius-xs);
+    background: none;
+    color: var(--v2-danger);
+    text-align: left;
+    cursor: pointer;
+  }
+}
+
+.hr-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--v2-line-soft);
+}
+
+.hr-tab {
+  @include type.text('body-strong');
+
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--v2-muted);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--v2-ink);
+  }
+}
+
+.hr-tab--on {
+  border-bottom-color: var(--v2-ink);
+  color: var(--v2-ink);
+}
+
+.hr-emp-cal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.hr-emp-cal__main {
+  flex: 999 1 560px;
+  min-width: 0;
+}
+
+.hr-emp-cal__side {
+  display: flex;
+  flex: 1 1 280px;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hr-emp-cal__closed {
+  @include hr.note(warn);
+
+  margin: 0 20px 12px;
+}
+
+.hr-link {
+  @include type.text('label');
+
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--v2-ink);
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hr-emp-sk {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hr-sk {
+  @include hr.skeleton;
+
+  display: block;
+}
+
+.hr-sk--title {
+  width: 280px;
+  height: 40px;
+}
+
+.hr-sk--card {
+  height: 520px;
+}

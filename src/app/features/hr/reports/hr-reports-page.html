@@ -1,0 +1,176 @@
+<div class="hr-head">
+  <div>
+    <h1 class="hr-head__title">{{ 'hr.reports.title' | translate }}</h1>
+    <p class="hr-head__subtitle">{{ 'hr.reports.subtitle' | translate }}</p>
+  </div>
+  <button
+    type="button"
+    appV2Button
+    [disabled]="exporting() || !data() || empty()"
+    (click)="exportCsv()"
+  >
+    <svg class="hr-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+    </svg>
+    {{ 'hr.reports.export' | translate }}
+  </button>
+</div>
+
+<div class="hr-filters">
+  <app-v2-select
+    class="hr-filters__office"
+    [options]="officeOptions()"
+    [value]="officeId()"
+    [ariaLabel]="'hr.office' | translate"
+    (valueChange)="setOffice($event)"
+  />
+  <app-v2-segmented-control
+    [options]="modeOptions()"
+    [value]="mode()"
+    [ariaLabel]="'hr.reports.period' | translate"
+    (valueChange)="setMode($event)"
+  />
+  <div class="hr-filters__nav">
+    <button
+      type="button"
+      class="hr-icon-btn"
+      [attr.aria-label]="'hr.reports.prev' | translate"
+      (click)="step(-1)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+    </button>
+    <span class="hr-filters__period" aria-live="polite">{{ periodLabel() }}</span>
+    <button
+      type="button"
+      class="hr-icon-btn"
+      [attr.aria-label]="'hr.reports.next' | translate"
+      (click)="step(1)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+    </button>
+  </div>
+  <span class="hr-filters__spacer"></span>
+  <span class="hr-caption">{{ 'hr.reports.exportNote' | translate }}</span>
+</div>
+
+@if (report.error() && !data()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'hr.reports.error.title' | translate"
+    [hint]="'hr.errorCode' | translate: { code: errorCode() }"
+  >
+    <button type="button" appV2Button (click)="report.reload()">
+      {{ 'hr.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else if (!data()) {
+  <div class="hr-card hr-sk-card" aria-hidden="true">
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+      <span class="hr-sk"></span>
+    }
+  </div>
+} @else if (empty()) {
+  <app-v2-state-panel
+    tone="empty"
+    icon="folder"
+    [title]="'hr.reports.empty.title' | translate: { period: periodLabel() }"
+    [hint]="'hr.reports.empty.hint' | translate: { office: officeName() }"
+  >
+    <button type="button" appV2Button (click)="goCurrent()">
+      {{ 'hr.reports.empty.current' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else if (mode() === 'month') {
+  <div class="hr-card hr-scroll">
+    <div
+      class="hr-table hr-table--month"
+      role="table"
+      [attr.aria-label]="
+        'hr.reports.ariaMonth' | translate: { period: periodLabel(), office: officeName() }
+      "
+    >
+      <div class="hr-tr hr-th" role="row">
+        <span role="columnheader">{{ 'hr.reports.person' | translate }}</span>
+        @for (label of columnLabels(); track $index) {
+          <span role="columnheader" class="hr-num">{{ label }}</span>
+        }
+      </div>
+      @for (r of monthRows(); track r.id) {
+        <div class="hr-tr" role="row">
+          <span role="cell" class="hr-person">
+            <app-hr-avatar [name]="r.name" size="sm" />
+            <span class="hr-person__text">
+              <span class="hr-person__name">{{ r.name }}</span>
+              <span class="hr-caption">{{ r.position }}</span>
+            </span>
+          </span>
+          @for (c of r.cells; track $index) {
+            <span role="cell" class="hr-num" [class.hr-zero]="c.zero" [class.hr-warn]="c.warn">{{
+              c.text
+            }}</span>
+          }
+        </div>
+      }
+      <div class="hr-tr hr-total" role="row">
+        <span role="cell">
+          {{
+            'hr.reports.total'
+              | translate: { people: text.plural('hr.n.people', monthRows().length) }
+          }}
+        </span>
+        @for (t of monthTotals(); track $index) {
+          <span role="cell" class="hr-num">{{ t }}</span>
+        }
+      </div>
+    </div>
+  </div>
+  <p class="hr-caption">{{ 'hr.reports.monthNote' | translate }}</p>
+} @else {
+  <div class="hr-card hr-scroll">
+    <div
+      class="hr-table hr-table--year"
+      role="table"
+      [attr.aria-label]="
+        'hr.reports.ariaYear' | translate: { period: periodLabel(), office: officeName() }
+      "
+    >
+      <div class="hr-tr hr-th" role="row">
+        <span role="columnheader">{{ 'hr.reports.person' | translate }}</span>
+        @for (m of monthHeads(); track $index) {
+          <span role="columnheader" class="hr-num">{{ m }}</span>
+        }
+        <span role="columnheader" class="hr-num">{{ 'hr.reports.col.year' | translate }}</span>
+        <span role="columnheader" class="hr-num">{{
+          'hr.reports.col.vacationYear' | translate
+        }}</span>
+      </div>
+      @for (r of yearRows(); track r.id) {
+        <div class="hr-tr" role="row">
+          <span role="cell" class="hr-person">
+            <app-hr-avatar [name]="r.name" size="sm" />
+            <span class="hr-person__name">{{ r.name }}</span>
+          </span>
+          @for (c of r.cells; track $index) {
+            <span role="cell" class="hr-num hr-ycell" [class.hr-future]="c.future">
+              <span>{{ c.planned }}</span>
+              <span class="hr-ycell__abs" [class.hr-zero]="c.absence === '0'">{{ c.absence }}</span>
+            </span>
+          }
+          <span role="cell" class="hr-num hr-ycell">
+            <strong>{{ r.planned }}</strong>
+            <span class="hr-ycell__abs">{{ r.absence }}</span>
+          </span>
+          <span role="cell" class="hr-num">
+            <span [class.hr-tag-warn]="r.vacationOver">{{ r.vacation }}</span>
+          </span>
+        </div>
+      }
+    </div>
+  </div>
+  <p class="hr-caption hr-legend">
+    <span><strong>21</strong> {{ 'hr.reports.yearPlanned' | translate }}</span>
+    <span><span class="hr-ycell__abs">−2</span> {{ 'hr.reports.yearAbsence' | translate }}</span>
+    <span class="hr-future-swatch">{{ 'hr.reports.yearFuture' | translate }}</span>
+  </p>
+}

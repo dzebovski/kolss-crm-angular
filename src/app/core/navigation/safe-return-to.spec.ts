@@ -7,6 +7,11 @@ describe('safeAppReturnTo', () => {
     );
   });
 
+  it('returns to HR after signing in', () => {
+    expect(safeAppReturnTo('/hr')).toBe('/hr');
+    expect(safeAppReturnTo('/hr-export')).toBe('/dashboard');
+  });
+
   it('normalizes legacy CRM destinations', () => {
     expect(safeAppReturnTo('/crm/calendar?office=kyiv#today')).toBe('/calendar?office=kyiv#today');
     expect(safeAppReturnTo('/crm')).toBe('/leads');

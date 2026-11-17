@@ -1,3 +1,5 @@
+import { hrMessagesUk } from './messages.hr.uk';
+
 export const messagesUk = {
   'common.save': 'Зберегти',
   'common.saving': 'Збереження…',
@@ -2069,6 +2071,7 @@ export const messagesUk = {
   'v2.projectPopup.payment.basis.other': 'Інше',
   'v2.projectPopup.payment.basisMissing': 'Оберіть підставу оплати',
   'v2.projectPopup.estimate.hint': 'Одна сума; порожнє поле прибирає оцінку.',
+  ...hrMessagesUk,
 } as const;
 
 export type MessageKey = keyof typeof messagesUk;

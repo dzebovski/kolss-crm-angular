@@ -1,0 +1,188 @@
+<div class="hr-head">
+  <div>
+    <h1 class="hr-head__title">{{ 'hr.team.title' | translate }}</h1>
+    <p class="hr-head__subtitle">{{ 'hr.team.subtitle' | translate }}</p>
+  </div>
+  <button type="button" appV2Button variant="primary" (click)="addToTracking()">
+    <svg class="hr-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+    {{ 'hr.team.add' | translate }}
+  </button>
+</div>
+
+<div class="hr-filters">
+  <app-v2-select
+    class="hr-filters__office"
+    [options]="officeOptions()"
+    [value]="officeId()"
+    [ariaLabel]="'hr.office' | translate"
+    (valueChange)="setOffice($event)"
+  />
+  <label class="hr-search">
+    <svg class="hr-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+    <input
+      type="search"
+      [attr.aria-label]="'hr.team.search' | translate"
+      [placeholder]="'hr.team.search' | translate"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+    />
+  </label>
+  <span class="hr-filters__spacer"></span>
+  <div class="hr-filters__nav">
+    <button
+      type="button"
+      class="hr-icon-btn"
+      [attr.aria-label]="'hr.prevMonth' | translate"
+      (click)="step(-1)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+    </button>
+    <span class="hr-filters__period" aria-live="polite">
+      {{ shownMonth() ? text.month(shownMonth()) : '' }}
+    </span>
+    <button
+      type="button"
+      class="hr-icon-btn"
+      [attr.aria-label]="'hr.nextMonth' | translate"
+      (click)="step(1)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+    </button>
+  </div>
+</div>
+
+@if (team.error() && !data()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'hr.team.error.title' | translate"
+    [hint]="'hr.errorCode' | translate: { code: errorCode() }"
+  >
+    <button type="button" appV2Button (click)="team.reload()">{{ 'hr.retry' | translate }}</button>
+  </app-v2-state-panel>
+} @else if (!data()) {
+  <div class="hr-table" aria-hidden="true">
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+      <div class="hr-row hr-row--skeleton">
+        <span class="hr-sk hr-sk--avatar"></span>
+        @for (w of [70, 90, 110, 60, 60, 90, 60]; track $index) {
+          <span class="hr-sk" [style.width.px]="w"></span>
+        }
+      </div>
+    }
+  </div>
+} @else if (trackedCount() === 0 && !showUntracked()) {
+  <app-v2-state-panel
+    tone="empty"
+    icon="people"
+    [title]="'hr.team.empty.title' | translate"
+    [hint]="'hr.team.empty.hint' | translate"
+  >
+    <button type="button" appV2Button variant="primary" (click)="addToTracking()">
+      {{ 'hr.team.add' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else {
+  <div class="hr-table-wrap">
+    <div class="hr-table" role="table" [attr.aria-label]="'hr.team.title' | translate">
+      <div class="hr-row hr-row--head" role="row">
+        <span role="columnheader">{{ 'hr.team.col.person' | translate }}</span>
+        <span role="columnheader">{{ 'hr.team.col.office' | translate }}</span>
+        <span role="columnheader">{{ 'hr.team.col.schedule' | translate }}</span>
+        <span role="columnheader">{{ 'hr.team.col.today' | translate }}</span>
+        <span role="columnheader">
+          {{ 'hr.team.col.month' | translate: { month: text.monthName(shownMonth()) } }}
+        </span>
+        <span role="columnheader">{{ 'hr.team.col.absences' | translate }}</span>
+        <span role="columnheader">{{ 'hr.team.col.vacation' | translate }}</span>
+        <span role="columnheader">{{ 'hr.team.col.makeup' | translate }}</span>
+        <span role="columnheader">{{ 'hr.team.col.nextWeek' | translate }}</span>
+      </div>
+      @for (row of rows(); track row.id) {
+        <a
+          class="hr-row"
+          role="row"
+          [class.hr-row--untracked]="!row.tracked"
+          [routerLink]="['/hr/employees', row.id]"
+        >
+          <span class="hr-person" role="cell">
+            <app-hr-avatar [name]="row.name" size="sm" />
+            <span class="hr-person__text">
+              <span class="hr-person__name">{{ row.name }}</span>
+              <span class="hr-person__pos">
+                {{ row.tracked ? row.position : ('hr.team.notTracked' | translate) }}
+              </span>
+            </span>
+          </span>
+          <span role="cell" class="hr-cell-text">{{ row.office }}</span>
+          <span role="cell" class="hr-cell-text">{{ row.schedule }}</span>
+          <span role="cell">
+            @if (row.todayAbsence; as absence) {
+              <app-hr-absence-chip [type]="absence.type" [part]="absence.part" />
+            } @else if (row.todayOff) {
+              <span class="hr-tag">{{ row.todayText }}</span>
+            } @else {
+              <span class="hr-mono">{{ row.todayText }}</span>
+            }
+          </span>
+          <span role="cell" class="hr-mono">{{ row.month }}</span>
+          <span role="cell" class="hr-chips">
+            @for (a of row.absences; track a.type) {
+              <app-hr-absence-chip
+                [type]="a.type"
+                [count]="text.number(a.days)"
+                [attr.title]="text.type(a.type) + ': ' + text.number(a.days)"
+              />
+            } @empty {
+              <span class="hr-subtle">–</span>
+            }
+          </span>
+          <span role="cell">
+            <span [class]="row.vacationOver ? 'hr-tag hr-tag--warn' : 'hr-mono'">
+              {{ row.vacation }}
+            </span>
+          </span>
+          <span role="cell" [class]="row.makeup === '–' ? 'hr-subtle' : 'hr-mono'">
+            {{ row.makeup }}
+          </span>
+          <span role="cell">
+            @switch (row.next) {
+              @case ('planned') {
+                <span class="hr-tag hr-tag--ok">{{ 'hr.team.nextWeek.planned' | translate }}</span>
+              }
+              @case ('missing') {
+                <span class="hr-tag hr-tag--danger">{{
+                  'hr.team.nextWeek.missing' | translate
+                }}</span>
+              }
+              @case ('fixed') {
+                <span class="hr-muted">{{ 'hr.team.nextWeek.fixed' | translate }}</span>
+              }
+              @default {
+                <span class="hr-subtle">–</span>
+              }
+            }
+          </span>
+        </a>
+      } @empty {
+        <p class="hr-table__empty">{{ 'hr.team.noMatches' | translate: { q: query() } }}</p>
+      }
+    </div>
+  </div>
+
+  <div class="hr-foot">
+    @if (data()!.untrackedAccounts > 0 || showUntracked()) {
+      <button type="button" appV2Button size="sm" (click)="showUntracked.set(!showUntracked())">
+        {{
+          showUntracked()
+            ? ('hr.team.hideUntracked' | translate)
+            : ('hr.team.showUntracked' | translate: { n: data()!.untrackedAccounts })
+        }}
+      </button>
+    }
+    <p class="hr-foot__note">{{ 'hr.team.note' | translate }}</p>
+  </div>
+}

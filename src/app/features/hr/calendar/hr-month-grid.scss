@@ -1,0 +1,149 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+
+// Month grid (HR-calendar-month.dc.html): 220px person column, 44px day columns, 4px gap.
+:host {
+  display: block;
+  overflow-x: auto;
+}
+
+.hr-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: max-content;
+  min-width: 100%;
+  padding: 12px 16px 16px;
+  box-sizing: border-box;
+}
+
+.hr-grid__row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hr-grid__person {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 220px;
+  width: 220px;
+  min-width: 0;
+  padding-right: 8px;
+  box-sizing: border-box;
+  background: var(--v2-surface);
+}
+
+.hr-grid__count {
+  @include type.text('card-label');
+
+  color: var(--v2-muted);
+}
+
+.hr-grid__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hr-grid__name {
+  @include type.text('body-strong');
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hr-grid__schedule {
+  @include type.text('label');
+
+  overflow: hidden;
+  color: var(--v2-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hr-grid__day,
+.hr-grid__slot,
+.hr-grid__total {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+}
+
+.hr-grid__day {
+  flex-direction: column;
+  height: 40px;
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink-2);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.hr-grid__letter {
+  color: var(--v2-muted);
+}
+
+.hr-grid__num {
+  @include hr.mono;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.hr-grid__day--weekend {
+  background: var(--v2-ground);
+}
+
+.hr-grid__day--holiday {
+  background: var(--v2-surface-sunk);
+  color: var(--v2-subtle);
+}
+
+.hr-grid__day--today {
+  background: var(--v2-ink);
+  color: var(--v2-on-ink);
+
+  .hr-grid__letter {
+    color: inherit;
+  }
+}
+
+.hr-grid__row--foot {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+.hr-grid__foot-label {
+  @include type.text('card-label');
+
+  color: var(--v2-muted);
+}
+
+.hr-grid__total {
+  @include hr.mono;
+
+  gap: 3px;
+  height: 24px;
+  color: var(--v2-ink-2);
+  font-size: 12px;
+}
+
+.hr-grid__total--nobody {
+  color: var(--v2-danger);
+  font-weight: 600;
+}
+
+.hr-grid__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--v2-danger);
+}

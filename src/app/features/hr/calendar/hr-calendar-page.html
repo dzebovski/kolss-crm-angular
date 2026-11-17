@@ -1,0 +1,171 @@
+<div class="hr-head">
+  <div class="hr-head__text">
+    <h1 class="hr-head__title">{{ 'hr.calendar.title' | translate }}</h1>
+    <p class="hr-head__subtitle">{{ subtitle() }}</p>
+  </div>
+  @if (canAdd()) {
+    <button type="button" appV2Button variant="primary" (click)="addAbsence()">
+      <svg class="hr-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+      {{ 'hr.addAbsence' | translate }}
+    </button>
+  }
+</div>
+
+<div class="hr-filters">
+  <app-v2-select
+    class="hr-filters__office"
+    [options]="officeOptions()"
+    [value]="officeId()"
+    [ariaLabel]="'hr.office' | translate"
+    (valueChange)="setOffice($event)"
+  />
+  <app-v2-segmented-control
+    [options]="viewOptions()"
+    [value]="mode()"
+    [ariaLabel]="'hr.view' | translate"
+    (valueChange)="setView($event)"
+  />
+  <div class="hr-filters__nav">
+    <button
+      type="button"
+      class="hr-icon-btn"
+      [attr.aria-label]="(mode() === 'week' ? 'hr.prevWeek' : 'hr.prevMonth') | translate"
+      (click)="step(-1)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+    </button>
+    <button type="button" appV2Button (click)="goToday()">{{ 'hr.today' | translate }}</button>
+    <button
+      type="button"
+      class="hr-icon-btn"
+      [attr.aria-label]="(mode() === 'week' ? 'hr.nextWeek' : 'hr.nextMonth') | translate"
+      (click)="step(1)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+    </button>
+  </div>
+  <span class="hr-filters__period" aria-live="polite">{{ periodLabel() }}</span>
+  <span class="hr-filters__spacer"></span>
+  <button
+    type="button"
+    appV2Button
+    [attr.aria-expanded]="legendOpen()"
+    aria-controls="hr-calendar-legend"
+    (click)="legendOpen.set(!legendOpen())"
+  >
+    {{ 'hr.legend' | translate }}
+  </button>
+  @if (legendOpen()) {
+    <div class="hr-filters__legend" id="hr-calendar-legend">
+      <app-hr-legend />
+    </div>
+  }
+</div>
+
+@if (strip(); as s) {
+  @if (s.total > 0) {
+    <div class="hr-strip">
+      <span class="hr-strip__label">{{ 'hr.calendar.inOfficeToday' | translate }}</span>
+      <span class="hr-strip__count">{{
+        'hr.calendar.countOf' | translate: { x: s.inOffice, n: s.total }
+      }}</span>
+      <span class="hr-strip__people">
+        @for (person of s.present; track person.id) {
+          <app-hr-avatar size="sm" [name]="person.displayName" [attr.title]="personName(person)" />
+        }
+      </span>
+      <span class="hr-strip__divider" aria-hidden="true"></span>
+      <span class="hr-strip__label">{{ 'hr.calendar.absentToday' | translate }}</span>
+      @for (item of s.absent; track item.employee.id) {
+        <span class="hr-strip__absent">
+          <span class="hr-strip__name">{{ personName(item.employee) }}</span>
+          <app-hr-absence-chip [type]="item.absence.type" [part]="item.absence.part" />
+        </span>
+      } @empty {
+        <span class="hr-strip__none">{{ 'hr.calendar.nobody' | translate }}</span>
+      }
+    </div>
+  }
+}
+
+<section
+  class="hr-card"
+  [attr.aria-label]="'hr.calendar.title' | translate"
+  [attr.aria-busy]="calendar.isLoading()"
+>
+  @if (calendar.error()) {
+    <app-v2-state-panel
+      tone="error"
+      icon="alert"
+      [title]="'hr.calendar.error.title' | translate"
+      [hint]="'hr.errorCode' | translate: { code: errorCode() }"
+    >
+      <button type="button" appV2Button (click)="calendar.reload()">
+        {{ 'hr.retry' | translate }}
+      </button>
+    </app-v2-state-panel>
+  } @else if (data(); as cal) {
+    @if (cal.people.length === 0) {
+      <app-v2-state-panel
+        tone="empty"
+        icon="people"
+        [title]="'hr.calendar.empty.title' | translate: { office: officeName() }"
+        [hint]="
+          (session.canManageHr() ? 'hr.calendar.empty.admin' : 'hr.calendar.empty.employee')
+            | translate
+        "
+      >
+        @if (session.canManageHr()) {
+          <button type="button" appV2Button variant="primary" (click)="addPeople()">
+            {{ 'hr.calendar.empty.add' | translate }}
+          </button>
+        }
+      </app-v2-state-panel>
+    } @else if (mode() === 'week') {
+      <app-hr-week-grid [calendar]="cal" (pick)="onPick($event)" />
+    } @else {
+      <app-hr-month-grid [calendar]="cal" [selected]="selectedKey()" (pick)="onPick($event)" />
+    }
+  } @else {
+    <div class="hr-skeleton" aria-hidden="true">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+        <span class="hr-skeleton__row"></span>
+      }
+    </div>
+  }
+</section>
+
+<p class="hr-note">{{ 'hr.calendar.note' | translate }}</p>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="selection()?.anchor!"
+  [cdkConnectedOverlayOpen]="!!picked()"
+  [cdkConnectedOverlayPositions]="positions"
+  cdkConnectedOverlayPanelClass="v2-dialog-panel"
+  (overlayOutsideClick)="closePopover()"
+  (detach)="closePopover()"
+  (overlayKeydown)="$event.key === 'Escape' && closePopover()"
+>
+  @if (picked(); as p) {
+    @if (data(); as cal) {
+      <app-hr-day-popover
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
+        [employee]="p.employee"
+        [date]="p.date"
+        [cell]="p.cell"
+        [day]="p.day"
+        [office]="cal.office"
+        [access]="access()"
+        [makeupOwed]="session.value()?.makeupOwed ?? null"
+        (closed)="closePopover()"
+        (editAbsence)="editAbsence($event)"
+        (editHours)="editHours($event)"
+        (openEmployee)="openEmployee($event)"
+      />
+    }
+  }
+</ng-template>

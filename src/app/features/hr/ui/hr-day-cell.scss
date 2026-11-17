@@ -1,0 +1,115 @@
+@use 'hr';
+@use '../../../../styles/v2/interactive';
+
+// 44×44 day cell (HR-components.dc.html, Day cell). 10/11px numerals are board values.
+:host {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line-soft);
+  border-radius: var(--v2-radius-sm);
+  color: var(--v2-ink);
+  font-family: var(--v2-font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  cursor: pointer;
+
+  @include interactive.states(surface);
+}
+
+:host([data-kind='closed']) {
+  background: var(--v2-surface-sunk);
+  border-color: transparent;
+  color: var(--v2-subtle);
+}
+
+:host([data-kind='off']) {
+  color: var(--v2-faint);
+}
+
+:host([data-kind='absence']:not([data-half])) {
+  @include hr.type-tones;
+
+  border-color: transparent;
+}
+
+:host(.hr-cell--today) {
+  outline: 2px solid var(--v2-ink);
+  outline-offset: -2px;
+}
+
+:host(.hr-cell--selected) {
+  border-color: var(--v2-ink);
+  box-shadow: 0 0 0 1px var(--v2-ink);
+}
+
+:host(.hr-cell--past) {
+  opacity: 0.72;
+}
+
+.hr-cell__start {
+  font-weight: 500;
+}
+
+.hr-cell__end {
+  color: var(--v2-muted);
+}
+
+.hr-cell__hours {
+  position: relative;
+  font-weight: 500;
+}
+
+.hr-cell__dash {
+  font-family: var(--v2-font-sans);
+  font-size: 14px;
+}
+
+.hr-cell__fill {
+  position: absolute;
+  inset: 0 0 50%;
+}
+
+:host([data-half='second_half']) .hr-cell__fill {
+  inset: 50% 0 0;
+}
+
+@each $type in hr.$types {
+  :host([data-half][data-type='#{$type}']) .hr-cell__fill {
+    @include hr.type-tone($type);
+  }
+}
+
+.hr-cell__icon,
+.hr-cell__lock {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hr-cell__lock {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  color: var(--v2-subtle);
+}
+
+.hr-cell__mk {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  color: var(--v2-event-showroom);
+  font-size: 9px;
+  font-weight: 600;
+}
