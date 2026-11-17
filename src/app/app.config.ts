@@ -16,6 +16,7 @@ import { routes } from './app.routes';
 import { AuthService } from './core/auth/auth.service';
 import { apiAuthInterceptor } from './core/api/api-auth.interceptor';
 import { clearChunkReloadGuard, tryReloadForStaleChunk } from './core/chunk-load-recovery';
+import { RememberedFilters } from './core/navigation/remembered-filters';
 import { I18nService } from './core/i18n/i18n.service';
 import { SessionService } from './core/session/session.service';
 
@@ -32,6 +33,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([apiAuthInterceptor])),
     provideAppInitializer(() => {
       clearChunkReloadGuard();
+      inject(RememberedFilters).start();
       const i18n = inject(I18nService);
       const session = inject(SessionService);
       // Load the active locale's message bundle before first render so

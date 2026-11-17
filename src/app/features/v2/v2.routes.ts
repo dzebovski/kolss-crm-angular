@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { superAdminGuard } from '@core/auth/role.guard';
+import { REMEMBER_PARAMS, restoreRememberedFilters } from '@core/navigation/remembered-filters';
 
 const V2_ROUTES: Routes = [
   {
@@ -10,6 +11,8 @@ const V2_ROUTES: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'leads' },
       {
         path: 'leads',
+        data: { [REMEMBER_PARAMS]: ['period', 'createdFrom', 'createdTo', 'status', 'rating'] },
+        canActivate: [restoreRememberedFilters],
         loadComponent: () => import('./leads/list/v2-leads-page').then((page) => page.V2LeadsPage),
       },
       {
@@ -19,6 +22,8 @@ const V2_ROUTES: Routes = [
       },
       {
         path: 'projects',
+        data: { [REMEMBER_PARAMS]: ['view', 'manager', 'status'] },
+        canActivate: [restoreRememberedFilters],
         loadComponent: () =>
           import('./projects/list/v2-projects-page').then((page) => page.V2ProjectsPage),
       },
@@ -36,6 +41,8 @@ const V2_ROUTES: Routes = [
       },
       {
         path: 'clients',
+        data: { [REMEMBER_PARAMS]: ['filter'] },
+        canActivate: [restoreRememberedFilters],
         loadComponent: () =>
           import('./clients/list/v2-clients-page').then((page) => page.V2ClientsPage),
       },
@@ -46,6 +53,8 @@ const V2_ROUTES: Routes = [
       },
       {
         path: 'tasks',
+        data: { [REMEMBER_PARAMS]: ['view', 'list', 'hide', 'who'] },
+        canActivate: [restoreRememberedFilters],
         loadComponent: () => import('./tasks/v2-tasks-page').then((page) => page.V2TasksPage),
       },
       {
