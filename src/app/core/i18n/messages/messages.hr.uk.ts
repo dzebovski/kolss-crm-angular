@@ -454,6 +454,16 @@ export const hrMessagesUk = {
   'hr.entries.deleteAria': 'Видалити запис',
   'hr.entries.byName': '{name}',
   'hr.entries.filter': 'Тип запису',
+  'hr.reports.overValue': '{n} понад',
+  'hr.reports.year': 'Рік',
+  'hr.reports.person': 'Людина',
+  'hr.reports.exportError': 'Не вдалося експортувати звіт',
+  'hr.settings.date': 'Дата',
+  'hr.settings.name': 'Назва',
+  'hr.settings.kind': 'Тип',
+  'hr.settings.deleteConfirm': 'Видалити «{name}»?',
+  'hr.settings.vacationError': 'Від 0 до 366 днів',
+  'hr.settings.actions': 'Дії',
 } as const;
 
 export type HrMessageKey = keyof typeof hrMessagesUk;

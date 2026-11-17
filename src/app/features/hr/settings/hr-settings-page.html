@@ -1,0 +1,233 @@
+<div class="hr-head">
+  <div>
+    <h1 class="hr-head__title">{{ 'hr.settings.title' | translate }}</h1>
+    <p class="hr-head__subtitle">{{ 'hr.settings.subtitle' | translate }}</p>
+  </div>
+</div>
+
+<div class="hr-office-bar">
+  <div class="hr-office-tabs" role="tablist" [attr.aria-label]="'hr.settings.offices' | translate">
+    @for (o of officeTabs(); track o.id) {
+      <button
+        type="button"
+        role="tab"
+        class="hr-office-tab"
+        [class.hr-office-tab--on]="o.active"
+        [attr.aria-selected]="o.active"
+        (click)="setOffice(o.id)"
+      >
+        {{ o.label }}
+      </button>
+    }
+  </div>
+  <p class="hr-note">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8h.01M11 12h1v4h1" />
+    </svg>
+    {{ 'hr.settings.note' | translate }}
+  </p>
+</div>
+
+@if (settings.error() && !data()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'hr.settings.error.title' | translate"
+    [hint]="'hr.errorCode' | translate: { code: errorCode() }"
+  >
+    <button type="button" appV2Button (click)="settings.reload()">
+      {{ 'hr.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else {
+  <div class="hr-cols">
+    <div class="hr-cols__left">
+      <section class="hr-card" aria-labelledby="hr-set-hours">
+        <header class="hr-card__head">
+          <h2 class="hr-card__title" id="hr-set-hours">{{ 'hr.settings.hours' | translate }}</h2>
+          <p class="hr-caption">{{ 'hr.settings.hoursHint' | translate }}</p>
+        </header>
+        <div class="hr-hours">
+          @for (h of hours(); track h.weekday) {
+            <div class="hr-hours__row">
+              <span class="hr-hours__day">{{ text.weekday(h.weekday) }}</span>
+              <button
+                type="button"
+                class="hr-switch"
+                role="switch"
+                [attr.aria-checked]="h.open"
+                [attr.aria-label]="
+                  'hr.settings.dayOpenAria' | translate: { day: text.weekday(h.weekday) }
+                "
+                (click)="patchDay(h.weekday, { open: !h.open })"
+              >
+                <span class="hr-sr-only">{{ text.weekday(h.weekday) }}</span>
+              </button>
+              <span class="hr-hours__state">
+                {{ (h.open ? 'hr.settings.open' : 'hr.settings.closed') | translate }}
+              </span>
+              @if (h.open) {
+                <span class="hr-hours__times">
+                  <select
+                    [attr.aria-label]="
+                      'hr.settings.fromAria' | translate: { day: text.weekday(h.weekday) }
+                    "
+                    [attr.aria-invalid]="hoursErrors().has(h.weekday)"
+                    (change)="patchDay(h.weekday, { opens: $any($event.target).value })"
+                  >
+                    @for (t of times; track t) {
+                      <option [value]="t" [selected]="t === h.opens">{{ t }}</option>
+                    }
+                  </select>
+                  <span aria-hidden="true">–</span>
+                  <select
+                    [attr.aria-label]="
+                      'hr.settings.toAria' | translate: { day: text.weekday(h.weekday) }
+                    "
+                    [attr.aria-invalid]="hoursErrors().has(h.weekday)"
+                    (change)="patchDay(h.weekday, { closes: $any($event.target).value })"
+                  >
+                    @for (t of times; track t) {
+                      <option [value]="t" [selected]="t === h.closes">{{ t }}</option>
+                    }
+                  </select>
+                </span>
+                @if (hoursErrors().has(h.weekday)) {
+                  <span class="hr-hours__error">{{ 'hr.settings.hoursError' | translate }}</span>
+                }
+              }
+            </div>
+          }
+        </div>
+        <footer class="hr-card__foot">
+          <button
+            type="button"
+            appV2Button
+            variant="primary"
+            [disabled]="!data() || savingHours()"
+            (click)="saveHours()"
+          >
+            {{ 'hr.settings.saveHours' | translate }}
+          </button>
+        </footer>
+      </section>
+
+      <section class="hr-card" aria-labelledby="hr-set-vac">
+        <header class="hr-card__head">
+          <h2 class="hr-card__title" id="hr-set-vac">{{ 'hr.settings.vacation' | translate }}</h2>
+        </header>
+        <div class="hr-vac">
+          <app-v2-form-field
+            class="hr-vac__field"
+            [label]="'hr.settings.vacationDays' | translate"
+            [error]="vacationInvalid() ? ('hr.settings.vacationError' | translate) : ''"
+            [hint]="'hr.settings.vacationHint' | translate"
+          >
+            <input
+              inputmode="numeric"
+              [value]="vacationText()"
+              (input)="vacationText.set($any($event.target).value)"
+            />
+          </app-v2-form-field>
+          <button
+            type="button"
+            appV2Button
+            [disabled]="!data() || savingVacation()"
+            (click)="saveVacation()"
+          >
+            {{ 'hr.save' | translate }}
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <section class="hr-card hr-cols__right" aria-labelledby="hr-set-hol">
+      <header class="hr-card__head hr-card__head--row">
+        <h2 class="hr-card__title" id="hr-set-hol">{{ 'hr.settings.holidays' | translate }}</h2>
+        <span class="hr-spacer"></span>
+        <app-v2-segmented-control
+          [options]="yearOptions()"
+          [value]="'' + year()"
+          [ariaLabel]="'hr.settings.year' | translate"
+          (valueChange)="year.set(+$event)"
+        />
+        <button type="button" appV2Button size="sm" (click)="addHoliday()">
+          <svg class="hr-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {{ 'hr.settings.add' | translate }}
+        </button>
+      </header>
+      <div role="table" [attr.aria-label]="'hr.settings.holidays' | translate">
+        <div class="hr-tr hr-th" role="row">
+          <span role="columnheader">{{ 'hr.settings.date' | translate }}</span>
+          <span role="columnheader">{{ 'hr.settings.name' | translate }}</span>
+          <span role="columnheader">{{ 'hr.settings.kind' | translate }}</span>
+          <span role="columnheader"
+            ><span class="hr-sr-only">{{ 'hr.settings.actions' | translate }}</span></span
+          >
+        </div>
+        @for (r of holidayRows(); track r.holiday.id) {
+          <div class="hr-tr" role="row">
+            <span role="cell" class="hr-strong" [class.hr-subtle]="r.sunday">{{ r.date }}</span>
+            <span role="cell">{{ r.holiday.name }}</span>
+            <span role="cell">
+              <span [class]="r.holiday.kind === 'public_holiday' ? 'hr-tag' : 'hr-pill'">{{
+                r.kind
+              }}</span>
+            </span>
+            <span role="cell" class="hr-actions">
+              <button
+                type="button"
+                class="hr-icon-btn"
+                [attr.aria-label]="'hr.settings.editAria' | translate: { name: r.holiday.name }"
+                (click)="editHoliday(r.holiday)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="hr-icon-btn"
+                [attr.aria-label]="'hr.settings.deleteAria' | translate: { name: r.holiday.name }"
+                (click)="confirmId.set(r.holiday.id)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+                </svg>
+              </button>
+            </span>
+            @if (confirmId() === r.holiday.id) {
+              <div
+                class="hr-confirm"
+                role="alertdialog"
+                [attr.aria-label]="'hr.delete' | translate"
+              >
+                <span class="hr-confirm__text">
+                  {{ 'hr.settings.deleteConfirm' | translate: { name: r.holiday.name } }}
+                </span>
+                <button type="button" appV2Button size="sm" (click)="confirmId.set(null)">
+                  {{ 'hr.cancel' | translate }}
+                </button>
+                <button
+                  type="button"
+                  appV2Button
+                  size="sm"
+                  variant="danger"
+                  (click)="deleteHoliday(r.holiday)"
+                >
+                  {{ 'hr.delete' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+        } @empty {
+          <p class="hr-empty">{{ 'hr.settings.holidaysEmpty' | translate: { year: year() } }}</p>
+        }
+      </div>
+      <p class="hr-caption hr-card__note">{{ 'hr.settings.sundayNote' | translate }}</p>
+    </section>
+  </div>
+}
