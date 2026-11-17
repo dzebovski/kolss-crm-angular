@@ -7,7 +7,6 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { hrInitials, hrSearchText } from '@domain/hr/hr-entry';
 import {
   hasHrPatternErrors,
-  hrNextMonday,
   hrPatternDraft,
   hrPatternPreview,
   hrPatternRequest,
@@ -45,7 +44,8 @@ export class HrAddTrackingDialog {
   protected readonly query = signal('');
   protected readonly profileId = signal('');
   protected readonly officeId = signal(this.session.defaultOfficeId());
-  protected readonly startedOn = signal(hrNextMonday(this.today || '2026-01-05'));
+  /** Today, so new people show up in the current week at once (owner decision, 2026-11-17). */
+  protected readonly startedOn = signal(this.today);
   protected readonly position = signal('');
   protected readonly draft = signal(hrPatternDraft(null));
   protected readonly attempted = signal(false);

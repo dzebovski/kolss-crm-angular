@@ -107,7 +107,27 @@
       </button>
     </app-v2-state-panel>
   } @else if (data(); as cal) {
-    @if (cal.people.length === 0) {
+    @if (cal.people.length === 0 && startsOn(); as start) {
+      <app-v2-state-panel
+        tone="empty"
+        icon="people"
+        [title]="
+          'hr.calendar.startsLater.title'
+            | translate: { office: officeName(), date: text.fullDay(start) }
+        "
+        [hint]="'hr.calendar.startsLater.hint' | translate"
+      >
+        <button type="button" appV2Button variant="primary" (click)="goTo(start)">
+          {{ 'hr.calendar.startsLater.go' | translate: { date: text.day(start) } }}
+        </button>
+      </app-v2-state-panel>
+    } @else if (cal.people.length === 0 && upcomingPending()) {
+      <div class="hr-skeleton" aria-hidden="true">
+        @for (row of [1, 2, 3]; track row) {
+          <span class="hr-skeleton__row"></span>
+        }
+      </div>
+    } @else if (cal.people.length === 0) {
       <app-v2-state-panel
         tone="empty"
         icon="people"

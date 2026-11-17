@@ -107,6 +107,31 @@ export class HrCalendarPage {
       this.hr.calendar({ officeId: params.officeId, from: params.today, to: params.today }),
   });
 
+  /**
+   * When nobody is tracked in the shown range, the first tracked day in the next 62 days (the
+   * API's longest range): people added with a later start date, shown as "starts on …".
+   */
+  private readonly upcoming = resource({
+    params: () => {
+      const range = this.range();
+      const officeId = this.officeId();
+      if (!range || !officeId || !this.calendar.hasValue()) return undefined;
+      if (this.calendar.value().people.length > 0) return undefined;
+      const from = addDays(range.to, 1);
+      return { officeId, from, to: addDays(from, 61) };
+    },
+    loader: ({ params }) => this.hr.calendar(params),
+  });
+
+  /** The look-ahead is still loading: keep the skeleton instead of flashing "nobody". */
+  protected readonly upcomingPending = computed(() => this.upcoming.isLoading());
+
+  protected readonly startsOn = computed(() => {
+    if (!this.upcoming.hasValue()) return null;
+    const dates = this.upcoming.value().cells.map((cell) => cell.date);
+    return dates.length > 0 ? dates.reduce((min, date) => (date < min ? date : min)) : null;
+  });
+
   protected readonly data = computed(() =>
     this.calendar.hasValue() ? this.calendar.value() : undefined,
   );
@@ -207,6 +232,10 @@ export class HrCalendarPage {
         ? addDays(mondayOf(anchor), delta * 7)
         : monthStart(shiftMonth(monthOf(anchor), delta));
     this.navigate({ at: next });
+  }
+
+  protected goTo(date: string): void {
+    this.navigate({ at: date });
   }
 
   protected goToday(): void {
