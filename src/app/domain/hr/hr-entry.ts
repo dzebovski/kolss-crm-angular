@@ -129,6 +129,18 @@ export function hrAbsenceDays(
   return single && draft.part !== 'full_day' ? count * 0.5 : count;
 }
 
+/**
+ * Search form of a name or email: lower case, diacritics dropped (`Sławek` → `slawek`,
+ * `Łódź` → `lodz`), so people find each other without Polish or Ukrainian keyboards.
+ */
+export function hrSearchText(value: string): string {
+  return value
+    .toLocaleLowerCase()
+    .replace(/ł/g, 'l')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 /** Initials for the avatar circle: first letters of the first two words. */
 export function hrInitials(name: string | null | undefined): string {
   const words = (name ?? '').trim().split(/\s+/).filter(Boolean);

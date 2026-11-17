@@ -6,7 +6,7 @@ import { KolssApiError } from '@core/api/generated/kolss-api.client';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { hrCellView } from '@domain/hr/hr-calendar';
 import { shiftMonth } from '@domain/hr/hr-dates';
-import { hrName } from '@domain/hr/hr-entry';
+import { hrName, hrSearchText } from '@domain/hr/hr-entry';
 import { HrService } from '@services/hr/hr.service';
 import { V2Button } from '../../v2/ui/v2-button';
 import { V2Select, type V2SelectOption } from '../../v2/ui/v2-select';
@@ -79,9 +79,9 @@ export class HrTeamPage {
   protected readonly rows = computed(() => {
     const data = this.data();
     if (!data) return [];
-    const q = this.query().trim().toLocaleLowerCase();
+    const q = hrSearchText(this.query().trim());
     return data.items
-      .filter((row) => !q || hrName(row.employee).toLocaleLowerCase().includes(q))
+      .filter((row) => !q || hrSearchText(hrName(row.employee)).includes(q))
       .map((row) => this.toRow(row, data.today));
   });
 

@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 import type { HrAccount } from '@core/api/generated/kolss-api.types';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
-import { hrInitials } from '@domain/hr/hr-entry';
+import { hrInitials, hrSearchText } from '@domain/hr/hr-entry';
 import {
   hasHrPatternErrors,
   hrNextMonday,
@@ -68,15 +68,15 @@ export class HrAddTrackingDialog {
 
   protected readonly matches = computed(() => {
     const list = this.accounts.hasValue() ? this.accounts.value() : [];
-    const q = this.query().trim().toLocaleLowerCase();
+    const q = hrSearchText(this.query().trim());
+    // Every account matches when the search is empty; the list scrolls.
     return list
       .filter(
         (a) =>
           !q ||
-          (a.displayName ?? '').toLocaleLowerCase().includes(q) ||
-          (a.email ?? '').toLocaleLowerCase().includes(q),
+          hrSearchText(a.displayName ?? '').includes(q) ||
+          hrSearchText(a.email ?? '').includes(q),
       )
-      .slice(0, 8)
       .map((a) => ({
         account: a,
         initials: hrInitials(a.displayName ?? a.email),

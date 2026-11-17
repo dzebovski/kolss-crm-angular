@@ -1,7 +1,7 @@
 import type { HrCell, HrHoliday, HrOffice, HrPattern } from '@core/api/generated/kolss-api.types';
 import { hrCoveredMinutes, hrDayCoverage, hrOfficeInterval } from './hr-calendar';
 import { addDays, isoWeekday, mondayOf, monthEnd, monthWeeks, shiftMonth } from './hr-dates';
-import { hrAbsenceDays, hrDateError, validateHrAbsence } from './hr-entry';
+import { hrAbsenceDays, hrDateError, hrSearchText, validateHrAbsence } from './hr-entry';
 import { hrPlanCounter, hrPlanDayState, hrPlanRequest, type HrPlanDay } from './hr-plan';
 import {
   hrNextMonday,
@@ -226,5 +226,11 @@ describe('hr-pattern', () => {
     expect(
       validateHrPattern({ ...draft, kind: 'flexible', daysPerWeek: 7, hoursPerDay: '4' }, office),
     ).toEqual({ daysPerWeek: 'range' });
+  });
+});
+
+describe('hrSearchText', () => {
+  it('drops case and Polish diacritics', () => {
+    expect(hrSearchText('Sławek ŻÓŁĆ')).toBe('slawek zolc');
   });
 });
