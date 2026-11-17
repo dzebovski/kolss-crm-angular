@@ -1,0 +1,61 @@
+<div class="hr-grid" role="grid" [attr.aria-rowcount]="rows().length + 2">
+  <div class="hr-grid__row hr-grid__row--head" role="row">
+    <span class="hr-grid__person hr-grid__count" role="columnheader">{{ peopleLabel() }}</span>
+    @for (head of heads(); track head.date) {
+      <span
+        class="hr-grid__day"
+        role="columnheader"
+        [class.hr-grid__day--weekend]="head.weekend"
+        [class.hr-grid__day--holiday]="head.holiday"
+        [class.hr-grid__day--today]="head.today"
+        [attr.title]="head.holidayName"
+        [attr.aria-label]="head.label"
+      >
+        <span class="hr-grid__letter" aria-hidden="true">{{ head.letter }}</span>
+        <span class="hr-grid__num" aria-hidden="true">{{ head.number }}</span>
+      </span>
+    }
+  </div>
+
+  @for (row of rows(); track row.employee.id) {
+    <div class="hr-grid__row" role="row">
+      <span class="hr-grid__person" role="rowheader">
+        <app-hr-avatar [name]="row.employee.displayName" />
+        <span class="hr-grid__who">
+          <span class="hr-grid__name">{{ row.name }}</span>
+          <span class="hr-grid__schedule">{{ row.schedule }}</span>
+        </span>
+      </span>
+      @for (cell of row.cells; track cell.view.date) {
+        <span class="hr-grid__slot" role="gridcell">
+          <button
+            appHrDayCell
+            [view]="cell.view"
+            [label]="cell.label"
+            [attr.aria-label]="cell.label"
+            [selected]="isSelected(row.employee.id, cell.view.date)"
+            (click)="onPick(row.employee, cell.view.date, $event)"
+          ></button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="hr-grid__row hr-grid__row--foot" role="row">
+    <span class="hr-grid__person hr-grid__foot-label" role="rowheader">
+      {{ 'hr.calendar.inOffice' | translate }}
+    </span>
+    @for (day of footer(); track day.date) {
+      <span class="hr-grid__total" role="gridcell" [class.hr-grid__total--nobody]="day.nobody">
+        @if (day.closed) {
+          –
+        } @else {
+          @if (day.nobody) {
+            <span class="hr-grid__dot" aria-hidden="true"></span>
+          }
+          {{ day.count }}
+        }
+      </span>
+    }
+  </div>
+</div>

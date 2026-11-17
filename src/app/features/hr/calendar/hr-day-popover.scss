@@ -1,0 +1,129 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+@use '../../../../styles/v2/interactive';
+
+// Day popover (HR-calendar-day-popover.dc.html): 360px card with the menu shadow.
+:host {
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - 32px));
+  background: var(--v2-surface);
+  border: 1px solid var(--v2-line);
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow-menu);
+}
+
+.hr-pop__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 12px 10px 16px;
+}
+
+.hr-pop__who {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.hr-pop__name {
+  @include type.text('body-strong');
+}
+
+.hr-pop__date {
+  @include type.text('label');
+
+  color: var(--v2-muted);
+}
+
+.hr-pop__close {
+  @include hr.icon-button;
+
+  width: var(--v2-control-sm);
+  height: var(--v2-control-sm);
+  border-color: transparent;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.hr-pop__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 16px 14px;
+}
+
+.hr-pop__holiday {
+  @include type.text('caption');
+
+  margin: 0;
+  color: var(--v2-ink-2);
+}
+
+.hr-pop__dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+
+  dt {
+    @include type.text('caption');
+
+    color: var(--v2-muted);
+  }
+
+  dd {
+    @include type.text('caption');
+
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.hr-pop__struck {
+  text-decoration: line-through;
+  color: var(--v2-muted);
+}
+
+.hr-pop__hours {
+  @include type.text('body-strong');
+  @include hr.mono;
+
+  margin: 0;
+}
+
+.hr-pop__muted,
+.hr-pop__note {
+  @include type.text('label');
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.hr-pop__lock {
+  @include type.text('label');
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--v2-muted);
+
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+  }
+}
+
+.hr-pop__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--v2-line-soft);
+}
