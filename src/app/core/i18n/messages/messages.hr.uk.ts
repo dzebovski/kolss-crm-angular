@@ -474,6 +474,7 @@ export const hrMessagesUk = {
   'hr.popover.planHours': 'Запланувати години',
   'hr.popover.editHours': 'Змінити години',
   'hr.popover.setWorkday': 'Робочий день {range}',
+  'hr.popover.outsideTracking': 'У цей день поза обліком · облік з {date}',
 } as const;
 
 export type HrMessageKey = keyof typeof hrMessagesUk;

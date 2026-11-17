@@ -66,6 +66,10 @@
     } @else if (employee().pattern?.kind === 'flexible') {
       <p class="hr-pop__note">{{ 'hr.popover.hoursPrivacy' | translate: { name: name() } }}</p>
     }
+  } @else if (!inTracking()) {
+    <p class="hr-pop__muted">
+      {{ 'hr.popover.outsideTracking' | translate: { date: text.day(employee().startedOn) } }}
+    </p>
   } @else {
     <p class="hr-pop__muted">{{ 'hr.popover.noPlan' | translate }} · {{ officeRange() }}</p>
   }

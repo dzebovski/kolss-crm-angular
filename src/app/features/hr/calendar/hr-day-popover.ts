@@ -99,9 +99,17 @@ export class HrDayPopover {
     );
   });
 
+  /** The day is inside the person's tracking (start … end / stop); outside, nothing shows. */
+  protected readonly inTracking = computed(() => {
+    const e = this.employee();
+    const date = this.date();
+    if (date < e.startedOn) return false;
+    return [e.endedOn, e.trackedUntil].every((last) => !last || date <= last);
+  });
+
   /** A free day: the admin adds an absence for anyone, a person for own days in the window. */
   protected readonly canAddAbsence = computed(() => {
-    if (this.absence()) return false;
+    if (this.absence() || !this.inTracking()) return false;
     const access = this.access();
     if (access.admin) return true;
     return (
@@ -110,7 +118,9 @@ export class HrDayPopover {
   });
 
   protected readonly canEditHours = computed(() => {
-    if (this.absence() || this.employee().pattern?.kind !== 'flexible') return false;
+    if (this.absence() || !this.inTracking() || this.employee().pattern?.kind !== 'flexible') {
+      return false;
+    }
     const access = this.access();
     if (access.admin) return true;
     return (

@@ -477,4 +477,5 @@ export const hrMessagesPl: Record<HrMessageKey, string> = {
   'hr.popover.planHours': 'Zaplanuj godziny',
   'hr.popover.editHours': 'Zmień godziny',
   'hr.popover.setWorkday': 'Dzień pracy {range}',
+  'hr.popover.outsideTracking': 'Tego dnia poza ewidencją · ewidencja od {date}',
 };
