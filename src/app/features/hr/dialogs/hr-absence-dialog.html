@@ -1,0 +1,173 @@
+<app-v2-dialog
+  [title]="(isEdit ? 'hr.absence.editTitle' : 'hr.absence.addTitle') | translate"
+  [subtitle]="'hr.absence.subtitle' | translate"
+  [saveLabel]="(isEdit ? 'hr.absence.saveChanges' : 'hr.absence.save') | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="dirty()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  @if (isEdit) {
+    <button
+      v2DialogFooterStart
+      type="button"
+      class="hr-abs__delete"
+      [disabled]="saving()"
+      (click)="confirmDelete.set(true)"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+      </svg>
+      {{ 'hr.delete' | translate }}
+    </button>
+  }
+
+  <div class="hr-abs">
+    @if (admin) {
+      <app-v2-form-field
+        [label]="'hr.absence.employee' | translate"
+        [hint]="'hr.absence.employeeHint' | translate"
+      >
+        <app-v2-select
+          [options]="employeeOptions()"
+          [value]="employeeId()"
+          [disabled]="isEdit"
+          [ariaLabel]="'hr.absence.employee' | translate"
+          (valueChange)="employeeId.set($event)"
+        />
+      </app-v2-form-field>
+    }
+
+    <fieldset class="hr-abs__types">
+      <legend class="hr-abs__legend">{{ 'hr.absence.type' | translate }}</legend>
+      <div class="hr-abs__cards">
+        @for (t of types; track t) {
+          <button
+            type="button"
+            class="hr-abs__card"
+            [attr.data-type]="t"
+            [class.hr-abs__card--on]="type() === t"
+            [attr.aria-pressed]="type() === t"
+            (click)="type.set(t)"
+          >
+            <span class="hr-abs__card-icon"><app-hr-type-icon [type]="t" [size]="16" /></span>
+            <span>{{ text.type(t) }}</span>
+          </button>
+        }
+      </div>
+    </fieldset>
+
+    <div class="hr-abs__grid2">
+      <app-v2-form-field
+        [label]="'hr.absence.from' | translate"
+        [error]="fromError()"
+        [hint]="fromHint() || ' '"
+      >
+        <input
+          type="date"
+          required
+          [value]="dateFrom()"
+          [attr.min]="admin ? null : today"
+          [attr.aria-invalid]="!!fromError()"
+          (input)="setFrom($any($event.target).value)"
+        />
+      </app-v2-form-field>
+      <app-v2-form-field [label]="'hr.absence.to' | translate" [error]="toError()" hint=" ">
+        <input
+          type="date"
+          required
+          [value]="dateTo()"
+          [attr.min]="dateFrom() || null"
+          [attr.aria-invalid]="!!toError()"
+          (input)="setTo($any($event.target).value)"
+        />
+      </app-v2-form-field>
+    </div>
+
+    <p class="hr-abs__summary" aria-live="polite">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 11v5M12 8h.01" />
+      </svg>
+      <span>{{ summary() }}</span>
+      @if (balance(); as b) {
+        <span class="hr-abs__dot" aria-hidden="true">·</span>
+        <span [class.hr-abs__warn]="b.warn">{{ b.text }}</span>
+      }
+    </p>
+
+    @if (type() !== 'makeup_day') {
+      <div class="hr-abs__part">
+        <span class="hr-abs__label">{{ 'hr.absence.part' | translate }}</span>
+        <app-v2-segmented-control
+          [options]="partOptions()"
+          [value]="part()"
+          [ariaLabel]="'hr.absence.part' | translate"
+          (valueChange)="part.set($event)"
+        />
+        <span class="hr-abs__hint">
+          {{ (single() ? 'hr.absence.partHalf' : 'hr.absence.partSingle') | translate }}
+        </span>
+      </div>
+    }
+
+    <app-v2-form-field
+      [label]="
+        (type() === 'other' ? 'hr.absence.commentRequired' : 'hr.absence.commentOptional')
+          | translate
+      "
+      [error]="commentError()"
+      [hint]="'hr.absence.commentPlaceholder' | translate"
+    >
+      <textarea
+        rows="3"
+        maxlength="500"
+        [value]="comment()"
+        [attr.placeholder]="
+          (type() === 'other'
+            ? 'hr.absence.commentPlaceholderOther'
+            : 'hr.absence.commentPlaceholder'
+          ) | translate
+        "
+        [attr.aria-invalid]="!!commentError()"
+        (input)="comment.set($any($event.target).value)"
+      ></textarea>
+    </app-v2-form-field>
+
+    @if (todayNote()) {
+      <p class="hr-abs__note">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4z" />
+        </svg>
+        <span>{{ 'hr.absence.todayNote' | translate }}</span>
+      </p>
+    }
+
+    @if (confirmDelete()) {
+      <div
+        class="hr-abs__confirm"
+        role="alertdialog"
+        [attr.aria-label]="'hr.absence.deleteConfirm' | translate"
+      >
+        <span class="hr-abs__confirm-text">
+          <strong>{{ 'hr.absence.deleteConfirm' | translate }}</strong>
+          {{ 'hr.absence.deleteConfirmHint' | translate }}
+        </span>
+        <button type="button" appV2Button size="sm" (click)="confirmDelete.set(false)">
+          {{ 'hr.absence.keep' | translate }}
+        </button>
+        <button
+          type="button"
+          appV2Button
+          size="sm"
+          variant="danger"
+          [disabled]="saving()"
+          (click)="remove()"
+        >
+          {{ 'hr.absence.deleteEntry' | translate }}
+        </button>
+      </div>
+    }
+  </div>
+</app-v2-dialog>

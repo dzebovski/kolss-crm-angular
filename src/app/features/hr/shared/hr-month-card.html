@@ -1,0 +1,106 @@
+<section class="hr-mc" [attr.aria-busy]="loading()">
+  <header class="hr-mc__head">
+    <div class="hr-mc__nav">
+      <button
+        type="button"
+        class="hr-mc__icon"
+        [attr.aria-label]="'hr.prevMonth' | translate"
+        (click)="prev.emit()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+      </button>
+      <h2 class="hr-mc__title" aria-live="polite">{{ label() }}</h2>
+      <button
+        type="button"
+        class="hr-mc__icon"
+        [attr.aria-label]="'hr.nextMonth' | translate"
+        (click)="next.emit()"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+    </div>
+    <button
+      type="button"
+      class="hr-mc__legend-btn"
+      [attr.aria-expanded]="legendOpen()"
+      (click)="legendOpen.set(!legendOpen())"
+    >
+      {{ 'hr.legend' | translate }}
+    </button>
+  </header>
+  @if (legendOpen()) {
+    <div class="hr-mc__legend"><app-hr-legend /></div>
+  }
+  <ng-content />
+
+  <div class="hr-mc__grid" role="grid">
+    <div class="hr-mc__row" role="row">
+      @for (head of weekdayHeads(); track $index) {
+        <span class="hr-mc__wd" role="columnheader">{{ head }}</span>
+      }
+    </div>
+    @for (week of weeks(); track $index) {
+      <div class="hr-mc__row" role="row">
+        @for (day of week; track $index) {
+          @if (day) {
+            <span role="gridcell" class="hr-mc__slot">
+              <button
+                type="button"
+                class="hr-mc__cell"
+                [attr.data-kind]="day.view.kind"
+                [class.hr-mc__cell--today]="day.view.today"
+                [class.hr-mc__cell--past]="day.view.past"
+                [attr.aria-label]="day.label"
+                (click)="onPick(day.view.date, $event)"
+              >
+                <span class="hr-mc__top">
+                  <span class="hr-mc__num">{{ day.number }}</span>
+                  @if (day.view.today) {
+                    <span class="hr-mc__today">{{ 'hr.today' | translate }}</span>
+                  } @else if (day.locked) {
+                    <svg
+                      class="hr-mc__lock"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <rect x="5" y="11" width="14" height="10" rx="2" />
+                      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                    </svg>
+                  }
+                </span>
+                @switch (day.view.kind) {
+                  @case ('hours') {
+                    <span class="hr-mc__range">{{ day.range }}</span>
+                    <span class="hr-mc__len">{{ day.hours }}</span>
+                  }
+                  @case ('absence') {
+                    <app-hr-absence-chip
+                      [type]="day.view.absence!.type"
+                      [part]="day.view.absence!.part"
+                    />
+                  }
+                  @case ('closed') {
+                    <span class="hr-mc__muted">{{ day.holidayName ?? '–' }}</span>
+                  }
+                  @default {
+                    <span class="hr-mc__muted">–</span>
+                  }
+                }
+                @if (day.view.makeup) {
+                  <span class="hr-mc__mk">{{ 'hr.type.makeup_day' | translate }}</span>
+                }
+              </button>
+            </span>
+          } @else {
+            <span role="gridcell" class="hr-mc__slot hr-mc__slot--blank"></span>
+          }
+        }
+      </div>
+    }
+  </div>
+  @if (note()) {
+    <p class="hr-mc__note">{{ note() }}</p>
+  }
+</section>

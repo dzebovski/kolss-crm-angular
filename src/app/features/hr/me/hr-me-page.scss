@@ -1,0 +1,99 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+
+// My time (HR-me.dc.html; mobile HR-me-mobile.dc.html at 390px).
+:host {
+  display: contents;
+}
+
+@include hr.skeleton-keyframes;
+
+.hr-head {
+  @include hr.page-head;
+}
+
+.hr-head__title {
+  @include hr.page-title;
+}
+
+.hr-head__subtitle {
+  @include hr.page-subtitle;
+}
+
+.hr-head__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hr-me__tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hr-me__entries {
+  @include hr.card;
+
+  overflow: hidden;
+}
+
+.hr-me__entries-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.hr-me__entries-title {
+  @include type.text('section-title');
+
+  margin: 0;
+}
+
+.hr-me__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hr-me__sk {
+  @include hr.skeleton;
+
+  display: block;
+}
+
+.hr-me__sk--title {
+  width: 240px;
+  height: 32px;
+}
+
+.hr-me__sk--tile {
+  height: 104px;
+}
+
+.hr-me__sk--card {
+  height: 480px;
+}
+
+@media (max-width: 1024px) {
+  .hr-me__tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .hr-head__actions {
+    width: 100%;
+
+    > * {
+      flex: 1;
+    }
+  }
+
+  .hr-me__tiles {
+    gap: 8px;
+  }
+}

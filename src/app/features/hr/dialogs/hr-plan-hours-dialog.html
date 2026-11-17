@@ -1,0 +1,142 @@
+<app-v2-dialog
+  width="wide"
+  [title]="title()"
+  [subtitle]="subtitle()"
+  [saveLabel]="'hr.plan.save' | translate"
+  [hint]="'hr.plan.footer' | translate"
+  [saveDisabled]="saving() || !target()"
+  [invalid]="invalid()"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="dirty()"
+  (save)="save()"
+>
+  <div class="hr-plan">
+    <div class="hr-plan__bar">
+      <div class="hr-plan__nav">
+        <button
+          type="button"
+          class="hr-plan__icon"
+          [attr.aria-label]="'hr.prevWeek' | translate"
+          (click)="stepWeek(-1)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <span class="hr-plan__week" aria-live="polite">{{ weekLabel() }}</span>
+        <button
+          type="button"
+          class="hr-plan__icon"
+          [attr.aria-label]="'hr.nextWeek' | translate"
+          (click)="stepWeek(1)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+        @if (weekTag()) {
+          <span class="hr-plan__tag">{{ weekTag() }}</span>
+        }
+      </div>
+      <span class="hr-plan__counter" [class.hr-plan__counter--ok]="counter().ok" aria-live="polite">
+        {{ counterText() }}
+      </span>
+    </div>
+
+    <div class="hr-plan__grid">
+      <div class="hr-plan__hours" aria-hidden="true" [style.height.px]="trackHeight()">
+        @for (label of hourLabels(); track label; let i = $index) {
+          <span class="hr-plan__hour" [style.top.px]="i * hourPx">{{ label }}</span>
+        }
+      </div>
+      @for (column of columns(); track column.day.date) {
+        <div
+          class="hr-plan__day"
+          role="group"
+          [attr.aria-label]="column.label"
+          [class.hr-plan__day--today]="column.today"
+          [attr.data-state]="column.state"
+        >
+          <span class="hr-plan__day-label">{{ column.label }}</span>
+          <div class="hr-plan__track" [style.height.px]="trackHeight()" aria-hidden="true">
+            @if (column.open) {
+              <span
+                class="hr-plan__open"
+                [style.top.px]="column.open.top"
+                [style.height.px]="column.open.height"
+              ></span>
+            }
+            @if (column.bar) {
+              <span
+                class="hr-plan__fill"
+                [class.hr-plan__fill--makeup]="column.day.makeup"
+                [style.top.px]="column.bar.top"
+                [style.height.px]="column.bar.height"
+              ></span>
+            }
+          </div>
+          @if (column.editable) {
+            @if (column.day.start || column.day.end) {
+              <label class="hr-plan__field">
+                <span>{{ 'hr.plan.start' | translate }}</span>
+                <select
+                  [value]="column.day.start"
+                  [attr.aria-label]="'hr.plan.startAria' | translate: { day: column.label }"
+                  (change)="setStart(column.index, $any($event.target).value)"
+                >
+                  @for (option of column.options; track option) {
+                    <option [value]="option" [selected]="option === column.day.start">
+                      {{ option }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="hr-plan__field">
+                <span>{{ 'hr.plan.end' | translate }}</span>
+                <select
+                  [value]="column.day.end"
+                  [attr.aria-label]="'hr.plan.endAria' | translate: { day: column.label }"
+                  (change)="setEnd(column.index, $any($event.target).value)"
+                >
+                  @for (option of column.options; track option) {
+                    <option [value]="option" [selected]="option === column.day.end">
+                      {{ option }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="hr-plan__switch">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  [checked]="column.day.makeup"
+                  [attr.aria-label]="'hr.plan.makeupAria' | translate: { day: column.label }"
+                  (change)="setMakeup(column.index, $any($event.target).checked)"
+                />
+                <span>{{ 'hr.plan.makeup' | translate }}</span>
+              </label>
+              <button type="button" class="hr-plan__link" (click)="clearDay(column.index)">
+                {{ 'hr.plan.clearDay' | translate }}
+              </button>
+            } @else {
+              <button type="button" class="hr-plan__add" (click)="planDay(column.index)">
+                {{ 'hr.plan.addDay' | translate }}
+              </button>
+            }
+          }
+          <span
+            class="hr-plan__msg"
+            [class.hr-plan__msg--err]="
+              column.state === 'outside' || column.state === 'end_before_start'
+            "
+            aria-live="polite"
+          >
+            {{ column.message }}
+          </span>
+        </div>
+      }
+    </div>
+
+    @if (target(); as t) {
+      <p class="hr-plan__owed">
+        {{ 'hr.plan.owedNow' | translate: { n: text.plural('hr.n.days', t.makeupOwed) } }}
+      </p>
+    }
+  </div>
+</app-v2-dialog>

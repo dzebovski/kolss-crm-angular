@@ -1,0 +1,66 @@
+<ul class="hr-entries" role="list">
+  @for (row of rows(); track row.entry.id) {
+    <li class="hr-entries__item">
+      <div class="hr-entries__top">
+        <span class="hr-entries__dates">{{ row.dates }}</span>
+        <span class="hr-entries__actions">
+          @if (row.entry.editable) {
+            @if (row.entry.kind === 'absence') {
+              <button type="button" appV2Button size="sm" (click)="edit.emit(row.entry)">
+                {{ 'hr.edit' | translate }}
+              </button>
+            }
+            <button
+              type="button"
+              appV2Button
+              size="sm"
+              [disabled]="busyId() === row.entry.id"
+              (click)="confirmId.set(row.entry.id)"
+            >
+              {{ 'hr.delete' | translate }}
+            </button>
+          } @else {
+            <span class="hr-entries__lock">
+              <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="5" y="11" width="14" height="10" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              {{ row.lock }}
+            </span>
+          }
+        </span>
+      </div>
+      <div class="hr-entries__meta">
+        <app-hr-absence-chip [type]="row.entry.type" [part]="row.entry.part" />
+        <span class="hr-entries__days">{{ row.days }}</span>
+        @if (row.hours) {
+          <span class="hr-entries__days">{{ row.hours }}</span>
+        }
+      </div>
+      @if (row.entry.comment) {
+        <p class="hr-entries__comment">{{ row.entry.comment }}</p>
+      }
+      <span class="hr-entries__added">{{ row.added }}</span>
+      @if (confirmId() === row.entry.id) {
+        <div
+          class="hr-entries__confirm"
+          role="alertdialog"
+          [attr.aria-label]="'hr.absence.deleteConfirm' | translate"
+        >
+          <span class="hr-entries__confirm-text">
+            <strong>{{ 'hr.absence.deleteConfirm' | translate }}</strong>
+            {{ 'hr.absence.deleteConfirmHint' | translate }}
+          </span>
+          <button type="button" appV2Button size="sm" (click)="confirmId.set(null)">
+            {{ 'hr.absence.keep' | translate }}
+          </button>
+          <button type="button" appV2Button size="sm" variant="danger" (click)="confirm(row.entry)">
+            {{ 'hr.absence.deleteEntry' | translate }}
+          </button>
+        </div>
+      }
+    </li>
+  } @empty {
+    <li class="hr-entries__empty">{{ 'hr.entries.empty' | translate }}</li>
+  }
+</ul>
