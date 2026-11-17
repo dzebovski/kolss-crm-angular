@@ -474,4 +474,6 @@ export const hrMessagesPl: Record<HrMessageKey, string> = {
   'hr.team.startsOn': 'W ewidencji od {date}',
   'hr.team.accounts.title': 'Konta CRM spoza ewidencji HR',
   'hr.team.accounts.empty': 'Wszystkie konta CRM są już w ewidencji.',
+  'hr.popover.planHours': 'Zaplanuj godziny',
+  'hr.popover.editHours': 'Zmień godziny',
 };

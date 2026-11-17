@@ -284,6 +284,13 @@ export class HrCalendarPage {
     this.dialogs.planHours({ employeeId: pick.employee.id, weekStart: mondayOf(date) });
   }
 
+  protected addAbsenceOn(date: string): void {
+    const pick = this.selection();
+    this.selection.set(null);
+    if (!pick) return;
+    this.dialogs.absence({ employeeId: pick.employee.id, date });
+  }
+
   protected openEmployee(id: string): void {
     this.selection.set(null);
     void this.router.navigate(['/hr/employees', id]);

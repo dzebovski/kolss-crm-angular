@@ -473,4 +473,6 @@ export const hrMessagesEn: Record<HrMessageKey, string> = {
   'hr.team.startsOn': 'Tracked from {date}',
   'hr.team.accounts.title': 'CRM accounts not in HR tracking',
   'hr.team.accounts.empty': 'Every CRM account here is already tracked.',
+  'hr.popover.planHours': 'Plan hours',
+  'hr.popover.editHours': 'Edit hours',
 };

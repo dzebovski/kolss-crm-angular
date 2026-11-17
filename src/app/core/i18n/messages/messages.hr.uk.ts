@@ -471,6 +471,8 @@ export const hrMessagesUk = {
   'hr.team.startsOn': 'В обліку з {date}',
   'hr.team.accounts.title': 'Акаунти CRM поза HR-обліком',
   'hr.team.accounts.empty': 'Усі акаунти CRM тут уже в обліку.',
+  'hr.popover.planHours': 'Запланувати години',
+  'hr.popover.editHours': 'Змінити години',
 } as const;
 
 export type HrMessageKey = keyof typeof hrMessagesUk;

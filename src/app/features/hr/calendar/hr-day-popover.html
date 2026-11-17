@@ -71,7 +71,7 @@
   }
 </div>
 
-@if (access().admin || canEditAbsence() || canEditHours()) {
+@if (access().admin || canEditAbsence() || canAddAbsence() || canEditHours()) {
   <footer class="hr-pop__foot">
     @if (access().admin) {
       <button type="button" appV2Button size="sm" (click)="openEmployee.emit(employee().id)">
@@ -88,15 +88,21 @@
       >
         {{ 'hr.edit' | translate }}
       </button>
-    } @else if (canEditHours()) {
+    }
+    @if (canEditHours()) {
+      <button type="button" appV2Button size="sm" (click)="editHours.emit(date())">
+        {{ (planned() ? 'hr.popover.editHours' : 'hr.popover.planHours') | translate }}
+      </button>
+    }
+    @if (canAddAbsence()) {
       <button
         type="button"
         appV2Button
         size="sm"
         variant="primary"
-        (click)="editHours.emit(date())"
+        (click)="addAbsence.emit(date())"
       >
-        {{ 'hr.edit' | translate }}
+        {{ 'hr.addAbsence' | translate }}
       </button>
     }
   </footer>

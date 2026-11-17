@@ -53,6 +53,7 @@ export class HrDayPopover {
   readonly closed = output<void>();
   readonly editAbsence = output<HrCellAbsence>();
   readonly editHours = output<string>();
+  readonly addAbsence = output<string>();
   readonly openEmployee = output<string>();
 
   protected readonly name = computed(() => hrName(this.employee()));
@@ -89,6 +90,16 @@ export class HrDayPopover {
     return (
       this.own() &&
       hrDateError(absence.dateFrom, access.today, access.editableAbsencesFrom) === null
+    );
+  });
+
+  /** A free day: the admin adds an absence for anyone, a person for own days in the window. */
+  protected readonly canAddAbsence = computed(() => {
+    if (this.absence()) return false;
+    const access = this.access();
+    if (access.admin) return true;
+    return (
+      this.own() && hrDateError(this.date(), access.today, access.editableAbsencesFrom) === null
     );
   });
 
