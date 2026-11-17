@@ -476,4 +476,5 @@ export const hrMessagesPl: Record<HrMessageKey, string> = {
   'hr.team.accounts.empty': 'Wszystkie konta CRM są już w ewidencji.',
   'hr.popover.planHours': 'Zaplanuj godziny',
   'hr.popover.editHours': 'Zmień godziny',
+  'hr.popover.setWorkday': 'Dzień pracy {range}',
 };

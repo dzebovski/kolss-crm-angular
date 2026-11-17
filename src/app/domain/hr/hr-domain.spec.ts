@@ -2,7 +2,14 @@ import type { HrCell, HrHoliday, HrOffice, HrPattern } from '@core/api/generated
 import { hrCoveredMinutes, hrDayCoverage, hrOfficeInterval } from './hr-calendar';
 import { addDays, isoWeekday, mondayOf, monthEnd, monthWeeks, shiftMonth } from './hr-dates';
 import { hrAbsenceDays, hrDateError, hrSearchText, validateHrAbsence } from './hr-entry';
-import { hrPlanCounter, hrPlanDayState, hrPlanRequest, type HrPlanDay } from './hr-plan';
+import {
+  hrPlanCounter,
+  hrPlanDayState,
+  hrPlanRequest,
+  hrQuickWorkday,
+  hrWeekWithDay,
+  type HrPlanDay,
+} from './hr-plan';
 import {
   hrNextMonday,
   hrOpenWeekdays,
@@ -232,5 +239,27 @@ describe('hr-pattern', () => {
 describe('hrSearchText', () => {
   it('drops case and Polish diacritics', () => {
     expect(hrSearchText('Sławek ŻÓŁĆ')).toBe('slawek zolc');
+  });
+});
+
+describe('set workday', () => {
+  it('starts at opening for the hours per day, cut at closing', () => {
+    expect(hrQuickWorkday(OFFICE, '2026-11-16', 8)).toEqual({ start: '10:00', end: '18:00' });
+    expect(hrQuickWorkday(OFFICE, '2026-11-21', 8)).toEqual({ start: '10:00', end: '15:00' });
+    expect(hrQuickWorkday(OFFICE, '2026-11-22', 8)).toBeNull();
+  });
+
+  it('keeps the other shifts of the week', () => {
+    const cells = [
+      cell({ date: '2026-11-17', plannedStart: '12:00:00', plannedEnd: '16:00:00' }),
+      cell({ date: '2026-11-18', shiftKind: null }),
+      cell({ employeeId: 'e2', date: '2026-11-19' }),
+    ];
+    expect(
+      hrWeekWithDay(cells, 'e1', { date: '2026-11-16', startTime: '10:00', endTime: '18:00' }),
+    ).toEqual([
+      { date: '2026-11-16', startTime: '10:00', endTime: '18:00' },
+      { date: '2026-11-17', startTime: '12:00', endTime: '16:00', kind: 'planned' },
+    ]);
   });
 });

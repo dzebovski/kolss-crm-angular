@@ -89,6 +89,16 @@
         {{ 'hr.edit' | translate }}
       </button>
     }
+    @if (quickWorkday(); as w) {
+      <button
+        type="button"
+        appV2Button
+        size="sm"
+        (click)="setWorkday.emit({ date: date(), start: w.start, end: w.end })"
+      >
+        {{ 'hr.popover.setWorkday' | translate: { range: text.range(w.start, w.end) } }}
+      </button>
+    }
     @if (canEditHours()) {
       <button type="button" appV2Button size="sm" (click)="editHours.emit(date())">
         {{ (planned() ? 'hr.popover.editHours' : 'hr.popover.planHours') | translate }}

@@ -473,6 +473,7 @@ export const hrMessagesUk = {
   'hr.team.accounts.empty': 'Усі акаунти CRM тут уже в обліку.',
   'hr.popover.planHours': 'Запланувати години',
   'hr.popover.editHours': 'Змінити години',
+  'hr.popover.setWorkday': 'Робочий день {range}',
 } as const;
 
 export type HrMessageKey = keyof typeof hrMessagesUk;

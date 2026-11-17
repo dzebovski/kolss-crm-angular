@@ -475,4 +475,5 @@ export const hrMessagesEn: Record<HrMessageKey, string> = {
   'hr.team.accounts.empty': 'Every CRM account here is already tracked.',
   'hr.popover.planHours': 'Plan hours',
   'hr.popover.editHours': 'Edit hours',
+  'hr.popover.setWorkday': 'Set workday {range}',
 };

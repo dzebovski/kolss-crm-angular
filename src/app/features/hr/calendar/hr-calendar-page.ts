@@ -9,11 +9,13 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { hrCellKey, hrTodayStrip, indexHrCells, indexHrDays } from '@domain/hr/hr-calendar';
 import { addDays, monthEnd, monthOf, monthStart, mondayOf, shiftMonth } from '@domain/hr/hr-dates';
 import { hrName } from '@domain/hr/hr-entry';
+import { hrWeekWithDay } from '@domain/hr/hr-plan';
 import { HrService } from '@services/hr/hr.service';
 import { V2Button } from '../../v2/ui/v2-button';
 import { V2SegmentedControl, type V2SegmentOption } from '../../v2/ui/v2-segmented-control';
 import { V2Select, type V2SelectOption } from '../../v2/ui/v2-select';
 import { V2StatePanel } from '../../v2/ui/v2-state-panel';
+import { V2ToastService } from '../../v2/ui/toast/v2-toast';
 import { HrDialogs } from '../dialogs/hr-dialogs';
 import { HrSession } from '../hr-session';
 import { HrText } from '../hr-text';
@@ -54,6 +56,7 @@ export class HrCalendarPage {
   private readonly hr = inject(HrService);
   private readonly router = inject(Router);
   private readonly dialogs = inject(HrDialogs);
+  private readonly toast = inject(V2ToastService);
   protected readonly session = inject(HrSession);
   protected readonly text = inject(HrText);
 
@@ -289,6 +292,35 @@ export class HrCalendarPage {
     this.selection.set(null);
     if (!pick) return;
     this.dialogs.absence({ employeeId: pick.employee.id, date });
+  }
+
+  /** Quick "Set workday": the week is re-sent with this day added (PUT replaces the week). */
+  protected async setWorkday(day: { date: string; start: string; end: string }): Promise<void> {
+    const pick = this.selection();
+    this.selection.set(null);
+    if (!pick) return;
+    const employee = pick.employee;
+    const weekStart = mondayOf(day.date);
+    try {
+      const week = await this.hr.calendar({
+        officeId: employee.officeId,
+        from: weekStart,
+        to: addDays(weekStart, 6),
+        employeeId: employee.id,
+      });
+      await this.hr.putWeekShifts(
+        weekStart,
+        hrWeekWithDay(week.cells, employee.id, {
+          date: day.date,
+          startTime: day.start,
+          endTime: day.end,
+        }),
+        employee.id,
+      );
+      this.toast.show(this.text.t('hr.toast.saved'));
+    } catch (error) {
+      this.toast.show(this.text.saveError(error));
+    }
   }
 
   protected openEmployee(id: string): void {

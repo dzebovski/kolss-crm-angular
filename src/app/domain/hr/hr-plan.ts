@@ -113,3 +113,45 @@ export function hrPlanDefaultTimes(
   const end = Math.min(hours.open + length, hours.close);
   return { start: minutesToTime(hours.open), end: minutesToTime(end) };
 }
+
+/**
+ * "Set workday" in the day popover: from office opening for the person's hours per day,
+ * cut at closing. `null` when the office is closed that day.
+ */
+export function hrQuickWorkday(
+  office: Pick<HrOffice, 'hours'>,
+  date: string,
+  hoursPerDay: number,
+): { readonly start: string; readonly end: string } | null {
+  const hours = hrOfficeHoursOn(office as HrOffice, date);
+  if (!hours) return null;
+  const end = Math.min(hours.open + Math.round(hoursPerDay * 60), hours.close);
+  return end > hours.open ? { start: minutesToTime(hours.open), end: minutesToTime(end) } : null;
+}
+
+/**
+ * `PUT /v1/hr/shifts` replaces the week, so a single new day is sent with the person's other
+ * shifts of that week (from the calendar cells) kept as they are.
+ */
+export function hrWeekWithDay(
+  cells: readonly HrCell[],
+  employeeId: string,
+  day: HrShiftDay,
+): HrShiftDay[] {
+  const kept = cells
+    .filter(
+      (cell) =>
+        cell.employeeId === employeeId &&
+        cell.date !== day.date &&
+        cell.shiftKind !== null &&
+        !!cell.plannedStart &&
+        !!cell.plannedEnd,
+    )
+    .map((cell) => ({
+      date: cell.date,
+      startTime: cell.plannedStart!.slice(0, 5),
+      endTime: cell.plannedEnd!.slice(0, 5),
+      kind: cell.shiftKind!,
+    }));
+  return [...kept, day].sort((a, b) => a.date.localeCompare(b.date));
+}

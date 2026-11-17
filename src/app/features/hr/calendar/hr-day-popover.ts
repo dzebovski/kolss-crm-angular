@@ -11,6 +11,7 @@ import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { hrOfficeHoursOn, hrWeekAxis } from '@domain/hr/hr-calendar';
 import { minutesToTime } from '@domain/hr/hr-dates';
 import { hrDateError, hrName } from '@domain/hr/hr-entry';
+import { hrQuickWorkday } from '@domain/hr/hr-plan';
 import { V2Button } from '../../v2/ui/v2-button';
 import { HrText } from '../hr-text';
 import { HrAbsenceChip } from '../ui/hr-absence-chip';
@@ -54,6 +55,11 @@ export class HrDayPopover {
   readonly editAbsence = output<HrCellAbsence>();
   readonly editHours = output<string>();
   readonly addAbsence = output<string>();
+  readonly setWorkday = output<{
+    readonly date: string;
+    readonly start: string;
+    readonly end: string;
+  }>();
   readonly openEmployee = output<string>();
 
   protected readonly name = computed(() => hrName(this.employee()));
@@ -110,6 +116,13 @@ export class HrDayPopover {
     return (
       this.own() && access.editableHoursFrom !== null && this.date() >= access.editableHoursFrom
     );
+  });
+
+  /** "Set workday": office opening + hours per day, on a day with nothing planned. */
+  protected readonly quickWorkday = computed(() => {
+    if (!this.canEditHours() || this.planned() || this.day()?.holidayName) return null;
+    const pattern = this.employee().pattern;
+    return pattern ? hrQuickWorkday(this.office(), this.date(), pattern.hoursPerDay) : null;
   });
 
   protected readonly pastLocked = computed(
