@@ -323,6 +323,19 @@ export class HrCalendarPage {
     }
   }
 
+  /** Moves the person's tracking start back to `date` so past days can be filled in. */
+  protected async startTracking(date: string): Promise<void> {
+    const pick = this.selection();
+    this.selection.set(null);
+    if (!pick) return;
+    try {
+      await this.hr.updateEmployee(pick.employee.id, { startedOn: date });
+      this.toast.show(this.text.t('hr.toast.saved'));
+    } catch (error) {
+      this.toast.show(this.text.saveError(error));
+    }
+  }
+
   protected openEmployee(id: string): void {
     this.selection.set(null);
     void this.router.navigate(['/hr/employees', id]);

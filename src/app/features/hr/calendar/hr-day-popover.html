@@ -77,6 +77,13 @@
 
 @if (access().admin || canEditAbsence() || canAddAbsence() || canEditHours()) {
   <footer class="hr-pop__foot">
+    @if (canStartEarlier()) {
+      <div class="hr-pop__row">
+        <button type="button" appV2Button size="sm" (click)="startTracking.emit(date())">
+          {{ 'hr.popover.startFrom' | translate: { date: text.day(date()) } }}
+        </button>
+      </div>
+    }
     @if (quickWorkday() || canEditHours()) {
       <div class="hr-pop__row">
         @if (quickWorkday(); as w) {

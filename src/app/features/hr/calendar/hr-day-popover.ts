@@ -55,6 +55,7 @@ export class HrDayPopover {
   readonly editAbsence = output<HrCellAbsence>();
   readonly editHours = output<string>();
   readonly addAbsence = output<string>();
+  readonly startTracking = output<string>();
   readonly setWorkday = output<{
     readonly date: string;
     readonly start: string;
@@ -106,6 +107,11 @@ export class HrDayPopover {
     if (date < e.startedOn) return false;
     return [e.endedOn, e.trackedUntil].every((last) => !last || date <= last);
   });
+
+  /** Admin, a day before the start: move the start back to fill in past days. */
+  protected readonly canStartEarlier = computed(
+    () => this.access().admin && this.date() < this.employee().startedOn,
+  );
 
   /** A free day: the admin adds an absence for anyone, a person for own days in the window. */
   protected readonly canAddAbsence = computed(() => {

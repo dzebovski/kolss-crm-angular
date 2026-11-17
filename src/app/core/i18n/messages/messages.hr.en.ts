@@ -477,4 +477,5 @@ export const hrMessagesEn: Record<HrMessageKey, string> = {
   'hr.popover.editHours': 'Edit hours',
   'hr.popover.setWorkday': 'Set workday {range}',
   'hr.popover.outsideTracking': 'Not tracked on this day · tracking starts {date}',
+  'hr.popover.startFrom': 'Start tracking from {date}',
 };
