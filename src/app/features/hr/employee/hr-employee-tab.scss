@@ -1,0 +1,150 @@
+@use '../ui/hr';
+@use '../../../../styles/v2/type';
+
+// Shared styles of the employee tabs (HR-employee-*.dc.html `.card`, `.tr`, `.kv`). Each tab
+// host sets `--hr-cols` (board grid columns of its table).
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hr-card {
+  @include hr.card;
+
+  overflow-x: auto;
+}
+
+.hr-sch {
+  padding: 20px;
+}
+
+.hr-sch__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hr-sch__title {
+  @include type.text('modal-title');
+
+  margin: 4px 0 0;
+}
+
+.hr-sch__h2 {
+  @include type.text('section-title');
+
+  margin: 0;
+}
+
+.hr-eyebrow {
+  @include type.text('eyebrow');
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.hr-caption {
+  @include type.text('caption');
+
+  margin: 0;
+  color: var(--v2-muted);
+}
+
+.hr-kv {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 10px 16px;
+  margin: 0;
+
+  dt {
+    @include type.text('label');
+
+    color: var(--v2-muted);
+  }
+
+  dd {
+    @include type.text('body');
+
+    margin: 0;
+  }
+}
+
+.hr-tbl-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 16px 20px 12px;
+}
+
+.hr-tr {
+  @include hr.table-row;
+
+  grid-template-columns: var(--hr-cols);
+  min-width: 720px;
+}
+
+.hr-th {
+  @include hr.table-head;
+}
+
+.hr-mono {
+  @include hr.mono;
+}
+
+.hr-tag {
+  @include hr.tag(ok);
+}
+
+.hr-tag--warn {
+  @include hr.tag(warn);
+}
+
+.hr-tag--neutral {
+  @include hr.tag;
+}
+
+.hr-subtle {
+  color: var(--v2-subtle);
+}
+
+.hr-empty {
+  @include type.text('caption');
+
+  margin: 0;
+  padding: 20px;
+  border-top: 1px solid var(--v2-line-soft);
+  color: var(--v2-muted);
+}
+
+.hr-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hr-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .hr-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.hr-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

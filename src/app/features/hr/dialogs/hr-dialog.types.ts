@@ -1,4 +1,11 @@
-import type { HrDayPart, HrEntryType } from '@core/api/generated/kolss-api.types';
+import type {
+  HrDayPart,
+  HrEntryType,
+  HrHoliday,
+  HrLeaveYear,
+  HrOffice,
+  HrPattern,
+} from '@core/api/generated/kolss-api.types';
 
 /** The entry an Edit absence popup changes (from an `HrEntry` or a calendar cell). */
 export interface HrAbsenceEdit {
@@ -26,4 +33,27 @@ export interface HrPlanDialogData {
   readonly employeeId?: string;
   /** Monday of the week to open; next week by default. */
   readonly weekStart?: string;
+}
+
+export interface HrScheduleDialogData {
+  readonly employeeId: string;
+  readonly name: string;
+  readonly office: HrOffice;
+  readonly pattern: HrPattern | null;
+  readonly today: string;
+}
+
+export interface HrLeaveLimitDialogData {
+  readonly employeeId: string;
+  readonly name: string;
+  readonly defaultDays: number;
+  readonly leave: readonly HrLeaveYear[];
+  readonly year: number;
+}
+
+export interface HrHolidayDialogData {
+  readonly officeId: string;
+  readonly year: number;
+  /** Edit mode. */
+  readonly holiday?: HrHoliday;
 }

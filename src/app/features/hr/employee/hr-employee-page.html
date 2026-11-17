@@ -1,0 +1,199 @@
+@if (detail.error() && !data()) {
+  <app-v2-state-panel
+    tone="error"
+    icon="alert"
+    [title]="'hr.employee.error.title' | translate"
+    [hint]="'hr.errorCode' | translate: { code: errorCode() }"
+  >
+    <button type="button" appV2Button (click)="detail.reload()">
+      {{ 'hr.retry' | translate }}
+    </button>
+  </app-v2-state-panel>
+} @else if (data(); as d) {
+  <nav class="hr-crumbs" aria-label="Breadcrumb">
+    <a routerLink="/hr/employees">{{ 'hr.employee.breadcrumb' | translate }}</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">{{ name() }}</span>
+  </nav>
+
+  <header class="hr-emp-head">
+    <app-hr-avatar [name]="name()" size="lg" />
+    <div class="hr-emp-head__text">
+      <div class="hr-emp-head__line">
+        <h1 class="hr-emp-head__title">{{ name() }}</h1>
+        @if (todayStatus(); as s) {
+          @if (s.absence) {
+            <app-hr-absence-chip [type]="s.absence.type" [part]="s.absence.part" size="md" />
+          } @else {
+            <span class="hr-emp-head__today">{{ s.text }}</span>
+          }
+        }
+      </div>
+      <p class="hr-emp-head__sub">{{ subtitle() }}</p>
+    </div>
+    <div class="hr-emp-head__actions">
+      @if (d.employee.isTracked) {
+        <div class="hr-more">
+          <button
+            type="button"
+            class="hr-icon-btn"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="moreOpen()"
+            [attr.aria-label]="'hr.employee.more' | translate"
+            (click)="moreOpen.set(!moreOpen())"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="5" cy="12" r="1" />
+              <circle cx="12" cy="12" r="1" />
+              <circle cx="19" cy="12" r="1" />
+            </svg>
+          </button>
+          @if (moreOpen()) {
+            <div class="hr-more__menu" role="menu">
+              <button type="button" role="menuitem" (click)="stopTracking()">
+                {{ 'hr.employee.stopTracking' | translate }}
+              </button>
+            </div>
+          }
+        </div>
+        <button
+          type="button"
+          appV2Button
+          [attr.aria-disabled]="!flexible()"
+          [class.hr-off]="!flexible()"
+          [attr.title]="flexible() ? null : ('hr.employee.planDisabled' | translate)"
+          (click)="planHours()"
+        >
+          {{ 'hr.planHours' | translate }}
+        </button>
+        <button type="button" appV2Button variant="primary" (click)="addAbsence()">
+          <svg class="hr-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          {{ 'hr.addAbsence' | translate }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="hr-tabs" role="tablist" [attr.aria-label]="'hr.employee.tabs' | translate">
+    @for (t of tabs(); track t.id) {
+      <button
+        type="button"
+        role="tab"
+        class="hr-tab"
+        [class.hr-tab--on]="t.active"
+        [attr.aria-selected]="t.active"
+        (click)="setTab(t.id)"
+      >
+        {{ t.label }}
+      </button>
+    }
+  </div>
+
+  @switch (activeTab()) {
+    @case ('calendar') {
+      <div class="hr-emp-cal">
+        <div class="hr-emp-cal__main">
+          <app-hr-month-card
+            [calendar]="calendar.hasValue() ? calendar.value() : undefined"
+            [employee]="d.employee"
+            [month]="shownMonth()"
+            [today]="d.today"
+            [editableFrom]="null"
+            [loading]="calendar.isLoading()"
+            [note]="'hr.employee.calendarNote' | translate"
+            (prev)="stepMonth(-1)"
+            (next)="stepMonth(1)"
+            (pick)="selection.set($event)"
+          >
+            @if (closedMonth()) {
+              <p class="hr-emp-cal__closed" role="status">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="5" y="11" width="14" height="10" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                {{
+                  'hr.employee.closedMonthNote' | translate: { month: text.monthName(shownMonth()) }
+                }}
+              </p>
+            }
+          </app-hr-month-card>
+        </div>
+        @if (tiles(); as t) {
+          <div class="hr-emp-cal__side">
+            <app-hr-balance-tile
+              [label]="t.planned.label"
+              [value]="t.planned.value"
+              [sub]="t.planned.sub"
+            />
+            @if (t.vacation; as v) {
+              <app-hr-balance-tile
+                [label]="v.label"
+                [value]="v.value"
+                [sub]="v.sub"
+                [used]="v.used"
+                [limit]="v.limit"
+              >
+                <button type="button" class="hr-link" (click)="editLimit()">
+                  {{ 'hr.employee.editLimit' | translate }}
+                </button>
+              </app-hr-balance-tile>
+            }
+            <app-hr-balance-tile
+              [label]="'hr.me.tile.makeup' | translate"
+              [value]="t.makeup.value"
+              [sub]="t.makeup.sub"
+              [empty]="t.makeup.empty"
+            />
+          </div>
+        }
+      </div>
+    }
+    @case ('schedule') {
+      <app-hr-employee-schedule [detail]="d" (changeSchedule)="changeSchedule()" />
+    }
+    @case ('leave') {
+      <app-hr-employee-leave [detail]="d" (editLimit)="editLimit()" />
+    }
+    @case ('entries') {
+      <app-hr-employee-entries [detail]="d" />
+    }
+    @case ('settings') {
+      <app-hr-employee-settings [detail]="d" [(stopRequested)]="stopRequested" />
+    }
+  }
+} @else {
+  <div class="hr-emp-sk" aria-hidden="true">
+    <span class="hr-sk hr-sk--title"></span>
+    <span class="hr-sk hr-sk--card"></span>
+  </div>
+}
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="selection()?.anchor!"
+  [cdkConnectedOverlayOpen]="!!picked()"
+  [cdkConnectedOverlayPositions]="positions"
+  cdkConnectedOverlayPanelClass="v2-dialog-panel"
+  (overlayOutsideClick)="selection.set(null)"
+  (detach)="selection.set(null)"
+  (overlayKeydown)="$event.key === 'Escape' && selection.set(null)"
+>
+  @if (picked(); as p) {
+    <app-hr-day-popover
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      [employee]="p.employee"
+      [date]="p.date"
+      [cell]="p.cell"
+      [day]="p.day"
+      [office]="p.office"
+      [access]="access()"
+      [makeupOwed]="data()?.makeupOwed ?? null"
+      (closed)="selection.set(null)"
+      (editAbsence)="editAbsence($event)"
+      (editHours)="editHours($event)"
+    />
+  }
+</ng-template>

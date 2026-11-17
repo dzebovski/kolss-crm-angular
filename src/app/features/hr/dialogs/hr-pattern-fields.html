@@ -1,0 +1,118 @@
+<fieldset class="hr-pf__group">
+  <legend class="hr-pf__legend">{{ 'hr.pattern.type' | translate }}</legend>
+  <div class="hr-pf__seg">
+    <button
+      type="button"
+      [class.hr-pf__seg--on]="draft().kind === 'fixed'"
+      [attr.aria-pressed]="draft().kind === 'fixed'"
+      (click)="setKind('fixed')"
+    >
+      {{ 'hr.pattern.fixedLong' | translate }}
+    </button>
+    <button
+      type="button"
+      [class.hr-pf__seg--on]="draft().kind === 'flexible'"
+      [attr.aria-pressed]="draft().kind === 'flexible'"
+      (click)="setKind('flexible')"
+    >
+      {{ 'hr.schedule.kind.flexible' | translate }}
+    </button>
+  </div>
+  <p class="hr-pf__hint">
+    {{
+      (draft().kind === 'fixed' ? 'hr.pattern.typeHintFixed' : 'hr.pattern.typeHintFlex')
+        | translate
+    }}
+  </p>
+</fieldset>
+
+@if (draft().kind === 'fixed') {
+  <fieldset class="hr-pf__group">
+    <legend class="hr-pf__legend">{{ 'hr.pattern.weekdays' | translate }}</legend>
+    <div class="hr-pf__days">
+      @for (w of weekdays(); track w.day) {
+        <button
+          type="button"
+          class="hr-pf__day"
+          [class.hr-pf__day--on]="w.on"
+          [attr.aria-pressed]="w.on"
+          [disabled]="w.closed"
+          (click)="toggleDay(w.day)"
+        >
+          {{ w.label }}
+        </button>
+      }
+    </div>
+    <p class="hr-pf__hint" [class.hr-pf__hint--error]="!!errors().weekdays">
+      {{ (errors().weekdays ? 'hr.pattern.weekdaysError' : 'hr.pattern.weekdaysHint') | translate }}
+    </p>
+  </fieldset>
+
+  <div class="hr-pf__grid3">
+    <app-v2-form-field [label]="'hr.pattern.start' | translate" [error]="startError()" hint=" ">
+      <select
+        [value]="draft().start"
+        [attr.aria-invalid]="!!startError()"
+        (change)="setTime('start', $any($event.target).value)"
+      >
+        @for (t of times(); track t) {
+          <option [value]="t" [selected]="t === draft().start">{{ t }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'hr.pattern.end' | translate"
+      [error]="errors().end ? ('hr.pattern.endError' | translate) : ''"
+      hint=" "
+    >
+      <select
+        [value]="draft().end"
+        [attr.aria-invalid]="!!errors().end"
+        (change)="setTime('end', $any($event.target).value)"
+      >
+        @for (t of times(); track t) {
+          <option [value]="t" [selected]="t === draft().end">{{ t }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'hr.pattern.hoursPerDay' | translate"
+      [error]="errors().hoursPerDay ? ('hr.pattern.hoursError' | translate) : ''"
+      [hint]="'hr.pattern.hoursAuto' | translate"
+    >
+      <input
+        inputmode="decimal"
+        [value]="draft().hoursPerDay"
+        [placeholder]="autoHours() ?? ''"
+        [attr.aria-invalid]="!!errors().hoursPerDay"
+        (input)="patch({ hoursPerDay: $any($event.target).value })"
+      />
+    </app-v2-form-field>
+  </div>
+} @else {
+  <div class="hr-pf__grid2">
+    <app-v2-form-field
+      [label]="'hr.pattern.daysPerWeek' | translate"
+      [error]="errors().daysPerWeek ? ('hr.pattern.daysRange' | translate) : ''"
+      [hint]="'hr.pattern.daysRange' | translate"
+    >
+      <select (change)="patch({ daysPerWeek: +$any($event.target).value })">
+        @for (n of dayOptions; track n) {
+          <option [value]="n" [selected]="n === draft().daysPerWeek">{{ n }}</option>
+        }
+      </select>
+    </app-v2-form-field>
+    <app-v2-form-field
+      [label]="'hr.pattern.hoursPerDay' | translate"
+      [error]="errors().hoursPerDay ? ('hr.pattern.hoursError' | translate) : ''"
+      [hint]="'hr.pattern.flexHint' | translate"
+    >
+      <input
+        inputmode="decimal"
+        [value]="draft().hoursPerDay"
+        [attr.aria-invalid]="!!errors().hoursPerDay"
+        (input)="patch({ hoursPerDay: $any($event.target).value })"
+      />
+    </app-v2-form-field>
+  </div>
+}

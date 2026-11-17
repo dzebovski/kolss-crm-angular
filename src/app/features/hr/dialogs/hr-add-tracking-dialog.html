@@ -1,0 +1,108 @@
+<app-v2-dialog
+  width="status"
+  [title]="'hr.track.title' | translate"
+  [subtitle]="'hr.track.subtitle' | translate"
+  [saveLabel]="'hr.track.save' | translate"
+  [saveDisabled]="saving()"
+  [invalid]="invalid()"
+  [errorCount]="errorCount()"
+  [hasUnsavedInput]="dirty()"
+  (save)="save()"
+  (invalidAttempt)="attempted.set(true)"
+>
+  <div class="hr-at">
+    <app-v2-form-field
+      [label]="'hr.track.account' | translate"
+      [error]="attempted() && errors().account ? ('hr.track.pickAccount' | translate) : ''"
+      hint=" "
+    >
+      <input
+        type="search"
+        role="combobox"
+        aria-autocomplete="list"
+        aria-controls="hr-at-accounts"
+        aria-expanded="true"
+        [placeholder]="'hr.track.search' | translate"
+        [value]="query()"
+        (input)="query.set($any($event.target).value); profileId.set('')"
+      />
+    </app-v2-form-field>
+    <ul class="hr-at__list" id="hr-at-accounts" role="listbox">
+      @for (m of matches(); track m.account.profileId) {
+        <li
+          role="option"
+          class="hr-at__item"
+          tabindex="0"
+          [class.hr-at__item--on]="m.account.profileId === profileId()"
+          [class.hr-at__item--off]="m.account.isTracked"
+          [attr.aria-selected]="m.account.profileId === profileId()"
+          [attr.aria-disabled]="m.account.isTracked"
+          (click)="pick(m.account)"
+          (keydown.enter)="$event.preventDefault(); pick(m.account)"
+          (keydown.space)="$event.preventDefault(); pick(m.account)"
+        >
+          <span class="hr-at__avatar" aria-hidden="true">{{ m.initials }}</span>
+          <span class="hr-at__text">
+            <span class="hr-at__name">{{ m.name }}</span>
+            <span class="hr-at__sub">{{ m.sub }}</span>
+          </span>
+          @if (m.account.isTracked) {
+            <span class="hr-at__tag">{{ 'hr.track.tracked' | translate }}</span>
+          }
+        </li>
+      } @empty {
+        <li class="hr-at__none">{{ 'hr.track.noAccounts' | translate }}</li>
+      }
+    </ul>
+
+    <div class="hr-at__grid">
+      <app-v2-form-field [label]="'hr.office' | translate" hint=" ">
+        <select (change)="officeId.set($any($event.target).value)">
+          @for (o of officeOptions(); track o.value) {
+            <option [value]="o.value" [selected]="o.value === officeId()">{{ o.label }}</option>
+          }
+        </select>
+      </app-v2-form-field>
+      <app-v2-form-field
+        [label]="'hr.track.start' | translate"
+        [error]="attempted() && errors().start ? ('hr.error.required' | translate) : ''"
+        hint=" "
+      >
+        <input
+          type="date"
+          required
+          [value]="startedOn()"
+          (input)="startedOn.set($any($event.target).value)"
+        />
+      </app-v2-form-field>
+    </div>
+
+    <app-v2-form-field [label]="'hr.track.position' | translate" hint=" ">
+      <input
+        maxlength="120"
+        [value]="position()"
+        (input)="position.set($any($event.target).value)"
+      />
+    </app-v2-form-field>
+
+    <fieldset class="hr-at__schedule">
+      <legend class="hr-at__legend">{{ 'hr.track.schedule' | translate }}</legend>
+      @if (officeValue(); as office) {
+        <app-hr-pattern-fields [(draft)]="draft" [office]="office" [showErrors]="attempted()" />
+        <p class="hr-at__preview">{{ preview() }}</p>
+      }
+    </fieldset>
+
+    <app-v2-form-field
+      [label]="'hr.track.vacation' | translate: { year }"
+      [error]="attempted() && errors().vacation ? ('hr.track.vacationError' | translate) : ''"
+      [hint]="'hr.track.vacationHint' | translate: { n: officeValue()?.defaultVacationDays ?? '' }"
+    >
+      <input
+        inputmode="numeric"
+        [value]="vacationText()"
+        (input)="vacationText.set($any($event.target).value)"
+      />
+    </app-v2-form-field>
+  </div>
+</app-v2-dialog>

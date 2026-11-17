@@ -3,6 +3,13 @@ import { hrCoveredMinutes, hrDayCoverage, hrOfficeInterval } from './hr-calendar
 import { addDays, isoWeekday, mondayOf, monthEnd, monthWeeks, shiftMonth } from './hr-dates';
 import { hrAbsenceDays, hrDateError, validateHrAbsence } from './hr-entry';
 import { hrPlanCounter, hrPlanDayState, hrPlanRequest, type HrPlanDay } from './hr-plan';
+import {
+  hrNextMonday,
+  hrOpenWeekdays,
+  hrPatternDraft,
+  hrPatternRequest,
+  validateHrPattern,
+} from './hr-pattern';
 
 const OFFICE: HrOffice = {
   id: 'o1',
@@ -183,5 +190,41 @@ describe('plan my hours', () => {
     expect(hrPlanRequest(week, '2026-11-24')).toEqual([
       { date: '2026-11-24', startTime: '10:00', endTime: '14:00', kind: 'makeup' },
     ]);
+  });
+});
+
+describe('hr-pattern', () => {
+  const office = {
+    hours: [1, 2, 3, 4, 5, 6, 7].map((weekday) => ({
+      weekday,
+      opens: weekday === 7 ? null : '10:00',
+      closes: weekday === 7 ? null : weekday === 6 ? '15:00' : '19:00',
+    })),
+  };
+
+  it('defaults to Mon–Fri 10–18 and next Monday', () => {
+    const draft = hrPatternDraft(null);
+    expect(hrPatternRequest(draft, '2026-11-23')).toEqual({
+      validFrom: '2026-11-23',
+      note: null,
+      kind: 'fixed',
+      weekdays: [1, 2, 3, 4, 5],
+      startTime: '10:00',
+      endTime: '18:00',
+      hoursPerDay: 8,
+    });
+    expect(hrNextMonday('2026-11-17')).toBe('2026-11-23');
+    expect(hrOpenWeekdays(office)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
+
+  it('flags hours outside the office and bad hours per day', () => {
+    const draft = { ...hrPatternDraft(null), weekdays: [1, 6], end: '18:00' };
+    expect(validateHrPattern(draft, office)).toEqual({ outsideDay: 6 });
+    expect(validateHrPattern({ ...draft, weekdays: [1], hoursPerDay: '7.3' }, office)).toEqual({
+      hoursPerDay: 'range',
+    });
+    expect(
+      validateHrPattern({ ...draft, kind: 'flexible', daysPerWeek: 7, hoursPerDay: '4' }, office),
+    ).toEqual({ daysPerWeek: 'range' });
   });
 });

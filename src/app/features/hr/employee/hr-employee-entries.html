@@ -1,0 +1,98 @@
+<div class="hr-bar" role="group" [attr.aria-label]="'hr.entries.filter' | translate">
+  <button
+    type="button"
+    class="hr-chip"
+    [class.hr-chip--on]="type() === null"
+    [attr.aria-pressed]="type() === null"
+    (click)="type.set(null)"
+  >
+    {{ 'hr.entries.allTypes' | translate }}
+  </button>
+  @for (t of types; track t) {
+    <button
+      type="button"
+      class="hr-chip"
+      [class.hr-chip--on]="type() === t"
+      [attr.aria-pressed]="type() === t"
+      (click)="type.set(t)"
+    >
+      <app-hr-type-icon [type]="t" [size]="14" />
+      {{ text.type(t) }}
+    </button>
+  }
+  <app-v2-select
+    class="hr-period"
+    [options]="rangeOptions()"
+    [value]="range()"
+    [ariaLabel]="'hr.entries.period' | translate"
+    (valueChange)="range.set($any($event))"
+  />
+</div>
+
+<section class="hr-card" role="table" [attr.aria-label]="'hr.employee.tab.entries' | translate">
+  <div class="hr-tr hr-th" role="row">
+    <span role="columnheader">{{ 'hr.employee.entries.dates' | translate }}</span>
+    <span role="columnheader">{{ 'hr.entries.typePart' | translate }}</span>
+    <span role="columnheader">{{ 'hr.employee.entries.days' | translate }}</span>
+    <span role="columnheader">{{ 'hr.employee.entries.comment' | translate }}</span>
+    <span role="columnheader">{{ 'hr.employee.entries.added' | translate }}</span>
+    <span role="columnheader"
+      ><span class="hr-sr-only">{{ 'hr.edit' | translate }}</span></span
+    >
+  </div>
+  @for (r of rows(); track r.entry.id) {
+    <div class="hr-tr" role="row">
+      <span role="cell" class="hr-dates">
+        {{ r.dates }}
+        @if (r.entry.closedMonth) {
+          <span class="hr-tag--neutral">{{ 'hr.entries.closedMonth' | translate }}</span>
+        }
+      </span>
+      <span role="cell" class="hr-type">
+        <app-hr-absence-chip [type]="r.entry.type" [part]="r.entry.part" />
+        <span class="hr-caption">{{ r.part }}</span>
+      </span>
+      <span role="cell" class="hr-mono">{{ r.days }}</span>
+      <span role="cell" class="hr-caption">{{ r.entry.comment ?? '' }}</span>
+      <span role="cell" class="hr-caption"> {{ r.when }}<br />{{ r.by }} </span>
+      <span role="cell" class="hr-actions">
+        @if (r.entry.kind === 'absence') {
+          <button type="button" appV2Button size="sm" (click)="edit(r.entry)">
+            {{ 'hr.edit' | translate }}
+          </button>
+        }
+        <button
+          type="button"
+          class="hr-icon-btn"
+          [disabled]="busyId() === r.entry.id"
+          [attr.aria-label]="'hr.entries.deleteAria' | translate"
+          (click)="confirmId.set(r.entry.id)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+          </svg>
+        </button>
+      </span>
+      @if (confirmId() === r.entry.id) {
+        <div
+          class="hr-confirm"
+          role="alertdialog"
+          [attr.aria-label]="'hr.absence.deleteConfirm' | translate"
+        >
+          <span class="hr-confirm__text">
+            <strong>{{ 'hr.absence.deleteConfirm' | translate }}</strong>
+            {{ 'hr.absence.deleteConfirmHint' | translate }}
+          </span>
+          <button type="button" appV2Button size="sm" (click)="confirmId.set(null)">
+            {{ 'hr.absence.keep' | translate }}
+          </button>
+          <button type="button" appV2Button size="sm" variant="danger" (click)="remove(r.entry)">
+            {{ 'hr.absence.deleteEntry' | translate }}
+          </button>
+        </div>
+      }
+    </div>
+  } @empty {
+    <p class="hr-empty">{{ 'hr.entries.empty' | translate }}</p>
+  }
+</section>

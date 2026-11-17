@@ -191,3 +191,24 @@ $types:
     }
   }
 }
+
+// Table rows of the admin pages (HR-employee-*.dc.html `.tr` / `.th`): a grid row with a soft
+// top border; the consumer sets `grid-template-columns`.
+@mixin table-row {
+  @include type.text('body');
+
+  display: grid;
+  column-gap: 16px;
+  align-items: center;
+  min-height: 52px;
+  padding: 8px 20px;
+  border-top: 1px solid var(--v2-line-soft);
+}
+
+@mixin table-head {
+  @include type.text('eyebrow');
+
+  min-height: 40px;
+  border-top: 0;
+  color: var(--v2-muted);
+}

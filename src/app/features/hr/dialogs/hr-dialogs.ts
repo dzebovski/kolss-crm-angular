@@ -2,8 +2,18 @@ import { inject, Service } from '@angular/core';
 
 import { V2DialogService } from '../../v2/ui/dialog/v2-dialog.service';
 import { HrAbsenceDialog } from './hr-absence-dialog';
-import type { HrAbsenceDialogData, HrPlanDialogData } from './hr-dialog.types';
+import { HrAddTrackingDialog } from './hr-add-tracking-dialog';
+import type {
+  HrAbsenceDialogData,
+  HrHolidayDialogData,
+  HrLeaveLimitDialogData,
+  HrPlanDialogData,
+  HrScheduleDialogData,
+} from './hr-dialog.types';
+import { HrHolidayDialog } from './hr-holiday-dialog';
+import { HrLeaveLimitDialog } from './hr-leave-limit-dialog';
 import { HrPlanHoursDialog } from './hr-plan-hours-dialog';
+import { HrScheduleDialog } from './hr-schedule-dialog';
 
 /** Opens the HR popups. Each popup saves itself, shows its toast and closes with `true`. */
 @Service()
@@ -18,7 +28,19 @@ export class HrDialogs {
     return this.dialogs.open<boolean, HrPlanDialogData>(HrPlanHoursDialog, data);
   }
 
-  addToTracking(): void {
-    // Wired in HF4 (HR-add-to-tracking.dc.html).
+  addToTracking() {
+    return this.dialogs.open<boolean, undefined>(HrAddTrackingDialog, undefined);
+  }
+
+  schedule(data: HrScheduleDialogData) {
+    return this.dialogs.open<boolean, HrScheduleDialogData>(HrScheduleDialog, data);
+  }
+
+  leaveLimit(data: HrLeaveLimitDialogData) {
+    return this.dialogs.open<boolean, HrLeaveLimitDialogData>(HrLeaveLimitDialog, data);
+  }
+
+  holiday(data: HrHolidayDialogData) {
+    return this.dialogs.open<boolean, HrHolidayDialogData>(HrHolidayDialog, data);
   }
 }
