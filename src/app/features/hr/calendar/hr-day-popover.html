@@ -77,47 +77,53 @@
 
 @if (access().admin || canEditAbsence() || canAddAbsence() || canEditHours()) {
   <footer class="hr-pop__foot">
-    @if (access().admin) {
-      <button type="button" appV2Button size="sm" (click)="openEmployee.emit(employee().id)">
-        {{ 'hr.popover.openEmployee' | translate }}
-      </button>
+    @if (quickWorkday() || canEditHours()) {
+      <div class="hr-pop__row">
+        @if (quickWorkday(); as w) {
+          <button
+            type="button"
+            appV2Button
+            size="sm"
+            (click)="setWorkday.emit({ date: date(), start: w.start, end: w.end })"
+          >
+            {{ 'hr.popover.setWorkday' | translate: { range: text.range(w.start, w.end) } }}
+          </button>
+        }
+        @if (canEditHours()) {
+          <button type="button" appV2Button size="sm" (click)="editHours.emit(date())">
+            {{ (planned() ? 'hr.popover.editHours' : 'hr.popover.planHours') | translate }}
+          </button>
+        }
+      </div>
     }
-    @if (canEditAbsence()) {
-      <button
-        type="button"
-        appV2Button
-        size="sm"
-        variant="primary"
-        (click)="editAbsence.emit(absence()!)"
-      >
-        {{ 'hr.edit' | translate }}
-      </button>
-    }
-    @if (quickWorkday(); as w) {
-      <button
-        type="button"
-        appV2Button
-        size="sm"
-        (click)="setWorkday.emit({ date: date(), start: w.start, end: w.end })"
-      >
-        {{ 'hr.popover.setWorkday' | translate: { range: text.range(w.start, w.end) } }}
-      </button>
-    }
-    @if (canEditHours()) {
-      <button type="button" appV2Button size="sm" (click)="editHours.emit(date())">
-        {{ (planned() ? 'hr.popover.editHours' : 'hr.popover.planHours') | translate }}
-      </button>
-    }
-    @if (canAddAbsence()) {
-      <button
-        type="button"
-        appV2Button
-        size="sm"
-        variant="primary"
-        (click)="addAbsence.emit(date())"
-      >
-        {{ 'hr.addAbsence' | translate }}
-      </button>
-    }
+    <div class="hr-pop__row">
+      @if (access().admin) {
+        <button type="button" appV2Button size="sm" (click)="openEmployee.emit(employee().id)">
+          {{ 'hr.popover.openEmployee' | translate }}
+        </button>
+      }
+      @if (canEditAbsence()) {
+        <button
+          type="button"
+          appV2Button
+          size="sm"
+          variant="primary"
+          (click)="editAbsence.emit(absence()!)"
+        >
+          {{ 'hr.edit' | translate }}
+        </button>
+      }
+      @if (canAddAbsence()) {
+        <button
+          type="button"
+          appV2Button
+          size="sm"
+          variant="primary"
+          (click)="addAbsence.emit(date())"
+        >
+          {{ 'hr.addAbsence' | translate }}
+        </button>
+      }
+    </div>
   </footer>
 }

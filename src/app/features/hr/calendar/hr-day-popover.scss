@@ -122,9 +122,23 @@
 
 .hr-pop__foot {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  flex-direction: column;
   gap: 8px;
   padding: 12px 16px;
   border-top: 1px solid var(--v2-line-soft);
+}
+
+// Each row fills the popover width: hours actions on top, the rest below.
+.hr-pop__row {
+  display: flex;
+  gap: 8px;
+
+  &:empty {
+    display: none;
+  }
+
+  > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
