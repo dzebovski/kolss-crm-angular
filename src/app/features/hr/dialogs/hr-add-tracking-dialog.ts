@@ -81,7 +81,9 @@ export class HrAddTrackingDialog {
         account: a,
         initials: hrInitials(a.displayName ?? a.email),
         name: a.displayName || a.email || '',
-        sub: [a.email, a.officeCodes.join(', ')].filter(Boolean).join(' · '),
+        sub: [a.email, a.officeCodes.map((code) => this.officeLabel(code)).join(', ')]
+          .filter(Boolean)
+          .join(' · '),
       }));
   });
 
@@ -110,6 +112,11 @@ export class HrAddTrackingDialog {
   protected readonly invalid = computed(() => Object.values(this.errors()).some(Boolean));
   protected readonly preview = computed(() => this.text.schedule(hrPatternPreview(this.draft())));
   protected readonly dirty = computed(() => !!this.profileId() || !!this.position().trim());
+
+  private officeLabel(code: string): string {
+    const office = this.session.offices().find((o) => o.code === code);
+    return office ? this.text.officeName(office) : code;
+  }
 
   protected pick(account: HrAccount): void {
     if (account.isTracked) return;

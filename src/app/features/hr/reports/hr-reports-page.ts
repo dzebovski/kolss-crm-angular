@@ -135,9 +135,12 @@ export class HrReportsPage {
     { value: 'month', label: this.text.t('hr.month') },
     { value: 'year', label: this.text.t('hr.reports.year') },
   ]);
-  protected readonly periodLabel = computed(() =>
-    this.mode() === 'year' ? String(this.shownYear()) : this.text.month(this.shownMonth()),
-  );
+  protected readonly periodLabel = computed(() => {
+    const month = this.shownMonth();
+    // Empty until `/hr/me` brings today (cold load).
+    if (!month) return '';
+    return this.mode() === 'year' ? String(this.shownYear()) : this.text.month(month);
+  });
   protected readonly columnLabels = computed(() =>
     MONTH_COLUMNS.map((c) => this.text.t(`hr.reports.col.${c}` as MessageKey)),
   );

@@ -144,12 +144,13 @@ export class HrAbsenceDialog {
 
   protected readonly employeeOptions = computed<V2SelectOption[]>(() => {
     if (!this.team.hasValue()) return [];
+    const offices = new Map(this.session.offices().map((office) => [office.id, office]));
     return this.team
       .value()
       .items.filter((row) => row.employee.isTracked)
       .map((row) => ({
         value: row.employee.id,
-        label: `${hrName(row.employee)} — ${row.employee.officeCode}`,
+        label: `${hrName(row.employee)} — ${this.text.officeName(offices.get(row.employee.officeId))}`,
       }));
   });
 

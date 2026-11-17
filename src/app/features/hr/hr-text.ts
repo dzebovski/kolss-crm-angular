@@ -52,8 +52,11 @@ export class HrText {
   }
 
   private format(iso: string, options: Intl.DateTimeFormatOptions): string {
+    const date = iso ? isoToDate(iso) : null;
+    // Empty or malformed input (e.g. before `/hr/me` brings today) renders as nothing.
+    if (!date || Number.isNaN(date.getTime())) return '';
     return new Intl.DateTimeFormat(INTL_LOCALE[this.locale()], { ...options, timeZone: 'UTC' })
-      .format(isoToDate(iso))
+      .format(date)
       .replace(/\.$/, '');
   }
 
