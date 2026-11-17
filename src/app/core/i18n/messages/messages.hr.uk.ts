@@ -467,6 +467,10 @@ export const hrMessagesUk = {
   'hr.settings.deleteConfirm': 'Видалити «{name}»?',
   'hr.settings.vacationError': 'Від 0 до 366 днів',
   'hr.settings.actions': 'Дії',
+  'hr.team.trackedUntil': 'В обліку до {date}',
+  'hr.team.startsOn': 'В обліку з {date}',
+  'hr.team.accounts.title': 'Акаунти CRM поза HR-обліком',
+  'hr.team.accounts.empty': 'Усі акаунти CRM тут уже в обліку.',
 } as const;
 
 export type HrMessageKey = keyof typeof hrMessagesUk;

@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, resource, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
-import type { HrTeamRow } from '@core/api/generated/kolss-api.types';
+import type { HrAccount, HrTeamRow } from '@core/api/generated/kolss-api.types';
 import { KolssApiError } from '@core/api/generated/kolss-api.client';
 import { TranslatePipe } from '@core/i18n/translate.pipe';
 import { hrCellView } from '@domain/hr/hr-calendar';
@@ -66,6 +66,29 @@ export class HrTeamPage {
       }),
   });
 
+  /** CRM accounts never added to tracking, loaded only while the toggle is on. */
+  private readonly accounts = resource({
+    params: () => (this.showUntracked() ? { version: this.hr.changes() } : undefined),
+    loader: () => this.hr.accounts(),
+  });
+
+  protected readonly untrackedAccounts = computed(() => {
+    const list = this.accounts.hasValue() ? (this.accounts.value() ?? []) : [];
+    const officeId = this.officeId();
+    const code = this.session.offices().find((o) => o.id === officeId)?.code;
+    const q = hrSearchText(this.query().trim());
+    return list
+      .filter((a) => !a.employeeId)
+      .filter((a) => officeId === ALL || (!!code && a.officeCodes.includes(code)))
+      .map((a) => ({
+        account: a,
+        name: a.displayName || a.email || '',
+        offices: a.officeCodes.map((c) => this.officeLabelByCode(c)).join(', '),
+      }))
+      .filter((a) => !q || hrSearchText(a.name).includes(q))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
+
   protected readonly officeOptions = computed<V2SelectOption[]>(() => [
     { value: ALL, label: this.text.t('hr.team.allOffices') },
     ...this.session.offices().map((office) => ({
@@ -103,6 +126,7 @@ export class HrTeamPage {
       name: hrName(employee),
       position: employee.position ?? '',
       tracked: employee.isTracked,
+      status: this.status(employee, today),
       office: this.officeLabel(employee.officeId, employee.officeCode),
       schedule: this.text.schedule(employee.pattern),
       todayAbsence: view?.kind === 'absence' ? view.absence : null,
@@ -129,6 +153,22 @@ export class HrTeamPage {
     };
   }
 
+  /** Under the name: not tracked / tracked until (stopped) / tracked from (starts later). */
+  private status(employee: HrTeamRow['employee'], today: string): string {
+    if (!employee.isTracked) return this.text.t('hr.team.notTracked');
+    const until = employee.trackedUntil ?? employee.endedOn;
+    if (until) return this.text.t('hr.team.trackedUntil', { date: this.text.day(until) });
+    if (employee.startedOn > today) {
+      return this.text.t('hr.team.startsOn', { date: this.text.day(employee.startedOn) });
+    }
+    return employee.position ?? '';
+  }
+
+  private officeLabelByCode(code: string): string {
+    const office = this.session.offices().find((o) => o.code === code);
+    return office ? this.text.officeName(office) : code;
+  }
+
   private officeLabel(id: string, code: string): string {
     const office = this.session.offices().find((o) => o.id === id);
     return office ? this.text.officeName(office) : code;
@@ -142,8 +182,14 @@ export class HrTeamPage {
     this.navigate({ month: shiftMonth(this.shownMonth(), delta) });
   }
 
-  protected addToTracking(): void {
-    this.dialogs.addToTracking();
+  protected addToTracking(account?: HrAccount): void {
+    if (!account) {
+      this.dialogs.addToTracking();
+      return;
+    }
+    const code = account.officeCodes[0];
+    const officeId = this.session.offices().find((o) => o.code === code)?.id;
+    this.dialogs.addToTracking({ profileId: account.profileId, officeId });
   }
 
   private navigate(queryParams: Record<string, string | null>): void {

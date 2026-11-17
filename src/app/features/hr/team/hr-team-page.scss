@@ -248,3 +248,30 @@ a.hr-row {
   margin: 0;
   color: var(--v2-muted);
 }
+
+// CRM accounts not in tracking (shown with "Show people not tracked").
+.hr-accounts {
+  @include hr.card;
+
+  display: flex;
+  flex-direction: column;
+  padding: 8px 20px 12px;
+}
+
+.hr-accounts__title {
+  @include type.text('body-strong');
+
+  margin: 8px 0;
+}
+
+.hr-accounts__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--v2-line-soft);
+
+  .hr-person__text {
+    flex: 1;
+  }
+}

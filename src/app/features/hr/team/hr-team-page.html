@@ -112,9 +112,7 @@
             <app-hr-avatar [name]="row.name" size="sm" />
             <span class="hr-person__text">
               <span class="hr-person__name">{{ row.name }}</span>
-              <span class="hr-person__pos">
-                {{ row.tracked ? row.position : ('hr.team.notTracked' | translate) }}
-              </span>
+              <span class="hr-person__pos">{{ row.status }}</span>
             </span>
           </span>
           <span role="cell" class="hr-cell-text">{{ row.office }}</span>
@@ -172,6 +170,28 @@
       }
     </div>
   </div>
+
+  @if (showUntracked()) {
+    <section class="hr-accounts" [attr.aria-label]="'hr.team.accounts.title' | translate">
+      <h2 class="hr-accounts__title">{{ 'hr.team.accounts.title' | translate }}</h2>
+      @for (a of untrackedAccounts(); track a.account.profileId) {
+        <div class="hr-accounts__row">
+          <app-hr-avatar [name]="a.name" size="sm" />
+          <span class="hr-person__text">
+            <span class="hr-person__name">{{ a.name }}</span>
+            <span class="hr-person__pos">{{
+              a.offices || ('hr.team.notTracked' | translate)
+            }}</span>
+          </span>
+          <button type="button" appV2Button size="sm" (click)="addToTracking(a.account)">
+            {{ 'hr.team.add' | translate }}
+          </button>
+        </div>
+      } @empty {
+        <p class="hr-subtle">{{ 'hr.team.accounts.empty' | translate }}</p>
+      }
+    </section>
+  }
 
   <div class="hr-foot">
     @if (data()!.untrackedAccounts > 0 || showUntracked()) {

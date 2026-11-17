@@ -1,4 +1,4 @@
-import { DialogRef } from '@angular/cdk/dialog';
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -18,6 +18,7 @@ import { V2FormField } from '../../v2/ui/dialog/v2-form-field';
 import { V2ToastService } from '../../v2/ui/toast/v2-toast';
 import { HrSession } from '../hr-session';
 import { HrText } from '../hr-text';
+import type { HrAddTrackingDialogData } from './hr-dialog.types';
 import { HrPatternFields } from './hr-pattern-fields';
 
 // Add to HR tracking (HR-add-to-tracking.dc.html, super admin, 560): pick a CRM account
@@ -31,6 +32,7 @@ import { HrPatternFields } from './hr-pattern-fields';
 })
 export class HrAddTrackingDialog {
   private readonly dialogRef = inject<DialogRef<boolean>>(DialogRef);
+  private readonly data = inject<HrAddTrackingDialogData | undefined>(DIALOG_DATA) ?? {};
   private readonly hr = inject(HrService);
   private readonly router = inject(Router);
   private readonly toast = inject(V2ToastService);
@@ -42,8 +44,8 @@ export class HrAddTrackingDialog {
 
   protected readonly accounts = resource({ loader: () => this.hr.accounts() });
   protected readonly query = signal('');
-  protected readonly profileId = signal('');
-  protected readonly officeId = signal(this.session.defaultOfficeId());
+  protected readonly profileId = signal(this.data.profileId ?? '');
+  protected readonly officeId = signal(this.data.officeId || this.session.defaultOfficeId());
   /** Today, so new people show up in the current week at once (owner decision, 2026-11-17). */
   protected readonly startedOn = signal(this.today);
   protected readonly position = signal('');

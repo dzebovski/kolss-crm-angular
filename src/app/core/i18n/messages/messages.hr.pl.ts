@@ -470,4 +470,8 @@ export const hrMessagesPl: Record<HrMessageKey, string> = {
   'hr.settings.deleteConfirm': 'Usunąć „{name}”?',
   'hr.settings.vacationError': 'Od 0 do 366 dni',
   'hr.settings.actions': 'Akcje',
+  'hr.team.trackedUntil': 'W ewidencji do {date}',
+  'hr.team.startsOn': 'W ewidencji od {date}',
+  'hr.team.accounts.title': 'Konta CRM spoza ewidencji HR',
+  'hr.team.accounts.empty': 'Wszystkie konta CRM są już w ewidencji.',
 };

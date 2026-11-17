@@ -5,6 +5,7 @@ import { HrAbsenceDialog } from './hr-absence-dialog';
 import { HrAddTrackingDialog } from './hr-add-tracking-dialog';
 import type {
   HrAbsenceDialogData,
+  HrAddTrackingDialogData,
   HrHolidayDialogData,
   HrLeaveLimitDialogData,
   HrPlanDialogData,
@@ -28,8 +29,8 @@ export class HrDialogs {
     return this.dialogs.open<boolean, HrPlanDialogData>(HrPlanHoursDialog, data);
   }
 
-  addToTracking() {
-    return this.dialogs.open<boolean, undefined>(HrAddTrackingDialog, undefined);
+  addToTracking(data: HrAddTrackingDialogData = {}) {
+    return this.dialogs.open<boolean, HrAddTrackingDialogData>(HrAddTrackingDialog, data);
   }
 
   schedule(data: HrScheduleDialogData) {

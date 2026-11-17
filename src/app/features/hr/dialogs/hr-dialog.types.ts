@@ -57,3 +57,9 @@ export interface HrHolidayDialogData {
   /** Edit mode. */
   readonly holiday?: HrHoliday;
 }
+
+export interface HrAddTrackingDialogData {
+  /** Preselected CRM account (Team → people not tracked). */
+  readonly profileId?: string;
+  readonly officeId?: string;
+}

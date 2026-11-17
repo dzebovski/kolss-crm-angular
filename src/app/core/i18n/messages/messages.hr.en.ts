@@ -469,4 +469,8 @@ export const hrMessagesEn: Record<HrMessageKey, string> = {
   'hr.settings.deleteConfirm': 'Delete {name}?',
   'hr.settings.vacationError': 'From 0 to 366 days',
   'hr.settings.actions': 'Actions',
+  'hr.team.trackedUntil': 'Tracked until {date}',
+  'hr.team.startsOn': 'Tracked from {date}',
+  'hr.team.accounts.title': 'CRM accounts not in HR tracking',
+  'hr.team.accounts.empty': 'Every CRM account here is already tracked.',
 };
