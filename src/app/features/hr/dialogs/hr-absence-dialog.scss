@@ -174,4 +174,9 @@
   .hr-abs__grid2 {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  // The day-part control spans the phone width; its segments share it (`fill`).
+  .hr-abs__part {
+    align-items: stretch;
+  }
 }

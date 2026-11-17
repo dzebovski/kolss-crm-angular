@@ -111,9 +111,9 @@ export class HrAbsenceDialog {
 
   protected readonly target = computed<HrTarget | null>(() => {
     const own = this.employeeId() === this.me?.employee?.id;
+    const year = Number(this.dateFrom().slice(0, 4)) || Number(this.today.slice(0, 4));
     if (this.detail.hasValue()) {
       const d = this.detail.value();
-      const year = Number(this.dateFrom().slice(0, 4)) || Number(d.today.slice(0, 4));
       return {
         pattern: d.employee.pattern,
         office: d.office,
@@ -125,7 +125,8 @@ export class HrAbsenceDialog {
       return {
         pattern: this.me.employee?.pattern ?? null,
         office: this.me.office,
-        vacation: this.me.vacation,
+        // `/hr/me` carries only the current year's balance.
+        vacation: this.me.vacation?.year === year ? this.me.vacation : null,
         makeupOwed: this.me.makeupOwed,
       };
     }

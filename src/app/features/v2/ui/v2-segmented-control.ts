@@ -30,7 +30,11 @@ export interface V2SegmentOption<T extends string> {
       </button>
     }
   `,
-  host: { role: 'group', '[attr.aria-label]': 'ariaLabel()' },
+  host: {
+    role: 'group',
+    '[attr.aria-label]': 'ariaLabel()',
+    '[class.v2-segmented--fill]': 'fill()',
+  },
   styles: `
     @use '../../../../styles/v2/interactive';
 
@@ -71,6 +75,13 @@ export interface V2SegmentOption<T extends string> {
       color: var(--v2-ink);
     }
 
+    // Fill mode: segments share the host width and may shrink below their label padding.
+    :host(.v2-segmented--fill) .v2-segmented__segment {
+      flex: 1 1 auto;
+      justify-content: center;
+      min-width: 0;
+    }
+
     .v2-segmented__segment--selected {
       background: var(--v2-surface);
       color: var(--v2-ink);
@@ -91,4 +102,6 @@ export class V2SegmentedControl<T extends string> {
   readonly value = model.required<T>();
   readonly ariaLabel = input.required<string>();
   readonly disabled = input(false);
+  /** Stretch the segments across the host width (the host's own width is the consumer's). */
+  readonly fill = input(false);
 }

@@ -184,6 +184,19 @@
     padding: 12px;
   }
 
+  // Month arrows, title and Legend fit one 390px row.
+  .hr-mc__nav {
+    gap: 4px;
+  }
+
+  .hr-mc__title {
+    min-width: 0;
+  }
+
+  .hr-mc__legend-btn {
+    padding: 0 10px;
+  }
+
   .hr-mc__row {
     gap: 3px;
   }

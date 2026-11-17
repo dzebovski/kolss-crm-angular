@@ -1,5 +1,8 @@
 import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, computed, inject, linkedSignal, resource, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 
 import type { HrOffice, HrPattern } from '@core/api/generated/kolss-api.types';
 import { KolssApiError } from '@core/api/generated/kolss-api.client';
@@ -65,6 +68,13 @@ export class HrPlanHoursDialog {
   protected readonly employeeId = this.data.employeeId ?? this.me?.employee?.id ?? '';
   protected readonly own = this.employeeId === this.me?.employee?.id;
   protected readonly hourPx = HOUR_PX;
+  /** Phone layout (HR-plan-hours-mobile.dc.html): day cards, no footer note. */
+  protected readonly phone = toSignal(
+    inject(BreakpointObserver)
+      .observe('(max-width: 720px)')
+      .pipe(map((state) => state.matches)),
+    { initialValue: false },
+  );
 
   protected readonly weekStart = signal(
     this.data.weekStart ?? addDays(mondayOf(this.today || '2026-01-05'), 7),

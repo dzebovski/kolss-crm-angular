@@ -3,7 +3,7 @@
   [title]="title()"
   [subtitle]="subtitle()"
   [saveLabel]="'hr.plan.save' | translate"
-  [hint]="'hr.plan.footer' | translate"
+  [hint]="phone() ? '' : ('hr.plan.footer' | translate)"
   [saveDisabled]="saving() || !target()"
   [invalid]="invalid()"
   [errorCount]="errorCount()"
