@@ -339,3 +339,11 @@ ul {
     gap: var(--v2-space-2);
   }
 }
+
+// HR kit: hour bars stack at the board's 320px track width.
+.v2-ds__col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+}

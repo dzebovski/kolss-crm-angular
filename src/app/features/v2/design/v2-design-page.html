@@ -549,3 +549,84 @@
     />
   </div>
 </section>
+
+<section id="hr-kit" class="v2-ds__card" aria-labelledby="v2-ds-hr-kit">
+  <h2 id="v2-ds-hr-kit" class="v2-ds__section-title">HR kit (HR-components)</h2>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label"
+      >AbsenceChip · <code class="v2-ds__code">sm</code> / <code class="v2-ds__code">md</code></span
+    >
+    <div class="v2-ds__row">
+      @for (type of hrTypes; track type) {
+        <app-hr-absence-chip [type]="type" />
+      }
+    </div>
+    <div class="v2-ds__row">
+      <app-hr-absence-chip type="vacation" size="md" />
+      <app-hr-absence-chip type="sick" part="first_half" size="md" />
+      <app-hr-absence-chip type="absent" size="md" />
+      <app-hr-absence-chip type="day_off_makeup" count="0.5" />
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Day cell · 44 × 44</span>
+    <div class="v2-ds__row">
+      @for (cell of hrCells; track cell.label) {
+        <button
+          appHrDayCell
+          [view]="cell.view"
+          [label]="cell.label"
+          [attr.aria-label]="cell.label"
+          [locked]="!!cell.locked"
+        ></button>
+      }
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Hour bar · office 10–19</span>
+    <div class="v2-ds__col">
+      <app-hr-hour-bar [axisStart]="600" [axisEnd]="1140" start="10:00" end="14:00" />
+      <app-hr-hour-bar
+        [axisStart]="600"
+        [axisEnd]="1140"
+        start="12:00"
+        end="18:00"
+        [makeup]="true"
+      />
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Balance tile</span>
+    <div class="v2-ds__row">
+      <app-hr-balance-tile
+        label="Vacation 2026"
+        value="12 of 20"
+        sub="8 left"
+        [used]="12"
+        [limit]="20"
+      />
+      <app-hr-balance-tile
+        label="Vacation 2026"
+        value="22 of 20"
+        sub="2 over"
+        [used]="22"
+        [limit]="20"
+      />
+      <app-hr-balance-tile
+        label="Make-up owed"
+        value="0 days"
+        sub="Nothing to make up"
+        [empty]="true"
+      />
+    </div>
+  </div>
+
+  <div class="v2-ds__demo">
+    <span class="v2-ds__demo-label">Legend</span>
+    <app-hr-legend />
+  </div>
+</section>

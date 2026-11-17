@@ -49,6 +49,12 @@ import {
   V2_TYPE_GROUPS,
 } from './v2-design-catalog';
 import { V2DesignDemoDialog } from './v2-design-demo-dialog';
+import { HR_KIT_CELLS, HR_KIT_TYPES } from '../../hr/ui/hr-kit-demo';
+import { HrAbsenceChip } from '../../hr/ui/hr-absence-chip';
+import { HrBalanceTile } from '../../hr/ui/hr-balance-tile';
+import { HrDayCell } from '../../hr/ui/hr-day-cell';
+import { HrHourBar } from '../../hr/ui/hr-hour-bar';
+import { HrLegend } from '../../hr/ui/hr-legend';
 
 type DemoPeriod = 'week' | 'month' | 'd40' | 'custom';
 
@@ -102,6 +108,11 @@ const PRODUCT_OPTIONS: readonly V2ChipOption[] = [
 @Component({
   selector: 'app-v2-design-page',
   imports: [
+    HrAbsenceChip,
+    HrBalanceTile,
+    HrDayCell,
+    HrHourBar,
+    HrLegend,
     TranslatePipe,
     V2Button,
     V2BudgetInput,
@@ -129,6 +140,9 @@ const PRODUCT_OPTIONS: readonly V2ChipOption[] = [
   styleUrl: './v2-design-page.scss',
 })
 export class V2DesignPage {
+  protected readonly hrCells = HR_KIT_CELLS;
+  protected readonly hrTypes = HR_KIT_TYPES;
+
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly dialogs = inject(V2DialogService);
   private readonly i18n = inject(I18nService);
