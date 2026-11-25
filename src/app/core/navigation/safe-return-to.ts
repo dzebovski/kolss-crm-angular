@@ -1,4 +1,4 @@
-const APP_FALLBACK = '/dashboard';
+const APP_FALLBACK = '/v2';
 const PROTECTED_ROUTE_PREFIXES = [
   '/dashboard',
   '/leads',
@@ -8,6 +8,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   '/reports',
   '/accounts',
   '/hr',
+  '/v2',
 ] as const;
 
 export function safeAppReturnTo(value: string | null | undefined, fallback = APP_FALLBACK): string {

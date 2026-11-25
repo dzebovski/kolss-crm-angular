@@ -1,6 +1,6 @@
 import { Menu, MenuContent, MenuItem, MenuTrigger } from '@angular/aria/menu';
 import { NgOptimizedImage } from '@angular/common';
-import { Component, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { TranslatePipe } from '@core/i18n/translate.pipe';
@@ -51,7 +51,7 @@ import { V2_SIDE_MENU_ID } from './v2-side-menu';
       </a>
       <div class="v2-header__workspace">
         <button type="button" class="v2-header__product" ngMenuTrigger [menu]="workspaceMenu">
-          {{ workspace() }}
+          {{ currentWorkspaceLabel() | translate }}
           <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M6 9l6 6 6-6" />
           </svg>
@@ -61,17 +61,17 @@ import { V2_SIDE_MENU_ID } from './v2-side-menu';
           #workspaceMenu="ngMenu"
           class="v2-header__workspace-menu"
           [class.is-open]="workspaceMenu.visible()"
-          [attr.aria-label]="workspace()"
+          [attr.aria-label]="'v2.header.workspace' | translate"
         >
           <ng-template ngMenuContent>
-            @for (option of workspaces; track option.label) {
+            @for (option of workspaces; track option.id) {
               <a
                 ngMenuItem
-                [value]="option.label"
+                [value]="option.id"
                 [routerLink]="option.route"
-                [attr.aria-current]="workspace() === option.label ? 'true' : null"
+                [attr.aria-current]="workspace() === option.id ? 'true' : null"
               >
-                {{ option.label }}
+                {{ option.label | translate }}
               </a>
             }
           </ng-template>
@@ -95,10 +95,18 @@ export class V2Header {
   private readonly session = inject(SessionService);
 
   readonly workspace = input<V2Workspace>('CRM');
+  // CRM v2 is the main CRM; the v1 CRM stays reachable as "CRM Old" (it has no workspace of its own
+  // in the v2 shell, so it is never the current item here).
   protected readonly workspaces = [
-    { label: 'CRM', route: '/v2' },
-    { label: 'HR', route: '/hr' },
+    { id: 'CRM', label: 'v2.header.workspaceCrm', route: '/v2' },
+    { id: 'CRM_OLD', label: 'v2.header.workspaceCrmOld', route: '/leads' },
+    { id: 'HR', label: 'v2.header.workspaceHr', route: '/hr' },
   ] as const;
+  protected readonly currentWorkspaceLabel = computed(
+    () =>
+      this.workspaces.find((option) => option.id === this.workspace())?.label ??
+      'v2.header.workspaceCrm',
+  );
 
   readonly menuOpen = input.required<boolean>();
   readonly menuToggle = output<void>();

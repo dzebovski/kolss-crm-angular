@@ -9,7 +9,7 @@ describe('safeAppReturnTo', () => {
 
   it('returns to HR after signing in', () => {
     expect(safeAppReturnTo('/hr')).toBe('/hr');
-    expect(safeAppReturnTo('/hr-export')).toBe('/dashboard');
+    expect(safeAppReturnTo('/hr-export')).toBe('/v2');
   });
 
   it('normalizes legacy CRM destinations', () => {
@@ -18,8 +18,8 @@ describe('safeAppReturnTo', () => {
   });
 
   it('rejects external, public, and lookalike paths', () => {
-    expect(safeAppReturnTo('https://example.com/leads')).toBe('/dashboard');
-    expect(safeAppReturnTo('/login')).toBe('/dashboard');
-    expect(safeAppReturnTo('/leads-export')).toBe('/dashboard');
+    expect(safeAppReturnTo('https://example.com/leads')).toBe('/v2');
+    expect(safeAppReturnTo('/login')).toBe('/v2');
+    expect(safeAppReturnTo('/leads-export')).toBe('/v2');
   });
 });

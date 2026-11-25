@@ -39,6 +39,16 @@
     <nav class="global-navigation__nav" [attr.aria-label]="'nav.main' | translate">
       <a
         class="global-navigation__link global-navigation__link--primary"
+        routerLink="/v2"
+        (click)="close()"
+      >
+        <span class="global-navigation__icon"><app-ui-icon name="arrow_back" [size]="20" /></span>
+        <span>{{ 'nav.crmV2' | translate }}</span>
+        <app-ui-icon class="global-navigation__chevron" name="chevron_right" [size]="18" />
+      </a>
+
+      <a
+        class="global-navigation__link global-navigation__link--primary"
         routerLink="/dashboard"
         [class.global-navigation__link--current]="isCurrent('/dashboard')"
         [attr.aria-current]="isCurrent('/dashboard', true) ? 'page' : null"
